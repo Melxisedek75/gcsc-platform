@@ -1,13 +1,14 @@
 # GCSC Platform
 
-Local migration candidate for exactly three repositories owned by Melxisedek75:
+Локальный кандидат monorepo для трёх репозиториев владельца Melxisedek75:
 `gcsc-website`, `gcsc-smart-contractor`, and `gcsc-store`.
 
-**Not a production release.** Imported source, a passing migration check, and a
-working end-to-end product are three different milestones.
+**Не production-релиз.** Перенесённый код, успешная проверка переноса и полностью
+работающий продукт — разные этапы готовности.
 
-Start with [the migration checklist](docs/migration/CHECKLIST.md) and
-[the source-of-truth audit](docs/migration/ARCHITECTURE-AUDIT.md).
+Текущий прогресс: [контрольный список](docs/migration/CHECKLIST.md),
+[матрица 60 возможностей](docs/migration/CAPABILITY-MATRIX.md),
+[результаты проверок](docs/migration/RESULTS-2026-09-06.md).
 
 Original repositories are not deleted, archived, made private, or modified by
 this local migration. Local backups are outside this repository at

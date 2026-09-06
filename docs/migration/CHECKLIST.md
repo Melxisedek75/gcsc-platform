@@ -1,45 +1,52 @@
-# GCSC: migration completion checklist
+# GCSC: контрольный список объединения
 
-Status: LOCAL PREPARATION. Last verified: 2026-09-06.
+Статус: локальный monorepo создан; интеграция продукта НЕ завершена. Проверка: 2026-09-06.
 
-## Sources and safety
-- [x] Founder confirmed exactly three repositories.
-- [x] Local status and exact upstream heads recorded.
-- [x] Three all-ref local bundles created and verified.
-- [x] Three upstream mirrors created; originals left untouched.
-- [x] 529 eligible dirty files copied; excluded/ignored files remain in originals.
-- [x] Web/marketing audit returned; three source validators passed (not E2E).
-- [ ] Independent backend/security review: first reviewer hit usage limit.
-- [ ] Supplementary backend wallet-candidate bundle verified.
+## Исходники и сохранность
+- [x] Подтверждены ровно три репозитория.
+- [x] Записаны локальные изменения и точные актуальные SHA из GitHub.
+- [x] Созданы и проверены три резервных Git bundle со всеми локальными refs.
+- [x] Созданы три upstream mirror; оригиналы оставлены на месте.
+- [x] Сохранены 529 допустимых dirty-файлов; исключённые/ignored остались в оригиналах.
+- [x] Получен отдельный аудит web/marketing; три static validator прошли, это не E2E.
+- [ ] Независимое backend/security review: проверяющие остановлены лимитом.
+- [x] Отдельно сохранён и проверен Git bundle кандидата wallet-backend.
 
-## Controlled consolidation
-- [x] Source-of-truth audit and explicit exclusions written.
-- [ ] Selected source trees imported with per-file blob provenance.
-- [ ] Original histories reachable through namespaced archive branches.
-- [ ] Whitepaper v1.4 and approved design retained as internal documents.
-- [ ] Single API startup and isolated package commands verified.
-- [ ] Three separate worktrees created and ownership recorded.
-- [ ] Import verification and local component baselines run.
+## Контролируемый перенос
+- [x] Записаны решения об источниках истины и явные исключения.
+- [x] 421 исходный файл перенесён с точным указанием commit/path/blob/SHA-256.
+- [x] История сохранена в archive/*; 1510 исключений явно зарегистрированы.
+- [x] Внутренний Whitepaper v1.4, дизайн и план сохранены отдельно от публичного.
+- [x] Исправлен API main/start/dev; регрессионный тест сначала падал, затем прошёл.
+- [x] Созданы отдельные worktree/ветки backend, frontend и QA.
+- [x] Перенос: 7 тестов PASS; API: 87 PASS; web build PASS; lint: 0 ошибок/1 warning.
 
-## Integration, not yet complete
-- [ ] Complete all 60 capability rows with executable evidence; unknown is not done.
-- [ ] One shared wallet-auth protocol and verified ownership-binding migration.
-- [ ] Remove client production URL fallbacks through reviewed environment contracts.
-- [ ] Web/native API types and request/response contracts agree.
-- [ ] Mobile sign-in, restore, cancel, timeout, account/network switch tested on device.
-- [ ] Lead purchase, duplicate callbacks, idempotency and reconciliation tested locally.
-- [ ] Domain/AI simulation extracted from the competing construction-ai application.
-- [ ] Typecheck/build/lint, API/DB tests, contract builds and E2E pass reproducibly.
-- [ ] Root CI covers integration; no auto-deploy workflow.
-- [ ] Independent security/migration review approved exact candidate commit.
+## Интеграция: ещё не завершена
+- [x] Составлена матрица 60 возможностей с кодом, доказательствами и неизвестными областями.
+- [ ] Для всех 60 возможностей собраны функциональные доказательства; unknown не равно готово.
+- [ ] Согласован единый wallet-auth protocol и безопасное подтверждение владения аккаунтом.
+- [ ] Убраны production URL fallback через проверенный контракт конфигурации.
+- [ ] Web/native используют совместимые API-типы и форматы запросов/ответов.
+- [ ] На телефоне проверены вход, restore, cancel, timeout, смена аккаунта/сети.
+- [ ] Проверена сквозная покупка лида, duplicate callbacks и восстановление платежа.
+- [ ] AI-функции выделены из конкурирующего construction-ai приложения без потери функций.
+- [ ] Воспроизводимо проходят native/DB/contract build/tests и полноценный E2E.
+- [x] Добавлен root CI без auto-deploy; integration gate намеренно красный до исправлений.
+- [ ] Независимый reviewer одобрил точный commit после всех исправлений.
 
-## Publication and archival
-- [ ] Full history/content secret and license review before push.
-- [ ] Hosting origins, service roots, GitHub App/Pages access, DNS and rollback audited.
-- [ ] New remote created and reviewed migration published without exposing private data.
-- [ ] Preview and real device acceptance completed; rollback drill recorded.
-- [ ] Production cutover separately authorized and verified.
-- [ ] Old repositories archived read-only after cutover, never deleted.
-- [ ] Privacy/access change assessed separately from archival.
+## Публикация и архив
+- [ ] Проверены секреты и лицензии во всей истории перед push.
+- [ ] Проверены hosting origins, service roots, GitHub App/Pages, DNS и rollback.
+- [ ] Создан новый remote и опубликована проверенная миграция без приватных данных.
+- [ ] Пройдены preview и проверка на устройстве; выполнена репетиция возврата.
+- [ ] Отдельно согласован и проверен production cutover.
+- [ ] Старые repos переведены в read-only archive после cutover, без удаления.
+- [ ] Изменение private/access проверено отдельно от архивирования.
 
-Next safe task: verified source import and local structural checks.
+Следующие безопасные задачи: независимое ревью переноса, общий контракт конфигурации
+и wallet-auth, native baseline, PostgreSQL/contract fixtures. Два обязательных
+wallet-first API-маршрута пока отсутствуют; integration gate остаётся красным.
+
+Открытые пункты выше не означают, что функцию нужно написать заново: сначала сверить
+существующий код и evidence в CAPABILITY-MATRIX.md. Факт сборки не заменяет тест
+на телефоне, а mock-транзакция не подтверждает реальную подпись или платёж.

@@ -1,0 +1,24 @@
+{
+  "checkedAt": "2026-09-06T17:43:08.106Z",
+  "results": [
+    {
+      "source": "website",
+      "statusUnchanged": true,
+      "dirtyFilesChecked": 517,
+      "changed": []
+    },
+    {
+      "source": "backend",
+      "statusUnchanged": true,
+      "dirtyFilesChecked": 11,
+      "changed": []
+    },
+    {
+      "source": "store",
+      "statusUnchanged": true,
+      "dirtyFilesChecked": 1,
+      "changed": []
+    }
+  ],
+  "limitation": "Only recorded eligible dirty files and porcelain status; not a full filesystem backup."
+}
