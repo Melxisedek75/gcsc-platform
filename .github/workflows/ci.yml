@@ -1,0 +1,34 @@
+name: Local migration and integration gates
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  relocation:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm run check
+      - run: npm --prefix services/api/v3 ci --ignore-scripts --no-audit --no-fund
+      - run: npm run test:api
+      - run: npm --prefix apps/web ci --ignore-scripts --no-audit --no-fund
+      - run: npm run build:web
+      - run: npm run lint:web
+  integration-readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      # Intentionally red until the approved wallet-first contract is implemented.
+      - run: npm run check:integration-contracts

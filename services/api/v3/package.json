@@ -1,0 +1,89 @@
+{
+  "name": "gcsc-smart-contractor-backend",
+  "version": "3.0.0",
+  "description": "GCSC Smart Contractor \u2014 P2P Construction Marketplace with XPR Blockchain Escrow",
+  "main": "pure-server.js",
+  "jest": {
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "-script\\.test\\.js$",
+      "payment-receipts-postgres\\.test\\.js$",
+      "daily-status-runbook\\.test\\.js$",
+      "ci-monitoring-workflow\\.test\\.js$"
+    ]
+  },
+  "scripts": {
+    "start": "node pure-server.js",
+    "dev": "nodemon pure-server.js",
+    "test": "jest",
+    "test:payment-receipts-postgres": "jest tests/payment-receipts-postgres.test.js --runInBand --testPathIgnorePatterns=/node_modules/",
+    "test:pg-storage": "node tests/postgres-storage-smoke.js",
+    "test:pg-workflow": "node tests/postgres-workflow-smoke.js",
+    "test:stripe-readiness": "node tests/stripe-readiness-smoke.js",
+    "test:production-smoke-script": "node tests/production-smoke-script.test.js",
+    "test:admin-audit-export-script": "node tests/admin-audit-export-script.test.js",
+    "test:ops-status-report-script": "node tests/ops-status-report-script.test.js",
+    "test:production-gates-summary-script": "node tests/production-gates-summary-script.test.js",
+    "test:daily-status-runbook": "node tests/daily-status-runbook.test.js",
+    "test:production-evidence-scan-script": "node tests/production-evidence-scan-script.test.js",
+    "test:ci-monitoring-workflow": "node tests/ci-monitoring-workflow.test.js",
+    "test:admin-bootstrap-check-script": "node tests/admin-bootstrap-check-script.test.js",
+    "test:migration-readiness-script": "node tests/migration-readiness-script.test.js",
+    "test:security-cors-smoke-script": "node tests/security-cors-smoke-script.test.js",
+    "test:security-env-check-script": "node tests/security-env-check-script.test.js",
+    "test:restore-drill-script": "node tests/restore-drill-script.test.js",
+    "smoke:production": "node scripts/production-smoke.mjs",
+    "ops:status": "node scripts/production-status-report.mjs",
+    "ops:gates": "node scripts/production-gates-summary.mjs",
+    "ops:evidence:scan": "node scripts/scan-production-evidence.mjs",
+    "security:cors:smoke": "node scripts/security-cors-smoke.mjs",
+    "security:env:check": "node scripts/check-security-env.mjs",
+    "check:auth-channel-verification": "node scripts/validate-auth-channel-verification.mjs",
+    "audit:export": "node scripts/export-admin-audit.mjs",
+    "admin:bootstrap:check": "node scripts/check-admin-bootstrap-env.mjs",
+    "db:backup": "node scripts/backup-postgres.mjs",
+    "db:restore:drill": "node scripts/restore-postgres-drill.mjs",
+    "db:migrations:check": "node scripts/check-migration-readiness.mjs",
+    "db:migrate": "psql $DATABASE_URL -f database/schema_v3_migration.sql && psql $DATABASE_URL -f database/escrow-audit-migration.sql && psql $DATABASE_URL -f database/settlement-binding-migration.sql"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@proton/api": "^28.8.6",
+    "@proton/js": "^28.1.2",
+    "@proton/web-sdk": "^2.7.21",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "express-rate-limit": "^7.4.1",
+    "googleapis": "^144.0.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3",
+    "pg": "^8.13.1",
+    "ripemd160": "^2.0.2",
+    "stripe": "^17.4.0",
+    "twilio": "^5.3.6",
+    "validator": "^13.12.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.7",
+    "supertest": "^7.0.0"
+  },
+  "keywords": [
+    "gcsc",
+    "smart-contractor",
+    "construction",
+    "blockchain",
+    "xpr",
+    "escrow",
+    "marketplace"
+  ],
+  "author": "GCSC Engineering",
+  "license": "UNLICENSED"
+}

@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "status": "REQUIRED_FOR_CUTOVER_NOT_IMPLEMENTATION_CLAIM",
+  "requiredRoutes": [
+    { "method": "POST", "path": "/api/auth/login", "purpose": "email login" },
+    { "method": "POST", "path": "/api/auth/register", "purpose": "registration" },
+    { "method": "POST", "path": "/api/wallet/challenge", "purpose": "authenticated ownership challenge" },
+    { "method": "POST", "path": "/api/wallet/connect", "purpose": "authenticated verified binding" },
+    { "method": "GET", "path": "/api/wallet/me", "purpose": "verified binding state" },
+    { "method": "POST", "path": "/api/auth/wallet/challenge", "purpose": "required wallet-first sign-in; candidate protocol needs security review" },
+    { "method": "POST", "path": "/api/auth/wallet/verify", "purpose": "required wallet-first sign-in; never trust mutable profile metadata" }
+  ],
+  "limits": [
+    "Route presence is necessary but insufficient; no proof of schema, auth or SDK compatibility.",
+    "Do not add placeholder handlers to make this gate green.",
+    "Future endpoint design may change only through an explicitly reviewed consumer/server contract update."
+  ]
+}

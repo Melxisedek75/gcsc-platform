@@ -1,0 +1,9 @@
+[
+  {
+    "path": "services/api/v3/package.json",
+    "sourceBlob": "b9cfb0115f8397470f152032fb954155d53064f8",
+    "sha256": "5efe26cf93e70f9051caeb36ddc437755fb8d617bb591c3e55255555eec4d1f0",
+    "reason": "Select pure-server.js for main/start/dev, matching the canonical runtime. No dependency changes.",
+    "test": "node --test tests/migration.test.mjs; witnessed red before correction"
+  }
+]

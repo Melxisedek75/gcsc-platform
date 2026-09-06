@@ -1,0 +1,249 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --void: #0B0E17;
+    --ink: #151928;
+    --violet: #7B2FF7;
+    --blue: #3B6BF7;
+    --electric: #00D4FF;
+    --cyan: #00E5FF;
+    --white: #F8FAFF;
+    --silver: #A0AEC0;
+    --surface: #F1F5F9;
+    --surface-alt: #E2E8F0;
+    --glass: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(123, 47, 247, 0.25);
+    --glass-border-hover: rgba(123, 47, 247, 0.45);
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 262 92% 58%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 262 92% 58%;
+    --radius: 0.625rem;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #0F172A;
+    background-color: #FFFFFF;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', system-ui, sans-serif;
+  }
+
+  * {
+    @apply border-border;
+  }
+}
+
+@layer utilities {
+  .gradient-primary {
+    background: linear-gradient(135deg, #7B2FF7 0%, #3B6BF7 50%, #00D4FF 100%);
+  }
+
+  .gradient-mesh {
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 40%, rgba(123, 47, 247, 0.15) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 70% 60%, rgba(59, 107, 247, 0.12) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 40% at 50% 90%, rgba(0, 212, 255, 0.08) 0%, transparent 50%),
+      #F8FAFC;
+  }
+
+  .gradient-card {
+    background: linear-gradient(180deg, rgba(123,47,247,0.08) 0%, rgba(59,107,247,0.04) 100%);
+  }
+
+  .gradient-subtle {
+    background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #7B2FF7 0%, #3B6BF7 50%, #00D4FF 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .brand-heading-hero {
+    font-size: 3.75rem;
+    line-height: 1.05;
+    letter-spacing: 0;
+  }
+
+  @media (max-width: 768px) {
+    .brand-heading-hero {
+      font-size: 2.45rem;
+    }
+  }
+
+  .container-padding {
+    padding-left: clamp(1.5rem, 5vw, 4rem);
+    padding-right: clamp(1.5rem, 5vw, 4rem);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(123, 47, 247, 0.25);
+    border-radius: 16px;
+    backdrop-filter: blur(12px) saturate(150%);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  }
+
+  .glass-card-hover:hover {
+    border-color: rgba(123, 47, 247, 0.45);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 60px rgba(123, 47, 247, 0.15);
+  }
+
+  /* ── Shimmer Text (slow wave) ── */
+  .shimmer-text {
+    background: linear-gradient(
+      90deg,
+      #7B2FF7 0%,
+      #3B6BF7 20%,
+      #00D4FF 40%,
+      #3B6BF7 60%,
+      #7B2FF7 80%,
+      #3B6BF7 100%
+    );
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer-wave 10s ease-in-out infinite;
+  }
+
+  @keyframes shimmer-wave {
+    0% { background-position: 0% center; }
+    50% { background-position: 100% center; }
+    100% { background-position: 0% center; }
+  }
+
+  /* ── Partner Logo Hover ── */
+  .brand-logo-wave {
+    animation: logo-wave 8s ease-in-out infinite;
+    will-change: transform, filter;
+  }
+
+  @keyframes logo-wave {
+    0%, 100% {
+      transform: translateY(0) scale(1);
+      filter: drop-shadow(0 8px 18px rgba(123, 47, 247, 0.18));
+    }
+    50% {
+      transform: translateY(-2px) scale(1.01);
+      filter: drop-shadow(0 14px 28px rgba(0, 212, 255, 0.28));
+    }
+  }
+
+  .partner-logo-real {
+    opacity: 0.6;
+    filter: grayscale(1);
+    transition: all 0.4s ease;
+  }
+  .partner-logo-real:hover {
+    opacity: 1;
+    filter: grayscale(0);
+    transform: scale(1.05);
+  }
+}
+
+/* ── Kimi marketing design utilities (dark premium surfaces) ── */
+@layer components {
+  .brand-gradient {
+    background: linear-gradient(135deg, #0072F5 0%, #7C3AED 100%);
+  }
+
+  .glow-gradient {
+    background: linear-gradient(135deg, #00C6FF 0%, #7C3AED 100%);
+  }
+
+  .brand-gradient-text {
+    background: linear-gradient(135deg, #0072F5 0%, #7C3AED 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .glow-gradient-text {
+    background: linear-gradient(135deg, #00C6FF 0%, #7C3AED 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .mesh-gradient-bg {
+    background:
+      radial-gradient(ellipse at 20% 30%, rgba(0,114,245,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 70%, rgba(124,58,237,0.08) 0%, transparent 60%);
+  }
+
+  .gradient-badge {
+    background: linear-gradient(135deg, rgba(0,114,245,0.15), rgba(124,58,237,0.15));
+    border: 1px solid rgba(0,114,245,0.3);
+    color: #4DA3FF;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 8px 16px;
+    border-radius: 100px;
+  }
+
+  .star-border-wrapper {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  .star-border-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    background: conic-gradient(from 0deg, #0072F5, #7C3AED, #00C6FF, #0072F5);
+    animation: spin 4s linear infinite;
+    z-index: 0;
+    opacity: 0.6;
+  }
+
+  .star-border-content {
+    position: relative;
+    z-index: 1;
+    background: #070B14;
+    border-radius: 20px;
+    height: 100%;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "gcsc-mcp-server",
+  "version": "0.1.0",
+  "description": "MCP server exposing the GCSC SmartContractor backend API as tools",
+  "type": "module",
+  "bin": {
+    "gcsc-mcp-server": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch",
+    "check": "npm run build && node test/smoke.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  }
+}

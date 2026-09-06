@@ -1,0 +1,131 @@
+# GCSC Core Contracts
+
+Core smart contracts forming the GCSC DAO protocol backbone, compiled with **proton-tsc** and deployed on **XPR Network testnet**.
+
+## Accounts & Contracts
+
+| Contract File | Account | Purpose |
+|---|---|---|
+| `gcsctoken111.contract.ts` | `gcsctoken111` | GCSC utility token (GCSC, 4 dec, 1B max) |
+| `gcscmember11.contract.ts` | `gcscmember11` | DAO membership tiers & on-chain profiles |
+| `gcsclead1111.contract.ts` | `gcsclead1111` | Leadership & multi-sig governance |
+| `gcscstake111.contract.ts` | `gcscstake111` | Token staking — 12% APY, 30-day lock |
+| `gcsctreasry1.contract.ts` | `gcsctreasry1` | Multi-sig treasury & fund management |
+| `gcscrealty11.contract.ts` | `gcscrealty11` | Real-estate tokenisation & fractional NFTs |
+| `gcscinsure11.contract.ts` | `gcscinsure11` | On-chain insurance (Health/Life/Property/General) |
+| `gcscrow1111.contract.ts` | `gcscrow1111` | Milestone escrow for homeowner-funded construction projects |
+| `gcscstable11.contract.ts` | `gcscstable11` | GCST stablecoin accounting contract |
+| `gcscadvance1.contract.ts` | `gcscadvance1` | Demo/MVP gate for escrow-backed contractor advance requests |
+| `gcsccredit11.contract.ts` | `gcsccredit11` | Demo/MVP gate for token-collateral equipment credit requests |
+| `gcscclaim111.contract.ts` | `gcscclaim111` | Demo/MVP gate for insurance ClaimBridge emergency advance requests |
+| `gcscworkcap1.contract.ts` | `gcscworkcap1` | Demo/MVP gate for contract-backed contractor working capital requests |
+
+## gcscadvance1 Safety Scope
+
+`gcscadvance1` records contractor advance requests against funded escrow references. It is intentionally limited to demo/MVP coordination:
+
+- No token transfers.
+- No live loan issuance.
+- No repayment routing.
+- No liquidation.
+- No insurance claim handling.
+- State availability must be explicitly enabled by admin/legal review hash.
+- Contractor verification must be explicitly recorded before request.
+- Requested and approved amounts are capped by the smallest of:
+  - 20% of escrow amount
+  - 50% of milestone amount
+  - configured risk limit
+
+This module is a guard rail and audit trail for future legal/provider review, not a production real-money credit product.
+
+## gcsccredit11 Safety Scope
+
+`gcsccredit11` records contractor equipment credit requests backed by a declared GCSC collateral amount. It is intentionally limited to demo/MVP coordination:
+
+- No token custody or collateral lock.
+- No token transfers.
+- No live loan issuance.
+- No repayment routing.
+- No liquidation.
+- State availability must be explicitly enabled by admin/legal review hash.
+- Contractor verification must be explicitly recorded before request.
+- Requested and approved amounts are capped by the smallest of:
+  - configured loan-to-value basis points, default 25%
+  - configured risk limit
+
+This module prepares the product logic for legal/provider/security review without activating a regulated lending product.
+
+## gcscclaim111 Safety Scope
+
+`gcscclaim111` records homeowner emergency advance requests against an expected insurance claim payout. It is intentionally limited to demo/MVP coordination:
+
+- No assignment of benefits.
+- No insurer integration.
+- No token transfers.
+- No live claim financing.
+- No repayment routing from insurance proceeds.
+- State availability must be explicitly enabled by admin/legal review hash.
+- Requested and approved amounts are capped by the smallest of:
+  - configured claim advance basis points, default 20%
+  - configured risk limit
+
+This module prepares the ClaimBridge workflow for legal/provider/security review without activating a real insurance-financing product.
+
+## gcscworkcap1 Safety Scope
+
+`gcscworkcap1` records contractor working capital requests backed by a verified construction contract reference. It is intentionally limited to demo/MVP coordination:
+
+- No assignment of payment rights.
+- No token transfers.
+- No live loan issuance.
+- No repayment routing from milestone payments.
+- No liens or UCC filing automation.
+- State availability must be explicitly enabled by admin/legal review hash.
+- Contractor verification must be explicitly recorded before request.
+- Requested and approved amounts are capped by the smallest of:
+  - configured contract advance basis points, default 20%
+  - configured risk limit
+
+This module prepares contract-backed working capital logic for legal/provider/security review without activating a real lending product.
+
+## Build
+
+```bash
+npm install
+npm run build          # compiles all core contracts
+```
+
+Individual contracts:
+```bash
+npm run build:token    # gcsctoken111
+npm run build:member   # gcscmember11
+npm run build:lead     # gcsclead1111
+npm run build:stake    # gcscstake111
+npm run build:treasury # gcsctreasry1
+npm run build:realty   # gcscrealty11
+npm run build:insure   # gcscinsure11
+npm run build:escrow   # gcscrow1111
+npm run build:stable   # gcscstable11
+npm run build:advance  # gcscadvance1
+npm run build:credit   # gcsccredit11
+npm run build:claim    # gcscclaim111
+npm run build:workcap  # gcscworkcap1
+```
+
+## Deploy (XPR Testnet)
+
+```bash
+proton contract:set gcsctoken111 build/gcsctoken111
+proton contract:set gcscmember11 build/gcscmember11
+proton contract:set gcsclead1111 build/gcsclead1111
+proton contract:set gcscstake111 build/gcscstake111
+proton contract:set gcsctreasry1 build/gcsctreasry1
+proton contract:set gcscrealty11 build/gcscrealty11
+proton contract:set gcscinsure11 build/gcscinsure11
+proton contract:set gcscrow1111 build/gcscrow1111
+proton contract:set gcscstable11 build/gcscstable11
+proton contract:set gcscadvance1 build/gcscadvance1
+proton contract:set gcsccredit11 build/gcsccredit11
+proton contract:set gcscclaim111 build/gcscclaim111
+proton contract:set gcscworkcap1 build/gcscworkcap1
+```

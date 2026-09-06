@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Global Construction Smart Contract — AI Infrastructure for Construction Finance</title>
+  <meta name="description" content="GCSC builds decentralized infrastructure for construction payments, escrow, and contractor reputation on XPR Network.">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            brand: { 50:'#f5f3ff',100:'#ede9fe',200:'#ddd6fe',300:'#c4b5fd',400:'#a78bfa',500:'#8b5cf6',600:'#7c3aed',700:'#6d28d9',800:'#5b21b6',900:'#4c1d95' },
+            dark: { 900:'#0a0a0f',800:'#12121e',700:'#1a1a2e',600:'#1f1f3a' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #0a0a0f; color: #fff; -webkit-font-smoothing: antialiased; }
+    .gradient-text { background: linear-gradient(135deg, #a78bfa, #ff8c00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .glow { box-shadow: 0 0 60px rgba(124,58,237,.15); }
+    .card-hover { transition: all .3s ease; }
+    .card-hover:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,.4); border-color: rgba(124,58,237,.3); }
+  </style>
+</head>
+<body class="bg-dark-900 text-white overflow-x-hidden">
+
+  <!-- NAV -->
+  <nav class="fixed top-0 w-full z-50 bg-dark-900/90 backdrop-blur-xl border-b border-white/5">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <a href="#" class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-sm font-bold">G</div>
+        <span class="font-bold text-lg tracking-tight">GCSC</span>
+      </a>
+      <div class="hidden md:flex gap-8 text-sm text-gray-400">
+        <a href="#mission" class="hover:text-white transition-colors">Mission</a>
+        <a href="#products" class="hover:text-white transition-colors">Products</a>
+        <a href="#technology" class="hover:text-white transition-colors">Technology</a>
+        <a href="whitepaper.html" class="hover:text-white transition-colors">Whitepaper</a>
+        <a href="#contact" class="hover:text-white transition-colors">Contact</a>
+      </div>
+      <a href="https://gcsc.store" target="_blank" class="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-sm font-semibold transition-all">Launch App</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="relative min-h-screen flex items-center pt-16">
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_-10%,rgba(124,58,237,.12),transparent)]"></div>
+    <div class="max-w-6xl mx-auto px-6 relative z-10 grid md:grid-cols-2 gap-16 items-center">
+      <div data-aos="fade-up">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-300 text-xs font-semibold tracking-wider uppercase mb-6">
+          <span class="w-2 h-2 rounded-full bg-brand-400 animate-pulse"></span>
+          Building on XPR Network
+        </div>
+        <h1 class="text-5xl md:text-7xl font-black leading-[1.05] tracking-tight mb-6">
+          Finance for the <br><span class="gradient-text">Construction</span> Era
+        </h1>
+        <p class="text-lg text-gray-400 leading-relaxed mb-8 max-w-lg">
+          We build decentralized infrastructure that turns construction reputation into a financial asset. Smart escrow, milestone payments, and verifiable contractor history — all on blockchain.
+        </p>
+        <div class="flex gap-4 flex-wrap">
+          <a href="https://gcsc.store" class="px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-500 font-semibold transition-all glow">Explore GCSC</a>
+          <a href="#products" class="px-6 py-3 rounded-xl border border-white/10 hover:border-white/30 font-semibold transition-all">Our Products</a>
+        </div>
+      </div>
+      <div class="relative hidden md:block" data-aos="fade-left" data-aos-delay="200">
+        <div class="w-full aspect-square rounded-3xl bg-gradient-to-br from-brand-600/20 to-orange-500/10 border border-white/5 p-8 flex items-center justify-center">
+          <div class="text-center">
+            <div class="text-6xl font-black text-white/5 mb-2">GCSC</div>
+            <div class="text-brand-400 font-semibold">Global Construction<br>Smart Contract</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MISSION -->
+  <section id="mission" class="py-24 bg-dark-800">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="text-center mb-16" data-aos="fade-up">
+        <h2 class="text-3xl md:text-5xl font-bold mb-4">The Problem We Solve</h2>
+        <p class="text-gray-400 max-w-2xl mx-auto text-lg">Construction is a $12 trillion industry where contractors struggle for fair payment and homeowners fear incomplete work. We fix both sides simultaneously.</p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="p-8 rounded-2xl bg-dark-700 border border-white/5 card-hover" data-aos="fade-up" data-aos-delay="0">
+          <div class="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center mb-4 text-red-400 text-xl">⚠️</div>
+          <h3 class="font-bold text-xl mb-2">Payment Risk</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">Contractors do 50% of work before seeing payment. Homeowners fear paying upfront for incomplete projects.</p>
+        </div>
+        <div class="p-8 rounded-2xl bg-dark-700 border border-white/5 card-hover" data-aos="fade-up" data-aos-delay="100">
+          <div class="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center mb-4 text-orange-400 text-xl">📉</div>
+          <h3 class="font-bold text-xl mb-2">No Reputation</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">Great contractors with 200+ projects cannot prove their track record to banks or new clients.</p>
+        </div>
+        <div class="p-8 rounded-2xl bg-dark-700 border border-white/5 card-hover" data-aos="fade-up" data-aos-delay="200">
+          <div class="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center mb-4 text-brand-400 text-xl">🔒</div>
+          <h3 class="font-bold text-xl mb-2">Our Solution</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">Blockchain escrow releases payment only after verified milestones. Every completed project builds an immutable reputation.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRODUCTS -->
+  <section id="products" class="py-24">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="text-center mb-16" data-aos="fade-up">
+        <h2 class="text-3xl md:text-5xl font-bold mb-4">Our Product</h2>
+        <p class="text-gray-400 max-w-2xl mx-auto text-lg">SmartContractor — the flagship platform of the GCSC ecosystem on XPR Network.</p>
+      </div>
+      <div class="max-w-md mx-auto">
+        <div class="p-8 rounded-2xl bg-dark-800 border border-white/5 card-hover" data-aos="fade-up">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center mb-6 text-white font-bold text-xl">S</div>
+          <h3 class="font-bold text-xl mb-2">Smart Contractor</h3>
+          <p class="text-gray-400 text-sm mb-4 leading-relaxed">P2P construction marketplace with blockchain escrow. Homeowners post projects, contractors bid, and funds release by milestone.</p>
+          <a href="https://gcsc.store" class="text-brand-400 text-sm font-semibold hover:text-brand-300 transition-colors">gcsc.store →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TECHNOLOGY -->
+  <section id="technology" class="py-24 bg-dark-800">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="grid md:grid-cols-2 gap-16 items-center">
+        <div data-aos="fade-right">
+          <h2 class="text-3xl md:text-4xl font-bold mb-6">Built on <span class="gradient-text">XPR Network</span></h2>
+          <p class="text-gray-400 mb-8 leading-relaxed">We chose XPR Network for its enterprise-grade speed, zero gas fees for users, and native compliance tooling. Every contract, payment, and reputation score is recorded immutably.</p>
+          <div class="space-y-4">
+            <div class="flex items-start gap-4">
+              <div class="w-8 h-8 rounded-lg bg-brand-500/10 flex items-center justify-center text-brand-400 flex-shrink-0 mt-1">1</div>
+              <div><h4 class="font-semibold mb-1">Smart Contract Escrow</h4><p class="text-gray-400 text-sm">Funds lock on-chain and release only after milestone verification.</p></div>
+            </div>
+            <div class="flex items-start gap-4">
+              <div class="w-8 h-8 rounded-lg bg-brand-500/10 flex items-center justify-center text-brand-400 flex-shrink-0 mt-1">2</div>
+              <div><h4 class="font-semibold mb-1">Zero User Fees</h4><p class="text-gray-400 text-sm">XPR Network absorbs gas costs. Users pay nothing for blockchain transactions.</p></div>
+            </div>
+            <div class="flex items-start gap-4">
+              <div class="w-8 h-8 rounded-lg bg-brand-500/10 flex items-center justify-center text-brand-400 flex-shrink-0 mt-1">3</div>
+              <div><h4 class="font-semibold mb-1">AI Verification</h4><p class="text-gray-400 text-sm">Computer vision and drone imagery verify milestone completion before payment release.</p></div>
+            </div>
+          </div>
+        </div>
+        <div class="p-8 rounded-3xl bg-gradient-to-br from-brand-600/10 to-transparent border border-brand-500/10" data-aos="fade-left">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="p-4 rounded-xl bg-dark-700 text-center">
+              <div class="text-2xl font-bold text-brand-400 mb-1">&lt;1s</div>
+              <div class="text-xs text-gray-500 uppercase tracking-wider">Finality</div>
+            </div>
+            <div class="p-4 rounded-xl bg-dark-700 text-center">
+              <div class="text-2xl font-bold text-brand-400 mb-1">$0</div>
+              <div class="text-xs text-gray-500 uppercase tracking-wider">Gas Fees</div>
+            </div>
+            <div class="p-4 rounded-xl bg-dark-700 text-center">
+              <div class="text-2xl font-bold text-brand-400 mb-1">AES-256</div>
+              <div class="text-xs text-gray-500 uppercase tracking-wider">Encryption</div>
+            </div>
+            <div class="p-4 rounded-xl bg-dark-700 text-center">
+              <div class="text-2xl font-bold text-brand-400 mb-1">100%</div>
+              <div class="text-xs text-gray-500 uppercase tracking-wider">On-Chain</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VISION / CTA -->
+  <section class="py-24">
+    <div class="max-w-4xl mx-auto px-6 text-center" data-aos="fade-up">
+      <h2 class="text-3xl md:text-5xl font-bold mb-6">Reputation as <span class="gradient-text">Collateral</span></h2>
+      <p class="text-gray-400 text-lg leading-relaxed mb-8">Our ultimate vision: a contractor with 200 verified completions and zero disputes can walk into any bank and secure working capital — not because of their credit score, but because of their provable, immutable work history on the blockchain.</p>
+      <div class="flex justify-center gap-4 flex-wrap">
+        <a href="https://gcsc.store" class="px-8 py-4 rounded-xl bg-brand-600 hover:bg-brand-500 font-semibold transition-all glow">Try the Beta</a>
+        <a href="mailto:hello@gcsc.store" class="px-8 py-4 rounded-xl border border-white/10 hover:border-white/30 font-semibold transition-all">Contact Us</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer id="contact" class="border-t border-white/5 py-12 bg-dark-900">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="grid md:grid-cols-4 gap-8 mb-8">
+        <div>
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-sm font-bold">G</div>
+            <span class="font-bold">GCSC</span>
+          </div>
+          <p class="text-gray-500 text-sm leading-relaxed">Decentralized infrastructure for construction finance. Washington State LLC.</p>
+        </div>
+        <div>
+          <h4 class="font-semibold text-sm uppercase tracking-wider text-gray-400 mb-4">Products</h4>
+          <ul class="space-y-2 text-sm text-gray-500">
+            <li><a href="https://gcsc.store" class="hover:text-white transition-colors">Smart Contractor</a></li>
+            <li><a href="whitepaper.html" class="hover:text-white transition-colors">Whitepaper</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold text-sm uppercase tracking-wider text-gray-400 mb-4">Company</h4>
+          <ul class="space-y-2 text-sm text-gray-500">
+            <li><span class="hover:text-white transition-colors cursor-pointer">About</span></li>
+            <li><span class="hover:text-white transition-colors cursor-pointer">Careers</span></li>
+            <li><a href="mailto:hello@gcsc.store" class="hover:text-white transition-colors">Contact</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold text-sm uppercase tracking-wider text-gray-400 mb-4">Legal</h4>
+          <ul class="space-y-2 text-sm text-gray-500">
+            <li><span class="hover:text-white transition-colors cursor-pointer">Privacy Policy</span></li>
+            <li><span class="hover:text-white transition-colors cursor-pointer">Terms of Service</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="border-t border-white/5 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+        <p class="text-gray-600 text-sm">© 2026 Global Construction Smart Contract LLC. All rights reserved.</p>
+        <div class="flex gap-4 text-sm text-gray-600">
+          <span>Washington State, USA</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    AOS.init({ duration: 800, once: true, offset: 100 });
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', e => { e.preventDefault(); document.querySelector(a.getAttribute('href')).scrollIntoView({ behavior: 'smooth' }); });
+    });
+  </script>
+</body>
+</html>
