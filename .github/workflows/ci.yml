@@ -21,6 +21,7 @@ jobs:
       - run: npm --prefix services/api/v3 ci --ignore-scripts --no-audit --no-fund
       - run: npm run test:api
       - run: npm --prefix apps/web ci --ignore-scripts --no-audit --no-fund
+      - run: npm run test:api-config
       - run: npm run build:web
       - run: npm run lint:web
   integration-readiness:

@@ -5,5 +5,33 @@
     "sha256": "5efe26cf93e70f9051caeb36ddc437755fb8d617bb591c3e55255555eec4d1f0",
     "reason": "Select pure-server.js for main/start/dev, matching the canonical runtime. No dependency changes.",
     "test": "node --test tests/migration.test.mjs; witnessed red before correction"
+  },
+  {
+    "path": "apps/web/src/services/api.ts",
+    "sourceBlob": "386771574699c2d98c025c8bcae2e27b91bfa9c9",
+    "sha256": "c3fcf79c360460737481b46832d667f55ce65005fdf3e76ed987c6b78387d2af",
+    "reason": "Require explicit API origin at request time and normalize legacy /api once; remove production fallback.",
+    "test": "npm run test:api-config; witnessed unsafe no-env fetch and path failures before correction"
+  },
+  {
+    "path": "apps/mobile/lib/api.ts",
+    "sourceBlob": "58ac59c3eb9eb9e959a463f7ffb173999ff62b12",
+    "sha256": "6418ac17b050e9cf9b5336150f3e0bc44b97b734506480609b9639775e099a5a",
+    "reason": "Resolve explicit API origin independently of payments/SDK; remove circular dependency.",
+    "test": "npm run test:api-config; witnessed unsafe no-env fetch before correction"
+  },
+  {
+    "path": "apps/mobile/lib/payments.ts",
+    "sourceBlob": "926287b21f4ee1dd48345cba31e4490372b72964",
+    "sha256": "b6d12b0aeabfcd56d86ea309a040cefe75a67e5e84b29754f5718da5143fca30",
+    "reason": "Keep endpoint paths render-safe; resolve explicit origin inside payment try/catch before fetch or signing.",
+    "test": "npm run test:api-config; witnessed no-env payment fetch before correction; no real signatures"
+  },
+  {
+    "path": "apps/mobile/eas.json",
+    "sourceBlob": "345320826f3e1a7979f60ea746eb4a803d6c17ff",
+    "sha256": "f1b7072f9dad3934cecebd01957e17bf95b35bf2db03d52564cb23978d3c9c5e",
+    "reason": "Remove embedded remote API origins from EAS profiles; require separately selected build environment.",
+    "test": "npm run test:api-config; witnessed production URL assertion failure before correction"
   }
 ]

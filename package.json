@@ -5,6 +5,7 @@
   "description": "GCSC three-repository migration candidate; not a production release",
   "scripts": {
     "test": "node --test tests/migration.test.mjs",
+    "test:api-config": "node --test tests/api-config.test.mjs",
     "check:api-syntax": "node --check services/api/v3/pure-server.js",
     "check:web": "node scripts/check-web.mjs",
     "check:integration-contracts": "node scripts/check-api-contracts.mjs",

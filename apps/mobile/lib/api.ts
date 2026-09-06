@@ -2,7 +2,7 @@
 // Persists JWT in AsyncStorage; injects Authorization header automatically.
 
 import { safeStorage as AsyncStorage } from './storage';
-import { PAYMENT_CONFIG } from './payments';
+import { getApiUrl } from './api-config';
 
 const TOKEN_KEY = '@gcsc/auth/token';
 const USER_KEY = '@gcsc/auth/user';
@@ -89,7 +89,7 @@ interface RequestOptions {
 }
 
 export async function apiRequest<T>(path: string, opts: RequestOptions = {}): Promise<T> {
-  const url = `${PAYMENT_CONFIG.API_BASE}${path}`;
+  const url = getApiUrl(path);
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(opts.headers ?? {}),

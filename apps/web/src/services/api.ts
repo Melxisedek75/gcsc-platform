@@ -1,5 +1,5 @@
 // GCSC API Client
-const API_BASE = import.meta.env.VITE_API_URL || 'https://gcsc-backend-production.up.railway.app/api'
+import { resolveApiUrl } from '../../../../packages/api-config/index.mjs'
 
 export interface GcscProfile {
   accountType: 'homeowner' | 'contractor'
@@ -240,7 +240,7 @@ class ApiClient {
   }
 
   private async request(path: string, options: RequestInit = {}) {
-    const url = `${API_BASE}${path}`
+    const url = resolveApiUrl(import.meta.env.VITE_API_URL, `/api${path}`, 'VITE_API_URL')
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...options.headers as Record<string, string>

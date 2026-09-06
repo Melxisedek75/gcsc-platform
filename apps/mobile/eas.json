@@ -12,9 +12,6 @@
       },
       "android": {
         "buildType": "apk"
-      },
-      "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://gcsc-backend-production.up.railway.app"
       }
     },
     "preview": {
@@ -25,9 +22,6 @@
       },
       "android": {
         "buildType": "apk"
-      },
-      "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://gcsc-backend-production.up.railway.app"
       }
     },
     "production": {
@@ -37,9 +31,6 @@
       },
       "android": {
         "buildType": "app-bundle"
-      },
-      "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://gcsc-backend-production.up.railway.app"
       }
     }
   },
