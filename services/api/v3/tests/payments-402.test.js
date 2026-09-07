@@ -64,9 +64,11 @@ beforeEach(() => {
   db.lead_tokens.length = 0;
   db.job_posting_payments.length = 0;
   db.users.length = 0;
+  // Positive payment fixtures represent bindings already proved by the server.
+  // Metadata-only and forged profile claims are covered by wallet-binding-trust.
   db.users.push(
-    { id: 1, email: 'demo@gcsc.store', role: 'homeowner', is_active: 1, wallet: { accountName: 'homeowner1', permission: 'active' } },
-    { id: 2, email: 'contractor@gcsc.store', role: 'contractor', is_active: 1, wallet: { accountName: 'testacct1', permission: 'active' } },
+    { id: 1, email: 'demo@gcsc.store', role: 'homeowner', is_active: 1, wallet: { accountName: 'homeowner1', permission: 'active', verified: true } },
+    { id: 2, email: 'contractor@gcsc.store', role: 'contractor', is_active: 1, wallet: { accountName: 'testacct1', permission: 'active', verified: true } },
   );
   _hooks.verifyHyperionTransfer = originalVerifier;
   _hooks.verifyAccountKey = originalVerifyAccountKey;

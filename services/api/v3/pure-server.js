@@ -2779,23 +2779,22 @@ function updateProfileFromBody(user, body) {
   }
 
   // P1-2: accept a wallet binding sent by the mobile client via PUT /api/auth/profile.
-  // Persist { accountName, permission } so it can be matched against the on-chain
-  // sender at payment time (see P1-1). This path stores UNVERIFIED metadata only;
-  // proven ownership (verified:true) is set exclusively by POST /api/wallet/connect
-  // after a signed challenge (P1-4). Payment sender-binding still guards funds.
+  // Metadata is not ownership proof. Only an unchanged account AND permission
+  // may retain an existing server proof; clients cannot supply proof fields here.
   if (body.wallet && typeof body.wallet === 'object') {
     const accountName = cleanString(body.wallet.account || body.wallet.accountName || '', 12).toLowerCase();
     const permission = cleanString(body.wallet.permission || 'active', 12).toLowerCase();
     if (/^[a-z1-5.]{1,12}$/.test(accountName) && /^[a-z1-5]{1,12}$/.test(permission)) {
       const prev = user.wallet || {};
-      const keepVerified = prev.accountName === accountName && prev.verified === true;
+      const keepVerified = prev.accountName === accountName
+        && prev.permission === permission && prev.verified === true;
       user.wallet = {
-        ...prev,
+        ...(keepVerified ? prev : {}),
         accountName,
         permission,
         walletType: cleanString(body.wallet.walletType || 'webauth', 40),
         verified: keepVerified,
-        connectedAt: prev.connectedAt || new Date().toISOString(),
+        connectedAt: (keepVerified && prev.connectedAt) || new Date().toISOString(),
       };
     }
   } else if (body.wallet === null) {
@@ -4117,6 +4116,9 @@ const routes = {
     if (!leadWallet) {
       return json(res, 409, { error: 'Wallet not connected', code: 'wallet_required' });
     }
+    if (leadUser.wallet.verified !== true) {
+      return json(res, 409, { error: 'Verified wallet ownership required', code: 'wallet_proof_required' });
+    }
 
     const verify = await _hooks.verifyHyperionTransfer({
       txHash,
@@ -4211,6 +4213,9 @@ const routes = {
     const jobWallet = jobUser && jobUser.wallet && jobUser.wallet.accountName;
     if (!jobWallet) {
       return json(res, 409, { error: 'Wallet not connected', code: 'wallet_required' });
+    }
+    if (jobUser.wallet.verified !== true) {
+      return json(res, 409, { error: 'Verified wallet ownership required', code: 'wallet_proof_required' });
     }
 
     const verify = await _hooks.verifyHyperionTransfer({
