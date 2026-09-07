@@ -6,6 +6,9 @@
   "scripts": {
     "test": "node --test tests/migration.test.mjs",
     "test:api-config": "node --test tests/api-config.test.mjs",
+    "test:mobile-build": "node --test tests/mobile-build.test.mjs",
+    "check:mobile-types": "node apps/mobile/node_modules/typescript/bin/tsc --project apps/mobile/tsconfig.json --noEmit",
+    "bundle:android:local": "node scripts/bundle-mobile-local.mjs",
     "check:api-syntax": "node --check services/api/v3/pure-server.js",
     "check:web": "node scripts/check-web.mjs",
     "check:integration-contracts": "node scripts/check-api-contracts.mjs",
@@ -13,7 +16,7 @@
     "lint:web": "npm --prefix apps/web run lint",
     "test:api": "node scripts/run-api-tests.mjs",
     "test:contracts": "npm --prefix contracts/gcsc-core test",
-    "check": "npm test && npm run check:api-syntax && npm run check:web"
+    "check": "npm test && npm run test:mobile-build && npm run check:api-syntax && npm run check:web"
   },
   "engines": { "node": ">=20" }
 }
