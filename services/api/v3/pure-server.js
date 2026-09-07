@@ -1622,8 +1622,8 @@ function verifyWalletSignature({ message, signature, publicKey }) {
   return { ok: true, publicKey: recovered };
 }
 
-// Default on-chain check: confirm the recovered key is authorized for the given
-// permission of the account. Mockable via _hooks.verifyAccountKey.
+// Direct-key proof only: the recovered key must meet the requested permission's
+// threshold alone. Mockable via _hooks.verifyAccountKey.
 async function verifyXprAccountKey({ accountName, permission, publicKey }) {
   const normKey = XprNumeric.publicKeyToString(XprNumeric.stringToPublicKey(String(publicKey)));
   let lastError = 'no_nodes';
@@ -1642,8 +1642,14 @@ async function verifyXprAccountKey({ accountName, permission, publicKey }) {
       const perms = Array.isArray(payload.permissions) ? payload.permissions : [];
       const perm = perms.find(p => p.perm_name === permission);
       if (!perm) { lastError = 'permission_not_found'; continue; }
+      const threshold = perm.required_auth && perm.required_auth.threshold;
+      if (!Number.isInteger(threshold) || threshold <= 0 || threshold > 0xffffffff) {
+        return { ok: false, error: 'account_key_unauthorized' };
+      }
       const keys = (perm.required_auth && Array.isArray(perm.required_auth.keys)) ? perm.required_auth.keys : [];
+      // One recovered signature cannot borrow weight from other keys, accounts or waits.
       const match = keys.some(k => {
+        if (!k || !Number.isInteger(k.weight) || k.weight < threshold || k.weight > 0xffff) return false;
         try { return XprNumeric.publicKeyToString(XprNumeric.stringToPublicKey(String(k.key))) === normKey; }
         catch { return false; }
       });

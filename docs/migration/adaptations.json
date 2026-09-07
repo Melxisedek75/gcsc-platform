@@ -9,9 +9,9 @@
   {
     "path": "services/api/v3/pure-server.js",
     "sourceBlob": "952128e9316fe78bef42dba8ddc7b04eb09e29e5",
-    "sha256": "6165c6b7062f355571cb1e7e6e7110dff1a4fec45a0a7a1bb229a2295c4d587b",
-    "reason": "Require verified wallet ownership at both payment entrypoints; invalidate proof when profile account or permission changes.",
-    "test": "npm run test:api; wallet-binding-trust reproduced 12 failures before fix"
+    "sha256": "357e978f1d4bc76891c4ab6a0501ef12a8722cc983bfa6ac746b8a999cf2cc34",
+    "reason": "Require verified wallet ownership at both payment entrypoints; invalidate proof on account/permission changes; require recovered key weight to meet the authority threshold alone.",
+    "test": "npm run test:api; wallet-binding-trust reproduced 12 failures and wallet-authority reproduced 25 failures before their respective fixes"
   },
   {
     "path": "services/api/v3/tests/payments-402.test.js",

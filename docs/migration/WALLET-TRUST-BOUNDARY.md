@@ -77,3 +77,48 @@ reviewer was launched in this task; prior quota-blocked reviews are not approval
 Review additionally needs to cover the existing authority-check bypass setting,
 threshold/delegation handling, network/permission-bound challenges, duplicate-account
 ownership rules and legacy stored bindings. This patch does not certify those paths.
+
+## Follow-up plan: single-key authority threshold
+
+Base: fe16dfc1. Scope: verifyXprAccountKey and a new wallet-authority.test.js suite.
+The existing proof supplies one recovered key, not a multisignature transaction.
+Require that key's own positive integer weight to meet the permission's positive
+uint32 threshold. Never borrow weights from other keys, accounts or waits. Keep
+the existing account_key_unauthorized response and fail closed on invalid numbers.
+This is a direct-key subset, not a recursive Antelope authorization evaluator.
+
+Reference: [Antelope permissions](https://docs.antelope.io/docs/latest/protocol/accounts_and_permissions/)
+and [WharfKit hasPermission](https://wharfkit.com/docs/antelope/authority), checked
+2026-09-07. No new dependency is needed for a numeric guard in the existing checker.
+
+- [x] Add offline fixtures for insufficient weight, malformed numbers, wrong keys,
+  permission separation, and EOS/PUB_K1 normalization; witness failures first.
+- [x] Change only the direct-key threshold check in pure-server.js.
+- [x] Run npm run test:api twice, npm run check and check:integration-contracts;
+  update the adaptation hash and record actual outcomes here.
+
+No RPC calls, user keys or signatures in the new suite. The enforcement bypass,
+challenge scope, ownership uniqueness and missing wallet-first routes remain separate
+tasks. Full wallet authorization and independent review remain NOT_APPROVED.
+
+### Follow-up verification: 2026-09-07 UTC
+
+- npm run test:api before the runtime change: 25 FAIL / 115 PASS, 5 suites.
+  Failures were false-positive authority grants, not harness errors.
+- After the change, npm run test:api twice: 140/140 PASS, 5 suites each time
+  (34.911 s and 20.107 s). The new suite contributes 38 direct-checker cases.
+- npm run check: exit 0; 7/7 provenance, syntax and all 3 static web validators.
+- npm run check:integration-contracts: exit 1, unchanged 5/7 required endpoints;
+  missing wallet-first challenge/verify is not hidden or counted as passing.
+- git diff --check: exit 0. Existing url.parse deprecation and expected mocked
+  payment-rejection console warning remain; dependencies/lockfiles unchanged.
+
+Numeric bounds follow the Antelope uint32 threshold and uint16 key weight
+([weight_type definition](https://github.com/AntelopeIO/leap/blob/main/libraries/chain/include/eosio/chain/types.hpp#L224)).
+The direct-key policy can reject otherwise valid parent/delegated/multisig chain
+authorities: supporting them requires a separately designed proof flow, not summing
+unproven factors here. The current enforcement bypass remains an open blocker.
+
+No independent approval is claimed. Pascal's prior attempt to review fe16dfc1
+terminated with a quota error and left no report; this follow-up was not dispatched
+again. The full candidate remains unmerged and is not a wallet-login release.
