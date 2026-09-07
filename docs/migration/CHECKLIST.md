@@ -25,6 +25,10 @@
 - [x] Составлена матрица 60 возможностей с кодом, доказательствами и неизвестными областями.
 - [ ] Для всех 60 возможностей собраны функциональные доказательства; unknown не равно готово.
 - [ ] Согласован единый wallet-auth protocol и безопасное подтверждение владения аккаунтом.
+- [x] Локальный кандидат защиты wallet metadata: backend commit fe16dfc1.
+  Неподтверждённая привязка отклоняется на обоих payment endpoints; смена account/permission
+  сбрасывает proof. 102/102 offline API-тестов дважды PASS, 7/7 provenance PASS.
+  Независимое ревью и интеграция НЕ выполнены; это не готовый wallet-first вход.
 - [ ] Убраны production URL fallback через проверенный контракт конфигурации.
 - [x] Локальный кандидат конфигурации: общий URL resolver для web/mobile, убран fallback
   и цикл API/payments; 14/14 тестов дважды, web build PASS. Ветка codex/frontend-integration,
@@ -55,9 +59,13 @@ wallet-first API-маршрута пока отсутствуют; integration g
 
 Для следующего исполнителя: конфигурационный кандидат и guarded native JS build уже
 есть в frontend worktree; не переписывать их повторно. Получить независимое ревью;
-в backend lane изучить существующие wallet-auth кандидаты и определить безопасный
-protocol/ownership contract до реализации отсутствующих маршрутов. Доказательства:
-.worktrees/frontend/docs/migration/API-CONFIG-CONTRACT.md и NATIVE-BUILD-BASELINE.md.
+в backend lane продолжить protocol/ownership contract до реализации отсутствующих
+маршрутов. Следующий конкретный риск: on-chain checker учитывает наличие ключа,
+но не threshold; есть отключаемая проверка и challenge без chain/permission binding.
+Сначала локальные негативные тесты и узкое исправление, без live RPC/подписей.
+Доказательства: .worktrees/frontend/docs/migration/API-CONFIG-CONTRACT.md,
+.worktrees/frontend/docs/migration/NATIVE-BUILD-BASELINE.md и
+.worktrees/backend/docs/migration/WALLET-TRUST-BOUNDARY.md.
 
 Открытые пункты выше не означают, что функцию нужно написать заново: сначала сверить
 существующий код и evidence в CAPABILITY-MATRIX.md. Факт сборки не заменяет тест
