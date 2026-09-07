@@ -10,6 +10,8 @@
 - [x] Сохранены 529 допустимых dirty-файлов; исключённые/ignored остались в оригиналах.
 - [x] Получен отдельный аудит web/marketing; три static validator прошли, это не E2E.
 - [ ] Независимое backend/security review: проверяющие остановлены лимитом.
+  Попытка Pascal для fe16dfc1 также остановлена лимитом; отчёт отсутствует,
+  QA worktree чистый (проверено 2026-09-07 15:37 UTC). Не засчитано как PASS.
 - [x] Отдельно сохранён и проверен Git bundle кандидата wallet-backend.
 
 ## Контролируемый перенос
@@ -29,6 +31,10 @@
   Неподтверждённая привязка отклоняется на обоих payment endpoints; смена account/permission
   сбрасывает proof. 102/102 offline API-тестов дважды PASS, 7/7 provenance PASS.
   Независимое ревью и интеграция НЕ выполнены; это не готовый wallet-first вход.
+- [x] Локальный кандидат threshold-проверки: backend commit 66fe4734 поверх fe16dfc1.
+  Вес одного подтверждённого ключа должен сам удовлетворять порогу разрешения;
+  некорректные числа отклоняются. 38 новых тестов; полный API suite 140/140 дважды PASS.
+  Provenance 7/7, syntax/static проверки PASS. Независимого одобрения и интеграции нет.
 - [ ] Убраны production URL fallback через проверенный контракт конфигурации.
 - [x] Локальный кандидат конфигурации: общий URL resolver для web/mobile, убран fallback
   и цикл API/payments; 14/14 тестов дважды, web build PASS. Ветка codex/frontend-integration,
@@ -60,8 +66,10 @@ wallet-first API-маршрута пока отсутствуют; integration g
 Для следующего исполнителя: конфигурационный кандидат и guarded native JS build уже
 есть в frontend worktree; не переписывать их повторно. Получить независимое ревью;
 в backend lane продолжить protocol/ownership contract до реализации отсутствующих
-маршрутов. Следующий конкретный риск: on-chain checker учитывает наличие ключа,
-но не threshold; есть отключаемая проверка и challenge без chain/permission binding.
+маршрутов. Direct-key threshold уже исправлен локально в 66fe4734, не переписывать.
+Следующий конкретный риск: есть отключаемая проверка ownership (enforcement bypass)
+и challenge без domain/chain/permission binding. Parent/delegated/multisig authority
+не поддерживается текущим single-key proof; не считать это полным chain verifier.
 Сначала локальные негативные тесты и узкое исправление, без live RPC/подписей.
 Доказательства: .worktrees/frontend/docs/migration/API-CONFIG-CONTRACT.md,
 .worktrees/frontend/docs/migration/NATIVE-BUILD-BASELINE.md и

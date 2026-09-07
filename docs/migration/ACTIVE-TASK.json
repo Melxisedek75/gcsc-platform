@@ -1,17 +1,27 @@
 {
-  "task": "wallet-metadata-trust-boundary",
-  "status": "AWAITING_REVIEW",
+  "task": "wallet-single-key-authority-threshold",
+  "status": "LOCAL_CHECKS_PASSED_AWAITING_REVIEW",
   "owner": "019e7c87-8410-79f1-b86a-eedf78a1aa27",
   "worktree": "C:/gcsc-platform/.worktrees/backend",
   "branch": "codex/backend-integration",
-  "scope": ["services/api/v3/pure-server.js", "services/api/v3/tests", "docs/migration"],
-  "startedAt": "2026-09-07T03:40:38Z",
+  "scope": ["services/api/v3/pure-server.js", "services/api/v3/tests/wallet-authority.test.js", "docs/migration/WALLET-TRUST-BOUNDARY.md", "docs/migration/adaptations.json"],
+  "startedAt": "2026-09-07T15:37:24Z",
   "leaseUntil": null,
-  "baseCommit": "5a520f49e5087cfd47dccb7ea0b849dfd36e14ae",
-  "resultCommit": "fe16dfc1",
-  "completedAt": "2026-09-07T03:47:55Z",
-  "review": "NOT_APPROVED; independent review pending; no merge/integration",
-  "checks": "Red: 12 FAIL/90 PASS. Green: full offline API 102/102 twice; provenance 7/7 + syntax/static checks PASS; integration route gate still FAIL 5/7.",
-  "previousResult": "Frontend candidates 4ec7a0b7 and 6151d36b remain NOT_APPROVED and unmerged; recorded in CHECKLIST and RESULTS.",
-  "next": "Independent review; continue backend authority threshold and chain/permission-bound proof checks with offline fixtures. Do not repeat metadata guard or merge unreviewed candidates. No live DB/RPC/wallet signing/transfers."
+  "completedAt": "2026-09-07T15:44:30Z",
+  "baseCommit": "fe16dfc11ab4758f3fe4415d18cc2c15513232be",
+  "candidateCommit": "66fe4734a2623db76627ccf42249e28bf6391447",
+  "review": "NOT_APPROVED; no merge/integration",
+  "previousReview": {
+    "candidateCommit": "fe16dfc11ab4758f3fe4415d18cc2c15513232be",
+    "reviewerId": "01a079fe-9a57-74e1-bfc0-68a40577003a",
+    "reviewerName": "Pascal",
+    "status": "BLOCKED_REVIEW",
+    "reason": "Reviewer terminated with usage-limit error; no verdict or independently verified checks.",
+    "reviewRecord": null,
+    "verifiedAt": "2026-09-07T15:37:24Z",
+    "observation": "QA worktree clean; report absent; close_agent returned agent not found. Expired review lease released. No redispatch."
+  },
+  "result": "25 failing negative cases reproduced before fix; 140/140 offline API checks passed twice after fix; provenance 7/7, syntax/static checks and staged diff check passed. Integration gate remains FAIL 5/7. No approval or integration.",
+  "previousResult": "Backend fe16dfc1 is preserved as parent of 66fe4734; frontend 4ec7a0b7/6151d36b remain unmerged; evidence in CHECKLIST and RESULTS.",
+  "next": "Independent review of exact candidates when a reviewer is actually available, without repeated dispatch at unchanged quota. Next local technical task: negative fixtures and removal of ownership enforcement bypass; then bind challenge to domain/chain/permission before adding wallet-first routes."
 }
