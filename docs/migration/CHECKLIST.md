@@ -1,6 +1,6 @@
 # GCSC: контрольный список объединения
 
-Статус: локальный monorepo создан; интеграция продукта НЕ завершена. Проверка: 2026-09-06.
+Статус: локальный monorepo создан; интеграция продукта НЕ завершена. Проверка: 2026-09-07 UTC.
 
 ## Исходники и сохранность
 - [x] Подтверждены ровно три репозитория.
@@ -28,7 +28,10 @@
 - [ ] Убраны production URL fallback через проверенный контракт конфигурации.
 - [x] Локальный кандидат конфигурации: общий URL resolver для web/mobile, убран fallback
   и цикл API/payments; 14/14 тестов дважды, web build PASS. Ветка codex/frontend-integration,
-  commit 4ec7a0b7. Независимое ревью, native bundle и интеграция ещё не выполнены.
+  commit 4ec7a0b7. Независимое ревью и интеграция ещё не выполнены; native JS bundle проверен ниже.
+- [x] Локальный Android JS/Hermes baseline: commit 6151d36b в frontend worktree,
+  1110 модулей, 3 795 880 байт, все 24 ресурса проверены. Полный mobile TypeScript PASS;
+  migration 7/7, build guards 4/4, API config 14/14 PASS. Это НЕ APK и НЕ тест телефона.
 - [ ] Web/native используют совместимые API-типы и форматы запросов/ответов.
 - [ ] На телефоне проверены вход, restore, cancel, timeout, смена аккаунта/сети.
 - [ ] Проверена сквозная покупка лида, duplicate callbacks и восстановление платежа.
@@ -46,13 +49,15 @@
 - [ ] Старые repos переведены в read-only archive после cutover, без удаления.
 - [ ] Изменение private/access проверено отдельно от архивирования.
 
-Следующие безопасные задачи: независимое ревью переноса, общий контракт конфигурации
-и wallet-auth, native baseline, PostgreSQL/contract fixtures. Два обязательных
+Следующие безопасные задачи: независимое ревью переноса и локальных кандидатов,
+wallet-auth protocol/ownership, APK build baseline, PostgreSQL/contract fixtures. Два обязательных
 wallet-first API-маршрута пока отсутствуют; integration gate остаётся красным.
 
-Для следующего исполнителя: конфигурационный кандидат уже есть в frontend worktree;
-не переписывать его повторно. Проверить native build/env preflight и получить
-независимое ревью. Доказательства: .worktrees/frontend/docs/migration/API-CONFIG-CONTRACT.md.
+Для следующего исполнителя: конфигурационный кандидат и guarded native JS build уже
+есть в frontend worktree; не переписывать их повторно. Получить независимое ревью;
+в backend lane изучить существующие wallet-auth кандидаты и определить безопасный
+protocol/ownership contract до реализации отсутствующих маршрутов. Доказательства:
+.worktrees/frontend/docs/migration/API-CONFIG-CONTRACT.md и NATIVE-BUILD-BASELINE.md.
 
 Открытые пункты выше не означают, что функцию нужно написать заново: сначала сверить
 существующий код и evidence в CAPABILITY-MATRIX.md. Факт сборки не заменяет тест
