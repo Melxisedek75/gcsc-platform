@@ -1,44 +1,21 @@
 import test, { after, before, mock } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
 import path from 'node:path';
 import net from 'node:net';
 import dgram from 'node:dgram';
-import { createHash } from 'node:crypto';
-import { createRequire } from 'node:module';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
+import { blockNetwork, loadPinnedCodecs, readJson, sha } from './helpers/wallet-sdk-fixture.mjs';
 
 // Characterization of installed SDKs, NOT an authentication acceptance suite.
 const root = fileURLToPath(new URL('../', import.meta.url));
-const sdkRoot = path.resolve(process.env.GCSC_WALLET_SDK_ROOT || root);
 const chainId = '11'.repeat(32); // Synthetic identifiers; no network is queried.
 const signer = { actor: 'alice', permission: 'active' };
 const expiration = '2030-01-01T00:00:00';
-const codecs = new Map();
-const readJson = p => JSON.parse(fs.readFileSync(p, 'utf8'));
-const sha = p => createHash('sha256').update(fs.readFileSync(p)).digest('hex');
-const denyNetwork = () => { throw new Error('Network forbidden in wallet SDK characterization'); };
+let codecs;
 
 before(async () => {
-  mock.method(globalThis, 'fetch', denyNetwork);
-  mock.method(net.Socket.prototype, 'connect', denyNetwork);
-  mock.method(dgram, 'createSocket', denyNetwork);
-  for (const app of ['web', 'mobile']) {
-    const appRoot = path.join(sdkRoot, 'apps', app);
-    const lockPath = path.join(appRoot, 'package-lock.json');
-    assert.equal(sha(lockPath), sha(path.join(root, 'apps', app, 'package-lock.json')),
-      `${app}: dependency source must match this checkout's lockfile`);
-    const lock = readJson(lockPath);
-    const linkPath = path.join(appRoot, 'node_modules/@proton/link/package.json');
-    const requireFromLink = createRequire(linkPath);
-    const codecPath = requireFromLink.resolve('@proton/signing-request/package.json');
-    const pkg = readJson(codecPath);
-    const relativePackage = path.relative(appRoot, path.dirname(codecPath)).replaceAll('\\', '/');
-    assert.equal(pkg.version, lock.packages[relativePackage]?.version,
-      `${app}: installed codec version must match lockfile`);
-    const modulePath = path.join(path.dirname(codecPath), pkg.module);
-    codecs.set(app, { sdk: await import(pathToFileURL(modulePath).href), pkg, modulePath, appRoot, lock });
-  }
+  blockNetwork(mock);
+  codecs = await loadPinnedCodecs(root);
 });
 
 after(() => mock.restoreAll());

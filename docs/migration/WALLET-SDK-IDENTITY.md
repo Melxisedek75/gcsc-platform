@@ -115,3 +115,58 @@ changing endpoints or both consumers. If current transports cannot represent tha
 proof, document the unsupported capability and keep wallet-first login gated;
 do not claim a raw v2 login proof satisfies the contract. Transport UI/device
 acceptance and independent security review remain separate gates.
+
+## Follow-up: full-transaction payload experiment (2026-09-08 UTC)
+
+Implemented only in tests, on top of QA eb4a84d8. No application protocol enabled.
+Added `tests/wallet-challenge-payload.test.mjs` and `test:wallet-payload`; extracted
+shared pinned-dependency/network-denial setup without weakening the 24 baseline tests.
+
+The fixture places a fixed-order JSON challenge in a context-free action's data,
+alongside an identity action and an explicit transaction expiration. Receivers are
+empty synthetic names, not deployed contracts or payment recipients. The context-free
+`nonce` action is a serialization fixture, NOT a claimed real ABI or chain action.
+There are no transfers and no generated signatures. Both codecs use the same full
+transaction bytes and digest; changes to version, purpose, audience, nonce, session
+binding, issue time and expiration each change that digest. The test uses action
+data inside `context_free_actions`, NOT a separate `context_free_data` blob.
+
+This is consistent with the transaction-level serialization described in the
+[official Antelope transaction protocol](https://docs.antelope.io/docs/latest/protocol/transactions_protocol/).
+It is a candidate encoding experiment, not proof that a real wallet will accept
+these synthetic actions, display them safely or return the required signature.
+
+Transport source tests transpile the pinned published TypeScript with the installed
+TypeScript compiler and execute it in an isolated VM. Only IO is replaced:
+- Native `ReactNativeTransport.onRequest`: a stub captures Linking.openURL; the
+  compressed URI decodes to the same digest with broadcast=false. This is NOT the
+  restored channel/session path and does not execute a device deep link.
+- Web `ProtonWebLink.createSession().transact`: fake window/messages capture the
+  full transaction and `{broadcast:false,noModify:true}` parameters. A synthetic
+  success response completes the promise, NOT cryptographic proof validation.
+
+Transport source SHA-256:
+- Native: ea0a970a14ce0dff609ae15cb0276e0191d089988c7cd08640acaa7fff40b786
+- Web: d4127914194177c7068bb27249e988948109dbaa64812eae1cc8912e9fc434f6
+
+`broadcast` and `noModify` are transport instructions, not signed restrictions on
+what a malicious client may submit. No server should accept arbitrary actions or
+trust these flags as security proof. Strict expected-byte comparison, purpose and
+session binding, atomic nonce consumption, authority checks and exact callback
+origin/source validation are still required before any auth integration.
+
+First experiment run: 17 PASS / 2 FAIL from harness setup (missing pako compression
+and cross-VM object prototype comparison). After supplying the SDK's pako, decoder
+scheme also had to match proton-dev; no installed package was modified. Final run:
+
+```powershell
+$env:GCSC_WALLET_SDK_ROOT='C:\gcsc-platform\.worktrees\frontend'
+node --test --test-concurrency=1 tests/wallet-sdk-identity.test.mjs tests/wallet-challenge-payload.test.mjs
+```
+
+43/43 PASS twice (4.826 s and 6.678 s), zero skipped. `npm run check` PASS (7/7 plus
+syntax/static), integration contract check still FAIL 5/7. No independent approval,
+wallet/device/native APK or backend behavior evidence was added. Application source,
+dependencies and lockfiles remain unchanged. The signing boundary cannot be crossed
+by this automation; continue other safe local baseline tasks instead of repeatedly
+running the same experiment or advertising the wallet protocol as ready.
