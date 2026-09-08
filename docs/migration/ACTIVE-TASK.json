@@ -1,15 +1,15 @@
 {
-  "task": "offline-wallet-sdk-identity-compatibility",
+  "task": "offline-wallet-challenge-payload-experiment",
   "status": "LOCAL_DIAGNOSTIC_COMPLETE_AWAITING_REVIEW",
   "owner": "019e7c87-8410-79f1-b86a-eedf78a1aa27",
   "worktree": "C:/gcsc-platform/.worktrees/qa",
   "branch": "codex/qa-integration",
-  "scope": ["tests/wallet-sdk-identity.test.mjs", "package.json", "docs/migration/WALLET-SDK-IDENTITY.md", "read-only installed frontend SDK sources"],
-  "startedAt": "2026-09-08T04:15:37Z",
+  "scope": ["tests/wallet-sdk-identity.test.mjs", "tests/wallet-challenge-payload.test.mjs", "tests/helpers/wallet-sdk-fixture.mjs", "package.json", "docs/migration/WALLET-SDK-IDENTITY.md"],
+  "startedAt": "2026-09-08T04:30:31Z",
   "leaseUntil": null,
-  "completedAt": "2026-09-08T04:25:29Z",
-  "baseCommit": "5a520f49e5087cfd47dccb7ea0b849dfd36e14ae",
-  "candidateCommit": "eb4a84d8482f22681c663da67f3cf343aece3494",
+  "completedAt": "2026-09-08T04:39:05Z",
+  "baseCommit": "eb4a84d8482f22681c663da67f3cf343aece3494",
+  "candidateCommit": "08636fdee7665b90073ad065b3d0dc5112420171",
   "review": "NOT_APPROVED; no merge/integration",
   "previousReview": {
     "candidateCommit": "309c2909dddea7c17e941f81bd485661e358349f",
@@ -21,7 +21,7 @@
     "verifiedAt": "2026-09-08T04:10:24Z",
     "observation": "QA worktree clean; report absent; agent closed with errored status, lease released. Aggregate 66%/73% usage before dispatch did not predict availability. No redispatch; earlier Pascal failure retained in RESULTS."
   },
-  "result": "Pinned SDK characterization 24/24 twice PASS, documenting hazards rather than auth acceptance: v2 identity omits nonce/domain/callback/scope from transaction digest and ignores supplied expiry. Deliberate nonce security assertion FAIL reproduced. Missing-dependency run fails closed. Migration 7/7 plus syntax/static PASS, integration FAIL 5/7 unchanged. No runtime code, SDK, lockfile, signing, wallet or RPC changes. QA eb4a84d8 remains unmerged/unapproved.",
+  "result": "QA 08636fde unsigned payload experiment complete: 43/43 combined tests twice PASS, migration 7/7 plus syntax/static PASS, integration FAIL 5/7 unchanged. Full transaction preserves audience/nonce/expiry in digest; native URI and web popup forwarding verified using published transport source with IO stubs. Synthetic empty-receiver actions are NOT a wallet-approved protocol. No signatures, device, production code, dependencies or lockfile changes; no independent approval.",
   "previousResult": "Backend fe16dfc1 and 66fe4734 are preserved as ancestors of 309c2909; frontend 4ec7a0b7/6151d36b remain unmerged; evidence in CHECKLIST and RESULTS.",
-  "next": "Read QA WALLET-SDK-IDENTITY.md; do not repeat baseline characterization. Next narrow SDK experiment: prove a canonical server challenge has signed domain/nonce/expiry through a supported non-broadcast payload usable by both web popup and native transport, then coordinate protocol before endpoints/consumers change. Do not enable bare v2 proof or invent signMessage/transfer auth. Independent review requires genuinely restored availability, not aggregate quota percentages alone."
+  "next": "Do not repeat SDK baseline/payload experiments. Real wallet acceptance and independent security review remain gated; do not enable the synthetic proof fixture as authentication. Next safe technical item: inspect and run the local contract build/test baseline in QA lane (no RPC/deploy/signing), fixing only reproducible local setup/test issues. Reviewer redispatch still requires meaningful new availability evidence."
 }

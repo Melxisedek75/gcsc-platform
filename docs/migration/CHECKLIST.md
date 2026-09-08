@@ -35,6 +35,10 @@
   24/24 диагностических теста дважды PASS. В identity v2 nonce/domain/callback
   не входят в digest, scope опущен, заданный expiry игнорируется. Это выявленные
   ограничения, НЕ одобрение безопасного входа; отдельное требование nonce binding FAIL.
+- [x] Проверена передача unsigned challenge payload: QA candidate 08636fde.
+  Полный transaction сохраняет domain/nonce/expiry в digest; native URI и web popup
+  проверены с IO-заглушками. Совместно 43/43 теста дважды PASS. Синтетические действия
+  НЕ подтверждают приём настоящим кошельком и НЕ являются готовым протоколом входа.
 - [x] Локальный кандидат защиты wallet metadata: backend commit fe16dfc1.
   Неподтверждённая привязка отклоняется на обоих payment endpoints; смена account/permission
   сбрасывает proof. 102/102 offline API-тестов дважды PASS, 7/7 provenance PASS.
@@ -87,10 +91,10 @@ challenge без domain/chain/permission binding; перед изменение�
 Сначала локальные негативные тесты и узкое исправление, без live RPC/подписей.
 Consumer audit frontend 6151d36b: mobile connect-wallet сохраняет только profile
 metadata, web wallet/connect отправляет запрос без challenge-подписи. Ограничения
-identity v2 уже воспроизведены в QA eb4a84d8, не повторять диагностику. Следующий
-шаг: локально доказать поддержку SDK non-broadcast payload с подписанными
-domain/nonce/expiry для обоих transport, затем согласовать протокол до изменения
-API/клиентов. Не предполагать signMessage и не использовать transfer для входа.
+identity v2 и unsigned payload уже проверены в QA eb4a84d8/08636fde; не повторять.
+Готовность реального кошелька принимать новый payload и независимое security review
+остаются отдельными воротами. Не включать экспериментальный proof в API/клиентах.
+Следующая безопасная задача: local contract build/test baseline без RPC/deploy.
 Доказательства: .worktrees/qa/docs/migration/WALLET-SDK-IDENTITY.md.
 Доказательства: .worktrees/frontend/docs/migration/API-CONFIG-CONTRACT.md,
 .worktrees/frontend/docs/migration/NATIVE-BUILD-BASELINE.md и
