@@ -1,15 +1,17 @@
 {
-  "task": "wallet-single-key-authority-threshold",
+  "task": "remove-wallet-ownership-enforcement-bypass",
   "status": "LOCAL_CHECKS_PASSED_AWAITING_REVIEW",
   "owner": "019e7c87-8410-79f1-b86a-eedf78a1aa27",
   "worktree": "C:/gcsc-platform/.worktrees/backend",
   "branch": "codex/backend-integration",
-  "scope": ["services/api/v3/pure-server.js", "services/api/v3/tests/wallet-authority.test.js", "docs/migration/WALLET-TRUST-BOUNDARY.md", "docs/migration/adaptations.json"],
-  "startedAt": "2026-09-07T15:37:24Z",
+  "scope": ["services/api/v3/pure-server.js", "services/api/v3/tests/payments-402.test.js", "services/api/v3/tests/postgres-storage-smoke.js", "docs/migration/WALLET-TRUST-BOUNDARY.md", "docs/migration/adaptations.json"],
+  "startedAt": "2026-09-07T15:50:13Z",
   "leaseUntil": null,
-  "completedAt": "2026-09-07T15:44:30Z",
-  "baseCommit": "fe16dfc11ab4758f3fe4415d18cc2c15513232be",
-  "candidateCommit": "66fe4734a2623db76627ccf42249e28bf6391447",
+  "resumedAt": "2026-09-08T03:16:58Z",
+  "resumeEvidence": "Prior exec session unavailable; no matching Node test/server process running. Existing scoped test/doc changes preserved; rerunning baseline before runtime edits.",
+  "completedAt": "2026-09-08T03:26:03Z",
+  "baseCommit": "66fe4734a2623db76627ccf42249e28bf6391447",
+  "candidateCommit": "309c2909dddea7c17e941f81bd485661e358349f",
   "review": "NOT_APPROVED; no merge/integration",
   "previousReview": {
     "candidateCommit": "fe16dfc11ab4758f3fe4415d18cc2c15513232be",
@@ -21,7 +23,7 @@
     "verifiedAt": "2026-09-07T15:37:24Z",
     "observation": "QA worktree clean; report absent; close_agent returned agent not found. Expired review lease released. No redispatch."
   },
-  "result": "25 failing negative cases reproduced before fix; 140/140 offline API checks passed twice after fix; provenance 7/7, syntax/static checks and staged diff check passed. Integration gate remains FAIL 5/7. No approval or integration.",
-  "previousResult": "Backend fe16dfc1 is preserved as parent of 66fe4734; frontend 4ec7a0b7/6151d36b remain unmerged; evidence in CHECKLIST and RESULTS.",
-  "next": "Independent review of exact candidates when a reviewer is actually available, without repeated dispatch at unchanged quota. Next local technical task: negative fixtures and removal of ownership enforcement bypass; then bind challenge to domain/chain/permission before adding wallet-first routes."
+  "result": "Removed runtime ownership bypass. Fresh baseline 3 FAIL/138 PASS; fixed API 141/141 twice; fake-PG + mock RPC smoke twice PASS; provenance 7/7, syntax/static checks and staged diff check PASS. Integration remains FAIL 5/7; no approval or integration.",
+  "previousResult": "Backend fe16dfc1 and 66fe4734 are preserved as ancestors of 309c2909; frontend 4ec7a0b7/6151d36b remain unmerged; evidence in CHECKLIST and RESULTS.",
+  "next": "Independent review of exact candidates when actually available, without repeated dispatch at unchanged quota. Next local technical task: challenge domain/chain/permission replay protection after checking SDK/client compatibility and documenting the coordinated protocol contract; wallet-first routes remain gated."
 }

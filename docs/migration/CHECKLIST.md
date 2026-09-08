@@ -1,6 +1,6 @@
 # GCSC: контрольный список объединения
 
-Статус: локальный monorepo создан; интеграция продукта НЕ завершена. Проверка: 2026-09-07 UTC.
+Статус: локальный monorepo создан; интеграция продукта НЕ завершена. Проверка: 2026-09-08 UTC.
 
 ## Исходники и сохранность
 - [x] Подтверждены ровно три репозитория.
@@ -35,6 +35,11 @@
   Вес одного подтверждённого ключа должен сам удовлетворять порогу разрешения;
   некорректные числа отклоняются. 38 новых тестов; полный API suite 140/140 дважды PASS.
   Provenance 7/7, syntax/static проверки PASS. Независимого одобрения и интеграции нет.
+- [x] Локально убран обход ownership-проверки через env: backend commit 309c2909.
+  При отказе или ошибке проверки привязка не создаётся; старая настройка false не
+  отключает контроль. API 141/141 дважды PASS, mock-PG + mock-RPC smoke дважды PASS,
+  provenance 7/7 и syntax/static PASS. Это не live PostgreSQL и не тест телефона;
+  независимое ревью и интеграция ещё не выполнены.
 - [ ] Убраны production URL fallback через проверенный контракт конфигурации.
 - [x] Локальный кандидат конфигурации: общий URL resolver для web/mobile, убран fallback
   и цикл API/payments; 14/14 тестов дважды, web build PASS. Ветка codex/frontend-integration,
@@ -67,8 +72,9 @@ wallet-first API-маршрута пока отсутствуют; integration g
 есть в frontend worktree; не переписывать их повторно. Получить независимое ревью;
 в backend lane продолжить protocol/ownership contract до реализации отсутствующих
 маршрутов. Direct-key threshold уже исправлен локально в 66fe4734, не переписывать.
-Следующий конкретный риск: есть отключаемая проверка ownership (enforcement bypass)
-и challenge без domain/chain/permission binding. Parent/delegated/multisig authority
+Обход ownership-проверки уже убран локально в 309c2909. Следующий конкретный риск:
+challenge без domain/chain/permission binding; перед изменением согласовать контракт
+с существующими SDK/web/native consumers. Parent/delegated/multisig authority
 не поддерживается текущим single-key proof; не считать это полным chain verifier.
 Сначала локальные негативные тесты и узкое исправление, без live RPC/подписей.
 Доказательства: .worktrees/frontend/docs/migration/API-CONFIG-CONTRACT.md,
