@@ -12,6 +12,10 @@
 - [ ] Независимое backend/security review: проверяющие остановлены лимитом.
   Попытка Pascal для fe16dfc1 также остановлена лимитом; отчёт отсутствует,
   QA worktree чистый (проверено 2026-09-07 15:37 UTC). Не засчитано как PASS.
+  Попытка Anscombe для 309c2909 также завершилась usage limit: отчёт отсутствует,
+  QA worktree чистый, исполнитель закрыт, lease снята (2026-09-08 04:10 UTC).
+  Общая доступная квота не подтверждает доступность reviewer; без новых доказательств
+  восстановления лимита повторно не запускать. Статус BLOCKED_REVIEW / NOT_APPROVED.
 - [x] Отдельно сохранён и проверен Git bundle кандидата wallet-backend.
 
 ## Контролируемый перенос
@@ -77,6 +81,11 @@ challenge без domain/chain/permission binding; перед изменение�
 с существующими SDK/web/native consumers. Parent/delegated/multisig authority
 не поддерживается текущим single-key proof; не считать это полным chain verifier.
 Сначала локальные негативные тесты и узкое исправление, без live RPC/подписей.
+Consumer audit frontend 6151d36b: mobile connect-wallet сохраняет только profile
+metadata, web wallet/connect отправляет запрос без challenge-подписи. Следующий
+шаг: проверить поддерживаемый SDK identity-proof и описать единый протокол для
+обоих клиентов. Не предполагать поддержку подписи произвольной строки и не
+использовать денежный transfer для входа; точные пути записаны в RESULTS.
 Доказательства: .worktrees/frontend/docs/migration/API-CONFIG-CONTRACT.md,
 .worktrees/frontend/docs/migration/NATIVE-BUILD-BASELINE.md и
 .worktrees/backend/docs/migration/WALLET-TRUST-BOUNDARY.md.
