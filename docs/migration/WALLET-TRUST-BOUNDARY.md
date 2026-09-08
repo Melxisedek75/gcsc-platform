@@ -117,8 +117,61 @@ Numeric bounds follow the Antelope uint32 threshold and uint16 key weight
 ([weight_type definition](https://github.com/AntelopeIO/leap/blob/main/libraries/chain/include/eosio/chain/types.hpp#L224)).
 The direct-key policy can reject otherwise valid parent/delegated/multisig chain
 authorities: supporting them requires a separately designed proof flow, not summing
-unproven factors here. The current enforcement bypass remains an open blocker.
+unproven factors here. At that checkpoint the enforcement bypass remained open.
 
 No independent approval is claimed. Pascal's prior attempt to review fe16dfc1
 terminated with a quota error and left no report; this follow-up was not dispatched
 again. The full candidate remains unmerged and is not a wallet-login release.
+
+## Follow-up plan: mandatory ownership enforcement
+
+Base: 66fe4734. Scope: remove the WALLET_ONCHAIN_KEY_ENFORCED runtime branch in
+pure-server.js; keep the account verifier mandatory after signature validation.
+Use existing offline K1/HTTP tests, explicitly booted with the legacy false flag,
+to prove configuration cannot grant an unverified binding. A rejected or failed
+lookup must preserve the existing wallet; successful checks must still run.
+
+The fake-PG smoke currently disables ownership checks. Replace that bypass with
+an explicit mock RPC serving only the generated fixture's public key. Sanitize the
+child environment and keep temporary fixtures in this worktree; no live database,
+wallet signing, or user secrets. Generated offline test signatures are not device
+or chain proof. No wallet-first API/protocol/consumer changes in this task.
+
+- [x] Reproduce the false-flag bypass with the real HTTP handler and offline tests.
+- [x] Remove the runtime bypass and migrate the fake-PG fixture off it.
+- [x] Run the complete API suite twice, fake-PG smoke, provenance and integration
+  checks; record exact results and any remaining blockers. No self-approval.
+
+### Enforcement verification: 2026-09-08 UTC
+
+The prior execution was interrupted after test edits. Its lost process result was
+not counted; the same task resumed with the existing edits preserved and no active
+test/server process. Fresh npm run test:api before the runtime fix: 3 FAIL / 138
+PASS, 5 suites (53.372 s). The false flag skipped the successful verifier entirely
+and granted a wallet when lookup should reject or fail. This reproduced the bypass.
+
+After removing the runtime flag and conditional:
+- npm run test:api, twice: 141/141 PASS, 5 suites (42.22 s and 52.008 s).
+- npm run test:pg-storage from services/api/v3, twice: exit 0, smoke passed with
+  an in-memory pg replacement and explicit fixture-public-key RPC. No real PG server.
+- npm run check: exit 0, 7/7 provenance, API syntax and 3 static web validators.
+- npm run check:integration-contracts: unchanged exit 1, 5/7 required routes.
+- git diff --check: exit 0. Existing url.parse deprecation and expected mocked
+  payment-rejection warning remain; no dependency or lockfile changes.
+
+The first fake-PG attempt failed before startup because NODE_OPTIONS parsing lost
+Windows path separators. Passing --require and its path as separate spawn arguments
+fixed the fixture launcher; the actual runtime protection was not bypassed to pass.
+The child environment now permits only basic OS paths plus explicit dummy settings,
+the RPC mock denies unknown requests, and cleanup waits for child exit and removes
+only the two generated fixture files. Temp data stays in the ignored worktree .tmp.
+
+The legacy flag is present only in negative regression fixtures, not the canonical
+runtime or fake-PG launcher. Rejected/failed lookup leaves stored wallet state intact;
+success still requires the verifier to run. New signing uses only ephemeral offline
+test keys via the existing fixture helper, never a wallet, user key or transaction.
+
+Status: LOCAL_CHECKS_PASSED, NOT_APPROVED. No merge, push or deployment. Next work:
+bind challenges to domain/chain/permission, address account uniqueness/concurrency,
+and review the protocol before adding wallet-first routes. No independent reviewer
+was retried in this task; earlier usage-limit failures do not approve this candidate.

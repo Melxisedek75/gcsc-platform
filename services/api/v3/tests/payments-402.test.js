@@ -13,7 +13,22 @@
  */
 
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const exists = fs.existsSync;
+const write = fs.writeFileSync;
+jest.spyOn(fs, 'existsSync').mockImplementation(file =>
+  path.basename(String(file)) === 'gcsc.db' ? false : exists(file));
+jest.spyOn(fs, 'writeFileSync').mockImplementation((file, ...args) => {
+  if (path.basename(String(file)) !== 'gcsc.db') return write(file, ...args);
+});
+
+// Regression: legacy configuration must never disable ownership verification.
+const originalEnforcement = process.env.WALLET_ONCHAIN_KEY_ENFORCED;
+process.env.WALLET_ONCHAIN_KEY_ENFORCED = 'false';
 const mod = require('../pure-server');
+if (originalEnforcement === undefined) delete process.env.WALLET_ONCHAIN_KEY_ENFORCED;
+else process.env.WALLET_ONCHAIN_KEY_ENFORCED = originalEnforcement;
 
 const server = mod;
 const { db, _hooks, jwtSign, verifyWalletSignature, walletChallengeMessage } = mod;
@@ -56,7 +71,10 @@ beforeAll((done) => {
 });
 
 afterAll((done) => {
-  listener.close(done);
+  _hooks.verifyHyperionTransfer = originalVerifier;
+  _hooks.verifyAccountKey = originalVerifyAccountKey;
+  global.fetch = originalFetch;
+  listener.close(() => { jest.restoreAllMocks(); done(); });
 });
 
 beforeEach(() => {
@@ -397,7 +415,7 @@ describe('wallet ownership proof', () => {
   });
 
   test('challenge → sign → connect binds a verified wallet', async () => {
-    _hooks.verifyAccountKey = async () => ({ ok: true });
+    _hooks.verifyAccountKey = jest.fn(async () => ({ ok: true }));
     const { kp, pub } = makeXprKeypair();
 
     const challenge = await request({
@@ -418,6 +436,10 @@ describe('wallet ownership proof', () => {
     expect(r.body.wallet.accountName).toBe('testacct1');
     expect(r.body.wallet.verified).toBe(true);
     expect(r.body.wallet.publicKey).toBe(pub);
+    expect(_hooks.verifyAccountKey).toHaveBeenCalledTimes(1);
+    expect(_hooks.verifyAccountKey).toHaveBeenCalledWith({
+      accountName: 'testacct1', permission: 'active', publicKey: pub,
+    });
   });
 
   test('rejects when signature does not match the issued challenge', async () => {
@@ -441,7 +463,8 @@ describe('wallet ownership proof', () => {
   });
 
   test('rejects when the key is not authorized on-chain', async () => {
-    _hooks.verifyAccountKey = async () => ({ ok: false, error: 'account_key_unauthorized' });
+    _hooks.verifyAccountKey = jest.fn(async () => ({ ok: false, error: 'account_key_unauthorized' }));
+    const previousWallet = { ...db.users[1].wallet };
     const { kp, pub } = makeXprKeypair();
 
     const challenge = await request({
@@ -457,5 +480,28 @@ describe('wallet ownership proof', () => {
     });
     expect(r.status).toBe(400);
     expect(r.body.code).toBe('account_key_unauthorized');
+    expect(_hooks.verifyAccountKey).toHaveBeenCalledTimes(1);
+    expect(db.users[1].wallet).toEqual(previousWallet);
+  });
+
+  test('lookup failure cannot bind a new wallet even with the legacy false flag', async () => {
+    _hooks.verifyAccountKey = jest.fn(async () => { throw new Error('Offline fixture lookup failed'); });
+    db.users[1].wallet = null;
+    const { kp, pub } = makeXprKeypair();
+    const challenge = await request({
+      path: '/api/wallet/challenge',
+      headers: { Authorization: `Bearer ${CONTRACTOR_TOKEN}` },
+      body: { accountName: 'testacct1' },
+    });
+    expect(challenge.status).toBe(200);
+    const r = await request({
+      path: '/api/wallet/connect',
+      headers: { Authorization: `Bearer ${CONTRACTOR_TOKEN}` },
+      body: { accountName: 'testacct1', publicKey: pub, signature: signK1(challenge.body.message, kp) },
+    });
+    expect(r.status).toBe(400);
+    expect(r.body.code).toBe('account_lookup_failed');
+    expect(_hooks.verifyAccountKey).toHaveBeenCalledTimes(1);
+    expect(db.users[1].wallet).toBeNull();
   });
 });

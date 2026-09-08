@@ -1555,10 +1555,9 @@ async function recordJobPostingPayment({ txHash, userId, fromAccount, amount, bl
 // Binding an XPR account to a user must prove control of that account's key.
 // Flow: client asks for a challenge (server-issued single-use nonce), signs the
 // challenge message with the account key, then submits { publicKey, signature }.
-// The server recovers the signing key from the signature and (by default) checks
+// The server recovers the signing key from the signature and always checks
 // that the key is authorized on-chain for the account permission.
 const WALLET_CHALLENGE_TTL_MS = parseInt(process.env.WALLET_CHALLENGE_TTL_MS || '300000', 10);
-const WALLET_ONCHAIN_KEY_ENFORCED = process.env.WALLET_ONCHAIN_KEY_ENFORCED !== 'false';
 const walletChallenges = new Map(); // userId -> { nonce, accountName, message, expiresAt }
 
 function walletChallengeMessage({ userId, accountName, nonce }) {
@@ -3415,16 +3414,14 @@ const routes = {
       return json(res, 400, { error: 'Wallet signature verification failed', code: sigCheck.error });
     }
 
-    if (WALLET_ONCHAIN_KEY_ENFORCED) {
-      let keyCheck;
-      try {
-        keyCheck = await _hooks.verifyAccountKey({ accountName, permission, publicKey: sigCheck.publicKey });
-      } catch (err) {
-        keyCheck = { ok: false, error: 'account_lookup_failed', detail: err.message };
-      }
-      if (!keyCheck.ok) {
-        return json(res, 400, { error: 'Wallet key not authorized on-chain', code: keyCheck.error || 'account_key_unverified' });
-      }
+    let keyCheck;
+    try {
+      keyCheck = await _hooks.verifyAccountKey({ accountName, permission, publicKey: sigCheck.publicKey });
+    } catch (err) {
+      keyCheck = { ok: false, error: 'account_lookup_failed', detail: err.message };
+    }
+    if (!keyCheck.ok) {
+      return json(res, 400, { error: 'Wallet key not authorized on-chain', code: keyCheck.error || 'account_key_unverified' });
     }
 
     const wallet = {

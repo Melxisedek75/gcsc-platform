@@ -9,15 +9,22 @@
   {
     "path": "services/api/v3/pure-server.js",
     "sourceBlob": "952128e9316fe78bef42dba8ddc7b04eb09e29e5",
-    "sha256": "357e978f1d4bc76891c4ab6a0501ef12a8722cc983bfa6ac746b8a999cf2cc34",
-    "reason": "Require verified wallet ownership at both payment entrypoints; invalidate proof on account/permission changes; require recovered key weight to meet the authority threshold alone.",
-    "test": "npm run test:api; wallet-binding-trust reproduced 12 failures and wallet-authority reproduced 25 failures before their respective fixes"
+    "sha256": "488a74d004f6fcfa057c69a2fc9c4626879868d803aeb2c7550ae219baaee60e",
+    "reason": "Require verified wallet ownership at payment entrypoints; invalidate changed identity proof; enforce single-key authority threshold and remove the ownership-check environment bypass.",
+    "test": "npm run test:api; reproduced 12 metadata, 25 threshold and 3 enforcement-bypass failures before their respective fixes"
   },
   {
     "path": "services/api/v3/tests/payments-402.test.js",
     "sourceBlob": "db703f6925ddf23794991f56baca83daae18cb86",
-    "sha256": "099d9c0fdee1297809de076dc3159f55479a9be8e603f544b1e612dec7669ef9",
-    "reason": "Positive payment fixtures now explicitly represent server-verified bindings; new suite separately exercises forged/unverified metadata.",
+    "sha256": "9cb828d8ecd676e59f3e30bf9bcab8b2f4ce549a6e9653e79c089e613422f23a",
+    "reason": "Positive payment fixtures explicitly represent verified bindings; boot with the legacy false flag to prove ownership checks remain mandatory, including failed lookup and unchanged wallet assertions; isolate JSON database IO.",
     "test": "npm run test:api"
+  },
+  {
+    "path": "services/api/v3/tests/postgres-storage-smoke.js",
+    "sourceBlob": "2cea20855229da14e3dfbad3de9c2a5e69e5023a",
+    "sha256": "d7d9da8a24b4ae3f5fac3c1993216f86c607237f71eea910f579fa4dcd5d1155",
+    "reason": "Replace ownership bypass with explicit fixture-key RPC; sanitize child environment, use argv for preload, keep fixtures in the worktree, wait for child exit and clean only generated files without recursive deletion.",
+    "test": "npm run test:pg-storage (services/api/v3; fake PostgreSQL and mocked RPC only)"
   }
 ]

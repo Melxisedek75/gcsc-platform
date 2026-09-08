@@ -2,7 +2,6 @@ const assert = require('assert');
 const crypto = require('crypto');
 const fs = require('fs');
 const http = require('http');
-const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 
@@ -30,8 +29,11 @@ function signK1(message, kp) {
 }
 
 const v3Root = path.resolve(__dirname, '..');
-const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'gcsc-fake-pg-'));
+const tempParent = path.join(v3Root, '.tmp');
+fs.mkdirSync(tempParent, { recursive: true });
+const tempRoot = fs.mkdtempSync(path.join(tempParent, 'gcsc-fake-pg-'));
 const port = 12000 + Math.floor(Math.random() * 1000);
+const walletKeypair = makeXprKeypair();
 
 const fakePgPath = path.join(tempRoot, 'fake-pg.js');
 const registerPath = path.join(tempRoot, 'register-fake-pg.js');
@@ -254,6 +256,20 @@ Module._load = function patchedLoad(request, parent, isMain) {
   if (request === 'pg') return fakePg;
   return originalLoad.apply(this, arguments);
 };
+// Fixture-only RPC: never call a real node and never authorize an arbitrary key.
+global.fetch = async (url, options = {}) => {
+  if (url !== 'http://127.0.0.1:9/v1/chain/get_account' || options.method !== 'POST'
+      || JSON.parse(options.body || '{}').account_name !== 'gcscacct111') {
+    throw new Error('Unexpected RPC request in fake-PG fixture');
+  }
+  return { ok: true, json: async () => ({
+    account_name: 'gcscacct111',
+    permissions: [{ perm_name: 'active', required_auth: {
+      threshold: 1, keys: [{ key: ${JSON.stringify(walletKeypair.pub)}, weight: 1 }],
+      accounts: [], waits: [],
+    } }],
+  }) };
+};
 `);
 
 function request(method, pathname, body, token, extraHeaders = {}) {
@@ -307,10 +323,16 @@ async function waitForServer(child) {
 }
 
 (async () => {
-  const child = spawn(process.execPath, ['pure-server.js'], {
+  const localEnv = Object.fromEntries(Object.entries(process.env).filter(([key]) =>
+    /^(path|systemroot|windir|comspec|temp|tmp|home|userprofile)$/i.test(key)));
+  const child = spawn(process.execPath, ['--require', registerPath, 'pure-server.js'], {
     cwd: v3Root,
+    windowsHide: true,
     env: {
-      ...process.env,
+      ...localEnv,
+      NODE_ENV: 'test',
+      SETTLEMENT_ENABLED: 'false',
+      XPR_TX_VERIFIER_ENABLED: 'false',
       PORT: String(port),
       DATABASE_URL: 'postgres://gcsc:test@localhost:5432/gcsc',
       JWT_SECRET: 'test-secret-minimum-length-for-hs256',
@@ -321,16 +343,13 @@ async function waitForServer(child) {
       ADMIN_EMAIL: 'admin-smoke@gcsc.store',
       ADMIN_PASSWORD: 'AdminSmokePass123!',
       ADMIN_FULL_NAME: 'Smoke Admin',
-      // P1-4: the fake in-process Postgres cannot perform a real on-chain key
-      // lookup, so disable that defense-in-depth check here. Signature-over-nonce
-      // ownership proof is still fully exercised below.
-      WALLET_ONCHAIN_KEY_ENFORCED: 'false',
-      NODE_OPTIONS: `--require ${registerPath}`,
+      XPR_TESTNET_HYPERION_URLS: 'http://127.0.0.1:9',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 
   child.stderrText = '';
+  child.stdout.resume();
   child.stderr.on('data', (chunk) => { child.stderrText += chunk.toString(); });
 
   try {
@@ -533,7 +552,6 @@ async function waitForServer(child) {
     assert.strictEqual(resubmittedCompliance.data.overall_status, 'pending_review');
 
     // P1-4: wallet binding now requires a signed ownership challenge.
-    const walletKeypair = makeXprKeypair();
     const walletChallenge = await request('POST', '/api/wallet/challenge', {
       accountName: 'gcscacct111',
     }, token);
@@ -608,7 +626,13 @@ async function waitForServer(child) {
     console.log('postgres storage smoke test passed');
   } finally {
     child.kill('SIGTERM');
-    fs.rmSync(tempRoot, { recursive: true, force: true });
+    if (child.exitCode === null && child.signalCode === null) {
+      await new Promise(resolve => child.once('exit', resolve));
+    }
+    // Remove only this run's two generated files, never recursively delete a path.
+    fs.rmSync(registerPath, { force: true });
+    fs.rmSync(fakePgPath, { force: true });
+    fs.rmdirSync(tempRoot);
   }
 })().catch((err) => {
   console.error(err);
