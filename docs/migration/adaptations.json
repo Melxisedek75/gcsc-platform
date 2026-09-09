@@ -47,5 +47,12 @@
     "sha256": "6f93dd2e53f91251b5306b0f81f68cb3af7fa2a0a0b96b6df93eb6389a4e65fc",
     "reason": "Route local contract tests through offline harness with unique retained scratch directories.",
     "test": "node --test tests/contract-runner.test.mjs; npm run test:contracts"
+  },
+  {
+    "path": "services/api/v3/tests/payment-receipts-postgres.test.js",
+    "sourceBlob": "4db2cfe70a631bdf79f12b5dde24d478cecfcd45",
+    "sha256": "dfe95fecf03ee369633b6db93313f7e03ef8115409b4e650da85231bd2a4a687",
+    "reason": "Reject non-loopback and non-test PostgreSQL cleanup targets before storage initialization.",
+    "test": "node --test tests/local-test-database.test.mjs"
   }
 ]
