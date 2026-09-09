@@ -5,5 +5,47 @@
     "sha256": "5efe26cf93e70f9051caeb36ddc437755fb8d617bb591c3e55255555eec4d1f0",
     "reason": "Select pure-server.js for main/start/dev, matching the canonical runtime. No dependency changes.",
     "test": "node --test tests/migration.test.mjs; witnessed red before correction"
+  },
+  {
+    "path": "contracts/gcsc-core/package.json",
+    "sourceBlob": "685c1c410fcb691e9ae9f9569b50936e93b2466f",
+    "sha256": "929a5de808e9f2b8bf7d83bf8b48aa962cd8ed0e24264be2376a06c0a0d3d2d2",
+    "reason": "Route local contract tests through offline harness with unique retained scratch directories.",
+    "test": "node --test tests/contract-runner.test.mjs; npm run test:contracts"
+  },
+  {
+    "path": "contracts/gcsc-core/test/gcscadvance1.test.ts",
+    "sourceBlob": "2758c18399c3ce5d305914167e8db829d54970d5",
+    "sha256": "bbfe80fa480bfcf2f0dbcc03c2d5f35e71cb70110e0ca7a029df2b92bc01ff1f",
+    "reason": "Route local contract tests through offline harness with unique retained scratch directories.",
+    "test": "node --test tests/contract-runner.test.mjs; npm run test:contracts"
+  },
+  {
+    "path": "contracts/gcsc-core/test/gcscclaim111.test.ts",
+    "sourceBlob": "02f0c10dfbb46456f1ece4009816bd1ab33ad20e",
+    "sha256": "9b83bd75e068a2a6c56ec6c4eafc683114bb0d1e6f6b463d3aaa249efcefa223",
+    "reason": "Route local contract tests through offline harness with unique retained scratch directories.",
+    "test": "node --test tests/contract-runner.test.mjs; npm run test:contracts"
+  },
+  {
+    "path": "contracts/gcsc-core/test/gcsccredit11.test.ts",
+    "sourceBlob": "a37d01f81360931946613a589ea3f9702de3e775",
+    "sha256": "78093426984815d8196db3a61b9c9bbdcf3dd83c637bc473084608cdb765a29c",
+    "reason": "Route local contract tests through offline harness with unique retained scratch directories.",
+    "test": "node --test tests/contract-runner.test.mjs; npm run test:contracts"
+  },
+  {
+    "path": "contracts/gcsc-core/test/gcscrow1111.test.ts",
+    "sourceBlob": "b598cb0a081f25acb859844bd9cfc06a2d4fb469",
+    "sha256": "15e89255c80f06840f51db4a77460f8ddd1b97f1d81d2d2840897fb5c43556c9",
+    "reason": "Route local contract tests through offline harness with unique retained scratch directories.",
+    "test": "node --test tests/contract-runner.test.mjs; npm run test:contracts"
+  },
+  {
+    "path": "contracts/gcsc-core/test/gcscworkcap1.test.ts",
+    "sourceBlob": "ed4e1dec89fb52541763e34f75d377e5c5da4276",
+    "sha256": "6f93dd2e53f91251b5306b0f81f68cb3af7fa2a0a0b96b6df93eb6389a4e65fc",
+    "reason": "Route local contract tests through offline harness with unique retained scratch directories.",
+    "test": "node --test tests/contract-runner.test.mjs; npm run test:contracts"
   }
 ]

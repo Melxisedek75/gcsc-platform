@@ -1,13 +1,14 @@
+export {};
 const fs = require("fs");
 const path = require("path");
-const { execFileSync } = require("child_process");
+const { createScratchDirectory, runProtonAsc } = require("./harness.cjs");
 const { expect } = require("chai");
 const { Asset, Name } = require("@greymass/eosio");
 const { Blockchain, protonAssert } = require("@proton/vert");
 
 const TEST_DIR = __dirname;
 const CORE_DIR = path.resolve(TEST_DIR, "..");
-const GENERATED_DIR = path.join(TEST_DIR, ".vert-advance");
+const GENERATED_DIR = createScratchDirectory(CORE_DIR, "gcscadvance1");
 const ADVANCE_DIR = path.join(GENERATED_DIR, "advance");
 
 const ADVANCE_ACCOUNT = "gcscadvance1";
@@ -36,31 +37,6 @@ interface Harness {
 let advanceAbi: any;
 let advanceWasm: Uint8Array;
 
-function cleanGenerated(): void {
-    fs.rmSync(GENERATED_DIR, { recursive: true, force: true });
-}
-
-function runProtonAsc(sourcePath: string): void {
-    const relativeSourcePath = path.relative(CORE_DIR, sourcePath).replace(/\\/g, "/");
-    try {
-        if (process.platform === "win32") {
-            execFileSync("cmd.exe", ["/d", "/s", "/c", `npx proton-asc ${relativeSourcePath}`], {
-                cwd: CORE_DIR,
-                stdio: "pipe",
-            });
-        } else {
-            execFileSync("npx", ["proton-asc", relativeSourcePath], {
-                cwd: CORE_DIR,
-                stdio: "pipe",
-            });
-        }
-    } catch (err: any) {
-        const stdout = err.stdout ? err.stdout.toString() : "";
-        const stderr = err.stderr ? err.stderr.toString() : "";
-        throw new Error(`proton-asc failed for ${relativeSourcePath}\n${stdout}\n${stderr}`);
-    }
-}
-
 function findArtifact(root: string, fileName: string): string {
     const entries = fs.readdirSync(root, { withFileTypes: true });
     for (const entry of entries) {
@@ -87,7 +63,6 @@ function requireArtifact(root: string, fileName: string): string {
 }
 
 function buildArtifacts(): void {
-    cleanGenerated();
     fs.mkdirSync(ADVANCE_DIR, { recursive: true });
 
     const sourcePath = path.join(CORE_DIR, "gcscadvance1.contract.ts");
@@ -170,9 +145,7 @@ describe("gcscadvance1 escrow-backed contractor advance gate", function () {
         buildArtifacts();
     });
 
-    after(() => {
-        cleanGenerated();
-    });
+
 
     it("records a pending demo advance when state, contractor, and escrow gates pass", async () => {
         const harness = createHarness();
