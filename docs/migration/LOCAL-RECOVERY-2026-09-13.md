@@ -121,5 +121,37 @@ Separate QA worker Heisenberg (`01a0999b-9fd6-7d13-8aff-436607bc4532`) verified
 the isolated clean clone at base 1ac9644d: root and API offline installs PASS;
 root check 22 + 4 + 11 PASS; five API suites 159/159 PASS. Worktree remained clean,
 lockfiles unchanged, free C: 3.208 GiB. This refreshes the previously blocked
-root/API baseline with current evidence. Web/contracts checks are still running;
-APK, physical-device and real database acceptance are not covered.
+root/API baseline with current evidence.
+
+Final web verification in that clone: `npm run build:web` exit 0, 2977 modules;
+`npm run lint:web` exit 0, zero errors and one existing exhaustive-deps warning in
+DecryptText.tsx:112; `npm run test:api-config` exit 0, 15/15 PASS. Bundle-size
+warnings above 500 kB remain. These checks do not prove actual wallet behavior.
+
+Initial web installation did not expose a final exit code through the terminal
+bridge; it is not claimed as a confirmed successful npm-ci command. The first
+build encountered missing declaration files before installation completion was
+established. Subsequent direct resolution found all three declarations. The final
+installed lock metadata matched: 558 entries, 73 absent platform-optional entries,
+zero mandatory missing packages or version/resolved/integrity mismatches. A
+partial-install race is the supported inference, not a demonstrated source defect.
+The healthy-tree build passed without changing source, lockfiles or reinstalling.
+
+Clean contract dependency installation passed (659 packages). Initial tests:
+23 PASS, escrow before-hook timeout. The bounded preparation correction is tracked
+in CONTRACT-PREPARATION-BUDGET.md. Its control run on candidate 6a352f46 completed
+31/31 PASS with explicit command/terminal exit 0. Installed contract lock metadata
+matches; one optional platform package and two explicitly extraneous entries are
+correctly absent. No mandatory version/resolved/integrity mismatches remain.
+
+Parent API-config attempt in the archive worktree lacked web/esbuild dependencies
+and failed before executing tests. It was not counted as PASS; the successful
+15-test run above used the already-installed clean clone instead of another copy.
+
+Local host: Node.js v25.9.0, not a claim of GitHub CI on its Node20 matrix. Final
+measured free C: 2.487 GiB. Both original dirty-source status hashes still match.
+APK, physical-device, real PostgreSQL and full release acceptance remain open.
+
+Private main was independently read back at
+`6878cbdf9e918103cfb25cbba03a196171f2d240` after fast-forwarding the reviewed archive.
+The source archives are included there without activating old application code.

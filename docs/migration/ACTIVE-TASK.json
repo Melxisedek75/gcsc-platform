@@ -1,9 +1,9 @@
 {
-  "task": "preserve-legacy-work-and-verify-clean-baseline",
-  "status": "PRESERVATION_APPROVED_CLEAN_QA_RUNNING",
+  "task": "monorepo-local-baseline-recovery",
+  "status": "LOCAL_BASELINE_ADVANCED",
   "owner": "019e7c87-8410-79f1-b86a-eedf78a1aa27",
-  "worktree": "C:/gcsc-platform/.worktrees/legacy-preservation",
-  "branch": "codex/legacy-local-preservation-20260913",
+  "worktree": "C:/gcsc-platform/.worktrees/publication",
+  "branch": "codex/monorepo-publication",
   "remote": "https://github.com/Melxisedek75/gcsc-platform",
   "targetBranch": "main",
   "scope": [
@@ -11,24 +11,25 @@
     "private Google Drive source snapshots",
     "verified installer cleanup and disk report",
     "clean offline component verification",
+    "bounded escrow test-preparation deadline correction",
     "wallet client/API diagnosis"
   ],
   "leaseUntil": null,
-  "baseCommit": "1ac9644d6988895bf0f6b79229d94c813dd2e121",
-  "candidateCommit": "e8188048699dbf86331f54328cda5044943ad5c8",
-  "review": "Harvey independent preservation/docs review APPROVED e8188048 after one corrected finding. Exact evidence: docs/migration/LEGACY-PRESERVATION-REVIEW.md. Not release approval.",
-  "result": "12 legacy files byte-preserved; three source archives uploaded to private Drive with metadata verification; backup GitHub branch SHA confirmed. Removed 662109266 installer bytes. Candidate root39 and SDK43 PASS; clean base root37/API159 PASS. Web/contracts QA still running. Wallet inventory remains FAIL5/7 and web lead receipt consumer is absent.",
-  "next": "Finish running clean web/contracts QA in publication-clean-clone. Integrate approved archive/docs into private main and verify remote SHA. P2.1 diagnosis complete; P2.2 requires wallet-supported sign-only proof format before a coordinated API/client implementation. Scheduler remains paused.",
+  "baseCommit": "6878cbdf9e918103cfb25cbba03a196171f2d240",
+  "candidateCommit": "6a352f46ff8c6aca76f6a137703eebf2ad76d957",
+  "review": "Harvey independently APPROVED preservation/docs e8188048 and contract preparation correction6a352f46. Evidence: LEGACY-PRESERVATION-REVIEW.md and CONTRACT-PREPARATION-BUDGET.md. Final status/docs updates are parent verified, not a new source review. Not release approval.",
+  "result": "12 legacy files preserved in private main (6878cbdf remote SHA verified); three private Drive source archives verified by metadata/download size. Removed662109266 installer bytes; after required installs C free2.487GiB. Root39, API159, API-config15, SDK43, runner9 and contracts31 PASS; contract control command exit0. Web build2977 modules PASS; lint0errors/1warning. Initial web install exit unavailable; final installed metadata/build verified. Wallet inventory FAIL5/7 and no web lead receipt consumer. No APK/device/live DB/production acceptance.",
+  "next": "P2.2 investigate and verify a wallet-supported sign-only proof format, then coordinate the API/web/mobile protocol. Do not equate SDK pairing/profile metadata with ownership or app login. P1.5 real isolated PostgreSQL and native acceptance remain open; inspect existing local PostgreSQL tooling instead of repeating failed Docker polls. Keep the scheduler paused; no active subagent/build is expected after this batch.",
   "deferred": [
     {
       "task": "APK baseline",
-      "resumeCondition": "New resource evidence or isolated build capacity",
-      "checkpoint": "Expo Android prebuild complete, SDK C:/gcsc/.tools/android-sdk-full; Gradle8.14.3/JDK17 verified. No APK."
+      "resumeCondition": "New evidence of adequate native-build disk budget or isolated build capacity; do not retry on unchanged 2.5GiB free",
+      "checkpoint": "Expo Android prebuild complete, SDK C:/gcsc/.tools/android-sdk-full; Gradle8.14.3/JDK17 retained and verified. No new APK."
     },
     {
       "task": "Real PostgreSQL tests",
-      "resumeCondition": "Docker engine recovery or approved isolated PostgreSQL runtime",
-      "checkpoint": "Docker inference socket inaccessible; bounded stop/info timed out. Do not repeat identical polls."
+      "resumeCondition": "Docker recovery or an isolated local PostgreSQL runtime with fresh fixture data, never an existing/live database",
+      "checkpoint": "Docker inference socket inaccessible; do not repeat identical polls. C:/gcsc/.tmp/embedded-pg-runner exists and was retained; inspect its launcher/configuration before reuse. No new real-PG acceptance in this batch."
     },
     {
       "task": "Large generated-directory cleanup",
@@ -42,5 +43,5 @@
     "result": "bf3728bf: wallet restore11/11, API config15/15, npm run check and final web build PASS (2977 modules). Sol/high independent scoped review APPROVED after race fix. Preserved session on wallet/network failures and new token on cross-tab mismatch. No APK/device/live wallet/merge/deploy."
   },
   "boundaries": "No original Git history/ref publication, source repo deletion/archive/privacy changes, live database, wallet signing or deployment. Current dirty-file snapshots are archive-only, not active application inputs.",
-  "publishedAnchorCommit": "5a9bba32b99dd39cc7d6fc3bf4d5a40ea020de2d"
+  "publishedAnchorCommit": "6878cbdf9e918103cfb25cbba03a196171f2d240"
 }

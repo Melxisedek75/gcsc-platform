@@ -5,8 +5,10 @@
 The historical import-only status below is preserved as a dated record, not the
 current consolidation decision. Local consolidation/private publication approval
 is in CONSOLIDATION-REVIEW.md. The 2026-09-13 archive/diagnostic successor e8188048
-is independently APPROVED in LEGACY-PRESERVATION-REVIEW.md. Neither record is
-production or wallet/device approval; consult CHECKLIST.md for open gates.
+is independently APPROVED in LEGACY-PRESERVATION-REVIEW.md. The subsequent
+contract-test preparation fix 6a352f46 is independently APPROVED in
+CONTRACT-PREPARATION-BUDGET.md. None is production or wallet/device approval;
+consult CHECKLIST.md for open gates.
 
 ## Historical initial import review
 

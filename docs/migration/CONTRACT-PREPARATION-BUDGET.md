@@ -42,4 +42,29 @@ control run without the Tee pipeline, with an explicit numeric exit receipt, is
 required before acceptance. No source correction is inferred from this wrapper
 result, and no assertions or exit codes are overridden.
 
-Full command-exit evidence and independent review are recorded after completion.
+Control run at candidate `6a352f46ff8c6aca76f6a137703eebf2ad76d957`:
+`npm run test:contracts` printed `31 passing (3m)` and `CONTRACT_TEST_EXIT=0`;
+the terminal completion field was also 0. A generated receipt in
+`.tmp/contract-preparation-control-20260913.json` records the exact commit,
+2026-09-13T08:00:42Z start, 08:03:55Z finish and numeric exit 0. This control run
+omitted the Tee pipeline; the earlier wrapper -1 remains recorded above rather
+than retroactively treated as success. Its precise cause was not established.
+
+Node.js v25.9.0. Contract dependencies match the lock's installed metadata: 659
+entries; one platform-optional and two explicitly extraneous entries are absent.
+No mandatory version/resolved/integrity mismatches. No dependency versions or
+application/financial contract source changed.
+
+## Independent review
+
+Harvey, separate Sol/high context `01a0998c-62ea-7f10-ad0b-10e8b40c6d90`, APPROVED
+exact candidate `6a352f46ff8c6aca76f6a137703eebf2ad76d957` against 6878cbdf with no
+findings. Reviewer reran the nine runner checks (exit 0), verified adaptation SHA,
+unchanged assertions/compiler/suite limits/offline guard/lockfile, and checked the
+exact-commit exit receipt. The 31-test compiler run was accepted from the recorded
+parent evidence, not claimed as independently rerun. `git diff --check` passed.
+
+Final checkpoint and baseline-result documentation written after the candidate
+are author-verified evidence updates, not a further independent source review.
+Approval covers this preparation correction only, not finance, wallet/device,
+deployment or production readiness.
