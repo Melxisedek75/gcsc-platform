@@ -5,6 +5,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import vm from 'node:vm';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const core = path.join(root, 'contracts/gcsc-core');
@@ -72,6 +73,35 @@ test('compiler receives a single space-containing path, without a shell', () => 
   assert.equal(invocation.options.windowsHide, true);
   assert.ok(invocation.options.timeout > 0);
   assert.throws(() => h.compilerInvocation(core, path.join(core, 'gcsctoken111.contract.ts')), /scratch/i);
+});
+
+test('escrow preparation budgets both bounded compilations without changing test deadlines', () => {
+  const h = helper();
+  const requireCore = createRequire(path.join(core, 'package.json'));
+  const ts = requireCore('typescript');
+  const file = path.join(core, 'test/gcscrow1111.test.ts');
+  const source = ts.createSourceFile(file, fs.readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);
+  const hooks = [];
+  const visit = node => {
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'before') {
+      hooks.push(node.arguments[0]);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  assert.equal(hooks.length, 1);
+  const compilerTimeout = h.compilerInvocation(core, path.join(core, '.tmp/budget.contract.ts')).options.timeout;
+  assert.equal(compilerTimeout, 120000, 'individual compiler limit stays unchanged');
+  let hookTimeout = 120000;
+  let builds = 0;
+  const hook = vm.runInNewContext(`(${hooks[0].getText(source)})`, {
+    COMPILER_TIMEOUT_MS: h.COMPILER_TIMEOUT_MS,
+    buildArtifacts() { builds++; },
+  });
+  hook.call({ timeout(value) { hookTimeout = value; } });
+  assert.equal(builds, 1, 'artifact preparation still executes');
+  assert.equal(hookTimeout, 2 * compilerTimeout + 30000);
+  assert.match(source.text, /this\.timeout\(120000\)/, 'suite test deadline stays unchanged');
 });
 
 test('network preloader blocks fetch, TCP, TLS and UDP', () => {

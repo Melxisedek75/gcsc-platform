@@ -1,7 +1,7 @@
 export {};
 const fs = require("fs");
 const path = require("path");
-const { createScratchDirectory, runProtonAsc } = require("./harness.cjs");
+const { COMPILER_TIMEOUT_MS, createScratchDirectory, runProtonAsc } = require("./harness.cjs");
 const { expect } = require("chai");
 const { Asset, Name } = require("@greymass/eosio");
 const {
@@ -175,7 +175,9 @@ async function expectProtonAssert(promise: Promise<void>, message: string): Prom
 describe("gcscrow1111 milestone escrow", function () {
     this.timeout(120000);
 
-    before(() => {
+    before(function () {
+        // Token and escrow compile sequentially; each child retains its own limit.
+        this.timeout(2 * COMPILER_TIMEOUT_MS + 30000);
         buildArtifacts();
     });
 

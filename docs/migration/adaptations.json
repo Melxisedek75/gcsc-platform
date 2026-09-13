@@ -100,8 +100,8 @@
   {
     "path": "contracts/gcsc-core/test/gcscrow1111.test.ts",
     "sourceBlob": "b598cb0a081f25acb859844bd9cfc06a2d4fb469",
-    "sha256": "15e89255c80f06840f51db4a77460f8ddd1b97f1d81d2d2840897fb5c43556c9",
-    "reason": "Route local contract tests through offline harness with unique retained scratch directories.",
+    "sha256": "80b5085c0966c9a770001cadde43096735925881a85baf5c766d1058ae809c38",
+    "reason": "Route local contract tests through offline harness with unique retained scratch directories. Give escrow preparation a bounded budget for two sequential compilers; preserve each compiler's 120s limit and all runtime test deadlines/assertions.",
     "test": "node --test tests/contract-runner.test.mjs; npm run test:contracts"
   },
   {
