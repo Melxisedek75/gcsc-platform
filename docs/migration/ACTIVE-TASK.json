@@ -1,27 +1,39 @@
 {
-  "task": "offline-wallet-challenge-payload-experiment",
-  "status": "LOCAL_DIAGNOSTIC_COMPLETE_AWAITING_REVIEW",
+  "task": "consolidate-and-publish-monorepo",
+  "status": "FINAL_LOCAL_VERIFICATION",
   "owner": "019e7c87-8410-79f1-b86a-eedf78a1aa27",
-  "worktree": "C:/gcsc-platform/.worktrees/qa",
-  "branch": "codex/qa-integration",
-  "scope": ["tests/wallet-sdk-identity.test.mjs", "tests/wallet-challenge-payload.test.mjs", "tests/helpers/wallet-sdk-fixture.mjs", "package.json", "docs/migration/WALLET-SDK-IDENTITY.md"],
-  "startedAt": "2026-09-08T04:30:31Z",
+  "worktree": "C:/gcsc-platform/.worktrees/publication",
+  "branch": "codex/monorepo-publication",
+  "remote": "https://github.com/Melxisedek75/gcsc-platform",
+  "targetBranch": "main",
+  "scope": [
+    "reviewed branch consolidation",
+    "portable provenance",
+    "private GitHub publication",
+    "active priority plan"
+  ],
   "leaseUntil": null,
-  "completedAt": "2026-09-08T04:39:05Z",
-  "baseCommit": "eb4a84d8482f22681c663da67f3cf343aece3494",
-  "candidateCommit": "08636fdee7665b90073ad065b3d0dc5112420171",
-  "review": "NOT_APPROVED; no merge/integration",
-  "previousReview": {
-    "candidateCommit": "309c2909dddea7c17e941f81bd485661e358349f",
-    "reviewerId": "01a07f12-6dfc-7dd3-90ff-048c5d1fe9e9",
-    "reviewerName": "Anscombe",
-    "status": "BLOCKED_REVIEW",
-    "reason": "Reviewer terminated with usage-limit error; no verdict or independently verified checks.",
-    "reviewRecord": null,
-    "verifiedAt": "2026-09-08T04:10:24Z",
-    "observation": "QA worktree clean; report absent; agent closed with errored status, lease released. Aggregate 66%/73% usage before dispatch did not predict availability. No redispatch; earlier Pascal failure retained in RESULTS."
+  "baseCommit": "17332463",
+  "candidateCommit": "6f88ea54",
+  "review": "Backend0b2dcebb, frontend2ab3bf14, QA7c55289b approved independently by Descartes. Portable provenance approved by Bohr; mechanical union final review pending.",
+  "result": "All3 candidates merged. Clean single-branch clone npmci root+check PASS37 tests and syntax/static; final history23 commits scan matches7 adjudicated known false-positive/test/public-key findings. GitHub private repo created; no push yet.",
+  "next": "Finish component npmci/tests, record mechanical union review, push only unified main and verify remote SHA/tree. Then P2.1 wallet/API route contract analysis. Scheduler stays paused.",
+  "deferred": [
+    {
+      "task": "APK baseline",
+      "resumeCondition": "New resource evidence or isolated build capacity",
+      "checkpoint": "Expo Android prebuild complete, SDK C:/gcsc/.tools/android-sdk-full; Gradle8.14.3/JDK17 verified. No APK."
+    },
+    {
+      "task": "Real PostgreSQL tests",
+      "resumeCondition": "Docker engine recovery or approved isolated PostgreSQL runtime",
+      "checkpoint": "Docker inference socket inaccessible; bounded stop/info timed out. Do not repeat identical polls."
+    }
+  ],
+  "previousTask": {
+    "task": "web-wallet-restore-error-isolation",
+    "candidateCommit": "bf3728bf",
+    "result": "bf3728bf: wallet restore11/11, API config15/15, npm run check and final web build PASS (2977 modules). Sol/high independent scoped review APPROVED after race fix. Preserved session on wallet/network failures and new token on cross-tab mismatch. No APK/device/live wallet/merge/deploy."
   },
-  "result": "QA 08636fde unsigned payload experiment complete: 43/43 combined tests twice PASS, migration 7/7 plus syntax/static PASS, integration FAIL 5/7 unchanged. Full transaction preserves audience/nonce/expiry in digest; native URI and web popup forwarding verified using published transport source with IO stubs. Synthetic empty-receiver actions are NOT a wallet-approved protocol. No signatures, device, production code, dependencies or lockfile changes; no independent approval.",
-  "previousResult": "Backend fe16dfc1 and 66fe4734 are preserved as ancestors of 309c2909; frontend 4ec7a0b7/6151d36b remain unmerged; evidence in CHECKLIST and RESULTS.",
-  "next": "Do not repeat SDK baseline/payload experiments. Real wallet acceptance and independent security review remain gated; do not enable the synthetic proof fixture as authentication. Next safe technical item: inspect and run the local contract build/test baseline in QA lane (no RPC/deploy/signing), fixing only reproducible local setup/test issues. Reviewer redispatch still requires meaningful new availability evidence."
+  "boundaries": "No legacy/archive ref publication, source repo deletion/archive/privacy changes, live database, wallet signing or deployment."
 }

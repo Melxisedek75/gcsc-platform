@@ -57,7 +57,9 @@ Selected new monorepo history: 20 commits, 4.71 MB, seven generic-api-key findin
 - FRONTEND-AUDIT source commit SHA and ARCHITECTURE-AUDIT prose: false positives.
 All seven individually inspected. No scanner exclusions added or rules disabled.
 Initial publication tree scan including plaintext provenance: five corresponding
-findings, no additional matches in source metadata. Final merged scan remains due.
+findings, no additional matches in source metadata. Merged history6f88ea54 scan:
+23 non-merge commits, 5.47 MB; exactly the same seven adjudicated findings, no new
+matches. Legacy source refs are not ancestors of the publish branch.
 This is scoped secret screening, not a guarantee that all vulnerabilities are absent.
 
 Legacy source history scan: 2376 commits, eight findings. At least two need further
@@ -82,3 +84,25 @@ clean-clone check PASS, final redacted secret triage, push only intended main re
 remote SHA/tree verification. Original repositories stay unchanged until a future
 tested cutover. Wallet-first integration-readiness gate remains intentionally red
 and is NOT a monorepo preservation failure or a production approval.
+
+Clean isolated clone of6f88ea54 was created with --no-local --single-branch.
+Only the publication branch is present, no archive refs. Root npm ci installed
+the one pinned TypeScript dependency, and npm run check passed22 provenance,
+4 mobile-build guards,11 wallet-restore tests plus syntax/static validators.
+Extra component tests initially failed before their own dependencies were installed;
+README now lists explicit per-component npm ci prerequisites. These were not
+converted to skips or claimed as test passes.
+
+Descartes final mechanical merge review of6f88ea54: APPROVED. All17 adaptation
+records and all non-conflict lane source blobs preserved; package scripts union
+correct. Parent159 API tests passed in the backend worktree before merge, whose
+source blobs match the integrated branch.
+
+Fresh API/web/contracts installs in the isolated clone then failed with ENOSPC.
+C: reported0.64GB free after failure. Automatic cleanup of the three newly created
+partial node_modules was rejected by the tool policy; no removal was performed.
+Do not repeat installs until adequate free disk space exists. Full component
+clean-install/build acceptance remains BLOCKED, not PASS. Root portable37-test
+check completed successfully before these installs. This blocks the broader
+reproducible product baseline, not preservation of the reviewed source branch in
+a private repository. No CI or production success is inferred from publication.
