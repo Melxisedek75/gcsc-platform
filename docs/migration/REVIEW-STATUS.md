@@ -1,5 +1,15 @@
 # Independent review status
 
+## Current review records
+
+The historical import-only status below is preserved as a dated record, not the
+current consolidation decision. Local consolidation/private publication approval
+is in CONSOLIDATION-REVIEW.md. The 2026-09-13 archive/diagnostic successor e8188048
+is independently APPROVED in LEGACY-PRESERVATION-REVIEW.md. Neither record is
+production or wallet/device approval; consult CHECKLIST.md for open gates.
+
+## Historical initial import review
+
 Change: GCSC-MONOREPO-001. Risk: HIGH. State: NOT_APPROVED.
 Author: parent Codex execution. Candidate code commit:
 5a520f49e5087cfd47dccb7ea0b849dfd36e14ae.

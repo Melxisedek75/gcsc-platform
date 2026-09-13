@@ -111,6 +111,15 @@ not a full-disk accounting. Nested directories must not be added to their parent
   SHA-256 tests and Gitleaks inspect their complete contents. Active-source diff
   checks remain enabled. Final staged diff check is recorded with candidate review.
 
-Independent candidate review is pending until the exact commit is recorded.
-A separate QA worker is resuming clean root/API checks with a free-disk floor;
-results belong to the existing checklist/checkpoint.
+Independent reviewer Harvey APPROVED candidate
+`e8188048699dbf86331f54328cda5044943ad5c8` after correcting two overstated web
+consumers in the diagnostic table. Exact evidence: LEGACY-PRESERVATION-REVIEW.md.
+Reviewer independently matched original source bytes, manifest and Git blobs,
+reproduced source status hashes and reran the root/SDK checks. No runtime changed.
+
+Separate QA worker Heisenberg (`01a0999b-9fd6-7d13-8aff-436607bc4532`) verified
+the isolated clean clone at base 1ac9644d: root and API offline installs PASS;
+root check 22 + 4 + 11 PASS; five API suites 159/159 PASS. Worktree remained clean,
+lockfiles unchanged, free C: 3.208 GiB. This refreshes the previously blocked
+root/API baseline with current evidence. Web/contracts checks are still running;
+APK, physical-device and real database acceptance are not covered.
