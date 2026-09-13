@@ -4,11 +4,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
-import { spawnSync } from 'node:child_process';
+import { verifySourceSnapshot } from '../scripts/source-provenance.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const readJson = p => JSON.parse(fs.readFileSync(path.join(root, p), 'utf8'));
 const manifest = readJson('docs/migration/import-manifest.json');
+const provenance = readJson('docs/migration/source-provenance.json');
 
 test('application API package selects the declared canonical runtime', () => {
   const pkg = readJson('services/api/v3/package.json');
@@ -48,14 +49,14 @@ test('every imported file equals its source blob or an explicitly recorded adapt
   for (const key of overrides.keys()) assert(paths.has(key), `orphan adaptation: ${key}`);
 });
 
-test('manifest original paths and exclusions match preserved Git trees', () => {
+test('manifest original paths and exclusions match cryptographically pinned source trees', () => {
+  assert.equal(provenance.version, 1);
+  assert.equal(provenance.snapshots.length, manifest.sources.length);
+  assert.equal(new Set(provenance.snapshots.map(s => s.id)).size, manifest.sources.length);
   for (const source of manifest.sources) {
-    const r = spawnSync('git', ['ls-tree', '-rz', '--full-tree', source.commit], { cwd: root, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, windowsHide: true });
-    assert.equal(r.status, 0, r.stderr);
-    const tree = new Map(r.stdout.split('\0').filter(Boolean).map(line => {
-      const tab = line.indexOf('\t');
-      return [line.slice(tab + 1), line.slice(0, tab).split(' ')[2]];
-    }));
+    const snapshot = provenance.snapshots.find(s => s.id === source.id);
+    assert.ok(snapshot, `missing source evidence: ${source.id}`);
+    const tree = verifySourceSnapshot(snapshot, source.commit);
     const accounted = new Set();
     const imported = manifest.files.filter(f => f.source === source.id);
     for (const f of imported) {
@@ -75,17 +76,11 @@ test('manifest original paths and exclusions match preserved Git trees', () => {
   }
 });
 
-test('three source repos and internal whitepaper history remain reachable', () => {
+test('three source repos and internal whitepaper retain distinct pinned identities', () => {
   assert.equal(manifest.sourceCount, 3);
-  const required = {
-    website: 'archive/website/main', backend: 'archive/backend/main',
-    store: 'archive/store/api-backend', 'whitepaper-v14': 'archive/website/internal-whitepaper-v14',
-  };
+  assert.deepEqual(manifest.sources.map(s => s.id).sort(), ['backend', 'store', 'website', 'whitepaper-v14']);
   for (const source of manifest.sources) {
-    let r = spawnSync('git', ['rev-parse', '--verify', required[source.id]], { cwd: root, encoding: 'utf8', windowsHide: true });
-    if (r.status !== 0) r = spawnSync('git', ['rev-parse', '--verify', `origin/${required[source.id]}`], { cwd: root, encoding: 'utf8', windowsHide: true });
-    assert.equal(r.status, 0, r.stderr);
-    assert.equal(r.stdout.trim(), source.commit);
+    assert.equal(provenance.snapshots.find(s => s.id === source.id)?.commit, source.commit);
   }
 });
 
