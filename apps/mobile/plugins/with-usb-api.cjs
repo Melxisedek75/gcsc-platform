@@ -7,10 +7,10 @@ const networkConfig = `<?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
   <base-config cleartextTrafficPermitted="false" />
   <domain-config cleartextTrafficPermitted="true">
-    <domain>localhost</domain>
-    <domain>127.0.0.1</domain>
-    <domain>10.0.2.2</domain>
-    <domain>::1</domain>
+    <domain includeSubdomains="false">localhost</domain>
+    <domain includeSubdomains="false">127.0.0.1</domain>
+    <domain includeSubdomains="false">10.0.2.2</domain>
+    <domain includeSubdomains="false">::1</domain>
   </domain-config>
 </network-security-config>
 `;

@@ -131,8 +131,9 @@ test('USB network policy is scoped, idempotent, and removed from normal builds',
   assert.equal(attributes['android:usesCleartextTraffic'], undefined, 'do not allow all HTTP');
   await fileMod({ modRequest: { platformProjectRoot: 'C:/fixture/android' } });
   assert.match(written.contents, /base-config cleartextTrafficPermitted="false"/);
-  assert.deepEqual([...written.contents.matchAll(/<domain>([^<]+)<\/domain>/g)].map(m => m[1]),
+  assert.deepEqual([...written.contents.matchAll(/<domain includeSubdomains="false">([^<]+)<\/domain>/g)].map(m => m[1]),
     ['localhost', '127.0.0.1', '10.0.2.2', '::1']);
+  assert.doesNotMatch(written.contents, /includeSubdomains="true"|<domain>/);
   module.exports({}, { enabled: false });
   manifestMod(manifest);
   assert.equal(attributes['android:networkSecurityConfig'], undefined);
