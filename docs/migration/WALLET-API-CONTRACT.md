@@ -18,11 +18,11 @@ active inputs to this contract.
 | --- | --- | --- | --- |
 | Email login | POST /api/auth/login returns app JWT/user | services/api.ts | lib/auth.ts: login |
 | Read profile | GET /api/auth/profile, app JWT | Wallet.tsx and dashboard | lib/auth.ts: fetchProfile |
-| Save wallet metadata | PUT /api/auth/profile; changed identity invalidates verified binding | Profile API | app/(auth)/connect-wallet.tsx calls updateProfile with account/permission |
+| Save wallet metadata | PUT /api/auth/profile; changed identity invalidates verified binding | No wallet-profile caller | app/(auth)/connect-wallet.tsx calls updateProfile with account/permission |
 | Issue linking challenge | POST /api/wallet/challenge, existing app JWT required | No caller | No caller |
 | Verify linking proof | POST /api/wallet/connect requires publicKey/signature, consumes challenge, checks authority | api.connectWallet sends identity fields only, no signature | No caller; metadata update used instead |
 | Wallet-first challenge/verify | /api/auth/wallet/challenge and /verify absent | No implemented wallet-first app login | Sign-in contains no wallet-first action; earlier placeholder was removed |
-| Lead payment receipt | POST /api/payment/lead-token requires verified wallet and transfer verification | Separate payment consumer | Separate payment consumer; metadata-only binding cannot pass |
+| Lead payment receipt | POST /api/payment/lead-token requires verified wallet and transfer verification | No web consumer | Separate payment consumer; metadata-only binding cannot pass |
 
 Source anchors:
 - `services/api/v3/pure-server.js`: issueWalletChallenge,
@@ -43,6 +43,11 @@ app JWT on this failure is correct error isolation, not a completed wallet link.
 Mobile pairing writes metadata via profile update. That may let a user navigate
 the app, but the server still requires verified ownership before receipt acceptance.
 Priming a local SDK session from a backend profile does not create that proof.
+
+The web profile form does not write wallet metadata, and the web app has no
+lead-token receipt consumer. P2.5 requires implementing that client flow rather
+than merely reconnecting an existing one. These gaps were checked during
+independent review of the route map.
 
 The existing linking challenge requires an app JWT. It cannot be reused unchanged
 to log in a user who does not have an app JWT. Renaming endpoints alone does not
