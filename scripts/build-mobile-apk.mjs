@@ -12,7 +12,7 @@ export function assertDiskBudget(freeBytes) {
   }
 }
 
-export function createApkPlan(inputEnv) {
+export function createApkPlan(inputEnv, { downloadDependencies = false } = {}) {
   const bundle = createBuildPlan(inputEnv);
   const env = { ...bundle.env, GCSC_LOCAL_ANDROID_BUILD: '1' };
   for (const key of ['JAVA_HOME', 'ANDROID_HOME', 'GRADLE_USER_HOME']) {
@@ -25,9 +25,20 @@ export function createApkPlan(inputEnv) {
   return {
     cwd: bundle.cwd, env,
     prebuildArgs: ['node_modules/expo/bin/cli', 'prebuild', '--platform', 'android', '--no-install'],
-    gradleArgs: [':app:assembleRelease', '--offline', '--no-daemon', '--max-workers=1',
+    gradleArgs: [':app:assembleRelease', ...(downloadDependencies ? [] : ['--offline']),
+      '--no-daemon', '--console=plain', '--max-workers=1',
       '-PreactNativeArchitectures=arm64-v8a', '-Dorg.gradle.parallel=false',
       '-Dorg.gradle.jvmargs=-Xmx768m', '-Pkotlin.compiler.execution.strategy=in-process'],
+  };
+}
+
+export function createGradleInvocation(args) {
+  const quote = value => `'${value.replaceAll("'", "''")}'`;
+  return {
+    command: 'powershell.exe',
+    args: ['-NoProfile', '-NonInteractive', '-Command',
+      `$ErrorActionPreference = 'Stop'; & '.\\gradlew.bat' ${args.map(quote).join(' ')}; ` +
+      "if ($null -eq $LASTEXITCODE) { throw 'Gradle did not execute' }; exit $LASTEXITCODE"],
   };
 }
 
@@ -40,7 +51,9 @@ function run(command, args, options) {
 if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
   try {
     if (process.platform !== 'win32') throw new Error('This local APK runner currently supports Windows only.');
-    const plan = createApkPlan(process.env);
+    const args = process.argv.slice(2);
+    if (args.some(arg => arg !== '--download-dependencies')) throw new Error('Unknown APK build option.');
+    const plan = createApkPlan(process.env, { downloadDependencies: args.includes('--download-dependencies') });
     for (const dir of [plan.cwd, plan.env.ANDROID_HOME, plan.env.GRADLE_USER_HOME]) {
       const disk = fs.statfsSync(dir);
       assertDiskBudget(disk.bavail * disk.bsize);
@@ -52,9 +65,8 @@ if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) 
     run(process.execPath, plan.prebuildArgs, { cwd: plan.cwd, env: plan.env });
     // Release bundles JS/Hermes and disables Metro developer support. It still
     // uses the generated debug signing key: this is a local test APK, not a release.
-    run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
-      `& .\\gradlew.bat ${plan.gradleArgs.join(' ')}\nexit $LASTEXITCODE`],
-    { cwd: path.join(plan.cwd, 'android'), env: plan.env });
+    const gradle = createGradleInvocation(plan.gradleArgs);
+    run(gradle.command, gradle.args, { cwd: path.join(plan.cwd, 'android'), env: plan.env });
     run('powershell.exe', ['-NoProfile', '-NonInteractive', '-File',
       fileURLToPath(new URL('./verify-mobile-apk.ps1', import.meta.url)),
       '-ApkPath', path.join(plan.cwd, 'android/app/build/outputs/apk/release/app-release.apk'),

@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
+import { spawnSync } from 'node:child_process';
 
 const runner = new URL('../scripts/build-mobile-apk.mjs', import.meta.url);
 const load = async () => {
@@ -51,6 +52,35 @@ test('low disk fails closed before Gradle', async () => {
   assert.throws(() => assertDiskBudget(NaN), /disk/i);
   assert.doesNotThrow(() => assertDiskBudget(MIN_FREE_BYTES));
 });
+
+test('dependency downloads are explicit and do not enable Expo network or dotenv', async () => {
+  const { createApkPlan } = await load();
+  const plan = createApkPlan(env, { downloadDependencies: true });
+  assert(!plan.gradleArgs.includes('--offline'));
+  assert.equal(plan.env.EXPO_OFFLINE, '1');
+  assert.equal(plan.env.EXPO_NO_DOTENV, '1');
+});
+
+test('Windows Gradle launcher executes batch files, preserves arguments and returns their exit code',
+  { skip: process.platform !== 'win32' }, async () => {
+    const { createApkPlan, createGradleInvocation } = await load();
+    const plan = createApkPlan({ ...process.env, ...env, Path: process.env.Path ?? process.env.PATH });
+    assert.equal(plan.env.PATHEXT, process.env.PATHEXT);
+    assert.equal(plan.env.OS, process.env.OS);
+    const args = ['--version', '-Dorg.gradle.jvmargs=-Xmx768m', 'path with spaces', "single'quote"];
+    const invocation = createGradleInvocation(args);
+    const result = spawnSync(invocation.command, invocation.args, {
+      cwd: fileURLToPath(new URL('./fixtures/windows-gradle/', import.meta.url)),
+      env: { ...plan.env, GCSC_TEST_NODE: process.execPath },
+      encoding: 'utf8', windowsHide: true, timeout: 20000,
+    });
+    assert.ifError(result.error);
+    assert.equal(result.status, 7, result.stderr || result.stdout);
+    const actual = JSON.parse(result.stdout.trim());
+    assert.deepEqual(actual.args, args);
+    assert.equal(actual.apiOrigin, 'http://127.0.0.1:10000');
+    assert.equal(actual.nodeEnv, 'production');
+  });
 
 test('Android version can update installed code 4 and USB mode is explicit', () => {
   const require = createRequire(import.meta.url);
