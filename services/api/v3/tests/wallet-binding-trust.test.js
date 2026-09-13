@@ -21,7 +21,7 @@ const cases = [
   { role: 'homeowner', endpoint: 'job-posting', body: { project_id: 100 } },
 ];
 
-function request(route, body = {}, method = 'POST') {
+function request(route, body = {}, method = 'POST', payment = true) {
   const payload = JSON.stringify(body);
   const token = jwtSign({ userId: 17, email: 'fixture@example.invalid', role: db.users[0].role });
   return new Promise((resolve, reject) => {
@@ -29,14 +29,15 @@ function request(route, body = {}, method = 'POST') {
       hostname: '127.0.0.1', port, path: route, method, agent: false,
       headers: {
         'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload),
-        Connection: 'close', Authorization: `Bearer ${token}`, 'X-Payment-Tx': 'f'.repeat(64),
+        Connection: 'close', Authorization: `Bearer ${token}`,
+        ...(payment ? { 'X-Payment-Tx': 'f'.repeat(64) } : {}),
       },
     }, res => {
       let data = '';
       res.on('data', chunk => { data += chunk; });
       res.on('error', reject);
       res.on('end', () => {
-        try { resolve({ status: res.statusCode, body: JSON.parse(data) }); }
+        try { resolve({ status: res.statusCode, headers: res.headers, body: JSON.parse(data) }); }
         catch (error) { reject(error); }
       });
     });
@@ -81,6 +82,33 @@ function expectNoPaymentEffects() {
 }
 
 describe.each(cases)('$endpoint ownership boundary', ({ role, endpoint, body }) => {
+  test.each([undefined, false, 'true', 1])('does not offer payment for verified=%p', async verified => {
+    db.users[0].role = role;
+    db.users[0].wallet.verified = verified;
+    const result = await request(`/api/payment/${endpoint}`, body, 'POST', false);
+    expect(result.status).toBe(409);
+    expect(result.body.code).toBe('wallet_proof_required');
+    expect(result.headers['www-authenticate']).toBeUndefined();
+    expectNoPaymentEffects();
+  });
+
+  test('does not offer payment without a wallet', async () => {
+    db.users[0].role = role;
+    db.users[0].wallet = null;
+    const result = await request(`/api/payment/${endpoint}`, body, 'POST', false);
+    expect(result.status).toBe(409);
+    expect(result.body.code).toBe('wallet_required');
+    expect(result.headers['www-authenticate']).toBeUndefined();
+    expectNoPaymentEffects();
+  });
+
+  test('offers payment to a verified binding without broadcasting', async () => {
+    db.users[0].role = role;
+    const result = await request(`/api/payment/${endpoint}`, body, 'POST', false);
+    expect(result.status).toBe(402);
+    expect(result.headers['www-authenticate']).toMatch(/^Payment /);
+    expectNoPaymentEffects();
+  });
   test.each([undefined, false, 'true', 1])('rejects stored verified=%p before lookup', async verified => {
     db.users[0].role = role;
     db.users[0].wallet.verified = verified;
@@ -105,6 +133,52 @@ describe.each(cases)('$endpoint ownership boundary', ({ role, endpoint, body }) 
     expect(payment.status).toBe(409);
     expect(payment.body.code).toBe('wallet_proof_required');
     expectNoPaymentEffects();
+  });
+});
+
+describe('bid readiness ownership boundary', () => {
+  function completeContractorProfile() {
+    db.users[0].phone = '+12025550123';
+    db.users[0].profile = {
+      companyName: 'Fixture', ein: '12-3456789', licenseNumber: 'fixture-license',
+      serviceArea: 'Fixture City', specialties: ['plumbing'],
+    };
+    for (const document_type of ['contractor_license', 'insurance_certificate', 'business_ein']) {
+      db.user_documents.push({ id: db.user_documents.length + 1, user_id: 17, document_type, status: 'approved' });
+    }
+  }
+
+  test.each([undefined, false, 'true', 1])('metadata verified=%p cannot satisfy compliance', async verified => {
+    completeContractorProfile();
+    db.users[0].wallet.verified = verified;
+    const result = await request('/api/auth/compliance', {}, 'GET');
+    expect(result.status).toBe(200);
+    expect(result.body.profile_completion.completed).toBe(true);
+    expect(result.body.documents_approved).toBe(true);
+    expect(result.body.wallet_connected).toBe(false);
+    expect(result.body.ready_for_bids).toBe(false);
+  });
+
+  test('verified binding with approved documents satisfies compliance', async () => {
+    completeContractorProfile();
+    const result = await request('/api/auth/compliance', {}, 'GET');
+    expect(result.body.ready_for_bids).toBe(true);
+  });
+
+  test('homeowner cannot accept a bid from metadata-only contractor', async () => {
+    completeContractorProfile();
+    db.users[0].wallet.verified = false;
+    const contractor = { ...db.users[0], id: 18 };
+    db.users.push(contractor);
+    for (const doc of db.user_documents) doc.user_id = 18;
+    db.users[0].role = 'homeowner';
+    db.bids.push({ id: 9, contractor_id: 18, project_id: 100, status: 'pending', amount: 100 });
+    const result = await request('/api/bids/9/accept');
+    expect(result.status).toBe(400);
+    expect(result.body.contractor_verification.ready_for_bids).toBe(false);
+    expect(db.bids[0].status).toBe('pending');
+    expect(db.projects[0].status).toBe('open');
+    expect(db.escrow_contracts).toHaveLength(0);
   });
 });
 

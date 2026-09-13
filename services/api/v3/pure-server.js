@@ -2678,7 +2678,7 @@ function complianceForUser(user, documents) {
   const hasRejected = required_documents.some((item) => item.status === 'rejected');
   const documents_submitted = required_documents.length === 0 || required_documents.every((item) => item.status !== 'missing');
   const documents_approved = required_documents.length === 0 || required_documents.every((item) => item.status === 'approved');
-  const wallet_connected = !!user.wallet?.accountName;
+  const wallet_connected = !!user.wallet?.accountName && user.wallet.verified === true;
   let overall_status = 'verified';
 
   if (!profile_completion.completed) overall_status = 'profile_incomplete';
@@ -4088,6 +4088,16 @@ const routes = {
     if (!user) return json(res, 401, { error: 'Unauthorized' });
     if (user.role !== 'contractor') return json(res, 403, { error: 'Contractors only' });
 
+    // Refuse to request funds until the caller's stored ownership proof is valid.
+    const leadUser = await findUserById(user.userId);
+    const leadWallet = leadUser && leadUser.wallet && leadUser.wallet.accountName;
+    if (!leadWallet) {
+      return json(res, 409, { error: 'Wallet not connected', code: 'wallet_required' });
+    }
+    if (leadUser.wallet.verified !== true) {
+      return json(res, 409, { error: 'Verified wallet ownership required', code: 'wallet_proof_required' });
+    }
+
     const amount = '50.0000 XPR';
     const memo = 'gcsc:lead-token';
     const auth = req.headers['authorization'] || '';
@@ -4111,16 +4121,6 @@ const routes = {
     if (existing) {
       const existingLead = await findStoredLeadTokenByTxHash(txHash);
       return json(res, 409, { error: 'Payment already processed', tx_hash: txHash, lead_id: existingLead && existingLead.id });
-    }
-
-    // P1-1: resolve the caller's bound wallet and require the on-chain sender to match.
-    const leadUser = await findUserById(user.userId);
-    const leadWallet = leadUser && leadUser.wallet && leadUser.wallet.accountName;
-    if (!leadWallet) {
-      return json(res, 409, { error: 'Wallet not connected', code: 'wallet_required' });
-    }
-    if (leadUser.wallet.verified !== true) {
-      return json(res, 409, { error: 'Verified wallet ownership required', code: 'wallet_proof_required' });
     }
 
     const verify = await _hooks.verifyHyperionTransfer({
@@ -4181,6 +4181,15 @@ const routes = {
     if (!user) return json(res, 401, { error: 'Unauthorized' });
     if (user.role !== 'homeowner') return json(res, 403, { error: 'Homeowners only' });
 
+    const jobUser = await findUserById(user.userId);
+    const jobWallet = jobUser && jobUser.wallet && jobUser.wallet.accountName;
+    if (!jobWallet) {
+      return json(res, 409, { error: 'Wallet not connected', code: 'wallet_required' });
+    }
+    if (jobUser.wallet.verified !== true) {
+      return json(res, 409, { error: 'Verified wallet ownership required', code: 'wallet_proof_required' });
+    }
+
     const amount = '25.0000 XPR';
     const memo = 'gcsc:job-posting';
     const auth = req.headers['authorization'] || '';
@@ -4209,16 +4218,6 @@ const routes = {
 
     if (await findStoredPaymentReceiptByTxHash(txHash)) {
       return json(res, 409, { error: 'Payment already processed', tx_hash: txHash });
-    }
-
-    // P1-1: bind the on-chain sender to the homeowner's connected wallet.
-    const jobUser = await findUserById(user.userId);
-    const jobWallet = jobUser && jobUser.wallet && jobUser.wallet.accountName;
-    if (!jobWallet) {
-      return json(res, 409, { error: 'Wallet not connected', code: 'wallet_required' });
-    }
-    if (jobUser.wallet.verified !== true) {
-      return json(res, 409, { error: 'Verified wallet ownership required', code: 'wallet_proof_required' });
     }
 
     const verify = await _hooks.verifyHyperionTransfer({

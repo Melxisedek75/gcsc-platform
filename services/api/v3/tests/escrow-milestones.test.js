@@ -82,7 +82,7 @@ beforeEach(() => {
       id: CONTRACTOR_ID, email: 'co@test.io', role: 'contractor', is_active: 1,
       full_name: 'Con Tractor', phone: '2065550102',
       profile: { companyName: 'Con LLC', ein: '12-3456789', licenseNumber: 'LIC-1', serviceArea: 'Seattle, WA', specialties: ['general'] },
-      wallet: { accountName: 'contractor1', permission: 'active' },
+      wallet: { accountName: 'contractor1', permission: 'active', verified: true },
     },
     {
       id: UNVERIFIED_CONTRACTOR_ID, email: 'co2@test.io', role: 'contractor', is_active: 1,
@@ -219,7 +219,7 @@ describe('POST /api/bids/:id/accept', () => {
       id: 105, email: 'co3@test.io', role: 'contractor', is_active: 1,
       full_name: 'Third Co', phone: '2065550199',
       profile: { companyName: 'C', ein: '99-9999999', licenseNumber: 'L', serviceArea: 'Seattle', specialties: ['general'] },
-      wallet: { accountName: 'contractor3', permission: 'active' },
+      wallet: { accountName: 'contractor3', permission: 'active', verified: true },
     });
     db.user_documents.push(...verifiedContractorDocs(105));
     const thirdToken = jwtSign({ userId: 105, email: 'co3@test.io', role: 'contractor' });
