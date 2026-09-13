@@ -2,10 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-import { createRequire } from 'node:module';
-
-const requireMobile = createRequire(new URL('../apps/mobile/package.json', import.meta.url));
-const ts = requireMobile('typescript');
+import ts from 'typescript';
 // Parse the actual page function, not a copied implementation. Only IO is replaced.
 const source = fs.readFileSync(new URL('../apps/web/src/pages/Wallet.tsx', import.meta.url), 'utf8');
 const file = ts.createSourceFile('Wallet.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);

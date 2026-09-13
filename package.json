@@ -19,5 +19,6 @@
     "test:contracts": "npm --prefix contracts/gcsc-core test",
     "check": "npm test && npm run test:mobile-build && npm run test:wallet-restore && npm run check:api-syntax && npm run check:web"
   },
-  "engines": { "node": ">=20" }
+  "engines": { "node": ">=20" },
+  "devDependencies": { "typescript": "5.9.3" }
 }
