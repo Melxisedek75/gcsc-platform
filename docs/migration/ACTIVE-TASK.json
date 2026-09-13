@@ -1,30 +1,29 @@
 {
-  "task": "monorepo-local-baseline-recovery",
-  "status": "LOCAL_BASELINE_ADVANCED",
+  "task": "mobile-startup-recovery",
+  "status": "APK_BLOCKED_DISK",
   "owner": "019e7c87-8410-79f1-b86a-eedf78a1aa27",
-  "worktree": "C:/gcsc-platform/.worktrees/publication",
-  "branch": "codex/monorepo-publication",
+  "worktree": "C:/gcsc-platform/.worktrees/frontend",
+  "branch": "codex/mobile-startup-recovery-20260913",
   "remote": "https://github.com/Melxisedek75/gcsc-platform",
   "targetBranch": "main",
   "scope": [
-    "preserve 12 staged/untracked legacy files without runtime activation",
-    "private Google Drive source snapshots",
-    "verified installer cleanup and disk report",
-    "clean offline component verification",
-    "bounded escrow test-preparation deadline correction",
-    "wallet client/API diagnosis"
+    "capture actual installed Android startup failure",
+    "guard standalone USB-local APK generation and embedded API configuration",
+    "advance Android version without uninstalling app data",
+    "verify source, native prebuild and Hermes export",
+    "independent source review; APK/device acceptance remains pending"
   ],
   "leaseUntil": null,
-  "baseCommit": "6878cbdf9e918103cfb25cbba03a196171f2d240",
-  "candidateCommit": "6a352f46ff8c6aca76f6a137703eebf2ad76d957",
-  "review": "Harvey independently APPROVED preservation/docs e8188048 and contract preparation correction6a352f46. Evidence: LEGACY-PRESERVATION-REVIEW.md and CONTRACT-PREPARATION-BUDGET.md. Final status/docs updates are parent verified, not a new source review. Not release approval.",
-  "result": "12 legacy files preserved in private main (6878cbdf remote SHA verified); three private Drive source archives verified by metadata/download size. Removed662109266 installer bytes; after required installs C free2.487GiB. Root39, API159, API-config15, SDK43, runner9 and contracts31 PASS; contract control command exit0. Web build2977 modules PASS; lint0errors/1warning. Initial web install exit unavailable; final installed metadata/build verified. Wallet inventory FAIL5/7 and no web lead receipt consumer. No APK/device/live DB/production acceptance.",
-  "next": "P2.2 investigate and verify a wallet-supported sign-only proof format, then coordinate the API/web/mobile protocol. Do not equate SDK pairing/profile metadata with ownership or app login. P1.5 real isolated PostgreSQL and native acceptance remain open; inspect existing local PostgreSQL tooling instead of repeating failed Docker polls. Keep the scheduler paused; no active subagent/build is expected after this batch.",
+  "baseCommit": "4fcb08ea78738ea49baf11389ec98114d9b4a535",
+  "candidateCommit": "19d44622",
+  "review": "Kepler independently APPROVED 4fcb08ea..19d44622 for SOURCE/PREPARATION ONLY; 9/9 build tests, syntax and normal/USB config checks. Not APK, wallet or release acceptance. Evidence MOBILE-STARTUP-RECOVERY.md.",
+  "result": "Authorized Pixel8: installed0.1.2/code4 reproduces missing EXPO_PUBLIC_API_BASE_URL before wallet. Candidate0.1.3/code5 prepared. Check24+9+11/static, API-config15, native types, prebuild and Hermes1110 modules exit0. Bundle3795880 bytes SHA256 ba5a7f527c6355330d307ded95c27cf0491876eeef4a0d8a0e2a48d9c2e9b8bf contains loopback API. Gradle not started: free2.45GiB below4GiB preflight. Old cache deletion rejected before execution. No APK/install/signature/payment/liveDB/production action. Evidence: MOBILE-STARTUP-RECOVERY.md.",
+  "next": "When disk capacity changes to at least4GiB free, resume frontend branch and run build:apk:local with explicit JDK/SDK/Gradle paths from MOBILE-STARTUP-RECOVERY.md. Verify embedded JS/API, signature compatibility and exact installed version before handing off an APK. No uninstall/data wipe to force update. USB-local API requires adb reverse and isolated local server; wallet-first protocol and purchase acceptance are still open. Do not repeat unchanged disk cleanup/preflight or restart heartbeat.",
   "deferred": [
     {
       "task": "APK baseline",
-      "resumeCondition": "New evidence of adequate native-build disk budget or isolated build capacity; do not retry on unchanged 2.5GiB free",
-      "checkpoint": "Expo Android prebuild complete, SDK C:/gcsc/.tools/android-sdk-full; Gradle8.14.3/JDK17 retained and verified. No new APK."
+      "resumeCondition": "At least4GiB free on build/cache volumes or separately authorized adequate native build capacity; do not retry on unchanged2.45GiB free",
+      "checkpoint": "Candidate19d44622: native prebuild version5/0.1.3 complete; guarded APK command stops before Gradle. SDK C:/gcsc/.tools/android-sdk-full, Gradle cache arm64, JDK17 retained. Hermes export verified, NOT APK."
     },
     {
       "task": "Real PostgreSQL tests",
@@ -42,6 +41,6 @@
     "candidateCommit": "bf3728bf",
     "result": "bf3728bf: wallet restore11/11, API config15/15, npm run check and final web build PASS (2977 modules). Sol/high independent scoped review APPROVED after race fix. Preserved session on wallet/network failures and new token on cross-tab mismatch. No APK/device/live wallet/merge/deploy."
   },
-  "boundaries": "No original Git history/ref publication, source repo deletion/archive/privacy changes, live database, wallet signing or deployment. Current dirty-file snapshots are archive-only, not active application inputs.",
-  "publishedAnchorCommit": "6878cbdf9e918103cfb25cbba03a196171f2d240"
+  "boundaries": "Source/preparation only until native acceptance. No original Git history/ref publication, source repo deletion/archive/privacy change, live database, wallet signing, payments or deployment. No data wipe. Current device retains0.1.2/code4. Keep scheduler paused.",
+  "publishedAnchorCommit": "4fcb08ea78738ea49baf11389ec98114d9b4a535"
 }
