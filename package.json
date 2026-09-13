@@ -19,9 +19,10 @@
     "test:source-history": "node --test tests/source-history.test.mjs",
     "test:api-config": "node --test tests/api-config.test.mjs",
     "test:wallet-restore": "node --test tests/wallet-restore.test.mjs",
-    "test:mobile-build": "node --test tests/mobile-build.test.mjs",
+    "test:mobile-build": "node --test tests/mobile-build.test.mjs tests/mobile-apk.test.mjs",
     "check:mobile-types": "node apps/mobile/node_modules/typescript/bin/tsc --project apps/mobile/tsconfig.json --noEmit",
-    "bundle:android:local": "node scripts/bundle-mobile-local.mjs"
+    "bundle:android:local": "node scripts/bundle-mobile-local.mjs",
+    "build:apk:local": "node scripts/build-mobile-apk.mjs"
   },
   "engines": {
     "node": ">=20"

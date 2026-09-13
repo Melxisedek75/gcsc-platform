@@ -117,5 +117,19 @@
     "sha256": "dfe95fecf03ee369633b6db93313f7e03ef8115409b4e650da85231bd2a4a687",
     "reason": "Reject non-loopback and non-test PostgreSQL cleanup targets before storage initialization.",
     "test": "node --test tests/local-test-database.test.mjs"
+  },
+  {
+    "path": "apps/mobile/app.json",
+    "sourceBlob": "34e7fb48f1cefe1fffbda1c5ffd28b33a80c5699",
+    "sha256": "4af2adf9e729438d080de2f56697ed62eacc5ab0b729975ddf65c16d4c5ed152",
+    "reason": "Advance candidate to 0.1.3/versionCode 5 so a rebuilt APK can replace installed 0.1.2/code 4 without uninstalling user data. No APK or device acceptance implied.",
+    "test": "node --test tests/mobile-apk.test.mjs; version regression failed before correction"
+  },
+  {
+    "path": "apps/mobile/package.json",
+    "sourceBlob": "4c492c185d9c189ae5ab919457976b40f381df7c",
+    "sha256": "d091ee3f2c3f62a92dda7ef1122806783a1b61f6cc343533d22dbcdfe78010f7",
+    "reason": "Retain Expo prebuild-generated native run commands. Dependencies and lockfile are unchanged; standalone USB APKs use the separate guarded root build:apk:local command.",
+    "test": "Expo prebuild --platform android --no-install; npm run check:mobile-types; npm run check"
   }
 ]
