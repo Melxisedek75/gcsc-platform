@@ -9,9 +9,9 @@
   {
     "path": "apps/web/src/services/api.ts",
     "sourceBlob": "386771574699c2d98c025c8bcae2e27b91bfa9c9",
-    "sha256": "c3fcf79c360460737481b46832d667f55ce65005fdf3e76ed987c6b78387d2af",
-    "reason": "Require explicit API origin at request time and normalize legacy /api once; remove production fallback.",
-    "test": "npm run test:api-config; witnessed unsafe no-env fetch and path failures before correction"
+    "sha256": "b2ff8e83ff6643acc12cbbf70c5ba1d45345f3463080a85630eb2f72442c0e79",
+    "reason": "Explicit API origin (existing adaptation) plus typed HTTP status for scoped authentication error handling.",
+    "test": "node --test tests/wallet-restore.test.mjs tests/api-config.test.mjs; regression red witnessed before fix"
   },
   {
     "path": "apps/mobile/lib/api.ts",
@@ -33,5 +33,12 @@
     "sha256": "f1b7072f9dad3934cecebd01957e17bf95b35bf2db03d52564cb23978d3c9c5e",
     "reason": "Remove embedded remote API origins from EAS profiles; require separately selected build environment.",
     "test": "npm run test:api-config; witnessed production URL assertion failure before correction"
+  },
+  {
+    "path": "apps/web/src/pages/Wallet.tsx",
+    "sourceBlob": "c10fdb5e4b99081c908b4581de3fc55697444b6c",
+    "sha256": "69aba2b19526b5e91bbd91b79c5ee746af1d174e9609c41267671f3406e46286",
+    "reason": "Preserve app authentication on wallet/network failure; clear only profile HTTP401; catch anonymous restore failure.",
+    "test": "node --test tests/wallet-restore.test.mjs tests/api-config.test.mjs; regression red witnessed before fix"
   }
 ]

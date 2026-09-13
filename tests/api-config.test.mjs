@@ -42,6 +42,23 @@ async function client(entry, value) {
   return context;
 }
 
+test('web: HTTP failures expose status without clearing stored authentication', async () => {
+  let cleared = false;
+  const configured = await client('apps/web/src/services/api.ts', 'http://127.0.0.1:3001');
+  configured.exports.api.setToken('fixture-token');
+  assert.equal(configured.exports.api.getToken(), 'fixture-token');
+  configured.localStorage.removeItem = () => { cleared = true; };
+  for (const status of [401, 403, 500]) {
+    configured.fetch = async (_url, options) => {
+      assert.equal(options.headers.Authorization, `Bearer ${configured.exports.api.getToken()}`);
+      return { ok: false, status, json: async () => ({ error: 'fixture failure' }) };
+    };
+    await assert.rejects(configured.exports.api.getProfile(), error =>
+      error instanceof configured.exports.ApiError && error.status === status && error.message === 'fixture failure');
+  }
+  assert.equal(cleared, false);
+});
+
 test('web: missing API config imports safely and rejects before fetch', async () => {
   const c = await client('apps/web/src/services/api.ts');
   await assert.rejects(c.exports.api.login({ email: 'test@example.invalid', password: 'fixture' }), { code: 'API_CONFIGURATION' });

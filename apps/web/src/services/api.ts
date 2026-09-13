@@ -222,6 +222,16 @@ export interface GcscMilestone {
   updated_at?: string
 }
 
+export class ApiError extends Error {
+  readonly status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+  }
+}
+
 class ApiClient {
   private token: string | null = null
 
@@ -232,6 +242,10 @@ class ApiClient {
   setToken(token: string) {
     this.token = token
     localStorage.setItem('gcsc_auth_token', token)
+  }
+
+  getToken() {
+    return this.token
   }
 
   clearToken() {
@@ -249,7 +263,7 @@ class ApiClient {
 
     const res = await fetch(url, { ...options, headers })
     const data = await res.json().catch(() => ({}))
-    if (!res.ok) throw new Error(data.error || `API error: ${res.status}`)
+    if (!res.ok) throw new ApiError(data.error || `API error: ${res.status}`, res.status)
     return data
   }
 

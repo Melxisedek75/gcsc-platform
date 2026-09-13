@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { motion } from 'framer-motion'
 import { Link2, Coins, CreditCard, Check, ExternalLink, ArrowRight, Loader2, PlugZap, ShieldCheck } from 'lucide-react'
-import { api, type GcscUser, type GcscWallet } from '../services/api'
+import { api, ApiError, type GcscUser, type GcscWallet } from '../services/api'
 import { connectWebAuthWallet, restoreWebAuthWallet } from '../services/webauth'
 
 const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }
@@ -30,11 +30,24 @@ export default function Wallet() {
     let mounted = true
 
     const loadWallet = async () => {
-      const token = localStorage.getItem('gcsc_auth_token')
+      const token = api.getToken()
 
       if (token) {
         try {
-          const response = await api.getProfile()
+          let response
+          try {
+            response = await api.getProfile()
+          } catch (err) {
+            if (!mounted) return
+            // Only the profile endpoint can establish that app authentication expired.
+            if (err instanceof ApiError && err.status === 401) {
+              if (api.getToken() === token && localStorage.getItem('gcsc_auth_token') === token) api.clearToken()
+              setStatus('Your sign-in has expired. Please sign in again.')
+            } else {
+              setStatus('Could not load your profile. Please try again.')
+            }
+            return
+          }
           if (!mounted) return
           setUser(response.user)
           setWallet(response.user.wallet || null)
@@ -49,15 +62,19 @@ export default function Wallet() {
             setStatus('Restored WebAuth session and saved it to your GCSC account.')
           }
         } catch {
-          api.clearToken()
+          if (mounted) setStatus('Could not restore your wallet. Your app sign-in has been kept; please try connecting again.')
         }
         return
       }
 
-      const restored = await restoreWebAuthWallet()
-      if (!mounted || !restored) return
-      setWallet({ ...restored })
-      setStatus('Restored WebAuth session locally. Sign in on Dashboard to save it.')
+      try {
+        const restored = await restoreWebAuthWallet()
+        if (!mounted || !restored) return
+        setWallet({ ...restored })
+        setStatus('Restored WebAuth session locally. Sign in on Dashboard to save it.')
+      } catch {
+        if (mounted) setStatus('Could not restore your wallet. Please try connecting again.')
+      }
     }
 
     void loadWallet()
