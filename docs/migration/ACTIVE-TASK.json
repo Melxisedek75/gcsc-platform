@@ -1,6 +1,6 @@
 {
   "task": "mobile-startup-recovery",
-  "status": "APK_BLOCKED_DISK",
+  "status": "APK_VERIFIED_DEVICE_PENDING",
   "owner": "019e7c87-8410-79f1-b86a-eedf78a1aa27",
   "worktree": "C:/gcsc-platform/.worktrees/frontend",
   "branch": "codex/mobile-startup-recovery-20260913",
@@ -15,15 +15,15 @@
   ],
   "leaseUntil": null,
   "baseCommit": "4fcb08ea78738ea49baf11389ec98114d9b4a535",
-  "candidateCommit": "19d44622",
-  "review": "Kepler independently APPROVED 4fcb08ea..19d44622 for SOURCE/PREPARATION ONLY; 9/9 build tests, syntax and normal/USB config checks. Not APK, wallet or release acceptance. Evidence MOBILE-STARTUP-RECOVERY.md.",
-  "result": "Authorized Pixel8: installed0.1.2/code4 reproduces missing EXPO_PUBLIC_API_BASE_URL before wallet. Candidate0.1.3/code5 prepared. Check24+9+11/static, API-config15, native types, prebuild and Hermes1110 modules exit0. Bundle3795880 bytes SHA256 ba5a7f527c6355330d307ded95c27cf0491876eeef4a0d8a0e2a48d9c2e9b8bf contains loopback API. Gradle not started: free2.45GiB below4GiB preflight. Old cache deletion rejected before execution. No APK/install/signature/payment/liveDB/production action. Evidence: MOBILE-STARTUP-RECOVERY.md.",
-  "next": "When disk capacity changes to at least4GiB free, resume frontend branch and run build:apk:local with explicit JDK/SDK/Gradle paths from MOBILE-STARTUP-RECOVERY.md. Verify embedded JS/API, signature compatibility and exact installed version before handing off an APK. No uninstall/data wipe to force update. USB-local API requires adb reverse and isolated local server; wallet-first protocol and purchase acceptance are still open. Do not repeat unchanged disk cleanup/preflight or restart heartbeat.",
+  "candidateCommit": "2094b69c87020de4100f2382bd4a118c4eb43e33",
+  "review": "Kepler approved initial source preparation. Jason separately approved Windows launcher/environment/download changes (11 tests) and the2094b69c XML-generator fix (7/7 tests and diff check). Both are scoped source reviews. Author's native build, lint and artifact verification now PASS; not independent device/wallet acceptance. Evidence MOBILE-STARTUP-RECOVERY.md.",
+  "result": "Offline APK rebuild exit0,24m11s,488 tasks (48 executed/440 up-to-date); lintVitalRelease PASS. Delivered0.1.3/code5 ARM64 SmartContractor USB APK,28504933 bytes, SHA256 6b06ca9ce5a0cb3ee5bfae1e806c2abfa528ea8f4a29355efff5267aae1eef56. Embedded JS/API/testnet chain, non-debuggable manifest, compiled local-only XML and v2 signature verified. Delivery C:/Users/rivne/Downloads/SmartContractor-0.1.3-usb-2094b69c.apk matches source hash. C:4.150GiB free after delivery (1.69 after first failed compilation); sources retained, no blocked deletion bypass. Latest ADB empty; no install, API start, wallet signature, payment, liveDB or deployment.",
+  "next": "Do not rebuild the verified APK without source changes. When Pixel8 is connected, compare installed certificate, update with adb install -r only if compatible, preserve data and verify actual startup/version/logs. Prepare an isolated canonical API and USB reverse for network tests. Until then, proceed with unblocked P2.2 wallet-proof/API work; do not send owner into a known-incomplete full wallet purchase flow. No repeated unchanged ADB/quota polling; keep heartbeat paused.",
   "deferred": [
     {
-      "task": "APK baseline",
-      "resumeCondition": "At least4GiB free on build/cache volumes or separately authorized adequate native build capacity; do not retry on unchanged2.45GiB free",
-      "checkpoint": "Candidate19d44622: native prebuild version5/0.1.3 complete; guarded APK command stops before Gradle. SDK C:/gcsc/.tools/android-sdk-full, Gradle cache arm64, JDK17 retained. Hermes export verified, NOT APK."
+      "task": "Device acceptance of verified APK",
+      "resumeCondition": "Authorized Pixel8 reconnects; verify installed certificate before update, never wipe data to force compatibility",
+      "checkpoint": "APK0.1.3/code5 verified and delivered, source2094b69c; no new build required. Signing certificate SHA256 fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c. USB API still needs isolated local server and port reverse."
     },
     {
       "task": "Real PostgreSQL tests",
@@ -41,6 +41,6 @@
     "candidateCommit": "bf3728bf",
     "result": "bf3728bf: wallet restore11/11, API config15/15, npm run check and final web build PASS (2977 modules). Sol/high independent scoped review APPROVED after race fix. Preserved session on wallet/network failures and new token on cross-tab mismatch. No APK/device/live wallet/merge/deploy."
   },
-  "boundaries": "Source/preparation only until native acceptance. No original Git history/ref publication, source repo deletion/archive/privacy change, live database, wallet signing, payments or deployment. No data wipe. Current device retains0.1.2/code4. Keep scheduler paused.",
+  "boundaries": "Native artifact verified, not device/API/wallet acceptance. No original Git history/ref publication, source repo deletion/archive/privacy change, live database, wallet signing, payments or deployment. No data wipe. Last observed installed version0.1.2/code4; phone currently absent. Keep scheduler paused.",
   "publishedAnchorCommit": "4fcb08ea78738ea49baf11389ec98114d9b4a535"
 }
