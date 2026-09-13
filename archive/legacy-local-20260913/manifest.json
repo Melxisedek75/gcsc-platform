@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "capturedAt": "2026-09-13T07:14:34.976Z",
+  "sourceStatus": "staged-and-untracked",
+  "activation": "archived-only",
+  "sources": [
+    {
+      "repo": "gcsc-smart-contractor",
+      "head": "7a2d7ab353fe28132f9e0528da7561bdbb8658b1",
+      "originalDirectory": "C:/gcsc-smart-contractor",
+      "statusSha256": "44af5c6d85b942f3dd25a73ccb56722248d47b0bf3e610ce240b945914f15930",
+      "files": [
+        {
+          "path": "gcsc-smart-contractor/v3/pure-server.js",
+          "bytes": 155555,
+          "sha256": "ecc3a0a6aaa8e351505becc4cd57fc5eaf0d68cf2fcc1963ee83e7769ff21ae2"
+        },
+        {
+          "path": "gcsc-smart-contractor/v3/database/renovation-migration.sql",
+          "bytes": 503,
+          "sha256": "bbc4f1cc91a4c5c88248005ce443ad9e19d32b12a2582385536e58bf3ce2b78a"
+        },
+        {
+          "path": "gcsc-smart-contractor/v3/database/renovation-module-migration.sql",
+          "bytes": 3878,
+          "sha256": "8b5d97b3ea8a7dbe938b02a7949c6f039f99fa392c92573f57f79cdc1224042a"
+        },
+        {
+          "path": "gcsc-smart-contractor/v3/services/renovation/MilestoneGenerationService.js",
+          "bytes": 2758,
+          "sha256": "887f135581d0ace1238ec13316d03b216ff2be56326f19cd72b760cd474342b2"
+        },
+        {
+          "path": "gcsc-smart-contractor/v3/services/renovation/PermitRiskHeuristicService.js",
+          "bytes": 4238,
+          "sha256": "25a0d6507d65179114a5e6aed922a4e100c425cc6f9fcc3ab04c043e0f7c49c4"
+        },
+        {
+          "path": "gcsc-smart-contractor/v3/services/renovation/README.md",
+          "bytes": 5196,
+          "sha256": "1f868b7fa9fd6dfdecf6144de02bd29b6378af178634863932e58aa5961431d5"
+        },
+        {
+          "path": "gcsc-smart-contractor/v3/services/renovation/RenovationAnalysisService.js",
+          "bytes": 6396,
+          "sha256": "a8647d3961d2fc3acb54caa6299e9d27d3c7af87ef193e5911fcddbb1807d4cd"
+        },
+        {
+          "path": "gcsc-smart-contractor/v3/services/renovation/VisualGenerationService.js",
+          "bytes": 6287,
+          "sha256": "d3b88a0749a179244536a67df8bc36bb997046dc3c956e16e410838d8125040c"
+        },
+        {
+          "path": "gcsc-smart-contractor/v3/services/renovation/constants.js",
+          "bytes": 21752,
+          "sha256": "ef2a9d07d5f514aa47de763b733d9532044401c8297bba16a225b6a003bed150"
+        },
+        {
+          "path": "gcsc-smart-contractor/v3/services/renovation/index.js",
+          "bytes": 3612,
+          "sha256": "91d81d7d2c7dde1fe0ad67f1900584591bc08b93c29d2e7577b69561297ca44c"
+        },
+        {
+          "path": "gcsc-smart-contractor/v3/tests/founder-action-packet.test.js",
+          "bytes": 2892,
+          "sha256": "a341f247d713b8140af1cee1f46eb9848da45fe1ce9317aa35278fa733a492eb"
+        }
+      ]
+    },
+    {
+      "repo": "gcsc-store",
+      "head": "2f023068cb7b5a08a481f7fb0a503d3a5f0f6248",
+      "originalDirectory": "C:/gcsc-store",
+      "statusSha256": "abf5f2121a5dce2e2077f67996cef7be70e442625982747956476df633e8bf69",
+      "files": [
+        {
+          "path": "gcsc-store/vercel.json",
+          "bytes": 167,
+          "sha256": "327a4c72b6b78a6559817c14eec45a6493cf8891328abb89a619eceda7d214be"
+        }
+      ]
+    }
+  ]
+}

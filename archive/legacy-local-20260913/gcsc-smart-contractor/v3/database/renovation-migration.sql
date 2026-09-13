@@ -1,0 +1,7 @@
+-- ⚠️ DO NOT USE — REDUNDANT / SUPERSEDED.
+-- The renovation schema is created automatically at server startup inside
+-- v3/pure-server.js (see the migration block near the renovation_project_drafts
+-- CREATE TABLE, which also adds converted_project_id, generated_image_urls, and
+-- the indexes). This standalone file was created in error on 2026-06-13 before
+-- discovering the existing implementation, and is INCOMPLETE (missing
+-- converted_project_id). Kept as a no-op marker; safe to delete.

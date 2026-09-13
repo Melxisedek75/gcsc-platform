@@ -1,0 +1,3 @@
+# Frozen snapshots preserve original line endings/whitespace and use SHA-256 checks.
+gcsc-smart-contractor/** -text -diff
+gcsc-store/** -text -diff
