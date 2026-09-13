@@ -106,3 +106,12 @@ clean-install/build acceptance remains BLOCKED, not PASS. Root portable37-test
 check completed successfully before these installs. This blocks the broader
 reproducible product baseline, not preservation of the reviewed source branch in
 a private repository. No CI or production success is inferred from publication.
+
+Publication confirmed: pushed only HEAD:refs/heads/main with followTags=false.
+git ls-remote --heads origin returned only main at
+5a9bba32b99dd39cc7d6fc3bf4d5a40ea020de2d (tree02e30b5561bb6abc6a754ea7ba63f2b767904f0f).
+Follow-up documentation commits update the checkpoint but not the reviewed source.
+GitHub remains private. Original repositories and preserved history unchanged.
+Next static contract gate:47 declared routes,5/7 required entrypoints present;
+auth/wallet/challenge and auth/wallet/verify remain absent. Gate exit1 is recorded
+as unfinished P2 work, not hidden or converted to a success.

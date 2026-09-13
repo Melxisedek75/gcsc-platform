@@ -1,6 +1,6 @@
 {
   "task": "consolidate-and-publish-monorepo",
-  "status": "FINAL_LOCAL_VERIFICATION",
+  "status": "SOURCE_CONSOLIDATED_PUBLISHED",
   "owner": "019e7c87-8410-79f1-b86a-eedf78a1aa27",
   "worktree": "C:/gcsc-platform/.worktrees/publication",
   "branch": "codex/monorepo-publication",
@@ -15,9 +15,9 @@
   "leaseUntil": null,
   "baseCommit": "17332463",
   "candidateCommit": "6f88ea54",
-  "review": "Backend0b2dcebb, frontend2ab3bf14, QA7c55289b approved independently by Descartes. Portable provenance approved by Bohr; mechanical union final review pending.",
-  "result": "All3 candidates merged. Clean single-branch clone npmci root+check PASS37 tests and syntax/static; final history23 commits scan matches7 adjudicated known false-positive/test/public-key findings. GitHub private repo created; no push yet.",
-  "next": "Finish component npmci/tests, record mechanical union review, push only unified main and verify remote SHA/tree. Then P2.1 wallet/API route contract analysis. Scheduler stays paused.",
+  "review": "Independent local consolidation/provenance/mechanical merge APPROVED; evidence docs/migration/CONSOLIDATION-REVIEW.md. Not release approval.",
+  "result": "One private GitHub main published and SHA verified. All3 candidates consolidated; clean portable37 tests PASS, backend159 tests PASS before merge with identical source blobs. Full clean component installs failed ENOSPC; not a completed product baseline.",
+  "next": "P2.1 inspect47 declared routes against wallet-first contract (5/7 present; missing auth/wallet/challenge and verify). No API rewrite before protocol diagnosis. P1.5 clean component builds require disk recovery; do not repeat installs. Scheduler remains paused.",
   "deferred": [
     {
       "task": "APK baseline",
@@ -28,6 +28,11 @@
       "task": "Real PostgreSQL tests",
       "resumeCondition": "Docker engine recovery or approved isolated PostgreSQL runtime",
       "checkpoint": "Docker inference socket inaccessible; bounded stop/info timed out. Do not repeat identical polls."
+    },
+    {
+      "task": "Clean component dependency installation",
+      "resumeCondition": "Adequate free disk space (several GB) or authorized alternative build volume",
+      "checkpoint": "ENOSPC in temporary clean clone API/web/contracts npmci. C free0.64GB. Cleanup command rejected by tool policy; partial generated node_modules retained. No blind retry."
     }
   ],
   "previousTask": {
@@ -35,5 +40,6 @@
     "candidateCommit": "bf3728bf",
     "result": "bf3728bf: wallet restore11/11, API config15/15, npm run check and final web build PASS (2977 modules). Sol/high independent scoped review APPROVED after race fix. Preserved session on wallet/network failures and new token on cross-tab mismatch. No APK/device/live wallet/merge/deploy."
   },
-  "boundaries": "No legacy/archive ref publication, source repo deletion/archive/privacy changes, live database, wallet signing or deployment."
+  "boundaries": "No legacy/archive ref publication, source repo deletion/archive/privacy changes, live database, wallet signing or deployment.",
+  "publishedAnchorCommit": "5a9bba32b99dd39cc7d6fc3bf4d5a40ea020de2d"
 }
