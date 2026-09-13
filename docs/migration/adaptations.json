@@ -5,5 +5,33 @@
     "sha256": "5efe26cf93e70f9051caeb36ddc437755fb8d617bb591c3e55255555eec4d1f0",
     "reason": "Select pure-server.js for main/start/dev, matching the canonical runtime. No dependency changes.",
     "test": "node --test tests/migration.test.mjs; witnessed red before correction"
+  },
+  {
+    "path": "services/api/v3/pure-server.js",
+    "sourceBlob": "952128e9316fe78bef42dba8ddc7b04eb09e29e5",
+    "sha256": "81852557dcc26816fc177ce0a72e5c7a4901b10b075ca9f8ca12904cc3457f2e",
+    "reason": "Require verified wallet ownership before payment challenges and bid readiness; invalidate changed identity proof; enforce single-key authority threshold and remove the ownership-check environment bypass.",
+    "test": "npm run test:api; reproduced earlier metadata/threshold/bypass failures and 15 pre-payment/bid-readiness regression failures before fixes"
+  },
+  {
+    "path": "services/api/v3/tests/payments-402.test.js",
+    "sourceBlob": "db703f6925ddf23794991f56baca83daae18cb86",
+    "sha256": "9cb828d8ecd676e59f3e30bf9bcab8b2f4ce549a6e9653e79c089e613422f23a",
+    "reason": "Positive payment fixtures explicitly represent verified bindings; boot with the legacy false flag to prove ownership checks remain mandatory, including failed lookup and unchanged wallet assertions; isolate JSON database IO.",
+    "test": "npm run test:api"
+  },
+  {
+    "path": "services/api/v3/tests/escrow-milestones.test.js",
+    "sourceBlob": "21f10e3556473b1ee6f99c552c7973dd1b74b1aa",
+    "sha256": "afa4e326088d2919f0da7a3f42a1308ff8c4aeea7dce93d91788bd8971c17233",
+    "reason": "Positive escrow lifecycle fixtures explicitly model already server-verified wallet bindings; forged metadata rejection is covered separately.",
+    "test": "npm run test:api"
+  },
+  {
+    "path": "services/api/v3/tests/postgres-storage-smoke.js",
+    "sourceBlob": "2cea20855229da14e3dfbad3de9c2a5e69e5023a",
+    "sha256": "d7d9da8a24b4ae3f5fac3c1993216f86c607237f71eea910f579fa4dcd5d1155",
+    "reason": "Replace ownership bypass with explicit fixture-key RPC; sanitize child environment, use argv for preload, keep fixtures in the worktree, wait for child exit and clean only generated files without recursive deletion.",
+    "test": "npm run test:pg-storage (services/api/v3; fake PostgreSQL and mocked RPC only)"
   }
 ]

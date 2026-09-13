@@ -1555,10 +1555,9 @@ async function recordJobPostingPayment({ txHash, userId, fromAccount, amount, bl
 // Binding an XPR account to a user must prove control of that account's key.
 // Flow: client asks for a challenge (server-issued single-use nonce), signs the
 // challenge message with the account key, then submits { publicKey, signature }.
-// The server recovers the signing key from the signature and (by default) checks
+// The server recovers the signing key from the signature and always checks
 // that the key is authorized on-chain for the account permission.
 const WALLET_CHALLENGE_TTL_MS = parseInt(process.env.WALLET_CHALLENGE_TTL_MS || '300000', 10);
-const WALLET_ONCHAIN_KEY_ENFORCED = process.env.WALLET_ONCHAIN_KEY_ENFORCED !== 'false';
 const walletChallenges = new Map(); // userId -> { nonce, accountName, message, expiresAt }
 
 function walletChallengeMessage({ userId, accountName, nonce }) {
@@ -1622,8 +1621,8 @@ function verifyWalletSignature({ message, signature, publicKey }) {
   return { ok: true, publicKey: recovered };
 }
 
-// Default on-chain check: confirm the recovered key is authorized for the given
-// permission of the account. Mockable via _hooks.verifyAccountKey.
+// Direct-key proof only: the recovered key must meet the requested permission's
+// threshold alone. Mockable via _hooks.verifyAccountKey.
 async function verifyXprAccountKey({ accountName, permission, publicKey }) {
   const normKey = XprNumeric.publicKeyToString(XprNumeric.stringToPublicKey(String(publicKey)));
   let lastError = 'no_nodes';
@@ -1642,8 +1641,14 @@ async function verifyXprAccountKey({ accountName, permission, publicKey }) {
       const perms = Array.isArray(payload.permissions) ? payload.permissions : [];
       const perm = perms.find(p => p.perm_name === permission);
       if (!perm) { lastError = 'permission_not_found'; continue; }
+      const threshold = perm.required_auth && perm.required_auth.threshold;
+      if (!Number.isInteger(threshold) || threshold <= 0 || threshold > 0xffffffff) {
+        return { ok: false, error: 'account_key_unauthorized' };
+      }
       const keys = (perm.required_auth && Array.isArray(perm.required_auth.keys)) ? perm.required_auth.keys : [];
+      // One recovered signature cannot borrow weight from other keys, accounts or waits.
       const match = keys.some(k => {
+        if (!k || !Number.isInteger(k.weight) || k.weight < threshold || k.weight > 0xffff) return false;
         try { return XprNumeric.publicKeyToString(XprNumeric.stringToPublicKey(String(k.key))) === normKey; }
         catch { return false; }
       });
@@ -2673,7 +2678,7 @@ function complianceForUser(user, documents) {
   const hasRejected = required_documents.some((item) => item.status === 'rejected');
   const documents_submitted = required_documents.length === 0 || required_documents.every((item) => item.status !== 'missing');
   const documents_approved = required_documents.length === 0 || required_documents.every((item) => item.status === 'approved');
-  const wallet_connected = !!user.wallet?.accountName;
+  const wallet_connected = !!user.wallet?.accountName && user.wallet.verified === true;
   let overall_status = 'verified';
 
   if (!profile_completion.completed) overall_status = 'profile_incomplete';
@@ -2779,23 +2784,22 @@ function updateProfileFromBody(user, body) {
   }
 
   // P1-2: accept a wallet binding sent by the mobile client via PUT /api/auth/profile.
-  // Persist { accountName, permission } so it can be matched against the on-chain
-  // sender at payment time (see P1-1). This path stores UNVERIFIED metadata only;
-  // proven ownership (verified:true) is set exclusively by POST /api/wallet/connect
-  // after a signed challenge (P1-4). Payment sender-binding still guards funds.
+  // Metadata is not ownership proof. Only an unchanged account AND permission
+  // may retain an existing server proof; clients cannot supply proof fields here.
   if (body.wallet && typeof body.wallet === 'object') {
     const accountName = cleanString(body.wallet.account || body.wallet.accountName || '', 12).toLowerCase();
     const permission = cleanString(body.wallet.permission || 'active', 12).toLowerCase();
     if (/^[a-z1-5.]{1,12}$/.test(accountName) && /^[a-z1-5]{1,12}$/.test(permission)) {
       const prev = user.wallet || {};
-      const keepVerified = prev.accountName === accountName && prev.verified === true;
+      const keepVerified = prev.accountName === accountName
+        && prev.permission === permission && prev.verified === true;
       user.wallet = {
-        ...prev,
+        ...(keepVerified ? prev : {}),
         accountName,
         permission,
         walletType: cleanString(body.wallet.walletType || 'webauth', 40),
         verified: keepVerified,
-        connectedAt: prev.connectedAt || new Date().toISOString(),
+        connectedAt: (keepVerified && prev.connectedAt) || new Date().toISOString(),
       };
     }
   } else if (body.wallet === null) {
@@ -3410,16 +3414,14 @@ const routes = {
       return json(res, 400, { error: 'Wallet signature verification failed', code: sigCheck.error });
     }
 
-    if (WALLET_ONCHAIN_KEY_ENFORCED) {
-      let keyCheck;
-      try {
-        keyCheck = await _hooks.verifyAccountKey({ accountName, permission, publicKey: sigCheck.publicKey });
-      } catch (err) {
-        keyCheck = { ok: false, error: 'account_lookup_failed', detail: err.message };
-      }
-      if (!keyCheck.ok) {
-        return json(res, 400, { error: 'Wallet key not authorized on-chain', code: keyCheck.error || 'account_key_unverified' });
-      }
+    let keyCheck;
+    try {
+      keyCheck = await _hooks.verifyAccountKey({ accountName, permission, publicKey: sigCheck.publicKey });
+    } catch (err) {
+      keyCheck = { ok: false, error: 'account_lookup_failed', detail: err.message };
+    }
+    if (!keyCheck.ok) {
+      return json(res, 400, { error: 'Wallet key not authorized on-chain', code: keyCheck.error || 'account_key_unverified' });
     }
 
     const wallet = {
@@ -4086,6 +4088,16 @@ const routes = {
     if (!user) return json(res, 401, { error: 'Unauthorized' });
     if (user.role !== 'contractor') return json(res, 403, { error: 'Contractors only' });
 
+    // Refuse to request funds until the caller's stored ownership proof is valid.
+    const leadUser = await findUserById(user.userId);
+    const leadWallet = leadUser && leadUser.wallet && leadUser.wallet.accountName;
+    if (!leadWallet) {
+      return json(res, 409, { error: 'Wallet not connected', code: 'wallet_required' });
+    }
+    if (leadUser.wallet.verified !== true) {
+      return json(res, 409, { error: 'Verified wallet ownership required', code: 'wallet_proof_required' });
+    }
+
     const amount = '50.0000 XPR';
     const memo = 'gcsc:lead-token';
     const auth = req.headers['authorization'] || '';
@@ -4109,13 +4121,6 @@ const routes = {
     if (existing) {
       const existingLead = await findStoredLeadTokenByTxHash(txHash);
       return json(res, 409, { error: 'Payment already processed', tx_hash: txHash, lead_id: existingLead && existingLead.id });
-    }
-
-    // P1-1: resolve the caller's bound wallet and require the on-chain sender to match.
-    const leadUser = await findUserById(user.userId);
-    const leadWallet = leadUser && leadUser.wallet && leadUser.wallet.accountName;
-    if (!leadWallet) {
-      return json(res, 409, { error: 'Wallet not connected', code: 'wallet_required' });
     }
 
     const verify = await _hooks.verifyHyperionTransfer({
@@ -4176,6 +4181,15 @@ const routes = {
     if (!user) return json(res, 401, { error: 'Unauthorized' });
     if (user.role !== 'homeowner') return json(res, 403, { error: 'Homeowners only' });
 
+    const jobUser = await findUserById(user.userId);
+    const jobWallet = jobUser && jobUser.wallet && jobUser.wallet.accountName;
+    if (!jobWallet) {
+      return json(res, 409, { error: 'Wallet not connected', code: 'wallet_required' });
+    }
+    if (jobUser.wallet.verified !== true) {
+      return json(res, 409, { error: 'Verified wallet ownership required', code: 'wallet_proof_required' });
+    }
+
     const amount = '25.0000 XPR';
     const memo = 'gcsc:job-posting';
     const auth = req.headers['authorization'] || '';
@@ -4204,13 +4218,6 @@ const routes = {
 
     if (await findStoredPaymentReceiptByTxHash(txHash)) {
       return json(res, 409, { error: 'Payment already processed', tx_hash: txHash });
-    }
-
-    // P1-1: bind the on-chain sender to the homeowner's connected wallet.
-    const jobUser = await findUserById(user.userId);
-    const jobWallet = jobUser && jobUser.wallet && jobUser.wallet.accountName;
-    if (!jobWallet) {
-      return json(res, 409, { error: 'Wallet not connected', code: 'wallet_required' });
     }
 
     const verify = await _hooks.verifyHyperionTransfer({
