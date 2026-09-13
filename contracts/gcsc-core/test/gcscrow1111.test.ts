@@ -1,6 +1,7 @@
+export {};
 const fs = require("fs");
 const path = require("path");
-const { execFileSync } = require("child_process");
+const { createScratchDirectory, runProtonAsc } = require("./harness.cjs");
 const { expect } = require("chai");
 const { Asset, Name } = require("@greymass/eosio");
 const {
@@ -12,7 +13,7 @@ const {
 
 const TEST_DIR = __dirname;
 const CORE_DIR = path.resolve(TEST_DIR, "..");
-const GENERATED_DIR = path.join(TEST_DIR, ".vert");
+const GENERATED_DIR = createScratchDirectory(CORE_DIR, "gcscrow1111");
 const TOKEN_DIR = path.join(GENERATED_DIR, "token");
 const ESCROW_DIR = path.join(GENERATED_DIR, "escrow");
 
@@ -45,31 +46,6 @@ let tokenWasm: Uint8Array;
 let escrowAbi: any;
 let escrowWasm: Uint8Array;
 
-function cleanGenerated(): void {
-    fs.rmSync(GENERATED_DIR, { recursive: true, force: true });
-}
-
-function runProtonAsc(sourcePath: string): void {
-    const relativeSourcePath = path.relative(CORE_DIR, sourcePath).replace(/\\/g, "/");
-    try {
-        if (process.platform === "win32") {
-            execFileSync("cmd.exe", ["/d", "/s", "/c", `npx proton-asc ${relativeSourcePath}`], {
-                cwd: CORE_DIR,
-                stdio: "pipe",
-            });
-        } else {
-            execFileSync("npx", ["proton-asc", relativeSourcePath], {
-                cwd: CORE_DIR,
-                stdio: "pipe",
-            });
-        }
-    } catch (err: any) {
-        const stdout = err.stdout ? err.stdout.toString() : "";
-        const stderr = err.stderr ? err.stderr.toString() : "";
-        throw new Error(`proton-asc failed for ${relativeSourcePath}\n${stdout}\n${stderr}`);
-    }
-}
-
 function findArtifact(root: string, fileName: string): string {
     const entries = fs.readdirSync(root, { withFileTypes: true });
     for (const entry of entries) {
@@ -96,7 +72,6 @@ function requireArtifact(root: string, fileName: string): string {
 }
 
 function buildArtifacts(): void {
-    cleanGenerated();
     fs.mkdirSync(TOKEN_DIR, { recursive: true });
     fs.mkdirSync(ESCROW_DIR, { recursive: true });
 
@@ -204,9 +179,7 @@ describe("gcscrow1111 milestone escrow", function () {
         buildArtifacts();
     });
 
-    after(() => {
-        cleanGenerated();
-    });
+
 
     it("creates escrow project successfully", async () => {
         const harness = createHarness();

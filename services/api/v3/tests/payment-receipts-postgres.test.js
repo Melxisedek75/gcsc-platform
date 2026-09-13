@@ -1,10 +1,8 @@
 const http = require('http');
 const { Pool } = require('pg');
 
-const databaseUrl = process.env.TEST_DATABASE_URL;
-if (!databaseUrl) {
-  throw new Error('TEST_DATABASE_URL is required for payment receipt PostgreSQL tests');
-}
+const { validateLocalTestDatabase } = require('../../../../scripts/local-test-database.cjs');
+const databaseUrl = validateLocalTestDatabase(process.env.TEST_DATABASE_URL);
 
 process.env.DATABASE_URL = databaseUrl;
 process.env.PGSSL = 'false';

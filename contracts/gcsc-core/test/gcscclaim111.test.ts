@@ -1,12 +1,13 @@
+export {};
 const fs = require("fs");
 const path = require("path");
-const { execFileSync } = require("child_process");
+const { createScratchDirectory, runProtonAsc } = require("./harness.cjs");
 const { expect } = require("chai");
 const { Blockchain, protonAssert } = require("@proton/vert");
 
 const TEST_DIR = __dirname;
 const CORE_DIR = path.resolve(TEST_DIR, "..");
-const GENERATED_DIR = path.join(TEST_DIR, ".vert-claim");
+const GENERATED_DIR = createScratchDirectory(CORE_DIR, "gcscclaim111");
 const CLAIM_DIR = path.join(GENERATED_DIR, "claim");
 
 const CLAIM_ACCOUNT = "gcscclaim111";
@@ -29,31 +30,6 @@ interface Harness {
 
 let claimAbi: any;
 let claimWasm: Uint8Array;
-
-function cleanGenerated(): void {
-    fs.rmSync(GENERATED_DIR, { recursive: true, force: true });
-}
-
-function runProtonAsc(sourcePath: string): void {
-    const relativeSourcePath = path.relative(CORE_DIR, sourcePath).replace(/\\/g, "/");
-    try {
-        if (process.platform === "win32") {
-            execFileSync("cmd.exe", ["/d", "/s", "/c", `npx proton-asc ${relativeSourcePath}`], {
-                cwd: CORE_DIR,
-                stdio: "pipe",
-            });
-        } else {
-            execFileSync("npx", ["proton-asc", relativeSourcePath], {
-                cwd: CORE_DIR,
-                stdio: "pipe",
-            });
-        }
-    } catch (err: any) {
-        const stdout = err.stdout ? err.stdout.toString() : "";
-        const stderr = err.stderr ? err.stderr.toString() : "";
-        throw new Error(`proton-asc failed for ${relativeSourcePath}\n${stdout}\n${stderr}`);
-    }
-}
 
 function findArtifact(root: string, fileName: string): string {
     const entries = fs.readdirSync(root, { withFileTypes: true });
@@ -81,7 +57,6 @@ function requireArtifact(root: string, fileName: string): string {
 }
 
 function buildArtifacts(): void {
-    cleanGenerated();
     fs.mkdirSync(CLAIM_DIR, { recursive: true });
 
     const sourcePath = path.join(CORE_DIR, "gcscclaim111.contract.ts");
@@ -156,9 +131,7 @@ describe("gcscclaim111 ClaimBridge emergency advance gate", function () {
         buildArtifacts();
     });
 
-    after(() => {
-        cleanGenerated();
-    });
+
 
     it("records a pending emergency claim advance when state gate passes", async () => {
         const harness = createHarness();
