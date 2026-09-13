@@ -1,5 +1,5 @@
 // GCSC API Client
-const API_BASE = import.meta.env.VITE_API_URL || 'https://gcsc-backend-production.up.railway.app/api'
+import { resolveApiUrl } from '../../../../packages/api-config/index.mjs'
 
 export interface GcscProfile {
   accountType: 'homeowner' | 'contractor'
@@ -222,6 +222,16 @@ export interface GcscMilestone {
   updated_at?: string
 }
 
+export class ApiError extends Error {
+  readonly status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+  }
+}
+
 class ApiClient {
   private token: string | null = null
 
@@ -234,13 +244,17 @@ class ApiClient {
     localStorage.setItem('gcsc_auth_token', token)
   }
 
+  getToken() {
+    return this.token
+  }
+
   clearToken() {
     this.token = null
     localStorage.removeItem('gcsc_auth_token')
   }
 
   private async request(path: string, options: RequestInit = {}) {
-    const url = `${API_BASE}${path}`
+    const url = resolveApiUrl(import.meta.env.VITE_API_URL, `/api${path}`, 'VITE_API_URL')
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...options.headers as Record<string, string>
@@ -249,7 +263,7 @@ class ApiClient {
 
     const res = await fetch(url, { ...options, headers })
     const data = await res.json().catch(() => ({}))
-    if (!res.ok) throw new Error(data.error || `API error: ${res.status}`)
+    if (!res.ok) throw new ApiError(data.error || `API error: ${res.status}`, res.status)
     return data
   }
 

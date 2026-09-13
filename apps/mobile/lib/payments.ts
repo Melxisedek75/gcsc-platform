@@ -6,6 +6,7 @@
 
 import { signTransfer as webauthSignTransfer } from './webauth';
 import { getToken, clearSession, getCurrentUser } from './api';
+import { getApiUrl } from './api-config';
 
 // Thrown when the backend rejects the caller's JWT (missing/expired/stale token
 // from a previous backend). Callers can catch this to route the user back to
@@ -96,10 +97,11 @@ async function livePayment(
   onProgress: (p: PaymentProgress) => void,
 ): Promise<PaymentReceipt> {
   try {
+    const endpoint = getApiUrl(req.endpoint!);
     onProgress({ stage: 'requesting', detail: 'Contacting payment endpoint…' });
     const token = getToken();
     const baseHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-    const first = await fetch(req.endpoint!, { method: 'POST', headers: baseHeaders });
+    const first = await fetch(endpoint, { method: 'POST', headers: baseHeaders });
     // 401/403 = the JWT is missing, expired, or from a previous backend. Clear
     // the stale session so the app can route back to sign-in, and surface a
     // human-readable message instead of a raw status code.
@@ -128,7 +130,7 @@ async function livePayment(
       'X-Payment-Tx': txHash,
     };
     if (token) secondHeaders.Authorization = `Bearer ${token}`;
-    const second = await fetch(req.endpoint!, {
+    const second = await fetch(endpoint, {
       method: 'POST',
       headers: secondHeaders,
       body: req.meta ? JSON.stringify(req.meta) : undefined,
@@ -210,13 +212,6 @@ function shortHash(h: string): string {
   return `${h.slice(0, 6)}…${h.slice(-4)}`;
 }
 
-// Live backend on Railway (auto-deployed from gcsc-smart-contractor/main).
-// Override via env at build time (Expo: app.config.ts extra block).
-const RAILWAY_BACKEND = 'https://gcsc-backend-production.up.railway.app';
-const API_BASE: string =
-  (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_BASE_URL) ||
-  RAILWAY_BACKEND;
-
 export const PAYMENT_CONFIG = {
   LEAD_TOKEN_RECIPIENT: 'gcsctoken111',
   LEAD_TOKEN_AMOUNT: '50.0000 XPR',
@@ -225,7 +220,6 @@ export const PAYMENT_CONFIG = {
   JOB_POSTING_AMOUNT: '25.0000 XPR',
   JOB_POSTING_MEMO: 'gcsc:job-posting',
   ESCROW_RECIPIENT: 'gcsctoken111',
-  API_BASE,
-  LEAD_TOKEN_ENDPOINT: `${API_BASE}/api/payment/lead-token`,
-  JOB_POSTING_ENDPOINT: `${API_BASE}/api/payment/job-posting`,
+  LEAD_TOKEN_ENDPOINT: '/api/payment/lead-token',
+  JOB_POSTING_ENDPOINT: '/api/payment/job-posting',
 } as const;
