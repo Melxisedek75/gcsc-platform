@@ -128,8 +128,99 @@
   {
     "path": "apps/mobile/package.json",
     "sourceBlob": "4c492c185d9c189ae5ab919457976b40f381df7c",
-    "sha256": "d091ee3f2c3f62a92dda7ef1122806783a1b61f6cc343533d22dbcdfe78010f7",
-    "reason": "Retain Expo prebuild-generated native run commands. Dependencies and lockfile are unchanged; standalone USB APKs use the separate guarded root build:apk:local command.",
-    "test": "Expo prebuild --platform android --no-install; npm run check:mobile-types; npm run check"
+    "sha256": "eeecd4981efd2f3a80a404953c8e6ed88aa30c80138dedaed5ebf2d4a53d00bd",
+    "reason": "Retain Expo native run commands and guarded standalone APK build. Pin Material-compatible React Native Paper and explicitly declare the existing Expo icon family for the mobile design foundation.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; npm run check"
+  },
+  {
+    "path": "apps/mobile/package-lock.json",
+    "sourceBlob": "9b2b588f37c3bb646c10a285f08b665996ca4483",
+    "sha256": "01b384d1809c393f0a99460883d444f6947157947e1d8956090d0338d15f8a48",
+    "reason": "Lock Paper 5.15.3 and its six newly installed packages without unrelated upgrades; installation disabled lifecycle scripts.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; npm run check"
+  },
+  {
+    "path": "apps/mobile/app/(auth)/sign-in.tsx",
+    "sourceBlob": "67b9f324ea5fb59de86c7c8fb56a8588d4bb3671",
+    "sha256": "1308c08a180f3598ff8fe8d75353a8888c6d6e86c80fe140b1323d6f71da1ada",
+    "reason": "Add autocomplete, accessible error announcement and stable loading-button labeling without changing authentication or wallet requests.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; browser UI verification in MOBILE-DESIGN.md"
+  },
+  {
+    "path": "apps/mobile/app/(contractor)/_layout.tsx",
+    "sourceBlob": "f9536c49791c370015635d2e0424ce1080478a0c",
+    "sha256": "38e2ff20b26d193c9b815cd549564b7288e120e04e02061c0e72fcdb4c0f8da3",
+    "reason": "Use shared accessible role tabs with real icons and explicit hidden detail routes; retain all existing route files.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/app/(homeowner)/_layout.tsx",
+    "sourceBlob": "9ff26f42b838d6a8047c572b53f0dcef901a52c1",
+    "sha256": "d29426a518b9ddddd1fc2c84703c58197f1a4f5dfd65fb534e1c137cd1ca8355",
+    "reason": "Use shared accessible role tabs with real icons and explicit hidden detail routes; retain all existing route files.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/app/_layout.tsx",
+    "sourceBlob": "41af3e10e5fe6a1cb594a835e297ee3332c30f77",
+    "sha256": "96db0e6c6372d617767d4c146091ac1e4037f558eb79e3dae360ae2d3a92d7ee",
+    "reason": "Provide the shared Material light theme and bundled icons; use a matching status bar without changing hydration/authentication logic.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/app/(contractor)/profile.tsx",
+    "sourceBlob": "7c2445c10ba77a8aae3422be637b52983832e509",
+    "sha256": "1cb78861c3ab338b500412d1c6b39726dbc68afddf204bdcc0b062db8e5382c1",
+    "reason": "Remove the fictional shared review score and show unavailable reviews honestly; wrap selectable account/profile values without changing account actions.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/components/Avatar.tsx",
+    "sourceBlob": "b4f7789fe82d125c1a72571cd0586de0fa560375",
+    "sha256": "e66616a9d9b2e738dd93140bbd4dcc523a0d4f8642b330bb211dd359a9dc3e33",
+    "reason": "Use contrasting on-brand initials with the shared light palette.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/components/Badge.tsx",
+    "sourceBlob": "1ea8668dacadf45537fd0637ad00ea3701177309",
+    "sha256": "2783209e3871063b212866da7d7f33b0346098a3b539a5d7f62f857318fffd53",
+    "reason": "Use contrasting badge text and normal letter spacing with the shared light palette.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/components/Button.tsx",
+    "sourceBlob": "0184a22a2c72e0961289f981c51a7d05843141c5",
+    "sha256": "3947efb8d6ba35b831e1e990b2bf77e2cd204b786e77769008e27cb2d397c473",
+    "reason": "Use Material ripple/loading primitives, accessible disabled/busy state, a 56dp minimum and wrapping labels without changing consumers' callbacks.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/components/Input.tsx",
+    "sourceBlob": "e0ad54bc96bab1726d6cda1d5fea6d6e6454fd79",
+    "sha256": "f1e33a119adf2fc464430e7f9c5613fc0ad806e067cbeac2021a3e2ab34e2f19",
+    "reason": "Adopt outlined Material input with labels, helper state, focus and explicit password visibility; preserve controlled value callbacks.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; browser UI verification in MOBILE-DESIGN.md"
+  },
+  {
+    "path": "apps/mobile/components/Screen.tsx",
+    "sourceBlob": "39271b0a6db5042e7afd9e4eb02e04adbded2b85",
+    "sha256": "dc730daaa39be9df686fe35dc81f09fde371094c5f3a130cc6fd2a17b957ef3c",
+    "reason": "Constrain wide content and provide keyboard-aware scroll/forms with handled taps.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; native keyboard acceptance remains open"
+  },
+  {
+    "path": "apps/mobile/lib/tokens.ts",
+    "sourceBlob": "136d415e5244d0211deb1a09be9de7b5efbf2810",
+    "sha256": "9a75644ba24c893808eaae2ea2ba67d1a6bf867adf44daf2f7927e7bc8280e20",
+    "reason": "Define a neutral light work-focused palette, contrasting semantic colors, readable typography, compact corners and minimum touch dimensions.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/app/(homeowner)/profile.tsx",
+    "sourceBlob": "2d7664da35e4e1e5ec49c0af70e4bc92702b7975",
+    "sha256": "b4e5135ad1c7d1b798efce860aa01ab062d0f23169a4cad49e5f3185f2f41970",
+    "reason": "Wrap selectable full account values consistently for both roles; no change to profile or wallet actions.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; browser UI verification in MOBILE-DESIGN.md"
   }
 ]

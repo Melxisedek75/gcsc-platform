@@ -1,6 +1,9 @@
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { PaperProvider } from 'react-native-paper';
+import { StatusBar } from 'expo-status-bar';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { fetchProfile } from '../lib/auth';
 import { AuthUser, clearSession, loadSession } from '../lib/api';
@@ -8,6 +11,7 @@ import { initI18n } from '../lib/i18n';
 import { hasCompletedOnboarding } from '../lib/onboarding';
 import { loadWebauthSession, primeSessionFromBackend } from '../lib/webauth';
 import { colors } from '../lib/tokens';
+import { paperTheme } from '../lib/paperTheme';
 
 type HydrationState = 'pending' | 'ready';
 
@@ -71,7 +75,11 @@ export default function RootLayout() {
   }, [router]);
 
   return (
+    <PaperProvider theme={paperTheme} settings={{
+      icon: ({ name, color, size }) => <MaterialCommunityIcons name={name as keyof typeof MaterialCommunityIcons.glyphMap} color={color} size={size} />,
+    }}>
     <ErrorBoundary>
+      <StatusBar style="dark" />
       <View style={styles.root}>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
@@ -92,6 +100,7 @@ export default function RootLayout() {
         ) : null}
       </View>
     </ErrorBoundary>
+    </PaperProvider>
   );
 }
 

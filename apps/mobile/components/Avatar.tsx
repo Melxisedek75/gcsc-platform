@@ -28,5 +28,5 @@ export function Avatar({ name, color = colors.brand, size = 44 }: Props) {
 
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center', justifyContent: 'center' },
-  initials: { color: '#0B0F17', fontWeight: '700' },
+  initials: { color: colors.onBrand, fontWeight: '700' },
 });

@@ -25,6 +25,17 @@ jobs:
       - run: npm run test:api-config
       - run: npm run build:web
       - run: npm run lint:web
+  mobile-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm --prefix apps/mobile ci --ignore-scripts --no-audit --no-fund
+      - run: npm run test:mobile-design
+      - run: npm run check:mobile-types
   integration-readiness:
     runs-on: ubuntu-latest
     steps:

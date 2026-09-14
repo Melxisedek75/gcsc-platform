@@ -57,6 +57,7 @@ export default function SignIn() {
           placeholder="you@example.com"
           autoCapitalize="none"
           keyboardType="email-address"
+          autoComplete="email"
         />
         <Input
           label="Password"
@@ -64,9 +65,10 @@ export default function SignIn() {
           onChangeText={setPassword}
           placeholder="••••••••"
           secureTextEntry
+          autoComplete="current-password"
         />
         {error && (
-          <Text style={[typography.caption, { color: colors.danger }]}>{error}</Text>
+          <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={[typography.caption, { color: colors.danger }]}>{error}</Text>
         )}
         <Text style={[typography.caption, { color: colors.brand, alignSelf: 'flex-end' }]}>
           Forgot password?
@@ -75,7 +77,8 @@ export default function SignIn() {
 
       <View style={styles.actions}>
         <Button
-          label={submitting ? 'Signing in…' : 'Sign in'}
+          label="Sign in"
+          loading={submitting}
           fullWidth
           onPress={handleSignIn}
           disabled={submitting}

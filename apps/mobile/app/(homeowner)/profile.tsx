@@ -78,7 +78,7 @@ export default function HomeownerProfile() {
         {rows.map((r, i) => (
           <View key={r.label} style={[styles.row, i < rows.length - 1 && styles.divider]}>
             <Text style={[typography.body, { color: colors.text }]}>{r.label}</Text>
-            <Text style={[typography.caption, { color: colors.textMuted }]} numberOfLines={1}>
+            <Text selectable style={[typography.caption, { color: colors.textMuted }]}>
               {r.value}
             </Text>
           </View>
@@ -128,6 +128,6 @@ export default function HomeownerProfile() {
 
 const styles = StyleSheet.create({
   heroRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'center' },
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.md, gap: spacing.md },
+  row: { paddingVertical: spacing.md, gap: spacing.xs },
   divider: { borderBottomWidth: 1, borderBottomColor: colors.border },
 });
