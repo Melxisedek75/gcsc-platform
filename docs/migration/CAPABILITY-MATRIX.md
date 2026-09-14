@@ -80,11 +80,26 @@ P3.1 частично завершён, не вся матрица. Детали
 | 53 | Shared API types | Web/native собственные типы | Проверить/создать по согласованному API; не пустой package ради структуры | HIGH |
 | 54 | Database schema | services/api/v3/database/schema-statements.cjs; API initStorage | 1a2814f1: схема едина для API и SQL-экспорта; колонки, ограничения и индексы совпали на real PG. Произвольные legacy-схемы не сертифицированы | HIGH |
 | 55 | Database migrations | services/api/v3/database/migrate-schema.cjs | Real PG: fresh/repeat/additive/legacy-action upgrade, data+DDL rollback и concurrent startup PASS. Старый init.sql отклоняется до изменений. Preflight означает local readiness, не production | CRITICAL |
-| 56 | PostgreSQL | API storage + scripts/run-postgres-baseline.mjs | 0f4961b2: real PG18.4:23/23 PASS включая profile/documents и additive revision backfill. Fake storage PASS. Полная DB-приёмка/backup открыты; прежний wallet_missing не ослаблен | HIGH |
+| 56 | PostgreSQL | API storage + scripts/run-postgres-baseline.mjs | 6666e8e7: real PG18.4:39/39 PASS, включая profile/documents и16 chat scenarios. Fake storage PASS. Полная DB-приёмка/backup открыты; прежний wallet_missing не ослаблен | HIGH |
 | 57 | CI | .github/workflows/ci.yml | Новый checks-only workflow; GitHub запуск не выполнен | HIGH |
 | 58 | Security checks | limited secret-pattern scan + tests | Активный tree без совпадений узкого скана; полный history/security review отсутствует | HIGH |
 | 59 | E2E tests | HTTP/PG + browser component acceptance;0f4961b2 | PG23 результатов с fixture JWT; отдельно реальные React панели с mock HTTP на1280/390 PASS. Это не единый UI/API/DB путь, не регистрация/кошелёк/phone E2E | HIGH |
 | 60 | Deployment | docs/migration/source-configs | Только declarations; live root/Pages/GitHub App/rollback не проверены | CRITICAL |
+
+## Дополнение MVP: чат
+
+14 сентября, кандидат6666e8e7: canonical `/api/chat/threads` и messages,
+PostgreSQL-only. Мобильный `p<projectId>`/React-state чат не был серверной
+доставкой и не мигрируется в общую историю. Новые диалоги разделены по проекту,
+исходному заказчику и подрядчику с реальной заявкой; только актуальные участники.
+Read-only после отклонения/завершения, UUID повтора, последовательный cursor,
+атомарный audit без текста, ограничения тела/частоты и тайм-ауты блокировок.
+PG39/39 (16 chat), API168/168, root48/static и fake storage PASS.
+Замечания о тайм-аутах и UTF-8 исправлены; независимое ревью6666e8e7 APPROVED,
+Copernicus повторил PG39/39 и API168/168.
+UI/registration/lead/payment/native приёмки нет;
+оплата лида и право на контакт требуют совместной проверки с P2.5 до пилота.
+Детали: CHAT-ACCEPTANCE.md. Исходная матрица60 не переименована под новый отчёт.
 
 ## Приёмка
 

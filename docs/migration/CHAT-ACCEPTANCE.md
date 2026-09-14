@@ -59,8 +59,8 @@ or relationship; 400 invalid fields/ids/cursors; 409 read-only/key conflict;
 - [x] Red test confirms missing canonical route.
 - [x] Real PostgreSQL positive/negative, retry, concurrency, restart and rollback tests.
 - [x] Mandatory root/API checks and JSON-mode fail-closed check.
-- [ ] Independent review of the exact source candidate.
-- [ ] Update owner checklist and continuation checkpoint.
+- [x] Independent review of the exact source candidate.
+- [x] Update owner checklist and continuation checkpoint.
 
 Client integration and full registration/browser/API/DB acceptance remain open.
 Retention/deletion policy, content moderation, spam controls across API replicas,
@@ -117,7 +117,19 @@ Independently repeated PG36/36, API168/168, root48/static, fake storage and diff
   08:11:53Z..08:12:29Z. Test and PostgreSQL process both exited0.
 - Final root48/static/readiness checks repeated PASS. API168/168 in7 suites
   repeated PASS (51.031s); fake storage and diff checks PASS. Focused independent
-  re-review is recorded below once completed; no self-approval.
+  re-review is recorded below; no self-approval.
+
+Final candidate **6666e8e7f17c746b756e5213d992774ce2b37b1a: APPROVED** by
+Copernicus, independent context01a09eeb-1f84-7660-89a8-4b4df185cd0c.
+Both findings closed without detected regressions. Reviewer independently repeated
+PG39/39, API168/168, syntax and diff checks, all exit0; exact HEAD confirmed.
+Evidence `services/api/v3/.tmp/postgres-baseline-EZpIiV/result.json`, including
+PostgreSQL process exit0. Table-lock responses were503 at approximately3 seconds;
+invalid raw UTF-8 returned400 with no database insert. Root/static was parent-run
+after the correction, not independently repeated in the focused re-review.
+
+Source is a reviewed local candidate, NOT main integration, deployment or a working
+client chat. No runtime was left running for the owner and no APK was produced.
 
 ## Next consumer slice (not implemented)
 
