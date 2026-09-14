@@ -6,7 +6,20 @@
 порядок; подробная история и критерии ниже сохраняются, но не меняют приоритеты.
 Статус «ГОТОВО» означает проверенный результат, а не намерение.
 
-13 сентября владелец изменил текущий приоритет на Android frontend: выбрать
+13 сентября, позднее: по просьбе владельца мобильная разработка, WebAuth и перенос
+старых файлов отложены. Выполнен первый независимый серверный шаг P2.6:
+в ветке codex/local-postgres-baseline-20260913 создан запускатель изолированной
+PostgreSQL. Кандидат e9f954fb проверяет 8 сценариев (9 test results), в том числе
+создание проекта, подачу заявки, права ролей, audit, ограничения SQL и повторное
+открытие данных. Настоящая PostgreSQL18.4:9/9, root43/43+static, API159/159 PASS.
+Независимое ревью e9f954fb APPROVED: повторены guards4/4 и PG9/9, исходная БД
+не изменена, PostgreSQL завершилась с exit0. Это серверный baseline; wallet,
+платёжные маршруты, backup/restore и production этим шагом не закрыты.
+[Доказательства](C:/gcsc-platform/.worktrees/qa/docs/migration/POSTGRES-BASELINE.md).
+Следующий доступный шаг: отдельные SQL migrations/upgrade и backup/restore
+на этой временной базе, затем оставшиеся пользовательские сценарии P3.1.
+
+Ранее 13 сентября владелец изменил приоритет на Android frontend: выбрать
 проверенные дизайн-подходы и начать улучшение SmartContractor. Активный шаг UI-1:
 дизайн-спецификация, общие доступные элементы управления и навигация в существующем
 Expo/RN-приложении. Backend P2.2 не отменён; новая визуальная часть не означает
@@ -30,13 +43,13 @@ static и TypeScript PASS; браузер320/390/768px с локальными f
 | P1.3 | ГОТОВО | Единая main опубликована в приватном Melxisedek75/gcsc-platform. Первый опубликованный commit 5a9bba32 подтверждён git ls-remote; опубликована только main, без archive refs. |
 | P1.4 | ГОТОВО | GitHub main и C:/gcsc-platform/.worktrees/publication зафиксированы в README/AGENTS как источник новой разработки. Старые репозитории не удалены, не архивированы, настройки работающих сервисов не менялись. |
 | P1.4a | ГОТОВО | 12 уникальных staged/untracked файлов сохранены в архиве приватной main, SHA 6878cbdf подтверждён. Три снимка исходников также находятся в закрытом Google Drive. Независимое ревью e8188048: APPROVED; изоляция и контрольные суммы проверены. Renovation не активирован. Evidence: LEGACY-PRESERVATION-REVIEW.md, LOCAL-RECOVERY-2026-09-13.md. |
-| P1.5 | ЧАСТИЧНО ГОТОВО | Root baseline39/39, API159/159, API-config15/15, web build2977 модулей PASS; lint0 ошибок/1 предупреждение. Подготовка контрактов6a352f46:9/9 runner и31/31 Vert, exit0; независимое ревью APPROVED. APK2094b69c собран, установлен и прошёл старт на Pixel8; его46/46+static PASS. Новый UI29ba58e1:46+10 тестов, types/static и браузер PASS, не новый APK. Реальная PostgreSQL и CI Node20 ещё не подтверждены. Evidence: LOCAL-RECOVERY-2026-09-13.md, CONTRACT-PREPARATION-BUDGET.md, frontend/MOBILE-STARTUP-RECOVERY.md и MOBILE-DESIGN.md. |
+| P1.5 | ЧАСТИЧНО ГОТОВО | Root baseline39/39, API159/159, API-config15/15, web build2977 модулей PASS; lint0 ошибок/1 предупреждение. Подготовка контрактов6a352f46:9/9 runner и31/31 Vert, exit0; независимое ревью APPROVED. APK2094b69c собран, установлен и прошёл старт на Pixel8; его46/46+static PASS. Новый UI29ba58e1:46+10 тестов, types/static и браузер PASS, не новый APK. Кандидат e9f954fb проверяет проекты/заявки на PostgreSQL18.4:9/9; полная DB-приёмка и CI Node20 ещё открыты. Evidence: LOCAL-RECOVERY-2026-09-13.md, CONTRACT-PREPARATION-BUDGET.md, frontend/MOBILE-STARTUP-RECOVERY.md и MOBILE-DESIGN.md. |
 | P2.1 | ДИАГНОСТИКА ГОТОВА | Таблица маршрутов и клиентов: WALLET-API-CONTRACT.md. Web отправляет metadata без подписи; mobile сохраняет metadata через профиль. Wallet-first routes отсутствуют; связывание кошелька требует существующий app JWT. SDK v2 identity не подписывает nonce/domain. Следующий шаг: подтвердить поддерживаемый кошельком формат доказательства для P2.2. |
 | P2.2 | ОЧЕРЕДЬ | Завершить backend авторизации: nonce, срок действия, replay, account/permission/network binding, отмена и ошибки. Никаких неподписанных identity metadata как доказательства. |
 | P2.3 | ОЧЕРЕДЬ | Desktop/web: вход, восстановление, выход, смена кошелька/сети, истёкшая сессия. Проверка на реальном интерфейсе с локальным API; mock отдельно от интеграции. |
 | P2.4 | СТАРТ НА ТЕЛЕФОНЕ ПРОВЕРЕН; AUTH ОТКРЫТ | APK2094b69c, опубликованный отчёт7acb7662: 0.1.3/code5 ARM64,28 504 933байта, SHA256 начинается6b06ca9ce5a0. Offline-сборка exit0 за24м11с,488задач; lintVitalRelease PASS,46/46+static PASS, независимое source-review APPROVED. Сертификат совпал со старой версией; install-r Success без удаления данных. Pixel8 подтверждает0.1.3/code5: два холодных старта и Sign in без прежнего красного экрана. Остались предупреждение(auth) layout, серверный вход, callbacks и покупка. API не запущен. [Evidence](C:/gcsc-platform/.worktrees/frontend/docs/migration/MOBILE-STARTUP-RECOVERY.md). Код кандидата в main не включён. |
 | P2.5 | ОЧЕРЕДЬ | Покупка лида: eligibility до предложения оплаты, сумма/получатель/memo, подпись пользователем, проверка перевода, повтор callback, отложенное подтверждение, отсутствие двойной покупки. Web и mobile отдельно. |
-| P2.6 | ОЧЕРЕДЬ | Реальная изолированная PostgreSQL: миграции, роли, ограничения, повторные платежи, восстановление. Не использовать live базу для тестов. |
+| P2.6 | ЧАСТИЧНО ГОТОВО | e9f954fb: свежая PostgreSQL18.4, schema init, проекты/заявки/роли/audit, FK/UNIQUE и повторное открытие API проверены:9/9. Root43/43+static и API159/159 PASS. Независимое ревью APPROVED; candidate не включён в main. Следующий подтверждённый разрыв: migration-readiness требует исключённый database/schema.sql. SQL migration/upgrade, payment-endpoint races и backup/restore открыты. Evidence: POSTGRES-BASELINE.md в QA. |
 | P3.1 | ОЧЕРЕДЬ | Проверить согласованный MVP по матрице 60 возможностей: jobs, bids, документы/verification, chat, профиль, роли, proof/milestones. Вернуть отсутствующее; каждый пункт закрывается пользовательским сценарием. Отдельно согласовать выборочный перенос сохранённых renovation/Resend изменений с v1.4, SQL constraints и тестами; архив не означает работающую функцию. |
 | P3.2 | ОЧЕРЕДЬ | Security и эксплуатация: зависимости/лицензии, доступы, rate limits, наблюдаемость, backup/restore, rollback. Предупреждения устаревших пакетов не скрывать. |
 | P3.3 | ОЧЕРЕДЬ | Preview-пилот и физическое устройство: подтвердить все основные сценарии для точного артефакта; подготовить публикацию и переключение сервисов. |

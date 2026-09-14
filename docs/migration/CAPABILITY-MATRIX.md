@@ -11,6 +11,13 @@
 в import-manifest.json. Web/native SDK остаются разными адаптерами, а не дублем,
 который можно просто удалить. Полное независимое security review не выполнено.
 
+Обновление 2026-09-13: кандидат e9f954fb (QA, codex/local-postgres-baseline-20260913)
+добавляет реальный PostgreSQL18.4 baseline. Ниже обновлены только покрытые строки;
+9/9 результатов включают родительский тест и 8 сценариев. Fixture-пользователи/JWT,
+HTTP API и настоящая БД не заменяют регистрацию, UI, кошелёк или production.
+Evidence: POSTGRES-BASELINE.md в той же ветке. Независимое ревью e9f954fb APPROVED;
+reviewer повторил PG9/9 и guards4/4. Source candidate не включён в main.
+
 | # | Capability | Источник / кандидат | Проверено и что остаётся | Риск |
 | --- | --- | --- | --- | --- |
 | 1 | Authentication | services/api/v3/pure-server.js, /api/auth/login | Код; дубль старых /api/login; wallet-first отсутствует | HIGH |
@@ -23,10 +30,10 @@
 | 8 | Contractor compliance documents | API auth/documents, admin review; web CompliancePanel | Код, static trust validator; provider/E2E проверить | HIGH |
 | 9 | Insurance records | UI compliance; contracts/gcsc-core | Проверить: UI/контракт не доказывает страховой продукт | HIGH |
 | 10 | Bonds | Требование продукта | Проверить; действующая bond-интеграция не подтверждена | HIGH |
-| 11 | Projects | API /api/projects; web ProjectsPanel; native jobs | Код, разные клиенты; совместимость payload проверить | HIGH |
-| 12 | Project creation | API POST /api/projects | Код; регистрация → создание → чтение требует E2E | HIGH |
-| 13 | Project discovery | API GET /api/projects, /:id | Код; права/фильтры/пагинация проверить | MEDIUM |
-| 14 | Bids | API /api/bids, /:id/accept; web/native | Код; escrow unit suite покрывает часть принятия | HIGH |
+| 11 | Projects | API /api/projects; web ProjectsPanel; native jobs | HTTP + real PG: создание/чтение и повторное открытие данных PASS; клиентские сценарии остаются | HIGH |
+| 12 | Project creation | API POST /api/projects | Real PG: владелец берётся из JWT, anonymous/contractor отклонены, audit сохранён. Fixture JWT; регистрация/UI E2E открыты | HIGH |
+| 13 | Project discovery | API GET /api/projects, /:id | Real PG: category/location фильтры и my-projects по владельцу PASS; полнота ACL/пагинация открыты | MEDIUM |
+| 14 | Bids | API /api/bids, /:id/accept; web/native | Real PG: подача, роли, my-bids, сохранение и audit PASS; принятие/escrow/lead eligibility этим не покрыты | HIGH |
 | 15 | Contracts | contracts; bid/escrow API | On-chain исходники есть; отдельный lifecycle договора проверить | HIGH |
 | 16 | Milestones | API /api/escrow/:id/milestones, /api/milestones/* | Код; escrow-milestones.test.js PASS, не реальная выплата | HIGH |
 | 17 | Evidence upload | API milestones/:id/submit, auth/documents | Код; storage/размеры/MIME/ACL требуют отдельного теста | HIGH |
@@ -38,8 +45,8 @@
 | 23 | Refunds | История Stripe/escrow реализаций | Отдельный canonical refund маршрут не найден в 47-route inventory | CRITICAL |
 | 24 | Payouts | История escrow/settlement | Не доказана полноценная payout-интеграция | CRITICAL |
 | 25 | Payment reconciliation | API reconcilePendingPayments | payment-reconciler.test.js PASS; Hyperion ответы mocked | CRITICAL |
-| 26 | Idempotency | API receipts / payment tests | Локальные replay-тесты PASS; PostgreSQL race отдельно | CRITICAL |
-| 27 | Audit log | API admin/audit-events; web AdminAuditLogPanel | Код, static trust validator; полноту/неизменяемость проверить | HIGH |
+| 26 | Idempotency | API receipts / payment tests | PostgreSQL UNIQUE: две одновременные SQL-вставки дают одну запись; это ещё не race payment endpoints/reconciler | CRITICAL |
+| 27 | Audit log | API admin/audit-events; web AdminAuditLogPanel | Real PG сохраняет project.created/bid.submitted; полнота, неизменяемость и admin E2E открыты | HIGH |
 | 28 | Disputes | API milestones/:id/dispute | Код, часть escrow suite; старый Express disputes не активировать | HIGH |
 | 29 | Reviews | Клиентские/старые модульные реализации | Canonical review маршрут не подтверждён; не включать старый router вслепую | MEDIUM |
 | 30 | Lead purchase | API payment/lead-token; native payments.ts | 402/reconciler unit PASS; device purchase НЕ проверена | CRITICAL |
@@ -66,12 +73,12 @@
 | 51 | MCP server | tools/mcp-server | 26-tool source registry из store; build/smoke/подключение не выполнены | HIGH |
 | 52 | Shared validation | API inline + web/native + domain-simulation | Частичные дубли; общего business-validation контракта ещё нет | HIGH |
 | 53 | Shared API types | Web/native собственные типы | Проверить/создать по согласованному API; не пустой package ради структуры | HIGH |
-| 54 | Database schema | services/api/v3/database | SQL сохранён; JSON/PG parity отдельно | HIGH |
-| 55 | Database migrations | services/api/v3/database/*.sql | Исходники; live SQL не применялся, rollback drill нужен | CRITICAL |
-| 56 | PostgreSQL | API storage + PG smoke tests | Код; 87 выполненных тестов НЕ PostgreSQL acceptance | HIGH |
+| 54 | Database schema | services/api/v3/database; API initStorage | Runtime schema real PG18.4: повторная инициализация сохраняет строки, role/FK/UNIQUE PASS; JSON parity/upgrade открыты | HIGH |
+| 55 | Database migrations | services/api/v3/database/*.sql | Preflight FAIL: требует старый database/schema.sql, исключённый при переносе. Согласовать canonical migration/upgrade; live SQL не применялся | CRITICAL |
+| 56 | PostgreSQL | API storage + scripts/run-postgres-baseline.mjs | Real PG18.4 baseline9/9 PASS; прежние smoke с fake Pool остаются mocks. Полная DB-приёмка ещё открыта | HIGH |
 | 57 | CI | .github/workflows/ci.yml | Новый checks-only workflow; GitHub запуск не выполнен | HIGH |
 | 58 | Security checks | limited secret-pattern scan + tests | Активный tree без совпадений узкого скана; полный history/security review отсутствует | HIGH |
-| 59 | E2E tests | План web/API/DB/native acceptance | Не выполнены; source validators не заменяют E2E | HIGH |
+| 59 | E2E tests | План web/API/DB/native acceptance | HTTP API + real PG8 сценариев PASS с fixture JWT; UI/регистрация/кошелёк/phone E2E не выполнены этим шагом | HIGH |
 | 60 | Deployment | docs/migration/source-configs | Только declarations; live root/Pages/GitHub App/rollback не проверены | CRITICAL |
 
 ## Приёмка

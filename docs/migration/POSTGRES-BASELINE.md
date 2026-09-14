@@ -11,6 +11,7 @@ requires a local PostgreSQL bin directory with postgres, initdb and pg_ctl. It d
 not install software or require Docker, psql or pg_isready.
 
 ```powershell
+Set-Location C:\gcsc-platform\.worktrees\qa
 npm run test:postgres:guards
 npm run test:postgres:local -- --postgres-bin C:\gcsc\.tmp\embedded-pg-runner\node_modules\@embedded-postgres\windows-x64\native\bin
 npm run check
@@ -43,7 +44,8 @@ Evidence: services/api/v3/.tmp/postgres-baseline-ZUU0yU/result.json (port 52286)
 The general npm run check passed 43 tests plus syntax/static checks. The isolated
 API regression runner passed all 159 tests across five suites, exit 0. Those API
 regressions still use their existing mocks and are distinct from the nine real-PG
-results. Independent review is pending for this new test infrastructure.
+results. Independent review APPROVED the exact source commit below.
+Node runtime: v25.9.0 on Windows. Node20 CI was not run during this local slice.
 
 1. HTTP health reports PostgreSQL; repeated runtime schema setup retains users.
 2. Anonymous users and contractors cannot create homeowner projects.
@@ -70,6 +72,18 @@ API module restart is not an OS-process or database-server crash recovery drill.
 Node reports the pre-existing url.parse deprecation warning; it is not suppressed.
 P2.6 remains partial until its migration, workflow/race and restore checks pass.
 
+## Next Confirmed Gap
+
+`node services/api/v3/scripts/check-migration-readiness.mjs` exits 1: it expects
+services/api/database/schema.sql, deliberately excluded from the active import
+(original blob 66f697b6790fb9e9f88249ac75dd82f21ce954f4, retained in provenance).
+The v3 SQL file explicitly requires the v2 schema first. Do not remove this gate
+or blindly copy the legacy schema into deployment: reconcile it with initStorage
+and verify fresh/upgrade paths in separate disposable databases.
+The installed minimal PostgreSQL distribution also lacks pg_dump and pg_restore;
+those utilities are required for the existing backup/restore scripts and have not
+been downloaded in this slice.
+
 ## Historical Baseline (2026-09-09)
 
 The following evidence predates this real PostgreSQL slice and remains useful for
@@ -86,3 +100,17 @@ suites / 87 tests; local database guards plus migration tests passed 9/9; diff
 check passed. Docker was started with a hidden window but daemon access timed out
 after 15 seconds. No real PostgreSQL was started and no SQL cleanup occurred then.
 The current native-binary runner makes Docker recovery unnecessary for this slice.
+
+## Independent Review
+
+Reviewer: Beauvoir, separate Sol/high execution
+01a09e82-0111-7803-ba04-dac9514c52a5. Verdict: APPROVED, no findings.
+Range: a0834ac7917c3de57ebc02fb542814561469bca2..
+e9f954fbb105ba4f6e05ff54c860ecaffec6ff28.
+Independently repeated guards4/4 and PostgreSQL18.4 baseline9/9 with exit0;
+services/api/v3/.tmp/postgres-baseline-dm5Jg3/result.json records testExitCode0
+and postgresExitCode0. Checked normal database shutdown, no surviving test
+processes, matching API snapshot SHA-256 and unchanged canonical gcsc.db.
+Root43/43 and API159/159 are parent evidence, not repeated by the reviewer.
+Subsequent changes are documentation/checkpoint only. Source is on the candidate
+branch; it has not been merged or deployed.
