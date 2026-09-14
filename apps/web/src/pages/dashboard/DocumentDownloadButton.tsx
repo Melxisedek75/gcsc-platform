@@ -16,7 +16,7 @@ export function DocumentDownloadButton({ document: file }: { document: GcscUserD
       url = URL.createObjectURL(new Blob([bytes], { type: result.document.mime_type }));
       const link = document.createElement('a');
       link.href = url;
-      link.download = result.document.file_name.replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_');
+      link.download = result.document.file_name.replace(/[\\/:*?"<>|\p{Cc}]/gu, '_');
       document.body.appendChild(link);
       link.click();
       link.remove();
