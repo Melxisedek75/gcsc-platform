@@ -21,6 +21,8 @@ jobs:
       - run: npm run check
       - run: npm --prefix services/api/v3 ci --ignore-scripts --no-audit --no-fund
       - run: npm run test:api
+      - run: npm run test:wallet-proof-client
+      - run: npm run test:wallet-device-probe
       - run: npm --prefix apps/web ci --ignore-scripts --no-audit --no-fund
       - run: npm run test:api-config
       - run: npm run build:web
