@@ -1,27 +1,37 @@
 {
-  "task": "wallet-ownership-proof",
-  "status": "P2_2_PROOF_REVIEWED_WALLET_ACCEPTANCE_OPEN",
+  "task": "native-wallet-usb-probe",
+  "status": "P2_2_APK_INSTALLED_DEVICE_CALL_INTERRUPTION",
   "owner": "019e7c87-8410-79f1-b86a-eedf78a1aa27",
-  "worktree": "C:/gcsc-platform/.worktrees/qa",
-  "branch": "codex/wallet-proof-20260914",
+  "worktree": "C:/gcsc-platform/.worktrees/frontend",
+  "branch": "codex/mobile-wallet-probe-20260914",
   "remote": "https://github.com/Melxisedek75/gcsc-platform",
   "targetBranch": "main",
   "scope": [
-    "Canonical sign-only ownership-proof codec and bounded verification; no HTTP/JWT activation",
-    "Shared native/web SDK result adapter and explicit opt-in service exports; preserve existing users and guards",
-    "Offline security/regression checks and independent review; no real account/signature/payment or production actions"
+    "Explicit local USB sign-only WebAuth diagnostic using ephemeral memory, no app JWT/data/authority writes",
+    "Build and update existing SmartContractor APK without uninstall or data clearing; inspect actual native SDK response",
+    "Owner controls pairing/sign-only approval; no agent signature, broadcast, payment, production or application-auth activation"
   ],
   "leaseUntil": null,
-  "baseCommit": "553c3692b7cb816da0be9c04ee0cf6f8bb6d3356",
-  "candidateCommit": "0d597d9b4e93d357875588a6fc8280519423187a",
-  "review": "APPROVED: Helmholtz independent Sol/high context01a0a1b1-ec17-7ee0-b66f-8c1998a2672b, exact0d597d9b4e93d357875588a6fc8280519423187a vs553c3692b7cb816da0be9c04ee0cf6f8bb6d3356, restricted nonactivated K1/R1 candidate. Independently proof52/52, client15/15 and diff exit0; pinned native/web codecs produce equal candidate bytes/digest. SIG_WA is unsupported and a pre-activation compatibility gate. Durable store/current authority, real wallet, popup origin/source, HTTP/JWT/UI and release excluded.",
-  "result": "Candidate implements canonical reqauth/raw nonce transaction bytes, K1/R1 recovery, session/chain/account/purpose/audience binding, expiry and bounded redemption via mandatory atomic-store/current-authority adapters. Shared client refuses transfers, missing/changed proof bytes, session changes and duplicate requests after timeout. Parent API220/220, client15/15, root48/static/readiness, mobile TypeScript, web build2979 modules exit0. No live or mock-as-live claim. Source guards unchanged; two adaptations explicitly registered.",
-  "next": "P2.2c: implement a bounded diagnostic sign-only path and observe actual native/web WebAuth responses with user-controlled approval. Verify K1/R1 or separately implement/review SIG_WA handling. Before auth activation: durable atomic challenge storage, current authority on verified chain, popup exact origin/source hardening, coordinated HTTP/consumer contract and independent review. Wallet-first routes remain absent (integration contract5/7 FAIL). ADB list empty and only Pixel8 Bluetooth/audio PnP entries present. No automatic device polling, false wallet-ready APK, or scheduler restart.",
+  "baseCommit": "512d7a9a",
+  "candidateCommit": "466e7e9d",
+  "nativeProbe": {
+    "runtimeCommit": "04561155",
+    "review": "Pauli independent Sol/high context01a0a1de-c575-72c0-bc02-45af2ef77e87 APPROVED_SOURCE_ONLY;32/32 focused tests. CI-only466e7e9d also approved. Installed native SDK5.1.0-rc-2; signing-request5.1.0-rc-1.",
+    "checks": "Parent root47/static, probe9/client15/design10, API211/211, mobile TypeScript exit0. Both configured RPC endpoints confirm XPR Testnet. Pixel8 USB authorized; installed0.1.3/code5.",
+    "build": "Completed exit0:25m1s,488tasks,lintVitalRelease and artifact verification PASS. APK29822797bytes SHA256e102f6621c01509426f55a5b2e1ab605f3811c9a43490792fd8d8ec9260b8a18. Delivery C:/Users/rivne/Downloads/SmartContractor-0.1.4-usb-wallet-probe-04561155.apk. install-r Success, Pixel8 confirms0.1.4/code6. Installed-before APK retained in frontend/.tmp/wallet-probe-20260914; identical old/new signer verified.",
+    "evidence": "C:/gcsc-platform/.worktrees/frontend/docs/migration/MOBILE-WALLET-PROBE.md",
+    "next": "After owner finishes phone call, verify loopback service and USB; confirm XPR Network Testnet and enabled probe screen. Owner approves pairing/sign-only challenge. Observe actual response shape/bytes before auth activation. Do not repeat APK build without new source changes.",
+    "observation": "WebAuth foreground showed Invalid Network with XPR Network selected. Testnet option observed, but selection/retry not confirmed: phone call appeared. Device interactions stopped; incidental call screenshot removed. No challenge, signature or proof result received. Activity cold launch succeeded; diagnostic screen rendering and enabled flag not yet visually confirmed.",
+    "localService": "PID30032, loopback10001, sanitized logs frontend/.tmp/wallet-probe-20260914/probe.stdout.log and probe.stderr.log. Health passed; auto-expires30minutes after startup. ADB reverse10001 configured. No scheduler restarted."
+  },
+  "review": "Pauli independent Sol/high context01a0a1de-c575-72c0-bc02-45af2ef77e87 APPROVED_SOURCE_ONLY;32/32 focused tests. CI-only466e7e9d also approved. Installed native SDK5.1.0-rc-2; signing-request5.1.0-rc-1.",
+  "result": "Parent root47/static, probe9/client15/design10, API211/211, mobile TypeScript exit0. Both configured RPC endpoints confirm XPR Testnet. Pixel8 USB authorized; installed0.1.3/code5. Completed exit0:25m1s,488tasks,lintVitalRelease and artifact verification PASS. APK29822797bytes SHA256e102f6621c01509426f55a5b2e1ab605f3811c9a43490792fd8d8ec9260b8a18. Delivery C:/Users/rivne/Downloads/SmartContractor-0.1.4-usb-wallet-probe-04561155.apk. install-r Success, Pixel8 confirms0.1.4/code6. Installed-before APK retained in frontend/.tmp/wallet-probe-20260914; identical old/new signer verified. WebAuth foreground showed Invalid Network with XPR Network selected. Testnet option observed, but selection/retry not confirmed: phone call appeared. Device interactions stopped; incidental call screenshot removed. No challenge, signature or proof result received. Activity cold launch succeeded; diagnostic screen rendering and enabled flag not yet visually confirmed.",
+  "next": "After owner finishes phone call, verify loopback service and USB; confirm XPR Network Testnet and enabled probe screen. Owner approves pairing/sign-only challenge. Observe actual response shape/bytes before auth activation. Do not repeat APK build without new source changes.",
   "deferred": [
     {
       "task": "P2.2 auth activation and actual wallet acceptance",
       "resumeCondition": "Owner already resumed mobile/WebAuth. Activation requires accepted real wallet proof format, durable store/current authority, origin/source hardening and independent security review.",
-      "checkpoint": "0d597d9b implements the previously selected safe codec/parser/TTL/replay slice; no HTTP/JWT activation. ADB device list empty in this run. Native SDK exposes signatures/serialized bytes; web popup response is opaque and must be observed, never guessed. pure-server.js still hardcodes gcsc.db and can use ambient DATABASE_URL, so isolate any future runtime."
+      "checkpoint": "Native USB probe reviewed on 04561155; Pixel8 connected. Build and sign-only device acceptance now in progress, not blocked on USB. Authentication remains gated on proof format, durable challenge store, current chain authority and coordinated reviewed API/UI activation."
     },
     {
       "task": "Remaining PostgreSQL acceptance",
@@ -110,5 +120,12 @@
     "review": "APPROVED: Copernicus independent Sol/high context01a09eeb-1f84-7660-89a8-4b4df185cd0c, exact final6666e8e7f17c746b756e5213d992774ce2b37b1a (baseff17a049). Initial6df6f81b needed bounded reads/auth and fatal UTF8 fixes; both closed. Independent final PG39/39, API168/168, syntax/diff PASS, exits0. PG .tmp/postgres-baseline-EZpIiV/result.json stopped0. Final root/static are parent evidence. No integration/release approval.",
     "result": "Reviewed PostgreSQL-only participant chat: pair isolation, fresh roles/status, read-only lifecycle, UUID replay/conflict handling, ordered cursor, atomic metadata audit, body/rate limits, bounded reads/auth/writes and strict UTF8. Parent PG39/39, API168/168, root48/static/readiness, fake storage/diff PASS. Independent PG/API repeat PASS. No client/API/DB end-to-end claim or live IO. CHAT-ACCEPTANCE.md records red/green evidence and limitations.",
     "next": "P3.1 web chat consumer: extend existing api.ts and Dashboard, open from actual bid, preserve message UUID on uncertain response, clear on account change, verify two browser sessions against isolated canonical API/local PG. Read CHAT-ACCEPTANCE.md and current consumers first. Native/WebAuth and archival remain deferred. Reconcile paid-lead/contact policy with P2.5 before pilot. No APK, live systems, merge/deploy or scheduler restart."
+  },
+  "previousOwnershipProof": {
+    "baseCommit": "553c3692b7cb816da0be9c04ee0cf6f8bb6d3356",
+    "candidateCommit": "0d597d9b4e93d357875588a6fc8280519423187a",
+    "review": "APPROVED: Helmholtz independent Sol/high context01a0a1b1-ec17-7ee0-b66f-8c1998a2672b, exact0d597d9b4e93d357875588a6fc8280519423187a vs553c3692b7cb816da0be9c04ee0cf6f8bb6d3356, restricted nonactivated K1/R1 candidate. Independently proof52/52, client15/15 and diff exit0; pinned native/web codecs produce equal candidate bytes/digest. SIG_WA is unsupported and a pre-activation compatibility gate. Durable store/current authority, real wallet, popup origin/source, HTTP/JWT/UI and release excluded.",
+    "result": "Candidate implements canonical reqauth/raw nonce transaction bytes, K1/R1 recovery, session/chain/account/purpose/audience binding, expiry and bounded redemption via mandatory atomic-store/current-authority adapters. Shared client refuses transfers, missing/changed proof bytes, session changes and duplicate requests after timeout. Parent API220/220, client15/15, root48/static/readiness, mobile TypeScript, web build2979 modules exit0. No live or mock-as-live claim. Source guards unchanged; two adaptations explicitly registered.",
+    "next": "P2.2c: implement a bounded diagnostic sign-only path and observe actual native/web WebAuth responses with user-controlled approval. Verify K1/R1 or separately implement/review SIG_WA handling. Before auth activation: durable atomic challenge storage, current authority on verified chain, popup exact origin/source hardening, coordinated HTTP/consumer contract and independent review. Wallet-first routes remain absent (integration contract5/7 FAIL). ADB list empty and only Pixel8 Bluetooth/audio PnP entries present. No automatic device polling, false wallet-ready APK, or scheduler restart."
   }
 }

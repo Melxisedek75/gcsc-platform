@@ -14,8 +14,20 @@ Android TypeScript и web build PASS. Независимое ревью Helmholt
 строго для неактивированного K1/R1-кандидата; повторены proof52/52 и client15/15.
 Это НЕ работающий вход: HTTP/JWT, durable store, current authority и UI ещё не
 подключены. Реальный формат WebAuth, включая SIG_WA, требует проверки.
-ADB пуст; Windows видит Pixel8 только по Bluetooth/audio. Новый APK не создавался.
+В том проходе ADB был пуст и новый APK не создавался; USB-продолжение ниже.
 [Точный результат и ограничения](C:/gcsc-platform/.worktrees/qa/docs/migration/WALLET-SDK-IDENTITY.md).
+
+14 сентября, USB-продолжение P2.2c: на Pixel8 установлена0.1.4/code6 поверх0.1.3,
+без uninstall/очистки данных; сертификаты совпали. Кандидат04561155, CI466e7e9d:
+изолированный диагностический sign-only режим. Независимое ревью Pauli
+APPROVED_SOURCE_ONLY,32/32; автор: API211/211, root47/static, probe9/client15/design10,
+TypeScript PASS. APK BUILD SUCCESSFUL25m1s, проверка встроенного JS/API/подписи exit0.
+WebAuth показал Invalid Network при выбранной основной сети; Testnet есть в меню,
+но выбор/повтор прервал экран звонка. Подпись и успешный вход НЕ подтверждены.
+[Версия, SHA256, ревью и точка продолжения](C:/gcsc-platform/.worktrees/frontend/docs/migration/MOBILE-WALLET-PROBE.md).
+
+- [x] P2.2c/USB: собран и установлен проверенный диагностический APK0.1.4/code6.
+- [ ] P2.2c/device: подтвердить Testnet, реальное сопряжение и формат подписанного ответа после звонка.
 
 - [x] P2.2a: canonical proof codec и shared sign-only адаптер, негативные проверки.
 - [x] P2.2b: независимое ревью точного кандидата0d597d9b, только nonactivated scope.
