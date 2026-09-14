@@ -1,16 +1,24 @@
 const assert = require('assert');
 const fs = require('fs');
 const http = require('http');
-const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 
 const v3Root = path.resolve(__dirname, '..');
-const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'gcsc-fake-pg-workflow-'));
+const tempParent = path.join(v3Root, '.tmp');
+fs.mkdirSync(tempParent, { recursive: true });
+assert.equal(fs.realpathSync(tempParent), path.join(fs.realpathSync(v3Root), '.tmp'));
+const tempRoot = fs.mkdtempSync(path.join(tempParent, 'gcsc-fake-pg-workflow-'));
+const appRoot = path.join(tempRoot, 'api');
+fs.mkdirSync(path.join(appRoot, 'database'), { recursive: true });
+fs.copyFileSync(path.join(v3Root, 'pure-server.js'), path.join(appRoot, 'pure-server.js'), fs.constants.COPYFILE_EXCL);
+for (const file of ['migrate-schema.cjs', 'schema-statements.cjs']) {
+  fs.copyFileSync(path.join(v3Root, 'database', file), path.join(appRoot, 'database', file), fs.constants.COPYFILE_EXCL);
+}
 const port = 13000 + Math.floor(Math.random() * 1000);
 const hyperionPort = 15000 + Math.floor(Math.random() * 1000);
 const verifiedReleaseTxId = 'a'.repeat(64);
-const jsonDbPath = path.join(v3Root, 'gcsc.db');
+const jsonDbPath = path.join(appRoot, 'gcsc.db');
 
 const statePath = path.join(tempRoot, 'pg-state.json');
 const fakePgPath = path.join(tempRoot, 'fake-pg.js');
@@ -64,11 +72,16 @@ function byNewest(rows) {
 }
 
 class Pool {
+  async connect() { return { query: this.query.bind(this), release() {} }; }
   async query(text, params = []) {
     const sql = normalize(text);
     const state = load();
 
     if (
+      ['begin', 'commit', 'rollback'].includes(sql) ||
+      sql.startsWith('set local ') ||
+      sql.startsWith('select pg_advisory_xact_lock(') ||
+      sql.startsWith('do $gcsc$') ||
       sql.startsWith('create table') ||
       sql.startsWith('alter table') ||
       sql.startsWith('create index') ||
@@ -546,16 +559,19 @@ function request(method, pathname, body, token) {
 }
 
 function startServer() {
-  const child = spawn(process.execPath, ['pure-server.js'], {
-    cwd: v3Root,
+  const localEnv = Object.fromEntries(Object.entries(process.env).filter(([key]) =>
+    /^(path|systemroot|windir|comspec|temp|tmp|home|userprofile)$/i.test(key)));
+  const child = spawn(process.execPath, ['--require', registerPath, 'pure-server.js'], {
+    cwd: appRoot,
+    windowsHide: true,
     env: {
-      ...process.env,
+      ...localEnv,
+      NODE_ENV: 'test', SETTLEMENT_ENABLED: 'false',
       PORT: String(port),
       DATABASE_URL: 'postgres://gcsc:test@localhost:5432/gcsc',
       JWT_SECRET: 'test-secret-minimum-length-for-hs256',
       XPR_TESTNET_HYPERION_URLS: `http://127.0.0.1:${hyperionPort}`,
       XPR_TX_VERIFIER_ENABLED: 'false',
-      NODE_OPTIONS: `--require ${registerPath}`,
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -633,7 +649,6 @@ async function waitForServer(child) {
 }
 
 (async () => {
-  fs.rmSync(jsonDbPath, { force: true });
   const hyperion = await startFakeHyperion();
   let child = startServer();
   try {
@@ -732,7 +747,7 @@ async function waitForServer(child) {
     fs.writeFileSync(statePath, JSON.stringify(state, null, 2));
 
     const accepted = await request('POST', `/api/bids/${bid.data.bid.id}/accept`, null, owner.data.token);
-    assert.strictEqual(accepted.status, 200);
+    assert.strictEqual(accepted.status, 200, JSON.stringify(accepted.data));
     assert.ok(accepted.data.escrow_id);
 
     // Regression: re-accepting the same bid must not create a second escrow.
@@ -994,8 +1009,7 @@ async function waitForServer(child) {
   } finally {
     await stopServer(child);
     await stopHttpServer(hyperion);
-    fs.rmSync(jsonDbPath, { force: true });
-    fs.rmSync(tempRoot, { recursive: true, force: true });
+    console.log(`Retained isolated workflow fixtures: ${tempRoot}`);
   }
 })().catch((err) => {
   console.error(err);

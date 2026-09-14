@@ -53,10 +53,15 @@ function normalize(text) {
 }
 
 class Pool {
+  async connect() { return { query: this.query.bind(this), release() {} }; }
   async query(text, params = []) {
     const sql = normalize(text);
 
     if (
+      ['begin', 'commit', 'rollback'].includes(sql) ||
+      sql.startsWith('set local ') ||
+      sql.startsWith('select pg_advisory_xact_lock(') ||
+      sql.startsWith('do $gcsc$') ||
       sql.startsWith('create table') ||
       sql.startsWith('alter table') ||
       sql.startsWith('create index') ||

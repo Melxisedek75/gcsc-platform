@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { createRequire } = require('node:module');
 const { createHash } = require('node:crypto');
+const { spawnSync } = require('node:child_process');
 const { validateLocalTestDatabase } = require('../scripts/local-test-database.cjs');
 
 const apiRoot = path.resolve(__dirname, '../services/api/v3');
@@ -20,9 +21,35 @@ fs.mkdirSync(appDirectory);
 const source = fs.readFileSync(path.join(apiRoot, 'pure-server.js'));
 const appFile = path.join(appDirectory, 'pure-server.cjs');
 fs.writeFileSync(appFile, source, { flag: 'wx' });
+fs.mkdirSync(path.join(appDirectory, 'database'));
+for (const file of ['migrate-schema.cjs', 'schema-statements.cjs']) {
+  fs.copyFileSync(path.join(apiRoot, 'database', file), path.join(appDirectory, 'database', file), fs.constants.COPYFILE_EXCL);
+}
 const pool = new Pool({ connectionString: databaseUrl, connectionTimeoutMillis: 3000 });
+const { migrateSchema, schemaDigest } = require(path.join(appDirectory, 'database/migrate-schema.cjs'));
 let api;
 let base;
+
+async function schemaPool(t, name) {
+  assert.match(name, /^fixture_[a-z_]+$/);
+  await pool.query(`CREATE SCHEMA ${name}`);
+  const isolated = new Pool({ connectionString: databaseUrl, connectionTimeoutMillis: 3000,
+    options: `-c search_path=${name}` });
+  t.after(() => isolated.end());
+  return isolated;
+}
+
+async function schemaSnapshot(name) {
+  const columns = await pool.query(`SELECT table_name,column_name,data_type,is_nullable,column_default
+    FROM information_schema.columns WHERE table_schema = $1 ORDER BY table_name,ordinal_position`, [name]);
+  const constraints = await pool.query(`SELECT c.relname AS table_name,p.conname,p.contype,pg_get_constraintdef(p.oid) AS definition
+    FROM pg_constraint p JOIN pg_class c ON c.oid = p.conrelid
+    JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = $1 ORDER BY c.relname,p.conname`, [name]);
+  const indexes = await pool.query(`SELECT tablename,indexname,indexdef FROM pg_indexes
+    WHERE schemaname = $1 ORDER BY tablename,indexname`, [name]);
+  return JSON.stringify({ columns: columns.rows, constraints: constraints.rows, indexes: indexes.rows })
+    .replaceAll(`${name}.`, '').replaceAll('public.', '');
+}
 
 async function startApi() {
   delete require.cache[require.resolve(appFile)];
@@ -156,5 +183,99 @@ test('real PostgreSQL project/bid persistence and access baseline', { timeout: 9
     assert.equal((await request('GET', '/api/bids/my/bids', contractor)).body.bids[0].amount, 1800);
   });
 
+  await t.test('upgrade preserves legacy milestone actions while replacing their CHECK constraint', async () => {
+    const escrow = (await pool.query(`INSERT INTO escrow_contracts(project_id,homeowner_id,contractor_id,total_amount)
+      VALUES ($1,$2,$3,1800) RETURNING id`, [project.id, owner.id, contractor.id])).rows[0];
+    const milestone = (await pool.query(`INSERT INTO milestones(escrow_id,title,amount)
+      VALUES ($1,'Fixture milestone',600) RETURNING id`, [escrow.id])).rows[0];
+    await pool.query('ALTER TABLE milestone_chain_txs DROP CONSTRAINT milestone_chain_txs_action_check');
+    await pool.query(`ALTER TABLE milestone_chain_txs ADD CONSTRAINT milestone_chain_txs_action_check
+      CHECK (action IN ('submitmilestone','approvemilestone','releasemilestone','disputemilestone'))`);
+    const oldActions = ['submitmilestone', 'approvemilestone', 'releasemilestone', 'disputemilestone'];
+    for (const action of oldActions) {
+      await pool.query(`INSERT INTO milestone_chain_txs(milestone_id,escrow_id,action,tx_id)
+        VALUES ($1,$2,$3,$4)`, [milestone.id, escrow.id, action, `fixture-${action}`]);
+    }
+    await api.initStorage();
+    assert.deepEqual((await pool.query('SELECT action FROM milestone_chain_txs ORDER BY id')).rows.map(row => row.action),
+      ['submitms', 'approvems', 'releasems', 'disputems']);
+    assert.equal((await pool.query('SELECT COUNT(*)::int AS count FROM milestone_chain_txs')).rows[0].count, 4);
+    await assert.rejects(pool.query("UPDATE milestone_chain_txs SET action = 'invalid'"), { code: '23514' });
+    await api.initStorage();
+    assert.equal((await pool.query('SELECT COUNT(*)::int AS count FROM milestone_chain_txs')).rows[0].count, 4);
+  });
+
+  await t.test('standalone exported SQL creates the same complete schema as API startup and can repeat', async s => {
+    const sqlPool = await schemaPool(s, 'fixture_export');
+    const exported = spawnSync(process.execPath, [path.join(apiRoot, 'scripts/migrate-postgres.mjs'), '--print-sql'],
+      { encoding: 'utf8', windowsHide: true, timeout: 10000 });
+    assert.equal(exported.status, 0, exported.stderr);
+    assert.ok(exported.stdout.includes(schemaDigest));
+    await sqlPool.query(exported.stdout);
+    assert.equal(await schemaSnapshot('fixture_export'), await schemaSnapshot('public'));
+    await sqlPool.query(exported.stdout);
+    assert.equal(await schemaSnapshot('fixture_export'), await schemaSnapshot('public'));
+    fs.writeFileSync(path.join(runDirectory, 'canonical-schema.sql'), exported.stdout);
+  });
+
+  await t.test('additive canonical upgrade preserves user/project/receipt values and backfills new columns', async s => {
+    const upgrade = await schemaPool(s, 'fixture_upgrade');
+    await migrateSchema(upgrade);
+    await upgrade.query(`INSERT INTO users(id,email,password_hash,role,full_name) VALUES (1,'upgrade@example.invalid','fixture','homeowner','Owner');
+      INSERT INTO projects(id,homeowner_id,title) VALUES (1,1,'Preserved project');
+      INSERT INTO payment_receipts(tx_hash,kind,user_id,amount) VALUES ('fixture-receipt','lead_token',1,'50.0000 XPR');
+      ALTER TABLE users DROP COLUMN email_verified;
+      ALTER TABLE projects DROP COLUMN published;
+      ALTER TABLE projects DROP COLUMN published_at;
+      ALTER TABLE payment_receipts DROP COLUMN verification_status;`);
+    await migrateSchema(upgrade);
+    assert.deepEqual((await upgrade.query('SELECT full_name,email_verified FROM users WHERE id=1')).rows,
+      [{ full_name: 'Owner', email_verified: false }]);
+    assert.deepEqual((await upgrade.query('SELECT title,published,published_at FROM projects WHERE id=1')).rows,
+      [{ title: 'Preserved project', published: false, published_at: null }]);
+    assert.deepEqual((await upgrade.query('SELECT tx_hash,amount,verification_status FROM payment_receipts')).rows,
+      [{ tx_hash: 'fixture-receipt', amount: '50.0000 XPR', verification_status: 'confirmed' }]);
+    await migrateSchema(upgrade);
+    assert.equal((await upgrade.query('SELECT COUNT(*)::int AS count FROM payment_receipts')).rows[0].count, 1);
+  });
+
+  await t.test('unknown action rolls back both DDL and data; original constraint survives failure', async s => {
+    const broken = await schemaPool(s, 'fixture_rollback');
+    await migrateSchema(broken);
+    await broken.query(`INSERT INTO users(id,email,password_hash,role) VALUES
+      (1,'owner@example.invalid','fixture','homeowner'),(2,'contractor@example.invalid','fixture','contractor');
+      INSERT INTO projects(id,homeowner_id,title) VALUES (1,1,'Fixture');
+      INSERT INTO escrow_contracts(id,project_id,homeowner_id,contractor_id,total_amount) VALUES (1,1,1,2,100);
+      INSERT INTO milestones(id,escrow_id,amount) VALUES (1,1,100);
+      ALTER TABLE users DROP COLUMN email_verified;
+      ALTER TABLE milestone_chain_txs DROP CONSTRAINT milestone_chain_txs_action_check;
+      ALTER TABLE milestone_chain_txs ADD CONSTRAINT milestone_chain_txs_action_check CHECK (action IN ('submitmilestone','unknown'));
+      INSERT INTO milestone_chain_txs(milestone_id,escrow_id,action,tx_id) VALUES
+        (1,1,'submitmilestone','fixture-old'),(1,1,'unknown','fixture-unknown');`);
+    const before = await schemaSnapshot('fixture_rollback');
+    await assert.rejects(migrateSchema(broken), { code: '23514' });
+    assert.equal(await schemaSnapshot('fixture_rollback'), before);
+    assert.deepEqual((await broken.query('SELECT action FROM milestone_chain_txs ORDER BY id')).rows.map(row => row.action),
+      ['submitmilestone', 'unknown']);
+    await assert.rejects(broken.query("UPDATE milestone_chain_txs SET action='submitms' WHERE tx_id='fixture-old'"), { code: '23514' });
+  });
+
+  await t.test('two simultaneous migrations serialize on a fresh schema', async s => {
+    const parallel = await schemaPool(s, 'fixture_parallel');
+    await Promise.all([migrateSchema(parallel), migrateSchema(parallel)]);
+    assert.equal(await schemaSnapshot('fixture_parallel'), await schemaSnapshot('public'));
+  });
+
+  await t.test('old init.sql schema is rejected before changes instead of reporting false readiness', async s => {
+    const legacy = await schemaPool(s, 'fixture_legacy');
+    await legacy.query(fs.readFileSync(path.join(apiRoot, 'database/init.sql'), 'utf8'));
+    const before = await schemaSnapshot('fixture_legacy');
+    await assert.rejects(migrateSchema(legacy), { code: '0A000' });
+    assert.equal(await schemaSnapshot('fixture_legacy'), before);
+  });
+
   fs.writeFileSync(path.join(runDirectory, 'api-source.sha256'), createHash('sha256').update(source).digest('hex') + '\n');
+  const hashes = Object.fromEntries(['pure-server.cjs', 'database/migrate-schema.cjs', 'database/schema-statements.cjs']
+    .map(file => [file, createHash('sha256').update(fs.readFileSync(path.join(appDirectory, file))).digest('hex')]));
+  fs.writeFileSync(path.join(runDirectory, 'api-files.sha256.json'), JSON.stringify(hashes, null, 2) + '\n');
 });

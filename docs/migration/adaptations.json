@@ -2,16 +2,16 @@
   {
     "path": "services/api/v3/package.json",
     "sourceBlob": "b9cfb0115f8397470f152032fb954155d53064f8",
-    "sha256": "5efe26cf93e70f9051caeb36ddc437755fb8d617bb591c3e55255555eec4d1f0",
-    "reason": "Select pure-server.js for main/start/dev, matching the canonical runtime. No dependency changes.",
-    "test": "node --test tests/migration.test.mjs; witnessed red before correction"
+    "sha256": "07dd90c5b0d8530d2695d8fda45209da8f473e1bfd8000e3d1034dd94c614e2b",
+    "reason": "Select pure-server.js for main/start/dev, matching the canonical runtime. No dependency changes. Expose the canonical SQL exporter instead of the obsolete v2/Express psql sequence; explicit --print-sql never reads database credentials or applies changes.",
+    "test": "npm run check; npm run test:api; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage"
   },
   {
     "path": "services/api/v3/pure-server.js",
     "sourceBlob": "952128e9316fe78bef42dba8ddc7b04eb09e29e5",
-    "sha256": "81852557dcc26816fc177ce0a72e5c7a4901b10b075ca9f8ca12904cc3457f2e",
-    "reason": "Require verified wallet ownership before payment challenges and bid readiness; invalidate changed identity proof; enforce single-key authority threshold and remove the ownership-check environment bypass.",
-    "test": "npm run test:api; reproduced earlier metadata/threshold/bypass failures and 15 pre-payment/bid-readiness regression failures before fixes"
+    "sha256": "1bbf18377f790881cb1ffd19be33312183fb8927acbefc212f2c3cb721364202",
+    "reason": "Require verified wallet ownership before payment challenges and bid readiness; invalidate changed identity proof; enforce single-key authority threshold and remove the ownership-check environment bypass. Move all 90 schema statements to one shared source; transact and serialize schema initialization, reject known incompatible legacy shapes and drop the old action CHECK before updating legacy values. Bootstrap remains after successful schema commit.",
+    "test": "npm run check; npm run test:api; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage"
   },
   {
     "path": "services/api/v3/tests/payments-402.test.js",
@@ -23,16 +23,16 @@
   {
     "path": "services/api/v3/tests/escrow-milestones.test.js",
     "sourceBlob": "21f10e3556473b1ee6f99c552c7973dd1b74b1aa",
-    "sha256": "afa4e326088d2919f0da7a3f42a1308ff8c4aeea7dce93d91788bd8971c17233",
-    "reason": "Positive escrow lifecycle fixtures explicitly model already server-verified wallet bindings; forged metadata rejection is covered separately.",
-    "test": "npm run test:api"
+    "sha256": "5f1c97366ba63b34eb83d0ba37a52ef738c9b019116b0a21bdcf3880aee32fa6",
+    "reason": "Positive escrow lifecycle fixtures explicitly model already server-verified wallet bindings; forged metadata rejection is covered separately. Isolate JSON fixture IO from the checkout to prevent shared-file EBUSY and accidental data modification.",
+    "test": "npm run check; npm run test:api; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage"
   },
   {
     "path": "services/api/v3/tests/postgres-storage-smoke.js",
     "sourceBlob": "2cea20855229da14e3dfbad3de9c2a5e69e5023a",
-    "sha256": "d7d9da8a24b4ae3f5fac3c1993216f86c607237f71eea910f579fa4dcd5d1155",
-    "reason": "Replace ownership bypass with explicit fixture-key RPC; sanitize child environment, use argv for preload, keep fixtures in the worktree, wait for child exit and clean only generated files without recursive deletion.",
-    "test": "npm run test:pg-storage (services/api/v3; fake PostgreSQL and mocked RPC only)"
+    "sha256": "5fda3c24368809763ddd78939bd86ef9d7dabc238dd9fd3e1643bee96b27c61f",
+    "reason": "Replace ownership bypass with explicit fixture-key RPC; sanitize child environment, use argv for preload, keep fixtures in the worktree, wait for child exit and clean only generated files without recursive deletion. Teach the fake pool the transaction/client interface; real DDL, locking and rollback are covered by the isolated PostgreSQL suite.",
+    "test": "npm run check; npm run test:api; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage"
   },
   {
     "path": "apps/web/src/services/api.ts",
@@ -117,5 +117,33 @@
     "sha256": "dfe95fecf03ee369633b6db93313f7e03ef8115409b4e650da85231bd2a4a687",
     "reason": "Reject non-loopback and non-test PostgreSQL cleanup targets before storage initialization.",
     "test": "node --test tests/local-test-database.test.mjs"
+  },
+  {
+    "path": "services/api/v3/scripts/check-migration-readiness.mjs",
+    "sourceBlob": "f27b12b5bdd3ac4081b8c4b493fc93bd11538e70",
+    "sha256": "258044fbf972209f04f9ba9eaf4277046b55f5189d97bbb03bc6778cf80e8771",
+    "reason": "Check the canonical runtime/export recipe instead of excluded v2 sources; explicitly report local/static readiness, not production approval.",
+    "test": "npm run check; npm run test:api; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage"
+  },
+  {
+    "path": "services/api/v3/tests/migration-readiness-script.test.js",
+    "sourceBlob": "6ebd65c2bf7af49f408d1dc5459b776217397838",
+    "sha256": "87784b6e17b56c9b5ea2c2bdbd17e5e69cc2f417d6d8c14b75ea89f92529eccf",
+    "reason": "Verify the canonical entrypoints and explicit production limitation; real SQL compatibility is tested separately on isolated PostgreSQL.",
+    "test": "npm run check; npm run test:api; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage"
+  },
+  {
+    "path": "services/api/v3/tests/payment-reconciler.test.js",
+    "sourceBlob": "a645aa4772a5f3d601fb5db886729881b190d8c3",
+    "sha256": "54072d6d8a12c41a4a78db87e64359375c177cafcea7763d9d028e7038d7422b",
+    "reason": "Isolate fixture JSON database IO; preserve all payment/reconciliation assertions.",
+    "test": "npm run check; npm run test:api; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage"
+  },
+  {
+    "path": "services/api/v3/tests/postgres-workflow-smoke.js",
+    "sourceBlob": "81ddb88e3f3fa65957478f7191a10d5e9b8720f4",
+    "sha256": "ad7b27ce2dfaaf2190144ee5785e4d02c82eaba606e4cf12b43171b2480cb5d7",
+    "reason": "Add transaction/client interface and isolate API/schema copies and JSON data in retained local scratch with sanitized child environment. Preserve the existing wallet_missing acceptance failure; no ownership bypass.",
+    "test": "npm run test:pg-workflow: still fails at unchanged wallet_missing guard; reproduced against pre-change 57b8ff21 API. No migration regression or false pass."
   }
 ]
