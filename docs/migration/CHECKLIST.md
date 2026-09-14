@@ -6,6 +6,23 @@
 порядок; подробная история и критерии ниже сохраняются, но не меняют приоритеты.
 Статус «ГОТОВО» означает проверенный результат, а не намерение.
 
+14 сентября, новый приоритет по просьбе владельца: WebAuth/mobile возобновлены.
+P2.2a: в ветке `codex/wallet-proof-20260914` создан кандидат `0d597d9b`:
+проверка подписанных байтов, одноразового запроса, сети, аккаунта и сессии;
+общий sign-only адаптер web/native. API220/220, новые client15/15, root48/static,
+Android TypeScript и web build PASS. Независимое ревью Helmholtz APPROVED
+строго для неактивированного K1/R1-кандидата; повторены proof52/52 и client15/15.
+Это НЕ работающий вход: HTTP/JWT, durable store, current authority и UI ещё не
+подключены. Реальный формат WebAuth, включая SIG_WA, требует проверки.
+ADB пуст; Windows видит Pixel8 только по Bluetooth/audio. Новый APK не создавался.
+[Точный результат и ограничения](C:/gcsc-platform/.worktrees/qa/docs/migration/WALLET-SDK-IDENTITY.md).
+
+- [x] P2.2a: canonical proof codec и shared sign-only адаптер, негативные проверки.
+- [x] P2.2b: независимое ревью точного кандидата0d597d9b, только nonactivated scope.
+- [ ] P2.2c: диагностический sign-only путь и реальный ответ обоих WebAuth SDK; K1/R1/WA.
+- [ ] P2.2d: durable atomic challenge store, актуальная authority нужной сети и popup origin/source.
+- [ ] P2.2e: согласованные HTTP/клиенты, настоящий вход, новый APK и устройство; затем покупка лида.
+
 14 сентября, следующий шаг P3.1: серверный чат в кандидате6666e8e7,
 ветка codex/chat-persistence-20260914. Раздельные диалоги по проекту и подрядчику,
 проверка актуальных участников, сохранение сообщений, защита от дублирования,
@@ -89,7 +106,7 @@ static и TypeScript PASS; браузер320/390/768px с локальными f
 | P1.4a | ГОТОВО | 12 уникальных staged/untracked файлов сохранены в архиве приватной main, SHA 6878cbdf подтверждён. Три снимка исходников также находятся в закрытом Google Drive. Независимое ревью e8188048: APPROVED; изоляция и контрольные суммы проверены. Renovation не активирован. Evidence: LEGACY-PRESERVATION-REVIEW.md, LOCAL-RECOVERY-2026-09-13.md. |
 | P1.5 | ЧАСТИЧНО ГОТОВО | Root baseline39/39, API159/159, API-config15/15, web build2977 модулей PASS; lint0 ошибок/1 предупреждение. Подготовка контрактов6a352f46:9/9 runner и31/31 Vert, exit0; независимое ревью APPROVED. APK2094b69c собран, установлен и прошёл старт на Pixel8; его46/46+static PASS. Новый UI29ba58e1:46+10 тестов, types/static и браузер PASS, не новый APK. Кандидат e9f954fb проверяет проекты/заявки на PostgreSQL18.4:9/9; полная DB-приёмка и CI Node20 ещё открыты. Evidence: LOCAL-RECOVERY-2026-09-13.md, CONTRACT-PREPARATION-BUDGET.md, frontend/MOBILE-STARTUP-RECOVERY.md и MOBILE-DESIGN.md. |
 | P2.1 | ДИАГНОСТИКА ГОТОВА | Таблица маршрутов и клиентов: WALLET-API-CONTRACT.md. Web отправляет metadata без подписи; mobile сохраняет metadata через профиль. Wallet-first routes отсутствуют; связывание кошелька требует существующий app JWT. SDK v2 identity не подписывает nonce/domain. Следующий шаг: подтвердить поддерживаемый кошельком формат доказательства для P2.2. |
-| P2.2 | ОЧЕРЕДЬ | Завершить backend авторизации: nonce, срок действия, replay, account/permission/network binding, отмена и ошибки. Никаких неподписанных identity metadata как доказательства. |
+| P2.2 | ЧАСТИЧНО ГОТОВО | Кандидат0d597d9b: canonical K1/R1 proof, context/expiry/exact-byte checks и shared sign-only adapter; независимое ревью APPROVED только для неактивированного кода. API220/220, client15/15, root48/static, types/build PASS. HTTP/JWT, durable store, current authority, real WebAuth/SIG_WA и popup origin/source остаются открытыми. Metadata не является proof. |
 | P2.3 | ОЧЕРЕДЬ | Desktop/web: вход, восстановление, выход, смена кошелька/сети, истёкшая сессия. Проверка на реальном интерфейсе с локальным API; mock отдельно от интеграции. |
 | P2.4 | СТАРТ НА ТЕЛЕФОНЕ ПРОВЕРЕН; AUTH ОТКРЫТ | APK2094b69c, опубликованный отчёт7acb7662: 0.1.3/code5 ARM64,28 504 933байта, SHA256 начинается6b06ca9ce5a0. Offline-сборка exit0 за24м11с,488задач; lintVitalRelease PASS,46/46+static PASS, независимое source-review APPROVED. Сертификат совпал со старой версией; install-r Success без удаления данных. Pixel8 подтверждает0.1.3/code5: два холодных старта и Sign in без прежнего красного экрана. Остались предупреждение(auth) layout, серверный вход, callbacks и покупка. API не запущен. [Evidence](C:/gcsc-platform/.worktrees/frontend/docs/migration/MOBILE-STARTUP-RECOVERY.md). Код кандидата в main не включён. |
 | P2.5 | ОЧЕРЕДЬ | Покупка лида: eligibility до предложения оплаты, сумма/получатель/memo, подпись пользователем, проверка перевода, повтор callback, отложенное подтверждение, отсутствие двойной покупки. Web и mobile отдельно. |
