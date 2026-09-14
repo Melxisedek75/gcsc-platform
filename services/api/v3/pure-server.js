@@ -9,6 +9,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { parse } = require('url');
+const { TextDecoder } = require('util');
 // P1-2/P1-4: XPR (Antelope/EOSIO) K1 signature verification for wallet ownership proof.
 const { ec: EllipticEC } = require('elliptic');
 const { Numeric: XprNumeric } = require('@proton/js');
@@ -333,9 +334,9 @@ async function findUserByEmail(email) {
   return db.users.find(u => u.email.toLowerCase() === String(email).toLowerCase()) || null;
 }
 
-async function findUserById(id) {
+async function findUserById(id, query = queryPostgres) {
   if (USE_POSTGRES) {
-    const result = await queryPostgres('SELECT * FROM users WHERE id = $1 LIMIT 1', [id]);
+    const result = await query('SELECT * FROM users WHERE id = $1 LIMIT 1', [id]);
     return normalizeStoredUser(result.rows[0]);
   }
 
@@ -1583,7 +1584,7 @@ function parseChatBody(req, allowed) {
     req.on('end', () => {
       if (failed) return;
       try {
-        const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        const body = JSON.parse(new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(Buffer.concat(chunks)));
         if (!body || Array.isArray(body) || typeof body !== 'object'
           || Object.keys(body).some(key => !allowed.includes(key))) throw new Error('Invalid fields');
         resolve(body);
@@ -1594,7 +1595,17 @@ function parseChatBody(req, allowed) {
 
 async function requireChatUser(req, res) {
   res.setHeader('Cache-Control', 'no-store');
-  const user = await requireActiveUser(req, res);
+  let user;
+  try {
+    const lookup = USE_POSTGRES
+      ? id => withChatTransaction(client => findUserById(id, client.query.bind(client)))
+      : findUserById;
+    user = await requireActiveUser(req, res, undefined, lookup);
+  } catch (err) {
+    if (!err.status) throw err;
+    json(res, err.status, { error: err.message });
+    return null;
+  }
   if (!user) return null;
   if (!['homeowner', 'contractor'].includes(user.role)) {
     json(res, 403, { error: 'Chat is limited to project participants' });
@@ -1684,7 +1695,8 @@ async function openChatThread(bidId, userId) {
 }
 
 async function listChatThreads(userId, before, limit) {
-  const result = await queryPostgres(`SELECT t.*,p.title,h.full_name AS homeowner_name,c.full_name AS contractor_name,
+  return withChatTransaction(async client => {
+    const result = await client.query(`SELECT t.*,p.title,h.full_name AS homeowner_name,c.full_name AS contractor_name,
       EXISTS(SELECT 1 FROM bids b WHERE b.project_id=p.id AND b.contractor_id=c.id
         AND ((b.status='pending' AND p.status='open') OR (b.status='accepted' AND p.status='in_progress'))) AS can_send
     FROM chat_threads t JOIN projects p ON p.id=t.project_id AND p.homeowner_id=t.homeowner_id
@@ -1693,8 +1705,9 @@ async function listChatThreads(userId, before, limit) {
       AND h.role='homeowner' AND c.role='contractor' AND h.is_active AND c.is_active
       AND EXISTS(SELECT 1 FROM bids b WHERE b.project_id=t.project_id AND b.contractor_id=t.contractor_id)
     ORDER BY t.id DESC LIMIT $3`, [userId, before, limit + 1]);
-  const threads = result.rows.slice(0, limit).map(row => publicChatThread(row, row, userId));
-  return { threads, has_more: result.rows.length > limit, next_before: threads.at(-1)?.id ?? before };
+    const threads = result.rows.slice(0, limit).map(row => publicChatThread(row, row, userId));
+    return { threads, has_more: result.rows.length > limit, next_before: threads.at(-1)?.id ?? before };
+  });
 }
 
 async function readChatMessages(threadId, userId, after, limit) {
@@ -2762,10 +2775,10 @@ function getUser(req) {
   try { return jwtVerify(token); } catch { return null; }
 }
 
-async function requireActiveUser(req, res, role) {
+async function requireActiveUser(req, res, role, lookup = findUserById) {
   const auth = getUser(req);
   if (!auth) { json(res, 401, { error: 'Unauthorized' }); return null; }
-  const user = await findUserById(auth.userId);
+  const user = await lookup(auth.userId);
   if (!user) { json(res, 404, { error: 'User not found' }); return null; }
   if (!user.is_active) { json(res, 403, { error: 'Account is inactive' }); return null; }
   // Roles in a still-valid JWT may have been revoked since login.

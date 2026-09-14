@@ -158,6 +158,32 @@ async function chatAcceptance(t, { pool, request, fixtureUser, startApi, stopApi
     assert.equal((await history(thread)).body.messages.at(-1).text, text);
   });
 
+  await t.test('malformed UTF-8 wire bytes are rejected before JSON decoding or persistence', async () => {
+    const key = randomUUID();
+    const rawBody = Buffer.concat([Buffer.from('{"text":"'), Buffer.from([0xc3, 0x28]),
+      Buffer.from(`","client_message_id":"${key}"}`)]);
+    const result = await request('POST', `/api/chat/threads/${thread.id}/messages`, contractor, undefined, { rawBody });
+    assert.equal(result.status, 400);
+    assert.equal((await pool.query('SELECT * FROM chat_messages WHERE client_message_id=$1', [key])).rowCount, 0);
+  });
+
+  for (const table of ['chat_threads', 'users']) {
+    await t.test(`chat list and authentication bound waits on a locked ${table} table`, async () => {
+      const locker = await pool.connect();
+      try {
+        await locker.query('BEGIN');
+        await locker.query(`LOCK TABLE ${table} IN ACCESS EXCLUSIVE MODE`);
+        const result = await request('GET', '/api/chat/threads', owner);
+        assert.equal(result.status, 503);
+        assert.equal(result.headers.get('cache-control'), 'no-store');
+      } finally {
+        await locker.query('ROLLBACK');
+        locker.release();
+      }
+      assert.equal((await request('GET', '/api/chat/threads', owner)).status, 200);
+    });
+  }
+
   await t.test('a queued send rechecks revoked access after acquiring the thread lock', async () => {
     const locker = await pool.connect();
     let pending;

@@ -66,15 +66,15 @@ Client integration and full registration/browser/API/DB acceptance remain open.
 Retention/deletion policy, content moderation, spam controls across API replicas,
 backup/restore and production sizing belong to later acceptance, not a PASS here.
 
-## Parent evidence, 2026-09-14
+## Initial parent evidence, 2026-09-14 (6df6f81b)
 
 All commands from `C:/gcsc-platform/.worktrees/qa`, exit0 unless explicitly red.
 
 - Red: `npm run test:postgres:local -- --postgres-bin C:\gcsc\.tmp\embedded-pg-runner\node_modules\@embedded-postgres\windows-x64\native\bin`
   failed on absent chat route (404 vs expected401). Previous22 scenarios passed.
   Evidence `services/api/v3/.tmp/postgres-baseline-oIQu4C/result.json`.
-- Same command, final coverage: **36/36**, PostgreSQL18.4. Thirteen chat scenarios,
-  twenty-two previous scenarios, one parent. Final evidence
+- Same command, initial coverage: **36/36**, PostgreSQL18.4. Thirteen chat scenarios,
+  twenty-two previous scenarios, one parent. Evidence
   `services/api/v3/.tmp/postgres-baseline-H7QWLF/result.json`,
   07:54:37Z..07:55:10Z, port54287; testExitCode0 and postgresExitCode0.
   Earlier intermediate expansions:31/31 then35/35, not the final coverage count.
@@ -94,4 +94,42 @@ P2.5 before pilot, not inferred from the existence of a bid or a chat message.
 
 No UI changed, so no new browser/device/build claim. The next available slice is
 web chat consumer integration using this contract and local browser/API/PG checks;
-native/WebAuth work remains deferred.
+  native/WebAuth work remains deferred.
+
+## Independent review and corrections
+
+Copernicus (separate Sol/high context01a09eeb-1f84-7660-89a8-4b4df185cd0c)
+reviewed ff17a049..6df6f81b715ce13516cc9f0b3c33a4a59335c50b: CHANGES REQUIRED.
+Independently repeated PG36/36, API168/168, root48/static, fake storage and diff checks.
+
+- P1: list query bypassed bounded transactions. Parent reproduced the timeout,
+  also found the initial user lookup used an unbounded query, and routed both
+  through the same bounded transaction path. Existing callers retain the default
+  user lookup; only chat supplies the bounded lookup.
+- P2: Buffer decoding replaced invalid UTF-8 bytes before validation. Parser now
+  uses a fatal TextDecoder before JSON.parse; escaped unpaired UTF-16 surrogates
+  remain rejected by the separate string validation.
+- New regression tests first failed: raw bytes C3 28 incorrectly returned201;
+  chat_threads/users table locks each exhausted the HTTP timeout instead of503.
+  Red evidence `services/api/v3/.tmp/postgres-baseline-8RYvhV/result.json`.
+- After correction, PG **39/39**:16 chat +22 previous +parent. Evidence
+  `services/api/v3/.tmp/postgres-baseline-AQkDzs/result.json`, port64269,
+  08:11:53Z..08:12:29Z. Test and PostgreSQL process both exited0.
+- Final root48/static/readiness checks repeated PASS. API168/168 in7 suites
+  repeated PASS (51.031s); fake storage and diff checks PASS. Focused independent
+  re-review is recorded below once completed; no self-approval.
+
+## Next consumer slice (not implemented)
+
+1. Extend the existing `apps/web/src/services/api.ts` client with the four typed
+   routes above; keep its configured base URL/application JWT, no second API client.
+2. Add participant-only Chat to the existing Dashboard section navigation. Open a
+   conversation from an actual bid in ProjectsPanel/BidsPanel, never a typed user id.
+3. Render plain text, ordered sequences, loading/empty/forbidden/read-only states.
+   A pending send keeps its UUID/text until acknowledged or explicitly abandoned.
+   Uncertain network failure must not append a second apparently delivered message.
+4. Clear history and pending UI on account/session change, ignore stale responses,
+   bound polling to the visible conversation, and paginate using server cursors.
+5. Run two browser contexts against the canonical API and disposable PostgreSQL:
+   send/receive, reload history, outsider isolation, stale access and retry. Distinguish
+   fixture JWT from registration. Native UI/APK and wallet callbacks remain deferred.
