@@ -222,5 +222,19 @@
     "sha256": "b4e5135ad1c7d1b798efce860aa01ab062d0f23169a4cad49e5f3185f2f41970",
     "reason": "Wrap selectable full account values consistently for both roles; no change to profile or wallet actions.",
     "test": "npm run test:mobile-design; npm run check:mobile-types; browser UI verification in MOBILE-DESIGN.md"
+  },
+  {
+    "path": "apps/mobile/lib/webauth.ts",
+    "sourceBlob": "b3ffa5c39bb62d63dbb21babef2768546796edd4",
+    "sha256": "f0923333a2ee656940e01f1bf5dd3a0406839b5a3d501e98e155f3626e763031",
+    "reason": "P2.2 candidate: add an explicit sign-only ownership-proof adapter using the existing native SDK session. No UI caller, binding, login, or broadcast activation.",
+    "test": "npm run test:wallet-proof-client; npm run check:mobile-types; npm run check; independent wallet SDK serialization review"
+  },
+  {
+    "path": "apps/web/src/services/webauth.ts",
+    "sourceBlob": "13fdadd14ef7675d9175e9f60621a9ec5d7128ff",
+    "sha256": "22ef8ac9870ef77150e0a8f8d27465635e1dc3241b57c42a7d3684f6fc0c7d1a",
+    "reason": "P2.2 candidate: expose the shared sign-only proof requester; fail closed if popup signature/bytes are absent. Existing connect/restore callers remain unchanged; no ownership claim from metadata.",
+    "test": "npm run test:wallet-proof-client; npm run build:web; npm run check; independent wallet SDK serialization review"
   }
 ]
