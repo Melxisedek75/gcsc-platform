@@ -1,27 +1,27 @@
 {
-  "task": "chat-persistence",
-  "status": "P3_1_CHAT_REVIEWED_CLIENT_INTEGRATION_OPEN",
+  "task": "wallet-ownership-proof",
+  "status": "P2_2_PROOF_REVIEWED_WALLET_ACCEPTANCE_OPEN",
   "owner": "019e7c87-8410-79f1-b86a-eedf78a1aa27",
   "worktree": "C:/gcsc-platform/.worktrees/qa",
-  "branch": "codex/chat-persistence-20260914",
+  "branch": "codex/wallet-proof-20260914",
   "remote": "https://github.com/Melxisedek75/gcsc-platform",
   "targetBranch": "main",
   "scope": [
-    "P3.1 canonical server chat: project/homeowner/contractor pair ACL, durable PostgreSQL messages, idempotency, ordered pagination and atomic audit",
-    "Current user/relationship validation with no admin bypass; JSON/demo chat fails503 instead of simulating delivery",
-    "Disposable local PostgreSQL acceptance only; mobile/WebAuth, disk archival, payments and live systems remain deferred"
+    "Canonical sign-only ownership-proof codec and bounded verification; no HTTP/JWT activation",
+    "Shared native/web SDK result adapter and explicit opt-in service exports; preserve existing users and guards",
+    "Offline security/regression checks and independent review; no real account/signature/payment or production actions"
   ],
   "leaseUntil": null,
-  "baseCommit": "ff17a049",
-  "candidateCommit": "6666e8e7f17c746b756e5213d992774ce2b37b1a",
-  "review": "APPROVED: Copernicus independent Sol/high context01a09eeb-1f84-7660-89a8-4b4df185cd0c, exact final6666e8e7f17c746b756e5213d992774ce2b37b1a (baseff17a049). Initial6df6f81b needed bounded reads/auth and fatal UTF8 fixes; both closed. Independent final PG39/39, API168/168, syntax/diff PASS, exits0. PG .tmp/postgres-baseline-EZpIiV/result.json stopped0. Final root/static are parent evidence. No integration/release approval.",
-  "result": "Reviewed PostgreSQL-only participant chat: pair isolation, fresh roles/status, read-only lifecycle, UUID replay/conflict handling, ordered cursor, atomic metadata audit, body/rate limits, bounded reads/auth/writes and strict UTF8. Parent PG39/39, API168/168, root48/static/readiness, fake storage/diff PASS. Independent PG/API repeat PASS. No client/API/DB end-to-end claim or live IO. CHAT-ACCEPTANCE.md records red/green evidence and limitations.",
-  "next": "P3.1 web chat consumer: extend existing api.ts and Dashboard, open from actual bid, preserve message UUID on uncertain response, clear on account change, verify two browser sessions against isolated canonical API/local PG. Read CHAT-ACCEPTANCE.md and current consumers first. Native/WebAuth and archival remain deferred. Reconcile paid-lead/contact policy with P2.5 before pilot. No APK, live systems, merge/deploy or scheduler restart.",
+  "baseCommit": "553c3692b7cb816da0be9c04ee0cf6f8bb6d3356",
+  "candidateCommit": "0d597d9b4e93d357875588a6fc8280519423187a",
+  "review": "APPROVED: Helmholtz independent Sol/high context01a0a1b1-ec17-7ee0-b66f-8c1998a2672b, exact0d597d9b4e93d357875588a6fc8280519423187a vs553c3692b7cb816da0be9c04ee0cf6f8bb6d3356, restricted nonactivated K1/R1 candidate. Independently proof52/52, client15/15 and diff exit0; pinned native/web codecs produce equal candidate bytes/digest. SIG_WA is unsupported and a pre-activation compatibility gate. Durable store/current authority, real wallet, popup origin/source, HTTP/JWT/UI and release excluded.",
+  "result": "Candidate implements canonical reqauth/raw nonce transaction bytes, K1/R1 recovery, session/chain/account/purpose/audience binding, expiry and bounded redemption via mandatory atomic-store/current-authority adapters. Shared client refuses transfers, missing/changed proof bytes, session changes and duplicate requests after timeout. Parent API220/220, client15/15, root48/static/readiness, mobile TypeScript, web build2979 modules exit0. No live or mock-as-live claim. Source guards unchanged; two adaptations explicitly registered.",
+  "next": "P2.2c: implement a bounded diagnostic sign-only path and observe actual native/web WebAuth responses with user-controlled approval. Verify K1/R1 or separately implement/review SIG_WA handling. Before auth activation: durable atomic challenge storage, current authority on verified chain, popup exact origin/source hardening, coordinated HTTP/consumer contract and independent review. Wallet-first routes remain absent (integration contract5/7 FAIL). ADB list empty and only Pixel8 Bluetooth/audio PnP entries present. No automatic device polling, false wallet-ready APK, or scheduler restart.",
   "deferred": [
     {
-      "task": "P2.2 wallet proof and isolated API",
-      "resumeCondition": "Owner resumes deferred mobile/WebAuth; actual wallet compatibility still requires user-controlled sign-only test and independent auth review.",
-      "checkpoint": "Read-only McClintock investigation confirms identityv2 lacks nonce/domain binding. Only full transaction/context-free challenge payload has offline digest evidence; actual WebAuth acceptance is unproven. Safe next slice is canonical payload/parser/TTL/replay tests, no JWT or live route activation. API pure-server.js hardcodes local gcsc.db and has ambient DATABASE_URL support; do not start against existing data."
+      "task": "P2.2 auth activation and actual wallet acceptance",
+      "resumeCondition": "Owner already resumed mobile/WebAuth. Activation requires accepted real wallet proof format, durable store/current authority, origin/source hardening and independent security review.",
+      "checkpoint": "0d597d9b implements the previously selected safe codec/parser/TTL/replay slice; no HTTP/JWT activation. ADB device list empty in this run. Native SDK exposes signatures/serialized bytes; web popup response is opaque and must be observed, never guessed. pure-server.js still hardcodes gcsc.db and can use ambient DATABASE_URL, so isolate any future runtime."
     },
     {
       "task": "Remaining PostgreSQL acceptance",
@@ -35,7 +35,7 @@
     },
     {
       "task": "Mobile frontend UI-2 and new APK",
-      "resumeCondition": "Owner lifts current mobile-work deferral and build/device prerequisites are available",
+      "resumeCondition": "Owner resumed mobile work; reconcile frontend UI-1 with reviewed wallet candidate and satisfy build/device prerequisites before a new APK.",
       "checkpoint": "UI-1 retained on frontend branch; previousMobileDesignTask preserves source/review/device state."
     },
     {
@@ -56,7 +56,7 @@
     "publishedRef": "refs/heads/codex/mobile-startup-recovery-20260913",
     "result": "Native build exit0,24m11s,488tasks; lintVitalRelease PASS;46tests/static PASS and scoped independent source review approved. APK28504933bytes SHA2566b06ca9ce5a0cb3ee5bfae1e806c2abfa528ea8f4a29355efff5267aae1eef56, delivery C:/Users/rivne/Downloads/SmartContractor-0.1.3-usb-2094b69c.apk. Physical USB was present; ADB NATIVE process-local switch restored transport. Old/new certificates match; install-r Success. Pixel8 confirms0.1.3/code5; two cold starts and Sign in navigation PASS. Nonfatal(auth) layout warning, API/auth/lead acceptance remain open. Evidence C:/gcsc-platform/.worktrees/frontend/docs/migration/MOBILE-STARTUP-RECOVERY.md. C:3.980GiB after preserving prior installed APK."
   },
-  "boundaries": "Canonical API/schema candidate only. PostgreSQL is a fresh owned local test cluster. No mobile/WebAuth, external accounts/network, existing/live database, signing/payment, production, merge or deploy. Keep scheduler paused.",
+  "boundaries": "Only the nonactivated wallet proof candidate and local tests. No existing/live database, external account authorization, real wallet signing, payments, new APK installation, merge/deploy or scheduler restart. Native/WebAuth work was resumed by owner on2026-09-14; archival remains separate.",
   "publishedAnchorCommit": "4fcb08ea78738ea49baf11389ec98114d9b4a535",
   "candidatePublishedHead": null,
   "candidatePublishedRef": null,
@@ -73,7 +73,7 @@
     "candidatePublishedHead": "eb59e0218e8f74ee319372cd404ae63cc6e96d92",
     "candidatePublishedRef": "refs/heads/codex/mobile-design-foundation-20260913"
   },
-  "completedAt": "2026-09-14T08:21:30.846Z",
+  "completedAt": "2026-09-14T21:21:59Z",
   "previousPostgresTask": {
     "task": "local-postgres-projects-baseline",
     "status": "P2_6_BASELINE_REVIEWED_REMAINING_GATES_OPEN",
@@ -83,7 +83,7 @@
     "review": "APPROVED: Beauvoir, independent Sol/high agent01a09e82-0111-7803-ba04-dac9514c52a5, reviewed a0834ac7..e9f954fbb105ba4f6e05ff54c860ecaffec6ff28. Independently ran guards4/4 and real PostgreSQL18.4 tests9/9, exits0; source SHA matches, canonical gcsc.db unchanged and PostgreSQL stopped. Root43/43/API159 remain parent evidence. No main integration or production approval.",
     "result": "Added native PostgreSQL runner without Docker or downloads. Real PostgreSQL18.4:9/9 including parent; runtime schema idempotency, project/bid creation, role isolation, audit, FK/UNIQUE and API module/connection restart pass. Root43/43 plus syntax/static and API159/159 pass. services/api/v3/.tmp/postgres-baseline-ZUU0yU/result.json: testExitCode0, postgresExitCode0. Missing pg_isready diagnosed and replaced by pg driver probe. No mobile, WebAuth or financial runtime edits."
   },
-  "updatedAt": "2026-09-14T08:21:30.846Z",
+  "updatedAt": "2026-09-14T21:21:59Z",
   "previousMigrationTask": {
     "task": "canonical-postgres-migrations",
     "status": "P2_6_MIGRATION_REVIEWED_REMAINING_GATES_OPEN",
@@ -101,5 +101,14 @@
     "candidateCommit": "8814b919b170f3b68baf61963e73477d43386eab",
     "review": "APPROVED: Lagrange, independent Sol/high context01a09ec2-e2d5-70f1-9902-bd9612287921, exact d57e4ce7..8814b919b170f3b68baf61963e73477d43386eab. No blocking findings; independently PG23/23, API164/164 and focused ESLint0/0, exits0. PG .tmp/postgres-baseline-vVXz0g/result.json, stopped0. Web build and browser actual React/mock HTTP are parent evidence, not full UI/API/DB E2E.",
     "result": "P3.1: profile/documents persist on real PG, fresh admin ACL, protected download, revision-bound conditional review, resubmission reset and audit. Parent PG23/23 exits0, API164/164, root48/48+static, fake storage PASS, web build exit0. Browser actual React/mock HTTP1280+390 PASS, not full UI/API/DB E2E. Report docs/migration/PROFILE-DOCUMENT-ACCEPTANCE.md. Final source8814b919: web build exit0, focused lint0/0, browser smoke repeated PASS in documents-ui-H1daOt. Independent review approved; no integration/deploy."
+  },
+  "previousChatTask": {
+    "task": "chat-persistence",
+    "status": "P3_1_CHAT_REVIEWED_CLIENT_INTEGRATION_OPEN",
+    "branch": "codex/chat-persistence-20260914",
+    "candidateCommit": "6666e8e7f17c746b756e5213d992774ce2b37b1a",
+    "review": "APPROVED: Copernicus independent Sol/high context01a09eeb-1f84-7660-89a8-4b4df185cd0c, exact final6666e8e7f17c746b756e5213d992774ce2b37b1a (baseff17a049). Initial6df6f81b needed bounded reads/auth and fatal UTF8 fixes; both closed. Independent final PG39/39, API168/168, syntax/diff PASS, exits0. PG .tmp/postgres-baseline-EZpIiV/result.json stopped0. Final root/static are parent evidence. No integration/release approval.",
+    "result": "Reviewed PostgreSQL-only participant chat: pair isolation, fresh roles/status, read-only lifecycle, UUID replay/conflict handling, ordered cursor, atomic metadata audit, body/rate limits, bounded reads/auth/writes and strict UTF8. Parent PG39/39, API168/168, root48/static/readiness, fake storage/diff PASS. Independent PG/API repeat PASS. No client/API/DB end-to-end claim or live IO. CHAT-ACCEPTANCE.md records red/green evidence and limitations.",
+    "next": "P3.1 web chat consumer: extend existing api.ts and Dashboard, open from actual bid, preserve message UUID on uncertain response, clear on account change, verify two browser sessions against isolated canonical API/local PG. Read CHAT-ACCEPTANCE.md and current consumers first. Native/WebAuth and archival remain deferred. Reconcile paid-lead/contact policy with P2.5 before pilot. No APK, live systems, merge/deploy or scheduler restart."
   }
 }

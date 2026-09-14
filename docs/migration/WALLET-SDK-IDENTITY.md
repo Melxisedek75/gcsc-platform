@@ -222,4 +222,36 @@ no package upgrades or SDK node_modules patches were made.
 
 Physical test is pending: `adb devices -l` returned an empty list this run.
 No new APK, installation, wallet approval, account access, broadcast or deployment.
-Web build and independent review results follow after completion below.
+Web build exited0: 2979 modules, Vite1m59s. Existing large-chunk and stale
+Browserslist warnings remain; no dependency churn was added to hide them.
+`npm run check:integration-contracts` still exits1:52 declared routes,5/7 required
+entrypoints; wallet-first challenge/verify are absent. This gate is NOT passed.
+
+### Independent review
+
+Helmholtz, separate Sol/high context `01a0a1b1-ec17-7ee0-b66f-8c1998a2672b`,
+APPROVED exact source candidate `0d597d9b4e93d357875588a6fc8280519423187a`
+against `553c3692b7cb816da0be9c04ee0cf6f8bb6d3356`, strictly for this nonactivated
+codec/adapters scope. No blocking finding for that scope; not approval to integrate
+HTTP/JWT, issue a wallet-ready APK, or deploy. Independently repeated:
+
+```powershell
+# cwd: services/api/v3
+node .\node_modules\jest\bin\jest.js --runTestsByPath C:\gcsc-platform\.worktrees\qa\services\api\v3\tests\wallet-ownership-proof.test.js --runInBand --verbose
+# cwd: repository root
+npm run test:wallet-proof-client
+git diff --check
+```
+
+Results:52/52,15/15 and diff PASS, exit0. A separate read-only probe confirmed
+matching candidate transaction bytes/digest for web codec5.0.0 and native
+codec5.1.0-rc-1 using the reqauth ABI. No real wallet transport was exercised.
+
+**Required before activation:** `SIG_WA_` is intentionally unsupported. Confirm
+actual signature types on BOTH target wallets; if WA is returned, add and review
+WebAuthn assertion/RP/origin/challenge checks instead of relaxing the allowlist or
+treating a WA key as K1/R1. This is a known compatibility gate, not general WebAuth
+support. Current authority and durable-store adapters remain unimplemented.
+
+Final device inventory shows only Pixel8 Bluetooth/audio entries, no present
+Android/ADB USB entry. No device-test retry loop or schedule was started.
