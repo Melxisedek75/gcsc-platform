@@ -4,6 +4,8 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { PaperProvider } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
+import * as Linking from 'expo-linking';
+import { isWalletProbeLink } from '../../../packages/wallet-proof/probe-support.mjs';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { fetchProfile } from '../lib/auth';
 import { AuthUser, clearSession, loadSession } from '../lib/api';
@@ -24,6 +26,7 @@ export default function RootLayout() {
 
     async function hydrate() {
       try {
+        if (isWalletProbeLink(await Linking.getInitialURL(), process.env.EXPO_PUBLIC_WALLET_PROBE === '1')) return;
         await initI18n();
         const { token } = await loadSession();
         if (!token) {
@@ -87,6 +90,7 @@ export default function RootLayout() {
           <Stack.Screen name="dispute" options={{ presentation: 'modal' }} />
           <Stack.Screen name="notifications" options={{ presentation: 'modal' }} />
           <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="wallet-probe" />
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(homeowner)" />
           <Stack.Screen name="(contractor)" />

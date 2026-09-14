@@ -121,8 +121,8 @@
   {
     "path": "apps/mobile/app.json",
     "sourceBlob": "34e7fb48f1cefe1fffbda1c5ffd28b33a80c5699",
-    "sha256": "4af2adf9e729438d080de2f56697ed62eacc5ab0b729975ddf65c16d4c5ed152",
-    "reason": "Advance candidate to 0.1.3/versionCode 5 so a rebuilt APK can replace installed 0.1.2/code 4 without uninstalling user data. No APK or device acceptance implied.",
+    "sha256": "f9c4b806a87c09b989ab6de5e47a2cdbaab9e71a421d1c6e0244ca45c39cdd46",
+    "reason": "Advance candidate to 0.1.4/versionCode 6 for the explicit USB sign-only wallet probe without uninstalling user data. No APK or device acceptance implied.",
     "test": "node --test tests/mobile-apk.test.mjs; version regression failed before correction"
   },
   {
@@ -163,9 +163,9 @@
   {
     "path": "apps/mobile/app/_layout.tsx",
     "sourceBlob": "41af3e10e5fe6a1cb594a835e297ee3332c30f77",
-    "sha256": "96db0e6c6372d617767d4c146091ac1e4037f558eb79e3dae360ae2d3a92d7ee",
-    "reason": "Provide the shared Material light theme and bundled icons; use a matching status bar without changing hydration/authentication logic.",
-    "test": "npm run test:mobile-design; npm run check:mobile-types"
+    "sha256": "2d637a5d218047da2c4d6dd554c2052b0e335b968048e4f2bbc0782cac2ce3d8",
+    "reason": "Retain Material theme and icons. Only an exact wallet-probe deep link in an explicitly enabled diagnostic build skips normal hydration, preserving existing application credentials during USB diagnostics.",
+    "test": "npm run test:mobile-design; npm run test:wallet-device-probe; npm run check:mobile-types"
   },
   {
     "path": "apps/mobile/app/(contractor)/profile.tsx",

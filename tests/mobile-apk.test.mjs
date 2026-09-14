@@ -61,6 +61,12 @@ test('dependency downloads are explicit and do not enable Expo network or dotenv
   assert.equal(plan.env.EXPO_NO_DOTENV, '1');
 });
 
+test('wallet diagnostics require an explicit build flag, never inherited ambient env', async () => {
+  const { createApkPlan } = await load();
+  assert.equal(createApkPlan({ ...env, EXPO_PUBLIC_WALLET_PROBE: '1' }).env.EXPO_PUBLIC_WALLET_PROBE, '0');
+  assert.equal(createApkPlan(env, { walletProbe: true }).env.EXPO_PUBLIC_WALLET_PROBE, '1');
+});
+
 test('Windows Gradle launcher executes batch files, preserves arguments and returns their exit code',
   { skip: process.platform !== 'win32' }, async () => {
     const { createApkPlan, createGradleInvocation } = await load();

@@ -12,9 +12,10 @@ export function assertDiskBudget(freeBytes) {
   }
 }
 
-export function createApkPlan(inputEnv, { downloadDependencies = false } = {}) {
+export function createApkPlan(inputEnv, { downloadDependencies = false, walletProbe = false } = {}) {
   const bundle = createBuildPlan(inputEnv);
   const env = { ...bundle.env, GCSC_LOCAL_ANDROID_BUILD: '1' };
+  env.EXPO_PUBLIC_WALLET_PROBE = walletProbe ? '1' : '0';
   for (const key of ['JAVA_HOME', 'ANDROID_HOME', 'GRADLE_USER_HOME']) {
     if (inputEnv[key]) env[key] = inputEnv[key];
   }
@@ -52,8 +53,9 @@ if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) 
   try {
     if (process.platform !== 'win32') throw new Error('This local APK runner currently supports Windows only.');
     const args = process.argv.slice(2);
-    if (args.some(arg => arg !== '--download-dependencies')) throw new Error('Unknown APK build option.');
-    const plan = createApkPlan(process.env, { downloadDependencies: args.includes('--download-dependencies') });
+    if (args.some(arg => !['--download-dependencies', '--wallet-probe'].includes(arg))) throw new Error('Unknown APK build option.');
+    const plan = createApkPlan(process.env, { downloadDependencies: args.includes('--download-dependencies'),
+      walletProbe: args.includes('--wallet-probe') });
     for (const dir of [plan.cwd, plan.env.ANDROID_HOME, plan.env.GRADLE_USER_HOME]) {
       const disk = fs.statfsSync(dir);
       assertDiskBudget(disk.bavail * disk.bsize);

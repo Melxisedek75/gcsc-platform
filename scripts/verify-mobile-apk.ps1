@@ -9,7 +9,7 @@ $apk = (Resolve-Path -LiteralPath $ApkPath).Path
 $aapt = Join-Path $SdkPath 'build-tools\36.0.0\aapt.exe'
 $badging = & $aapt dump badging $apk
 if ($LASTEXITCODE -ne 0) { throw 'APK manifest verification failed.' }
-if (-not ($badging -match "package: name='com.gcsc.smartcontractor' versionCode='5' versionName='0.1.3'")) {
+if (-not ($badging -match "package: name='com.gcsc.smartcontractor' versionCode='6' versionName='0.1.4'")) {
     throw 'Unexpected APK package/version; do not install.'
 }
 if ($badging -match '^application-debuggable') { throw 'APK still requires developer-mode acceptance.' }
@@ -30,7 +30,7 @@ try {
 & (Join-Path $SdkPath 'build-tools\36.0.0\apksigner.bat') verify $apk
 if ($LASTEXITCODE -ne 0) { throw 'APK signature verification failed.' }
 [pscustomobject]@{
-    Apk=$apk; Version='0.1.3'; VersionCode=5; ApiOrigin=$ApiOrigin
+    Apk=$apk; Version='0.1.4'; VersionCode=6; ApiOrigin=$ApiOrigin
     Bytes=(Get-Item -LiteralPath $apk).Length
     SHA256=(Get-FileHash -LiteralPath $apk -Algorithm SHA256).Hash.ToLowerInvariant()
     Scope='Local USB test APK. Not wallet/payment/device acceptance.'
