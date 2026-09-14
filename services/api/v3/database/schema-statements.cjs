@@ -52,6 +52,7 @@ const statements = Object.freeze([
   `ALTER TABLE user_documents ADD COLUMN IF NOT EXISTS file_data_url TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE user_documents ADD COLUMN IF NOT EXISTS file_size INTEGER NOT NULL DEFAULT 0`,
   `ALTER TABLE user_documents ADD COLUMN IF NOT EXISTS file_sha256 TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE user_documents ADD COLUMN IF NOT EXISTS revision INTEGER NOT NULL DEFAULT 1 CHECK (revision > 0)`,
   `ALTER TABLE user_documents ADD COLUMN IF NOT EXISTS review_note TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE user_documents ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`,
   `ALTER TABLE user_documents ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ`,

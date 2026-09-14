@@ -7,6 +7,7 @@ const { createRequire } = require('node:module');
 const { createHash } = require('node:crypto');
 const { spawnSync } = require('node:child_process');
 const { validateLocalTestDatabase } = require('../scripts/local-test-database.cjs');
+const { profileDocumentAcceptance } = require('./profile-documents.acceptance.cjs');
 
 const apiRoot = path.resolve(__dirname, '../services/api/v3');
 const runDirectory = fs.realpathSync(process.env.GCSC_TEST_RUN_DIRECTORY);
@@ -74,7 +75,7 @@ async function request(method, route, user, body) {
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     signal: AbortSignal.timeout(5000),
   });
-  return { status: response.status, body: await response.json() };
+  return { status: response.status, headers: response.headers, body: await response.json() };
 }
 
 async function fixtureUser(role, label) {
@@ -224,6 +225,8 @@ test('real PostgreSQL project/bid persistence and access baseline', { timeout: 9
     await upgrade.query(`INSERT INTO users(id,email,password_hash,role,full_name) VALUES (1,'upgrade@example.invalid','fixture','homeowner','Owner');
       INSERT INTO projects(id,homeowner_id,title) VALUES (1,1,'Preserved project');
       INSERT INTO payment_receipts(tx_hash,kind,user_id,amount) VALUES ('fixture-receipt','lead_token',1,'50.0000 XPR');
+      INSERT INTO user_documents(user_id,document_type,file_name,status) VALUES (1,'contractor_license','preserved.pdf','approved');
+      ALTER TABLE user_documents DROP COLUMN revision;
       ALTER TABLE users DROP COLUMN email_verified;
       ALTER TABLE projects DROP COLUMN published;
       ALTER TABLE projects DROP COLUMN published_at;
@@ -235,6 +238,8 @@ test('real PostgreSQL project/bid persistence and access baseline', { timeout: 9
       [{ title: 'Preserved project', published: false, published_at: null }]);
     assert.deepEqual((await upgrade.query('SELECT tx_hash,amount,verification_status FROM payment_receipts')).rows,
       [{ tx_hash: 'fixture-receipt', amount: '50.0000 XPR', verification_status: 'confirmed' }]);
+    assert.deepEqual((await upgrade.query('SELECT file_name,status,revision FROM user_documents')).rows,
+      [{ file_name: 'preserved.pdf', status: 'approved', revision: 1 }]);
     await migrateSchema(upgrade);
     assert.equal((await upgrade.query('SELECT COUNT(*)::int AS count FROM payment_receipts')).rows[0].count, 1);
   });
@@ -273,6 +278,8 @@ test('real PostgreSQL project/bid persistence and access baseline', { timeout: 9
     await assert.rejects(migrateSchema(legacy), { code: '0A000' });
     assert.equal(await schemaSnapshot('fixture_legacy'), before);
   });
+
+  await profileDocumentAcceptance(t, { pool, request, fixtureUser, startApi, stopApi });
 
   fs.writeFileSync(path.join(runDirectory, 'api-source.sha256'), createHash('sha256').update(source).digest('hex') + '\n');
   const hashes = Object.fromEntries(['pure-server.cjs', 'database/migrate-schema.cjs', 'database/schema-statements.cjs']

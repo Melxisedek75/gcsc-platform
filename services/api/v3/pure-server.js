@@ -466,6 +466,7 @@ function normalizeDocument(row) {
     mime_type: row.mime_type || '',
     file_size: Number(row.file_size) || 0,
     file_sha256: row.file_sha256 || '',
+    revision: Number(row.revision) || 1,
     status: row.status || 'submitted',
     review_note: row.review_note || '',
     submitted_at: row.submitted_at,
@@ -493,13 +494,17 @@ async function listStoredUserDocuments(userId) {
     .map(normalizeDocument);
 }
 
-async function findStoredUserDocumentById(id) {
+async function findStoredUserDocumentById(id, includeFile = false) {
+  let row;
   if (USE_POSTGRES) {
     const result = await queryPostgres('SELECT * FROM user_documents WHERE id = $1 LIMIT 1', [id]);
-    return normalizeDocument(result.rows[0]);
+    row = result.rows[0];
+  } else {
+    row = db.user_documents.find((doc) => doc.id === Number(id));
   }
-
-  return normalizeDocument(db.user_documents.find((doc) => doc.id === Number(id)));
+  const document = normalizeDocument(row);
+  if (document && includeFile) document.file_data_url = row.file_data_url || '';
+  return document;
 }
 
 async function listStoredDocumentsForReview(status = '') {
@@ -538,6 +543,7 @@ async function upsertStoredUserDocument(user, body) {
         file_data_url = EXCLUDED.file_data_url,
         file_size = EXCLUDED.file_size,
         file_sha256 = EXCLUDED.file_sha256,
+        revision = user_documents.revision + 1,
         status = EXCLUDED.status,
         review_note = EXCLUDED.review_note,
         submitted_at = NOW(),
@@ -565,6 +571,7 @@ async function upsertStoredUserDocument(user, body) {
     Object.assign(existing, {
       ...document,
       id: existing.id,
+      revision: (Number(existing.revision) || 1) + 1,
       submitted_at: new Date().toISOString(),
       reviewed_at: null,
       reviewed_by: null,
@@ -577,6 +584,7 @@ async function upsertStoredUserDocument(user, body) {
   const stored = {
     id: db.nextId('user_documents'),
     ...document,
+    revision: 1,
     submitted_at: new Date().toISOString(),
     reviewed_at: null,
     reviewed_by: null,
@@ -592,15 +600,15 @@ async function reviewStoredUserDocument(document, status, reviewNote, reviewedBy
   if (USE_POSTGRES) {
     const result = await queryPostgres(
       `UPDATE user_documents SET status = $1, review_note = $2, reviewed_by = $3, reviewed_at = NOW(), updated_at = NOW()
-       WHERE id = $4
+       WHERE id = $4 AND revision = $5
        RETURNING *`,
-      [status, reviewNote, reviewedBy, document.id]
+      [status, reviewNote, reviewedBy, document.id, document.revision]
     );
     return normalizeDocument(result.rows[0]);
   }
 
   const stored = db.user_documents.find((doc) => doc.id === Number(document.id));
-  if (!stored) return null;
+  if (!stored || (Number(stored.revision) || 1) !== document.revision) return null;
   stored.status = status;
   stored.review_note = reviewNote;
   stored.reviewed_by = reviewedBy;
@@ -2311,10 +2319,12 @@ function parseDataUrl(value) {
   const input = String(value || '');
   const match = input.match(/^data:([a-z0-9.+/-]+);base64,([a-z0-9+/=]+)$/i);
   if (!match) return null;
+  const buffer = Buffer.from(match[2], 'base64');
+  if (!buffer.length || buffer.toString('base64') !== match[2]) return null;
   return {
     mimeType: match[1].toLowerCase(),
     payload: match[2],
-    buffer: Buffer.from(match[2], 'base64'),
+    buffer,
   };
 }
 
@@ -2363,7 +2373,7 @@ function buildDocumentPayload(user, body) {
     file_size: parsed.buffer.length,
     file_sha256: crypto.createHash('sha256').update(parsed.buffer).digest('hex'),
     status: 'submitted',
-    review_note: cleanString(body.reviewNote || body.review_note, 300),
+    review_note: '',
   };
 }
 
@@ -2548,6 +2558,17 @@ function getUser(req) {
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
   if (!token) return null;
   try { return jwtVerify(token); } catch { return null; }
+}
+
+async function requireActiveUser(req, res, role) {
+  const auth = getUser(req);
+  if (!auth) { json(res, 401, { error: 'Unauthorized' }); return null; }
+  const user = await findUserById(auth.userId);
+  if (!user) { json(res, 404, { error: 'User not found' }); return null; }
+  if (!user.is_active) { json(res, 403, { error: 'Account is inactive' }); return null; }
+  // Roles in a still-valid JWT may have been revoked since login.
+  if (role && user.role !== role) { json(res, 403, { error: 'Admin only' }); return null; }
+  return user;
 }
 
 function envInt(name, fallback) {
@@ -3043,6 +3064,7 @@ const routes = {
           document_type: document.document_type,
           file_name: document.file_name,
           file_sha256: document.file_sha256,
+          revision: document.revision,
           status: document.status,
         },
       });
@@ -3055,6 +3077,35 @@ const routes = {
     } catch (err) {
       json(res, err.status || 400, { error: err.message || 'Could not submit document' });
     }
+  },
+
+  'GET /api/auth/documents/:id/file': async (req, res, params) => {
+    res.setHeader('Cache-Control', 'no-store');
+    const user = await requireActiveUser(req, res);
+    if (!user) return;
+    const id = Number(params.id);
+    if (!Number.isSafeInteger(id) || id <= 0) return json(res, 404, { error: 'Document not found' });
+    const document = await findStoredUserDocumentById(id, true);
+    if (!document || (document.user_id !== user.id && user.role !== 'admin')) {
+      return json(res, 404, { error: 'Document not found' });
+    }
+    const rawRevision = parse(req.url, true).query.revision;
+    if (rawRevision === undefined) return json(res, 428, { error: 'Document revision required. Refresh the document list.' });
+    const revision = typeof rawRevision === 'string' && /^[1-9][0-9]*$/.test(rawRevision) ? Number(rawRevision) : 0;
+    if (!Number.isSafeInteger(revision) || revision <= 0) return json(res, 400, { error: 'Invalid document revision' });
+    if (document.revision !== revision) return json(res, 409, { error: 'Document changed. Refresh the document list.' });
+    const parsed = parseDataUrl(document.file_data_url);
+    if (!parsed || !ALLOWED_DOCUMENT_MIME_TYPES.includes(parsed.mimeType)
+      || crypto.createHash('sha256').update(parsed.buffer).digest('hex') !== document.file_sha256) {
+      return json(res, 409, { error: 'Document file is unavailable. Ask the owner to upload it again.' });
+    }
+    await recordAuditEvent(req, {
+      actorId: user.id, targetUserId: document.user_id, action: 'document.downloaded',
+      entityType: 'user_document', entityId: document.id,
+      metadata: { revision: document.revision, file_sha256: document.file_sha256 },
+    });
+    const { file_data_url, ...metadata } = document;
+    json(res, 200, { document: metadata, file_data_url });
   },
 
   'GET /api/auth/compliance': async (req, res) => {
@@ -3212,9 +3263,7 @@ const routes = {
   },
 
   'GET /api/admin/documents': async (req, res) => {
-    const auth = getUser(req);
-    if (!auth) return json(res, 401, { error: 'Unauthorized' });
-    if (auth.role !== 'admin') return json(res, 403, { error: 'Admin only' });
+    if (!await requireActiveUser(req, res, 'admin')) return;
 
     const parsed = parse(req.url, true);
     const status = cleanString(parsed.query.status || '', 40);
@@ -3224,9 +3273,7 @@ const routes = {
   },
 
   'GET /api/admin/audit-events': async (req, res) => {
-    const auth = getUser(req);
-    if (!auth) return json(res, 401, { error: 'Unauthorized' });
-    if (auth.role !== 'admin') return json(res, 403, { error: 'Admin only' });
+    if (!await requireActiveUser(req, res, 'admin')) return;
 
     const parsed = parse(req.url, true);
     const events = await listStoredAuditEvents({
@@ -3239,9 +3286,7 @@ const routes = {
   },
 
   'GET /api/admin/financing-prechecks': async (req, res) => {
-    const auth = getUser(req);
-    if (!auth) return json(res, 401, { error: 'Unauthorized' });
-    if (auth.role !== 'admin') return json(res, 403, { error: 'Admin only' });
+    if (!await requireActiveUser(req, res, 'admin')) return;
 
     const parsed = parse(req.url, true);
     const prechecks = await listFinancingPrechecks({
@@ -3252,11 +3297,12 @@ const routes = {
   },
 
   'PUT /api/admin/documents/:id/review': async (req, res, params) => {
-    const auth = getUser(req);
-    if (!auth) return json(res, 401, { error: 'Unauthorized' });
-    if (auth.role !== 'admin') return json(res, 403, { error: 'Admin only' });
+    const reviewer = await requireActiveUser(req, res, 'admin');
+    if (!reviewer) return;
 
-    const document = await findStoredUserDocumentById(parseInt(params.id));
+    const id = Number(params.id);
+    if (!Number.isSafeInteger(id) || id <= 0) return json(res, 404, { error: 'Document not found' });
+    const document = await findStoredUserDocumentById(id);
     if (!document) return json(res, 404, { error: 'Document not found' });
 
     const body = await parseBody(req);
@@ -3264,22 +3310,30 @@ const routes = {
     if (status !== 'approved' && status !== 'rejected') {
       return json(res, 400, { error: 'Review status must be approved or rejected' });
     }
+    if (body.expectedRevision === undefined) return json(res, 428, { error: 'Document revision required. Refresh the document list.' });
+    if (!Number.isSafeInteger(body.expectedRevision) || body.expectedRevision <= 0) return json(res, 400, { error: 'Invalid document revision' });
+    if (document.revision !== body.expectedRevision) return json(res, 409, { error: 'Document changed. Refresh the document list.' });
+    const reviewNote = cleanString(body.reviewNote || body.review_note, 300);
+    if (status === 'rejected' && !reviewNote) return json(res, 400, { error: 'Rejection reason required' });
 
     const reviewed = await reviewStoredUserDocument(
       document,
       status,
-      cleanString(body.reviewNote || body.review_note, 300),
-      auth.userId || null
+      reviewNote,
+      reviewer.id
     );
+    if (!reviewed) return json(res, 409, { error: 'Document changed. Refresh the document list.' });
     const enrichedDocument = await enrichDocumentWithUser(reviewed);
     await recordAuditEvent(req, {
-      actorId: auth.userId || null,
+      actorId: reviewer.id,
       targetUserId: document.user_id,
       action: 'document.reviewed',
       entityType: 'user_document',
       entityId: document.id,
       metadata: {
         document_type: document.document_type,
+        revision: document.revision,
+        file_sha256: document.file_sha256,
         status: reviewed.status,
         review_note_present: !!reviewed.review_note,
       },

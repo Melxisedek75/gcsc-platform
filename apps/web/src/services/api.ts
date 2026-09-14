@@ -40,6 +40,7 @@ export interface GcscUserDocument {
   mime_type: string
   file_size: number
   file_sha256: string
+  revision: number
   status: 'submitted' | 'approved' | 'rejected' | 'missing'
   review_note?: string
   submitted_at?: string
@@ -286,13 +287,16 @@ class ApiClient {
   getDocuments() {
     return this.request('/auth/documents')
   }
+  getDocumentFile(document: GcscUserDocument) {
+    return this.request(`/auth/documents/${document.id}/file?revision=${document.revision}`)
+  }
   submitDocument(body: { documentType: string; fileName: string; mimeType: string; fileDataUrl: string; reviewNote?: string }) {
     return this.request('/auth/documents', { method: 'POST', body: JSON.stringify(body) })
   }
   getCompliance() {
     return this.request('/auth/compliance')
   }
-  reviewDocument(id: number, body: { status: 'approved' | 'rejected'; reviewNote?: string }) {
+  reviewDocument(id: number, body: { status: 'approved' | 'rejected'; reviewNote?: string; expectedRevision: number }) {
     return this.request(`/admin/documents/${id}/review`, { method: 'PUT', body: JSON.stringify(body) })
   }
   getAdminDocuments(status?: string) {
