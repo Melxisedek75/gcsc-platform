@@ -1,23 +1,23 @@
 {
-  "task": "canonical-postgres-migrations",
-  "status": "P2_6_MIGRATION_REVIEWED_REMAINING_GATES_OPEN",
+  "task": "profile-document-acceptance",
+  "status": "P3_1_PROFILE_DOCUMENT_REVIEWED_REMAINING_MVP_OPEN",
   "owner": "019e7c87-8410-79f1-b86a-eedf78a1aa27",
   "worktree": "C:/gcsc-platform/.worktrees/qa",
-  "branch": "codex/postgres-migrations-20260913",
+  "branch": "codex/profile-document-acceptance-20260913",
   "remote": "https://github.com/Melxisedek75/gcsc-platform",
   "targetBranch": "main",
   "scope": [
     "Owner deferred mobile/WebAuth development and disk archival; continue dependency-ready server work",
-    "One canonical schema for API startup and standalone SQL export; transaction, locking, preflight and data-preserving action upgrade",
+    "P3.1 profiles/documents/admin: real PostgreSQL persistence, revoked admin ACL, private file download, version-bound review and audit",
     "Only disposable owned PostgreSQL clusters and isolated API/test JSON files; no existing database migration",
     "Keep wallet/payment business behavior unchanged; preserve source provenance and every unrelated dirty file"
   ],
   "leaseUntil": null,
-  "baseCommit": "57b8ff21f6da14ff0028394d393b17ea311260db",
-  "candidateCommit": "1a2814f19634780c21d42a1e9ce2baafd605f06a",
-  "review": "APPROVED: Boole, independent Sol/high agent01a09e9a-f835-7aa0-9a80-dc8ed9d0f55f, exact57b8ff21..1a2814f19634780c21d42a1e9ce2baafd605f06a. No findings; independent90-statement comparison mismatchCount0 after intended reorder, schema5/5+readiness and PostgreSQL18.4:15/15 with exits0. Evidence .tmp/postgres-baseline-cSNuwd/result.json. Root48/API159/fake storage remain parent evidence. Not production or main integration approval.",
-  "result": "Reproduced CHECK violation23514 before fix; all90 SQL statements moved unchanged except DROP/UPDATE order. Real PostgreSQL18.4:15/15, schema5/5, root48/48+readiness/static, API159/159, fake storage PASS. Export and API catalogs match; tested repeat/additive upgrade/data+DDL rollback/concurrent startup/old init.sql rejection. First API run hit EBUSY from old shared JSON fixtures; isolated affected tests and reran PASS. Extra fake workflow remains400 wallet_missing, reproduced on pre-change57b8ff21; not a migration regression and not counted PASS.",
-  "next": "P3.1 next dependency-ready slice: real-PG profiles, contractor document upload/review, admin ACL and persistence without wallet/signatures or external providers. Include inactive/revoked admin, owner-only document visibility and re-submission review reset cases. P2.6 backup/restore remains open pending matching pg_dump/pg_restore tools; broader legacy conversion and payment endpoint/race acceptance remain open. Mobile/WebAuth/archival deferred; scheduler stays paused.",
+  "baseCommit": "d57e4ce7",
+  "candidateCommit": "8814b919b170f3b68baf61963e73477d43386eab",
+  "review": "APPROVED: Lagrange, independent Sol/high context01a09ec2-e2d5-70f1-9902-bd9612287921, exact d57e4ce7..8814b919b170f3b68baf61963e73477d43386eab. No blocking findings; independently PG23/23, API164/164 and focused ESLint0/0, exits0. PG .tmp/postgres-baseline-vVXz0g/result.json, stopped0. Web build and browser actual React/mock HTTP are parent evidence, not full UI/API/DB E2E.",
+  "result": "P3.1: profile/documents persist on real PG, fresh admin ACL, protected download, revision-bound conditional review, resubmission reset and audit. Parent PG23/23 exits0, API164/164, root48/48+static, fake storage PASS, web build exit0. Browser actual React/mock HTTP1280+390 PASS, not full UI/API/DB E2E. Report docs/migration/PROFILE-DOCUMENT-ACCEPTANCE.md. Final source8814b919: web build exit0, focused lint0/0, browser smoke repeated PASS in documents-ui-H1daOt. Independent review approved; no integration/deploy.",
+  "next": "P3.1 next: inspect chat client contract and canonical backend gap, then implement scoped participant-only message persistence with local PG tests. No mobile build or wallet integration. Backup/restore needs matching pg_dump/pg_restore; full UI/API/DB/registration acceptance remains open. Scheduler stays paused; archival remains deferred.",
   "deferred": [
     {
       "task": "P2.2 wallet proof and isolated API",
@@ -74,7 +74,7 @@
     "candidatePublishedHead": "eb59e0218e8f74ee319372cd404ae63cc6e96d92",
     "candidatePublishedRef": "refs/heads/codex/mobile-design-foundation-20260913"
   },
-  "completedAt": "2026-09-14T06:07:47.098Z",
+  "completedAt": "2026-09-14T07:26:34.334Z",
   "previousPostgresTask": {
     "task": "local-postgres-projects-baseline",
     "status": "P2_6_BASELINE_REVIEWED_REMAINING_GATES_OPEN",
@@ -84,5 +84,14 @@
     "review": "APPROVED: Beauvoir, independent Sol/high agent01a09e82-0111-7803-ba04-dac9514c52a5, reviewed a0834ac7..e9f954fbb105ba4f6e05ff54c860ecaffec6ff28. Independently ran guards4/4 and real PostgreSQL18.4 tests9/9, exits0; source SHA matches, canonical gcsc.db unchanged and PostgreSQL stopped. Root43/43/API159 remain parent evidence. No main integration or production approval.",
     "result": "Added native PostgreSQL runner without Docker or downloads. Real PostgreSQL18.4:9/9 including parent; runtime schema idempotency, project/bid creation, role isolation, audit, FK/UNIQUE and API module/connection restart pass. Root43/43 plus syntax/static and API159/159 pass. services/api/v3/.tmp/postgres-baseline-ZUU0yU/result.json: testExitCode0, postgresExitCode0. Missing pg_isready diagnosed and replaced by pg driver probe. No mobile, WebAuth or financial runtime edits."
   },
-  "updatedAt": "2026-09-14T06:40:40.698Z"
+  "updatedAt": "2026-09-14T07:26:34.334Z",
+  "previousMigrationTask": {
+    "task": "canonical-postgres-migrations",
+    "status": "P2_6_MIGRATION_REVIEWED_REMAINING_GATES_OPEN",
+    "branch": "codex/postgres-migrations-20260913",
+    "baseCommit": "57b8ff21f6da14ff0028394d393b17ea311260db",
+    "candidateCommit": "1a2814f19634780c21d42a1e9ce2baafd605f06a",
+    "review": "APPROVED: Boole, independent Sol/high agent01a09e9a-f835-7aa0-9a80-dc8ed9d0f55f, exact57b8ff21..1a2814f19634780c21d42a1e9ce2baafd605f06a. No findings; independent90-statement comparison mismatchCount0 after intended reorder, schema5/5+readiness and PostgreSQL18.4:15/15 with exits0. Evidence .tmp/postgres-baseline-cSNuwd/result.json. Root48/API159/fake storage remain parent evidence. Not production or main integration approval.",
+    "result": "Reproduced CHECK violation23514 before fix; all90 SQL statements moved unchanged except DROP/UPDATE order. Real PostgreSQL18.4:15/15, schema5/5, root48/48+readiness/static, API159/159, fake storage PASS. Export and API catalogs match; tested repeat/additive upgrade/data+DDL rollback/concurrent startup/old init.sql rejection. First API run hit EBUSY from old shared JSON fixtures; isolated affected tests and reran PASS. Extra fake workflow remains400 wallet_missing, reproduced on pre-change57b8ff21; not a migration regression and not counted PASS."
+  }
 }

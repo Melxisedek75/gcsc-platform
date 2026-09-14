@@ -18,16 +18,21 @@ HTTP API и настоящая БД не заменяют регистрацию
 Evidence: POSTGRES-BASELINE.md в той же ветке. Независимое ревью e9f954fb APPROVED;
 reviewer повторил PG9/9 и guards4/4. Source candidate не включён в main.
 
+Обновление 14 сентября: profile/documents/admin slice0f4961b2 и финальный
+sanitizer8814b919 независимо APPROVED Lagrange. PG23/23 и API164/164 повторены
+reviewer; browser component smoke/mock HTTP и web build проверены родителем.
+P3.1 частично завершён, не вся матрица. Детали: PROFILE-DOCUMENT-ACCEPTANCE.md.
+
 | # | Capability | Источник / кандидат | Проверено и что остаётся | Риск |
 | --- | --- | --- | --- | --- |
 | 1 | Authentication | services/api/v3/pure-server.js, /api/auth/login | Код; дубль старых /api/login; wallet-first отсутствует | HIGH |
 | 2 | Registration | API /api/auth/register | Код; /api/register — второй путь; проверить единый контракт ролей | HIGH |
 | 3 | Session management | API JWT; web api.ts; native lib/auth.ts | Код; JWT, профиль и signing session не эквивалентны | HIGH |
-| 4 | User profiles | API /api/auth/profile | Код; проверить запрет подмены wallet binding | HIGH |
+| 4 | User profiles | API /api/auth/profile;0f4961b2 | Real PG: профиль сохраняется после рестарта API, привилегированные поля игнорируются, invalid input без частичной записи. Wallet proof не ослаблен; регистрация/UI E2E отдельно | HIGH |
 | 5 | Contractor profiles | API /api/contractors/:id/public; apps/web | Код, static trust validator; не полный E2E | MEDIUM |
 | 6 | Homeowner profiles | API profile; apps/mobile/app/(homeowner) | Код; проверить поля и разделение ролей | MEDIUM |
 | 7 | KYC / verification hooks | API verification/check, compliance | Код; реальный провайдер и KYC не подтверждены | HIGH |
-| 8 | Contractor compliance documents | API auth/documents, admin review; web CompliancePanel | Код, static trust validator; provider/E2E проверить | HIGH |
+| 8 | Contractor compliance documents | API auth/documents, admin review;0f4961b2 | Real PG: owner/admin download, revision-bound review, re-upload reset, race и audit PASS; JSON5 tests, browser component smoke с mock HTTP PASS. Provider/KYC, scanning, полная UI/API/DB приёмка открыты | HIGH |
 | 9 | Insurance records | UI compliance; contracts/gcsc-core | Проверить: UI/контракт не доказывает страховой продукт | HIGH |
 | 10 | Bonds | Требование продукта | Проверить; действующая bond-интеграция не подтверждена | HIGH |
 | 11 | Projects | API /api/projects; web ProjectsPanel; native jobs | HTTP + real PG: создание/чтение и повторное открытие данных PASS; клиентские сценарии остаются | HIGH |
@@ -63,7 +68,7 @@ reviewer повторил PG9/9 и guards4/4. Source candidate не включё
 | 41 | React Native mobile application | apps/mobile из gcsc-website/main | Импорт/хеши PASS; новый APK и native typecheck пока не выполнены | HIGH |
 | 42 | Store / marketplace application | apps/web | Код; сохранить MarketingShell/AppShell и HashRouter | MEDIUM |
 | 43 | Public marketing site | apps/marketing | HTML/CSS перенесены побайтно; публикация не менялась | MEDIUM |
-| 44 | Admin dashboard | apps/web + API admin routes | Код, static trust validator; административный E2E/ACL проверить | HIGH |
+| 44 | Admin dashboard | apps/web + API admin routes;0f4961b2 | Все4 admin routes проверяют актуального активного admin в БД; revoked/demoted/deleted JWT отклонены на PG. Download/review UI smoke PASS; полная end-to-end сессия открыта | HIGH |
 | 45 | Smart contracts | contracts | Исходники сохранены; generated builds исключены, rebuild обязателен | HIGH |
 | 46 | DAO contracts | contracts/gcsc-core | Код; governance/permissions/security audit не повторялся | HIGH |
 | 47 | Token contracts | contracts/gcsc-core; contracts/gcsc-meme | Код; deploy/supply/ключи не изменялись | HIGH |
@@ -75,10 +80,10 @@ reviewer повторил PG9/9 и guards4/4. Source candidate не включё
 | 53 | Shared API types | Web/native собственные типы | Проверить/создать по согласованному API; не пустой package ради структуры | HIGH |
 | 54 | Database schema | services/api/v3/database/schema-statements.cjs; API initStorage | 1a2814f1: схема едина для API и SQL-экспорта; колонки, ограничения и индексы совпали на real PG. Произвольные legacy-схемы не сертифицированы | HIGH |
 | 55 | Database migrations | services/api/v3/database/migrate-schema.cjs | Real PG: fresh/repeat/additive/legacy-action upgrade, data+DDL rollback и concurrent startup PASS. Старый init.sql отклоняется до изменений. Preflight означает local readiness, не production | CRITICAL |
-| 56 | PostgreSQL | API storage + scripts/run-postgres-baseline.mjs | Real PG18.4:15/15 PASS. Fake storage PASS; старый fake workflow FAIL wallet_missing также на57b8ff21. Полная DB-приёмка ещё открыта | HIGH |
+| 56 | PostgreSQL | API storage + scripts/run-postgres-baseline.mjs | 0f4961b2: real PG18.4:23/23 PASS включая profile/documents и additive revision backfill. Fake storage PASS. Полная DB-приёмка/backup открыты; прежний wallet_missing не ослаблен | HIGH |
 | 57 | CI | .github/workflows/ci.yml | Новый checks-only workflow; GitHub запуск не выполнен | HIGH |
 | 58 | Security checks | limited secret-pattern scan + tests | Активный tree без совпадений узкого скана; полный history/security review отсутствует | HIGH |
-| 59 | E2E tests | План web/API/DB/native acceptance | HTTP API + real PG8 сценариев PASS с fixture JWT; UI/регистрация/кошелёк/phone E2E не выполнены этим шагом | HIGH |
+| 59 | E2E tests | HTTP/PG + browser component acceptance;0f4961b2 | PG23 результатов с fixture JWT; отдельно реальные React панели с mock HTTP на1280/390 PASS. Это не единый UI/API/DB путь, не регистрация/кошелёк/phone E2E | HIGH |
 | 60 | Deployment | docs/migration/source-configs | Только declarations; live root/Pages/GitHub App/rollback не проверены | CRITICAL |
 
 ## Приёмка
