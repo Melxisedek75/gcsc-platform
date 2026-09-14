@@ -159,5 +159,19 @@
     "sha256": "939eee911716c5fa208c8488ab308ba9e9ba4acbd1124c8af3e2220130b8a9c0",
     "reason": "P3.1: expose protected download of the owner document revision.",
     "test": "npm run check; npm run test:api; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage; npm --prefix apps/web run build; browser document review smoke"
+  },
+  {
+    "path": "apps/mobile/lib/webauth.ts",
+    "sourceBlob": "b3ffa5c39bb62d63dbb21babef2768546796edd4",
+    "sha256": "f0923333a2ee656940e01f1bf5dd3a0406839b5a3d501e98e155f3626e763031",
+    "reason": "P2.2 candidate: add an explicit sign-only ownership-proof adapter using the existing native SDK session. No UI caller, binding, login, or broadcast activation.",
+    "test": "npm run test:wallet-proof-client; npm run check:mobile-types; npm run check; independent wallet SDK serialization review"
+  },
+  {
+    "path": "apps/web/src/services/webauth.ts",
+    "sourceBlob": "13fdadd14ef7675d9175e9f60621a9ec5d7128ff",
+    "sha256": "22ef8ac9870ef77150e0a8f8d27465635e1dc3241b57c42a7d3684f6fc0c7d1a",
+    "reason": "P2.2 candidate: expose the shared sign-only proof requester; fail closed if popup signature/bytes are absent. Existing connect/restore callers remain unchanged; no ownership claim from metadata.",
+    "test": "npm run test:wallet-proof-client; npm run build:web; npm run check; independent wallet SDK serialization review"
   }
 ]

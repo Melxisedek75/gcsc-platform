@@ -170,3 +170,56 @@ wallet/device/native APK or backend behavior evidence was added. Application sou
 dependencies and lockfiles remain unchanged. The signing boundary cannot be crossed
 by this automation; continue other safe local baseline tasks instead of repeatedly
 running the same experiment or advertising the wallet protocol as ready.
+
+## P2.2 candidate implementation, 2026-09-14
+
+Owner resumed mobile/WebAuth work. Candidate branch: `codex/wallet-proof-20260914`,
+based on `553c3692b7cb816da0be9c04ee0cf6f8bb6d3356`. This section supersedes the
+work deferral, NOT the requirement for real wallet acceptance.
+
+`services/api/v3/wallet-ownership-proof.cjs` now implements canonical challenge
+serialization and signature verification using the existing `@proton/js` library.
+It supports K1/R1, exact transaction-byte equality, current requesting-session /
+audience / chain / actor / permission / purpose matching, two-minute expiry,
+and bounded single-use redemption through injected storage/authority adapters.
+The verifier returns an identity only after literal `true` from current authority;
+key recovery alone is NOT account authorization. No private key is read or stored.
+
+The candidate replaces the synthetic empty-account action with `eosio::reqauth`
+and raw `eosio.null::nonce` context-free data. The official XPR contract implements
+reqauth as `require_auth(from)`, without transferring funds:
+[pinned XPR source](https://github.com/XPRNetwork/proton.contracts/blob/4315f5bf60b5aef1bbe0e550d4fece873e52250c/contracts/eosio.bios/src/eosio.bios.cpp#L44-L46).
+This does NOT prove that either live wallet accepts/displays the nonce payload.
+
+`packages/wallet-proof/request-proof.mjs` is shared by new, explicitly invoked
+sign-only exports in web/mobile WebAuth services. It whitelists the auth actions,
+forces `broadcast:false,noModify:true`, checks the signing session before/after,
+and accepts only a signature plus exact expected bytes. Native typed results use
+`resolved.serializedTransaction`; web must actually return a supported byte field.
+Unknown shapes and transaction receipts are refused, not guessed or substituted.
+Timeout/cancellation discards late results without starting another signing request.
+
+Activation is deliberately absent: no UI caller, new HTTP route, wallet binding,
+JWT issuance, persistent-store adapter, or live authority adapter is added here.
+Existing ownership guards remain unchanged. Before activation, implement a durable
+atomic take by challenge ID AND full requesting context (including session),
+current authority against a verified chain, and the coordinated API/client flow.
+Never supply an in-memory test stub as a production adapter.
+
+The web popup still requires separate origin/source hardening. Both pinned SDK
+and official master use substring origin matching and target `*`; the wrapper
+added here does not fix those upstream event handlers:
+[pinned official popup implementation](https://github.com/XPRNetwork/proton-web-sdk/blob/def5ae4acf2b2f3854fbe0bc84be53ddba627504/packages/proton-web-sdk/src/links/protonWeb.ts#L177-L212).
+
+Parent verification: `npm run test:api` passed 220/220 in eight suites (93.824s),
+including 52 new proof cases. `npm run test:wallet-proof-client` passed15/15;
+transport fixtures are NOT cryptographic proofs or wallet responses.
+`npm run check:mobile-types` and `npm run check` (48 + static/readiness) exited0.
+The first root check correctly rejected changed imported files; adaptations.json
+now records the two actual changes and hashes, without altering the source manifest
+or assertions. Mobile/web reuse installed frontend dependencies via local junctions;
+no package upgrades or SDK node_modules patches were made.
+
+Physical test is pending: `adb devices -l` returned an empty list this run.
+No new APK, installation, wallet approval, account access, broadcast or deployment.
+Web build and independent review results follow after completion below.

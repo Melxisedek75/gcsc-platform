@@ -1,4 +1,5 @@
 import ProtonWebSDK from '@proton/web-sdk'
+import { createOwnershipProofRequester, type OwnershipChallenge } from '../../../../packages/wallet-proof/request-proof.mjs'
 
 export interface ConnectedWebAuthWallet {
   accountName: string
@@ -25,6 +26,21 @@ export interface WebAuthConnectOptions {
   restoreSession?: boolean
   endpoints?: string[]
   chainId?: string
+}
+
+const ownershipRequests = new WeakMap<WebAuthSigningSession, ReturnType<typeof createOwnershipProofRequester>>()
+
+// A popup login result alone is not ownership proof; missing signature/bytes fails closed.
+export async function signWebAuthOwnershipChallenge(session: WebAuthSigningSession, challenge: OwnershipChallenge, signal?: AbortSignal) {
+  let request = ownershipRequests.get(session)
+  if (!request) {
+    request = createOwnershipProofRequester({
+      getIdentity: () => ({ ...session.auth, chainId: session.chainId }),
+      transact: (args, options) => session.transact(args, options),
+    })
+    ownershipRequests.set(session, request)
+  }
+  return request(challenge, { signal })
 }
 
 async function requestWebAuthSession(options: WebAuthConnectOptions = {}): Promise<ConnectedWebAuthSession | null> {
