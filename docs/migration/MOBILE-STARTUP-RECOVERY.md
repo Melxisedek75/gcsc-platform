@@ -1,7 +1,7 @@
 # Mobile startup recovery, 2026-09-13
 
-Status: APK_VERIFIED / USB_DEVICE_NOT_CONNECTED.
-Native artifact verified; device, local API and full wallet/payment acceptance remain open.
+Status: APK_INSTALLED / DEVICE_STARTUP_VERIFIED / API_WALLET_PENDING.
+Native artifact and Pixel 8 startup verified; API, wallet and payment acceptance remain open.
 Candidate: 2094b69c, branch codex/mobile-startup-recovery-20260913.
 Workspace: C:/gcsc-platform/.worktrees/frontend, based on private main 4fcb08ea.
 
@@ -33,24 +33,62 @@ The compiled XML was inspected successfully: global cleartext=false, only the
 four exact local hosts allowed, all includeSubdomains=false. No check was skipped.
 
 The delivery copy hash matches the built APK. C: measured 4.150 GiB free after
-packaging and delivery. Latest ADB list is empty. No APK installation, uninstall,
-data wipe, device startup, wallet signature, payment, live database or deployment
-occurred. Do not claim the earlier red screen has disappeared on the phone until
-this exact APK is installed and launched there.
+packaging and delivery, and 3.980 GiB after retaining the previous installed APK
+for certificate comparison. Pixel 8 now has this exact candidate installed by
+`adb install -r`; output was `Success`, exit 0. No uninstall or data wipe occurred.
+Package manager confirms version 0.1.3 / code 5, updated 2026-09-13 17:04:45.
+Two cold launches returned `Status: ok` (1366 ms and 1204 ms). The start screen
+and navigation to Sign in were visually inspected without the former red screen.
+PID-scoped ReactNativeJS/AndroidRuntime error checks returned no errors. A
+nonfatal Expo Router warning about the absent `(auth)` layout remains recorded.
+This is startup/navigation evidence, not login or wallet/payment acceptance.
 
 This is a USB-local test candidate, not a production release or an away-from-PC
 service. The local API has not been started. Wallet-first challenge/verify routes
 and end-to-end lead purchase remain open in WALLET-API-CONTRACT.md. Do not ask the
 owner to repeat a full wallet purchase test before the relevant API work is ready.
 
-Next device step: reconnect Pixel 8, compare its installed app certificate with
-the verified signer, then update with adb install -r only if compatible. Preserve
-app data. Capture exact installed version, startup screenshot and scoped logs.
 The API stage needs an isolated local server and adb reverse tcp:10000 tcp:10000.
+No listener was present on 8081 or 10000 during startup verification; reverse
+mappings were empty. Do not invite login or lead purchase against the absent API.
+
+## USB recovery and device evidence
+
+Windows continuously detected the Pixel 8 composite USB device and ADB interface
+with status OK. An empty `adb devices` list did NOT mean physical disconnection.
+The original server used ADB 37.0.1 LIBADBUSB; restarting it briefly showed an
+offline transport. A scoped `pnputil /restart-device` returned Access is denied,
+so no driver reset or privilege bypass was performed.
+
+Google documents `ADB_USB_LEGACY=1` for this Windows version in the
+[Platform Tools release notes](https://developer.android.com/tools/releases/platform-tools).
+Restarting the server with that process-local variable selected NATIVE; the
+authorized Pixel 8 subsequently became available. No global environment setting,
+USB key deletion, driver replacement or device data change was needed. This
+recovery does not by itself establish the root cause of every prior disconnect.
+
+The previous base APK was pulled only to compare signing certificates. Both old
+and new artifacts pass v2 verification and have the identical certificate SHA-256
+listed above. Installation waited for an interactive Google Play Protect dialog;
+protection was not disabled and the skip-check option was not selected. Android
+then reported installation Success. No separate Play Protect verdict was recorded.
+
+Local evidence under
+`C:/gcsc-platform/.worktrees/publication/.tmp/device-recovery-20260913/`:
+- `before.png`: original missing-API-env startup error.
+- `after-0.1.3.png`: new startup screen.
+- `signin-0.1.3.png`: working navigation to Sign in, no credentials submitted.
+- `cold-start-second.png`: app visible after the second cold launch.
+- `startup-0.1.3.log`: scoped startup output and nonfatal route warnings.
+- `installed-0.1.2-base.apk`: previous APK, not user data or wallet keys.
+
+Remaining: repair the auth-layout warning in a scoped change, provide isolated
+API access, complete reviewed wallet proof endpoints and test actual auth/lead
+flows. No wallet signature, payment, live database, merge or deployment occurred.
 
 ## Confirmed failure
 
-ADB detected an authorized Pixel 8. Installed SmartContractor is 0.1.2,
+Before the update, ADB detected an authorized Pixel 8. Installed SmartContractor was 0.1.2,
 versionCode 4, last updated 2026-08-23. A fresh launch reproduced:
 `EXPO_PUBLIC_API_BASE_URL is required for a production build`, followed by
 an Expo Router ErrorBoundary error. The first error occurs during import,

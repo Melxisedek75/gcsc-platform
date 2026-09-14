@@ -1,6 +1,6 @@
 {
   "task": "mobile-startup-recovery",
-  "status": "APK_VERIFIED_DEVICE_PENDING",
+  "status": "DEVICE_STARTUP_VERIFIED_API_PENDING",
   "owner": "019e7c87-8410-79f1-b86a-eedf78a1aa27",
   "worktree": "C:/gcsc-platform/.worktrees/frontend",
   "branch": "codex/mobile-startup-recovery-20260913",
@@ -11,19 +11,19 @@
     "guard standalone USB-local APK generation and embedded API configuration",
     "advance Android version without uninstalling app data",
     "verify source, native prebuild and Hermes export",
-    "independent source review; APK/device acceptance remains pending"
+    "independent source review; verified APK and device startup, auth/payment acceptance remains pending"
   ],
   "leaseUntil": null,
   "baseCommit": "4fcb08ea78738ea49baf11389ec98114d9b4a535",
   "candidateCommit": "2094b69c87020de4100f2382bd4a118c4eb43e33",
   "review": "Kepler approved initial source preparation. Jason separately approved Windows launcher/environment/download changes (11 tests) and the2094b69c XML-generator fix (7/7 tests and diff check). Both are scoped source reviews. Author's native build, lint and artifact verification now PASS; not independent device/wallet acceptance. Evidence MOBILE-STARTUP-RECOVERY.md.",
-  "result": "Offline APK rebuild exit0,24m11s,488 tasks (48 executed/440 up-to-date); lintVitalRelease PASS. Delivered0.1.3/code5 ARM64 SmartContractor USB APK,28504933 bytes, SHA256 6b06ca9ce5a0cb3ee5bfae1e806c2abfa528ea8f4a29355efff5267aae1eef56. Embedded JS/API/testnet chain, non-debuggable manifest, compiled local-only XML and v2 signature verified. Delivery C:/Users/rivne/Downloads/SmartContractor-0.1.3-usb-2094b69c.apk matches source hash. C:4.150GiB free after delivery (1.69 after first failed compilation); sources retained, no blocked deletion bypass. Latest ADB empty; no install, API start, wallet signature, payment, liveDB or deployment.",
-  "next": "Do not rebuild the verified APK without source changes. When Pixel8 is connected, compare installed certificate, update with adb install -r only if compatible, preserve data and verify actual startup/version/logs. Prepare an isolated canonical API and USB reverse for network tests. Until then, proceed with unblocked P2.2 wallet-proof/API work; do not send owner into a known-incomplete full wallet purchase flow. No repeated unchanged ADB/quota polling; keep heartbeat paused.",
+  "result": "APK build exit0,24m11s,488 tasks; lintVitalRelease PASS. Verified0.1.3/code5 ARM64 APK,28504933 bytes, SHA256 6b06ca9ce5a0cb3ee5bfae1e806c2abfa528ea8f4a29355efff5267aae1eef56. Delivery C:/Users/rivne/Downloads/SmartContractor-0.1.3-usb-2094b69c.apk. Physical Pixel8 USB was present while ADB failed; process-local ADB_USB_LEGACY=1 selected NATIVE and transport recovered. Old/new v2 signing certificates match. adb install -r returned Success/exit0, no data wipe; device confirms0.1.3/code5. Two cold starts Status ok,1366/1204ms; startup and Sign in screens verified without old red error. Nonfatal missing(auth) layout warning remains. No API/Metro listener on10000/8081; no login, wallet signature, payment, liveDB or deploy. C:3.980GiB after preserving old APK; source repositories retained.",
+  "next": "Proceed with P2.2 wallet-proof/API contract work and an isolated loopback API; do not ask owner to test login or lead purchase before backend readiness. Repair the nonfatal auth-layout warning in a scoped change. Existing installed APK startup is verified; rebuild only for source/config changes, retain at least4GiB starting disk reserve. Preserve installed data and repeat exact artifact/device verification after changes. Do not poll unchanged USB/quota state or restart heartbeat.",
   "deferred": [
     {
-      "task": "Device acceptance of verified APK",
-      "resumeCondition": "Authorized Pixel8 reconnects; verify installed certificate before update, never wipe data to force compatibility",
-      "checkpoint": "APK0.1.3/code5 verified and delivered, source2094b69c; no new build required. Signing certificate SHA256 fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c. USB API still needs isolated local server and port reverse."
+      "task": "Wallet and lead end-to-end device acceptance",
+      "resumeCondition": "Reviewed wallet-proof backend, isolated API reachable over USB, and explicit user-controlled testnet signing when needed",
+      "checkpoint": "APK0.1.3/code5 source2094b69c installed with matching certificate and no wipe; two cold starts and Sign in navigation PASS. Startup evidence is not authenticated API/payment evidence. API server and USB reverse still absent; keep wallet-first routes and lead purchase open."
     },
     {
       "task": "Real PostgreSQL tests",
@@ -41,6 +41,6 @@
     "candidateCommit": "bf3728bf",
     "result": "bf3728bf: wallet restore11/11, API config15/15, npm run check and final web build PASS (2977 modules). Sol/high independent scoped review APPROVED after race fix. Preserved session on wallet/network failures and new token on cross-tab mismatch. No APK/device/live wallet/merge/deploy."
   },
-  "boundaries": "Native artifact verified, not device/API/wallet acceptance. No original Git history/ref publication, source repo deletion/archive/privacy change, live database, wallet signing, payments or deployment. No data wipe. Last observed installed version0.1.2/code4; phone currently absent. Keep scheduler paused.",
+  "boundaries": "Native artifact and phone startup verified, not authenticated API/wallet/payment acceptance. No original Git history/ref publication, source repo deletion/archive/privacy change, live database, wallet signing, payments or deployment. No data wipe; installed0.1.3/code5 confirmed. Keep scheduler paused.",
   "publishedAnchorCommit": "4fcb08ea78738ea49baf11389ec98114d9b4a535"
 }
