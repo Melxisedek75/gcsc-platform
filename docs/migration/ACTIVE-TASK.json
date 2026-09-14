@@ -1,29 +1,28 @@
 {
-  "task": "mobile-startup-recovery",
-  "status": "DEVICE_STARTUP_VERIFIED_API_PENDING",
+  "task": "mobile-design-foundation",
+  "status": "UI1_SOURCE_REVIEWED_DEVICE_PENDING",
   "owner": "019e7c87-8410-79f1-b86a-eedf78a1aa27",
   "worktree": "C:/gcsc-platform/.worktrees/frontend",
-  "branch": "codex/mobile-startup-recovery-20260913",
+  "branch": "codex/mobile-design-foundation-20260913",
   "remote": "https://github.com/Melxisedek75/gcsc-platform",
   "targetBranch": "main",
   "scope": [
-    "capture actual installed Android startup failure",
-    "guard standalone USB-local APK generation and embedded API configuration",
-    "advance Android version without uninstalling app data",
-    "verify source, native prebuild and Hermes export",
-    "independent source review; verified APK and device startup, auth/payment acceptance remains pending"
+    "owner-requested Android frontend design research and scoped first implementation",
+    "preserve React Native/Expo monorepo, role flows and auth/payment boundaries",
+    "accessible shared controls and navigation; no parallel replacement application",
+    "verify types, scoped tests and visual preview before claiming UI readiness"
   ],
   "leaseUntil": null,
-  "baseCommit": "4fcb08ea78738ea49baf11389ec98114d9b4a535",
-  "candidateCommit": "2094b69c87020de4100f2382bd4a118c4eb43e33",
-  "review": "Kepler approved initial source preparation. Jason separately approved Windows launcher/environment/download changes (11 tests) and the2094b69c XML-generator fix (7/7 tests and diff check). Both are scoped source reviews. Author's native build, lint and artifact verification now PASS; not independent device/wallet acceptance. Evidence MOBILE-STARTUP-RECOVERY.md.",
-  "result": "APK build exit0,24m11s,488 tasks; lintVitalRelease PASS. Verified0.1.3/code5 ARM64 APK,28504933 bytes, SHA256 6b06ca9ce5a0cb3ee5bfae1e806c2abfa528ea8f4a29355efff5267aae1eef56. Delivery C:/Users/rivne/Downloads/SmartContractor-0.1.3-usb-2094b69c.apk. Physical Pixel8 USB was present while ADB failed; process-local ADB_USB_LEGACY=1 selected NATIVE and transport recovered. Old/new v2 signing certificates match. adb install -r returned Success/exit0, no data wipe; device confirms0.1.3/code5. Two cold starts Status ok,1366/1204ms; startup and Sign in screens verified without old red error. Nonfatal missing(auth) layout warning remains. No API/Metro listener on10000/8081; no login, wallet signature, payment, liveDB or deploy. C:3.980GiB after preserving old APK; source repositories retained.",
-  "next": "Proceed with P2.2 wallet-proof/API contract work and an isolated loopback API; do not ask owner to test login or lead purchase before backend readiness. Repair the nonfatal auth-layout warning in a scoped change. Existing installed APK startup is verified; rebuild only for source/config changes, retain at least4GiB starting disk reserve. Preserve installed data and repeat exact artifact/device verification after changes. Do not poll unchanged USB/quota state or restart heartbeat.",
+  "baseCommit": "7acb7662693f17793b0c4b959e97568d80c10f3e",
+  "candidateCommit": "29ba58e1746e86d4360884d85bef2e0b56041739",
+  "review": "Popper Sol/high agent01a09d5d-0233-7ba2-9581-d1b10d06178b APPROVED exact source29ba58e1746e86d4360884d85bef2e0b56041739 after CI dependency, badge contrast, password target and homeowner truncation corrections. Independently repeated46root+10mobile tests, types/static/diff exit0. Retained unused legacy reviews guarded against all runtime app/component imports. Browser evidence is parent-only. No remote CI/newAPK/device/auth/payment approval. Evidence frontend/docs/migration/MOBILE-DESIGN-REVIEW.md.",
+  "result": "UI-1 implemented in existing Expo54/RN0.81.5: pinned Paper5.15.3, shared neutral Material theme/controls, auth group layout, five explicit role tabs, wrapped profiles and no fictional rating display. Root46/46+static, mobile-design10/10, TypeScript, diff checks exit0. Actual Expo web preview at320/390/768px passes synthetic UI checks: password48x48, primary56high, tabs64x59 at320, no console/page errors or external requests; nine screenshots local. No backend, SDK or payment logic changed. Native keyboard/TalkBack/200%text/newAPK still open; installed APK remains2094b69c0.1.3/code5. Sources and acceptance: docs/migration/MOBILE-DESIGN.md; verifier scripts/verify-mobile-design.mjs. Preview http://localhost:8093/sign-in; owned Metro PID18236, one worker, sanitized env.",
+  "next": "UI-2 in the same mobile app: contractor jobs/bids and homeowner post/details; do not fork a replacement app or invent API contracts. UI-3 proof/chat/profile must expose local-only and unavailable states honestly. UI-4 wallet/auth remains gated by P2.2. UI-5 requires new APK/device, keyboard/TalkBack/large text and actual backend journeys. Keep timer paused and proceed from dependency-ready work without repeated quota polls.",
   "deferred": [
     {
-      "task": "Wallet and lead end-to-end device acceptance",
-      "resumeCondition": "Reviewed wallet-proof backend, isolated API reachable over USB, and explicit user-controlled testnet signing when needed",
-      "checkpoint": "APK0.1.3/code5 source2094b69c installed with matching certificate and no wipe; two cold starts and Sign in navigation PASS. Startup evidence is not authenticated API/payment evidence. API server and USB reverse still absent; keep wallet-first routes and lead purchase open."
+      "task": "P2.2 wallet proof and isolated API",
+      "resumeCondition": "After current owner-requested frontend slice; real wallet compatibility requires user-controlled sign-only test and independent auth review",
+      "checkpoint": "Read-only McClintock investigation confirms identityv2 lacks nonce/domain binding. Only full transaction/context-free challenge payload has offline digest evidence; actual WebAuth acceptance is unproven. Safe next slice is canonical payload/parser/TTL/replay tests, no JWT or live route activation. API pure-server.js hardcodes local gcsc.db and has ambient DATABASE_URL support; do not start against existing data."
     },
     {
       "task": "Real PostgreSQL tests",
@@ -36,11 +35,20 @@
       "checkpoint": "Automatic deletion of C:/gcsc-w/mobile/smartcontractor/node_modules rejected with blocked by policy, no detailed reason. Prior cleanup-quarantine-20260912 also retained. Six separate installer ZIP files were successfully removed; source repositories/history remain."
     }
   ],
-  "previousTask": {
+  "previousWalletRestoreTask": {
     "task": "web-wallet-restore-error-isolation",
     "candidateCommit": "bf3728bf",
     "result": "bf3728bf: wallet restore11/11, API config15/15, npm run check and final web build PASS (2977 modules). Sol/high independent scoped review APPROVED after race fix. Preserved session on wallet/network failures and new token on cross-tab mismatch. No APK/device/live wallet/merge/deploy."
   },
-  "boundaries": "Native artifact and phone startup verified, not authenticated API/wallet/payment acceptance. No original Git history/ref publication, source repo deletion/archive/privacy change, live database, wallet signing, payments or deployment. No data wipe; installed0.1.3/code5 confirmed. Keep scheduler paused.",
-  "publishedAnchorCommit": "4fcb08ea78738ea49baf11389ec98114d9b4a535"
+  "previousTask": {
+    "task": "mobile-startup-recovery",
+    "sourceCommit": "2094b69c87020de4100f2382bd4a118c4eb43e33",
+    "publishedHead": "7acb7662693f17793b0c4b959e97568d80c10f3e",
+    "publishedRef": "refs/heads/codex/mobile-startup-recovery-20260913",
+    "result": "Native build exit0,24m11s,488tasks; lintVitalRelease PASS;46tests/static PASS and scoped independent source review approved. APK28504933bytes SHA2566b06ca9ce5a0cb3ee5bfae1e806c2abfa528ea8f4a29355efff5267aae1eef56, delivery C:/Users/rivne/Downloads/SmartContractor-0.1.3-usb-2094b69c.apk. Physical USB was present; ADB NATIVE process-local switch restored transport. Old/new certificates match; install-r Success. Pixel8 confirms0.1.3/code5; two cold starts and Sign in navigation PASS. Nonfatal(auth) layout warning, API/auth/lead acceptance remain open. Evidence C:/gcsc-platform/.worktrees/frontend/docs/migration/MOBILE-STARTUP-RECOVERY.md. C:3.980GiB after preserving prior installed APK."
+  },
+  "boundaries": "Frontend only. No auth weakening, mocked states presented as live, production/data migration, wallet signing, payment, merge or deployment. Installed0.1.3/code5 startup accepted; new design is not yet an installed APK. Preserve old sources, user data and paused scheduler.",
+  "publishedAnchorCommit": "4fcb08ea78738ea49baf11389ec98114d9b4a535",
+  "candidatePublishedHead": null,
+  "candidatePublishedRef": "refs/heads/codex/mobile-design-foundation-20260913"
 }
