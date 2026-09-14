@@ -638,7 +638,7 @@ function requestIp(req) {
   return String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket?.remoteAddress || '';
 }
 
-async function recordAuditEvent(req, input) {
+async function recordAuditEvent(req, input, query = queryPostgres) {
   const event = {
     actor_id: input.actorId === undefined ? null : input.actorId,
     target_user_id: input.targetUserId === undefined ? null : input.targetUserId,
@@ -651,7 +651,7 @@ async function recordAuditEvent(req, input) {
   };
 
   if (USE_POSTGRES) {
-    const result = await queryPostgres(
+    const result = await query(
       `INSERT INTO audit_events
         (actor_id, target_user_id, action, entity_type, entity_id, metadata, ip_address, user_agent)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -1534,6 +1534,208 @@ async function listStoredBidsForContractor(contractorId) {
     return result.rows.map(normalizeBid);
   }
   return db.bids.filter(b => b.contractor_id === contractorId);
+}
+
+// Chat never falls back to a simulated delivery in the JSON demo database.
+function chatError(status, message) {
+  return Object.assign(new Error(message), { status });
+}
+
+function chatInteger(value, minimum = 1) {
+  if (!/^(0|[1-9]\d*)$/.test(String(value)) || !Number.isSafeInteger(Number(value))
+    || Number(value) < minimum || Number(value) > 2147483647) {
+    throw chatError(400, 'Invalid chat id or cursor');
+  }
+  return Number(value);
+}
+
+function chatPage(req, cursorName, initialCursor) {
+  const params = new URL(req.url, 'http://localhost').searchParams;
+  for (const key of params.keys()) {
+    if (![cursorName, 'limit'].includes(key) || params.getAll(key).length !== 1) {
+      throw chatError(400, 'Invalid pagination');
+    }
+  }
+  const cursor = params.has(cursorName) ? chatInteger(params.get(cursorName), cursorName === 'after' ? 0 : 1) : initialCursor;
+  const limit = params.has('limit') ? chatInteger(params.get('limit')) : 50;
+  if (limit > 100) throw chatError(400, 'Maximum page size is 100');
+  return { cursor, limit };
+}
+
+function parseChatBody(req, allowed) {
+  if (String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase() !== 'application/json') {
+    throw chatError(400, 'Chat requires application/json');
+  }
+  return new Promise((resolve, reject) => {
+    let size = 0;
+    let chunks = [];
+    let failed = false;
+    req.on('data', chunk => {
+      size += chunk.length;
+      if (size > 32768) {
+        failed = true;
+        chunks = [];
+        reject(chatError(413, 'Chat request exceeds 32 KiB'));
+      } else if (!failed) chunks.push(chunk);
+    });
+    req.on('error', reject);
+    req.on('aborted', () => reject(chatError(400, 'Chat request interrupted')));
+    req.on('end', () => {
+      if (failed) return;
+      try {
+        const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        if (!body || Array.isArray(body) || typeof body !== 'object'
+          || Object.keys(body).some(key => !allowed.includes(key))) throw new Error('Invalid fields');
+        resolve(body);
+      } catch { reject(chatError(400, 'Invalid chat JSON or fields')); }
+    });
+  });
+}
+
+async function requireChatUser(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+  const user = await requireActiveUser(req, res);
+  if (!user) return null;
+  if (!['homeowner', 'contractor'].includes(user.role)) {
+    json(res, 403, { error: 'Chat is limited to project participants' });
+    return null;
+  }
+  const limited = checkRateLimit(req, req.method === 'GET' ? 'chat_read' : 'chat_write', `user:${user.id}`);
+  if (limited) {
+    res.setHeader('Retry-After', String(limited.retryAfterSeconds));
+    json(res, 429, { error: 'Too many chat requests', retry_after_seconds: limited.retryAfterSeconds });
+    return null;
+  }
+  if (!USE_POSTGRES) {
+    json(res, 503, { error: 'Chat requires PostgreSQL storage' });
+    return null;
+  }
+  return user;
+}
+
+async function chatRelationship(client, projectId, contractorId, userId) {
+  // Lock the authoritative relationships while a message/history transaction runs.
+  const result = await client.query(`SELECT p.id AS project_id, p.homeowner_id, p.title,
+      p.status AS project_status, b.status AS bid_status, c.id AS contractor_id,
+      h.full_name AS homeowner_name, c.full_name AS contractor_name
+    FROM bids b JOIN projects p ON p.id=b.project_id
+    JOIN users h ON h.id=p.homeowner_id JOIN users c ON c.id=b.contractor_id
+    WHERE p.id=$1 AND c.id=$2 AND (h.id=$3 OR c.id=$3)
+      AND h.role='homeowner' AND c.role='contractor' AND h.is_active AND c.is_active
+    ORDER BY b.id FOR SHARE OF b,p,h,c`, [projectId, contractorId, userId]);
+  if (!result.rowCount) throw chatError(404, 'Conversation not found');
+  return { ...result.rows[0], can_send: result.rows.some(row =>
+    (row.bid_status === 'pending' && row.project_status === 'open')
+    || (row.bid_status === 'accepted' && row.project_status === 'in_progress')) };
+}
+
+function publicChatThread(thread, relationship, userId) {
+  const isOwner = userId === thread.homeowner_id;
+  return {
+    id: thread.id, project_id: thread.project_id, homeowner_id: thread.homeowner_id,
+    contractor_id: thread.contractor_id, title: relationship.title,
+    counterparty: { id: isOwner ? thread.contractor_id : thread.homeowner_id,
+      full_name: isOwner ? relationship.contractor_name : relationship.homeowner_name,
+      role: isOwner ? 'contractor' : 'homeowner' },
+    can_send: relationship.can_send, last_sequence: thread.last_sequence,
+    created_at: thread.created_at, updated_at: thread.updated_at,
+  };
+}
+
+async function lockChatThread(client, threadId, userId, write = false) {
+  const result = await client.query(`SELECT * FROM chat_threads
+    WHERE id=$1 AND (homeowner_id=$2 OR contractor_id=$2) FOR ${write ? 'UPDATE' : 'SHARE'}`, [threadId, userId]);
+  const thread = result.rows[0];
+  if (!thread) throw chatError(404, 'Conversation not found');
+  const relationship = await chatRelationship(client, thread.project_id, thread.contractor_id, userId);
+  if (relationship.homeowner_id !== thread.homeowner_id) throw chatError(404, 'Conversation not found');
+  return { thread, relationship };
+}
+
+async function withChatTransaction(work) {
+  try {
+    return await withPostgresTransaction(async client => {
+      await client.query("SET LOCAL lock_timeout='3s'");
+      await client.query("SET LOCAL statement_timeout='5s'");
+      return work(client);
+    });
+  } catch (err) {
+    if (['55P03', '57014', '40P01'].includes(err.code)) throw chatError(503, 'Chat is temporarily busy; retry with the same message key');
+    throw err;
+  }
+}
+
+async function openChatThread(bidId, userId) {
+  return withChatTransaction(async client => {
+    const bid = (await client.query('SELECT project_id,contractor_id FROM bids WHERE id=$1', [bidId])).rows[0];
+    if (!bid) throw chatError(404, 'Conversation not found');
+    const relationship = await chatRelationship(client, bid.project_id, bid.contractor_id, userId);
+    const params = [bid.project_id, relationship.homeowner_id, bid.contractor_id];
+    const existing = await client.query(`SELECT * FROM chat_threads
+      WHERE project_id=$1 AND homeowner_id=$2 AND contractor_id=$3`, params);
+    if (existing.rowCount) return { thread: publicChatThread(existing.rows[0], relationship, userId), created: false };
+    if (!relationship.can_send) throw chatError(409, 'Conversation is read-only');
+    const inserted = await client.query(`INSERT INTO chat_threads(project_id,homeowner_id,contractor_id)
+      VALUES($1,$2,$3) ON CONFLICT(project_id,homeowner_id,contractor_id) DO NOTHING RETURNING *`, params);
+    const thread = inserted.rows[0] || (await client.query(`SELECT * FROM chat_threads
+      WHERE project_id=$1 AND homeowner_id=$2 AND contractor_id=$3`, params)).rows[0];
+    return { thread: publicChatThread(thread, relationship, userId), created: inserted.rowCount === 1 };
+  });
+}
+
+async function listChatThreads(userId, before, limit) {
+  const result = await queryPostgres(`SELECT t.*,p.title,h.full_name AS homeowner_name,c.full_name AS contractor_name,
+      EXISTS(SELECT 1 FROM bids b WHERE b.project_id=p.id AND b.contractor_id=c.id
+        AND ((b.status='pending' AND p.status='open') OR (b.status='accepted' AND p.status='in_progress'))) AS can_send
+    FROM chat_threads t JOIN projects p ON p.id=t.project_id AND p.homeowner_id=t.homeowner_id
+    JOIN users h ON h.id=t.homeowner_id JOIN users c ON c.id=t.contractor_id
+    WHERE (t.homeowner_id=$1 OR t.contractor_id=$1) AND ($2::integer IS NULL OR t.id<$2)
+      AND h.role='homeowner' AND c.role='contractor' AND h.is_active AND c.is_active
+      AND EXISTS(SELECT 1 FROM bids b WHERE b.project_id=t.project_id AND b.contractor_id=t.contractor_id)
+    ORDER BY t.id DESC LIMIT $3`, [userId, before, limit + 1]);
+  const threads = result.rows.slice(0, limit).map(row => publicChatThread(row, row, userId));
+  return { threads, has_more: result.rows.length > limit, next_before: threads.at(-1)?.id ?? before };
+}
+
+async function readChatMessages(threadId, userId, after, limit) {
+  return withChatTransaction(async client => {
+    const { thread, relationship } = await lockChatThread(client, threadId, userId);
+    const result = await client.query(`SELECT * FROM chat_messages WHERE thread_id=$1 AND sequence>$2
+      ORDER BY sequence LIMIT $3`, [threadId, after, limit + 1]);
+    const messages = result.rows.slice(0, limit);
+    return { thread: publicChatThread(thread, relationship, userId), messages,
+      has_more: result.rows.length > limit, next_after: messages.at(-1)?.sequence ?? after };
+  });
+}
+
+async function sendChatMessage(req, threadId, userId, body) {
+  if (typeof body.text !== 'string' || !body.text.trim() || body.text.trim().length > 4000 || body.text.includes('\0')
+    || Buffer.from(body.text, 'utf8').toString('utf8') !== body.text
+    || typeof body.client_message_id !== 'string'
+    || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(body.client_message_id)) {
+    throw chatError(400, 'A UUID client_message_id and 1..4000 text characters are required');
+  }
+  const text = body.text.trim();
+  return withChatTransaction(async client => {
+    // Allocate the cursor under the thread lock, not from a pre-commit global sequence.
+    const { thread, relationship } = await lockChatThread(client, threadId, userId, true);
+    const existing = await client.query(`SELECT * FROM chat_messages
+      WHERE thread_id=$1 AND sender_id=$2 AND client_message_id=$3`, [threadId, userId, body.client_message_id]);
+    if (existing.rowCount) {
+      if (existing.rows[0].text !== text) throw chatError(409, 'Message key already used with different text');
+      return { message: existing.rows[0], duplicate: true };
+    }
+    if (!relationship.can_send) throw chatError(409, 'Conversation is read-only');
+    const result = await client.query(`INSERT INTO chat_messages(thread_id,sequence,sender_id,client_message_id,text)
+      VALUES($1,$2,$3,$4,$5) RETURNING *`, [threadId, thread.last_sequence + 1, userId, body.client_message_id, text]);
+    const message = result.rows[0];
+    await client.query('UPDATE chat_threads SET last_sequence=$2,updated_at=clock_timestamp() WHERE id=$1', [threadId, message.sequence]);
+    await recordAuditEvent(req, { actorId: userId,
+      targetUserId: userId === thread.homeowner_id ? thread.contractor_id : thread.homeowner_id,
+      action: 'chat.message_sent', entityType: 'chat_thread', entityId: threadId,
+      metadata: { message_id: message.id, thread_id: threadId, sequence: message.sequence } }, client.query.bind(client));
+    return { message, duplicate: false };
+  });
 }
 
 function publicContractorProfile(user) {
@@ -2606,6 +2808,8 @@ function rateLimitConfigForRoute(pattern) {
   if (pattern === 'GET /api/auth/documents' || pattern === 'POST /api/auth/documents') return { name: 'documents', ...configs.documents };
   if (pattern === 'POST /api/wallet/connect') return { name: 'wallet', ...configs.wallet };
   if (pattern === 'POST /api/bids/:id/accept') return { name: 'bid_accept', ...configs.bid_accept };
+  if (pattern === 'chat_read' || pattern === 'chat_write') return { name: pattern,
+    max: pattern === 'chat_read' ? 240 : 60, windowMs: 60000 };
   return null;
 }
 
@@ -2619,7 +2823,7 @@ function clientIdentity(req) {
   return tokenHash ? `${ip}:${tokenHash}` : ip;
 }
 
-function checkRateLimit(req, pattern) {
+function checkRateLimit(req, pattern, identity = clientIdentity(req)) {
   if (process.env.RATE_LIMITS_DISABLED === 'true') return null;
   const config = rateLimitConfigForRoute(pattern);
   if (!config) return null;
@@ -2631,7 +2835,7 @@ function checkRateLimit(req, pattern) {
     }
   }
 
-  const key = `${config.name}:${pattern}:${clientIdentity(req)}`;
+  const key = `${config.name}:${pattern}:${identity}`;
   const current = rateLimitStore.get(key);
   if (!current || current.resetAt <= now) {
     rateLimitStore.set(key, { count: 1, resetAt: now + config.windowMs });
@@ -3432,6 +3636,47 @@ const routes = {
     const u = await findUserById(user.userId);
     if (!u) return json(res, 404, { error: 'User not found' });
     json(res, 200, { user: publicUser(u) });
+  },
+
+  // Private project conversations; native/web consumers integrate separately.
+  'POST /api/chat/threads': async (req, res) => {
+    const user = await requireChatUser(req, res);
+    if (!user) return;
+    try {
+      const body = await parseChatBody(req, ['bid_id']);
+      if (typeof body.bid_id !== 'number') throw chatError(400, 'bid_id must be an integer');
+      const result = await openChatThread(chatInteger(body.bid_id), user.id);
+      json(res, result.created ? 201 : 200, { thread: result.thread });
+    } catch (err) { if (err.status) json(res, err.status, { error: err.message }); else throw err; }
+  },
+
+  'GET /api/chat/threads': async (req, res) => {
+    const user = await requireChatUser(req, res);
+    if (!user) return;
+    try {
+      const { cursor, limit } = chatPage(req, 'before', null);
+      json(res, 200, await listChatThreads(user.id, cursor, limit));
+    } catch (err) { if (err.status) json(res, err.status, { error: err.message }); else throw err; }
+  },
+
+  'GET /api/chat/threads/:id/messages': async (req, res, params) => {
+    const user = await requireChatUser(req, res);
+    if (!user) return;
+    try {
+      const { cursor, limit } = chatPage(req, 'after', 0);
+      json(res, 200, await readChatMessages(chatInteger(params.id), user.id, cursor, limit));
+    } catch (err) { if (err.status) json(res, err.status, { error: err.message }); else throw err; }
+  },
+
+  'POST /api/chat/threads/:id/messages': async (req, res, params) => {
+    const user = await requireChatUser(req, res);
+    if (!user) return;
+    try {
+      const threadId = chatInteger(params.id);
+      const body = await parseChatBody(req, ['text', 'client_message_id']);
+      const result = await sendChatMessage(req, threadId, user.id, body);
+      json(res, result.duplicate ? 200 : 201, result);
+    } catch (err) { if (err.status) json(res, err.status, { error: err.message }); else throw err; }
   },
 
   // Create project

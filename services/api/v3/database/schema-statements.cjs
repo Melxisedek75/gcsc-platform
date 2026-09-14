@@ -228,6 +228,31 @@ const statements = Object.freeze([
   `CREATE INDEX IF NOT EXISTS idx_audit_events_actor ON audit_events (actor_id)`,
   `CREATE INDEX IF NOT EXISTS idx_audit_events_target ON audit_events (target_user_id)`,
   `CREATE INDEX IF NOT EXISTS idx_audit_events_created ON audit_events (created_at DESC)`,
+  `CREATE TABLE IF NOT EXISTS chat_threads (
+    id SERIAL PRIMARY KEY,
+    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    homeowner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    contractor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    last_sequence INTEGER NOT NULL DEFAULT 0 CHECK (last_sequence >= 0),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CHECK (homeowner_id <> contractor_id),
+    UNIQUE (project_id, homeowner_id, contractor_id)
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_chat_threads_homeowner ON chat_threads (homeowner_id, id DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_chat_threads_contractor ON chat_threads (contractor_id, id DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_bids_chat_pair ON bids (project_id, contractor_id)`,
+  `CREATE TABLE IF NOT EXISTS chat_messages (
+    id SERIAL PRIMARY KEY,
+    thread_id INTEGER NOT NULL REFERENCES chat_threads(id) ON DELETE CASCADE,
+    sequence INTEGER NOT NULL CHECK (sequence > 0),
+    sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    client_message_id UUID NOT NULL,
+    text TEXT NOT NULL CHECK (char_length(text) BETWEEN 1 AND 4000),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (thread_id, sequence),
+    UNIQUE (thread_id, sender_id, client_message_id)
+  )`,
   `CREATE TABLE IF NOT EXISTS financing_prechecks (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

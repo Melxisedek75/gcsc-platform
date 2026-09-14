@@ -8,6 +8,7 @@ const { createHash } = require('node:crypto');
 const { spawnSync } = require('node:child_process');
 const { validateLocalTestDatabase } = require('../scripts/local-test-database.cjs');
 const { profileDocumentAcceptance } = require('./profile-documents.acceptance.cjs');
+const { chatAcceptance } = require('./chat.acceptance.cjs');
 
 const apiRoot = path.resolve(__dirname, '../services/api/v3');
 const runDirectory = fs.realpathSync(process.env.GCSC_TEST_RUN_DIRECTORY);
@@ -66,13 +67,13 @@ async function stopApi() {
   if (api) await api.closeStorage();
 }
 
-async function request(method, route, user, body) {
+async function request(method, route, user, body, options = {}) {
   const response = await fetch(base + route, {
     method,
     headers: { 'Content-Type': 'application/json', ...(user ? {
       Authorization: `Bearer ${api.jwtSign({ userId: user.id, role: user.role, email: user.email })}`,
-    } : {}) },
-    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    } : {}), ...options.headers },
+    ...(options.rawBody !== undefined ? { body: options.rawBody } : body === undefined ? {} : { body: JSON.stringify(body) }),
     signal: AbortSignal.timeout(5000),
   });
   return { status: response.status, headers: response.headers, body: await response.json() };
@@ -226,6 +227,8 @@ test('real PostgreSQL project/bid persistence and access baseline', { timeout: 9
       INSERT INTO projects(id,homeowner_id,title) VALUES (1,1,'Preserved project');
       INSERT INTO payment_receipts(tx_hash,kind,user_id,amount) VALUES ('fixture-receipt','lead_token',1,'50.0000 XPR');
       INSERT INTO user_documents(user_id,document_type,file_name,status) VALUES (1,'contractor_license','preserved.pdf','approved');
+      DROP TABLE chat_messages,chat_threads;
+      DROP INDEX idx_bids_chat_pair;
       ALTER TABLE user_documents DROP COLUMN revision;
       ALTER TABLE users DROP COLUMN email_verified;
       ALTER TABLE projects DROP COLUMN published;
@@ -242,6 +245,8 @@ test('real PostgreSQL project/bid persistence and access baseline', { timeout: 9
       [{ file_name: 'preserved.pdf', status: 'approved', revision: 1 }]);
     await migrateSchema(upgrade);
     assert.equal((await upgrade.query('SELECT COUNT(*)::int AS count FROM payment_receipts')).rows[0].count, 1);
+    assert.equal((await upgrade.query('SELECT COUNT(*)::int AS count FROM chat_threads')).rows[0].count, 0);
+    assert.equal((await upgrade.query('SELECT COUNT(*)::int AS count FROM chat_messages')).rows[0].count, 0);
   });
 
   await t.test('unknown action rolls back both DDL and data; original constraint survives failure', async s => {
@@ -280,6 +285,7 @@ test('real PostgreSQL project/bid persistence and access baseline', { timeout: 9
   });
 
   await profileDocumentAcceptance(t, { pool, request, fixtureUser, startApi, stopApi });
+  await chatAcceptance(t, { pool, request, fixtureUser, startApi, stopApi });
 
   fs.writeFileSync(path.join(runDirectory, 'api-source.sha256'), createHash('sha256').update(source).digest('hex') + '\n');
   const hashes = Object.fromEntries(['pure-server.cjs', 'database/migrate-schema.cjs', 'database/schema-statements.cjs']
