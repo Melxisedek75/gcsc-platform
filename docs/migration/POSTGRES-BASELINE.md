@@ -8,7 +8,8 @@ initialization only, not wallet/payment business behavior.
 ## Canonical Migration Follow-Up
 
 Branch: codex/postgres-migrations-20260913, based on
-57b8ff21f6da14ff0028394d393b17ea311260db. Independent review is pending.
+57b8ff21f6da14ff0028394d393b17ea311260db. Candidate
+1a2814f19634780c21d42a1e9ce2baafd605f06a received independent APPROVED review.
 
 - Reproduced SQLSTATE23514 against the unmodified runtime: legacy action values
   were updated before the CHECK constraint allowing only those old values was
@@ -72,8 +73,22 @@ were not weakened. Full workflow acceptance remains open under P3.1/P2.2.
 
 Next: obtain matching pg_dump/pg_restore for a local backup/restore drill when
 available; meanwhile continue non-wallet product persistence/permission checks.
-No migration integration, source push, mobile build or deployment is authorized
-by this test result alone.
+No migration integration, source push, mobile build or deployment was performed.
+
+### Follow-Up Independent Review
+
+Reviewer: Boole, separate Sol/high execution
+01a09e9a-f835-7aa0-9a80-dc8ed9d0f55f. Verdict: APPROVED, no findings.
+Exact range:57b8ff21f6da14ff0028394d393b17ea311260db..
+1a2814f19634780c21d42a1e9ce2baafd605f06a.
+Independently compared all90 statements: mismatchCount0 after the intended
+DROP/UPDATE move. Verified shared runtime/export path, transaction, lock, rollback,
+release/discard and post-commit bootstrap. Repeated schema5/5+static readiness and
+PostgreSQL18.4:15/15, exit0. Evidence:
+services/api/v3/.tmp/postgres-baseline-cSNuwd/result.json records testExitCode0 and
+postgresExitCode0. Root48/API159/fake storage remain parent evidence, not independent
+reruns. Broader legacy conversion, backup/restore, Node20 CI and live/device
+acceptance are outside this approval. Later checkpoint edits do not change source.
 
 ## Reproduce
 
@@ -172,7 +187,7 @@ check passed. Docker was started with a hidden window but daemon access timed ou
 after 15 seconds. No real PostgreSQL was started and no SQL cleanup occurred then.
 The current native-binary runner makes Docker recovery unnecessary for this slice.
 
-## Independent Review
+## Original Baseline Independent Review
 
 Reviewer: Beauvoir, separate Sol/high execution
 01a09e82-0111-7803-ba04-dac9514c52a5. Verdict: APPROVED, no findings.
@@ -183,5 +198,6 @@ services/api/v3/.tmp/postgres-baseline-dm5Jg3/result.json records testExitCode0
 and postgresExitCode0. Checked normal database shutdown, no surviving test
 processes, matching API snapshot SHA-256 and unchanged canonical gcsc.db.
 Root43/43 and API159/159 are parent evidence, not repeated by the reviewer.
-Subsequent changes are documentation/checkpoint only. Source is on the candidate
-branch; it has not been merged or deployed.
+Changes from e9f954fb through57b8ff21 were documentation/checkpoint only. The later
+canonical-migration follow-up above is a separate source candidate and requires
+its own review; this baseline verdict does not approve it. No merge or deployment.

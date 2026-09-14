@@ -73,9 +73,9 @@ reviewer повторил PG9/9 и guards4/4. Source candidate не включё
 | 51 | MCP server | tools/mcp-server | 26-tool source registry из store; build/smoke/подключение не выполнены | HIGH |
 | 52 | Shared validation | API inline + web/native + domain-simulation | Частичные дубли; общего business-validation контракта ещё нет | HIGH |
 | 53 | Shared API types | Web/native собственные типы | Проверить/создать по согласованному API; не пустой package ради структуры | HIGH |
-| 54 | Database schema | services/api/v3/database; API initStorage | Runtime schema real PG18.4: повторная инициализация сохраняет строки, role/FK/UNIQUE PASS; JSON parity/upgrade открыты | HIGH |
-| 55 | Database migrations | services/api/v3/database/*.sql | Preflight FAIL: требует старый database/schema.sql, исключённый при переносе. Согласовать canonical migration/upgrade; live SQL не применялся | CRITICAL |
-| 56 | PostgreSQL | API storage + scripts/run-postgres-baseline.mjs | Real PG18.4 baseline9/9 PASS; прежние smoke с fake Pool остаются mocks. Полная DB-приёмка ещё открыта | HIGH |
+| 54 | Database schema | services/api/v3/database/schema-statements.cjs; API initStorage | 1a2814f1: схема едина для API и SQL-экспорта; колонки, ограничения и индексы совпали на real PG. Произвольные legacy-схемы не сертифицированы | HIGH |
+| 55 | Database migrations | services/api/v3/database/migrate-schema.cjs | Real PG: fresh/repeat/additive/legacy-action upgrade, data+DDL rollback и concurrent startup PASS. Старый init.sql отклоняется до изменений. Preflight означает local readiness, не production | CRITICAL |
+| 56 | PostgreSQL | API storage + scripts/run-postgres-baseline.mjs | Real PG18.4:15/15 PASS. Fake storage PASS; старый fake workflow FAIL wallet_missing также на57b8ff21. Полная DB-приёмка ещё открыта | HIGH |
 | 57 | CI | .github/workflows/ci.yml | Новый checks-only workflow; GitHub запуск не выполнен | HIGH |
 | 58 | Security checks | limited secret-pattern scan + tests | Активный tree без совпадений узкого скана; полный history/security review отсутствует | HIGH |
 | 59 | E2E tests | План web/API/DB/native acceptance | HTTP API + real PG8 сценариев PASS с fixture JWT; UI/регистрация/кошелёк/phone E2E не выполнены этим шагом | HIGH |

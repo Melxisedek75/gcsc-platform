@@ -6,6 +6,17 @@
 порядок; подробная история и критерии ниже сохраняются, но не меняют приоритеты.
 Статус «ГОТОВО» означает проверенный результат, а не намерение.
 
+Продолжение P2.6: кандидат1a2814f1 в codex/postgres-migrations-20260913 объединяет
+схему API и SQL-экспорт, исправляет CHECK-ошибку обновления старых действий и
+откатывает всю миграцию при сбое. Real PostgreSQL18.4:15/15, root48/48+readiness/static,
+API159/159 и fake storage PASS. Независимое ревью APPROVED, в main код не включён.
+Reviewer Boole повторил schema5/5 и PG15/15, exit0; замечаний нет.
+Старый полный fake workflow остаётся400 wallet_missing и на исходном57b8ff21;
+защита не ослаблена, этот сценарий не отмечен готовым. Все детали:
+[PostgreSQL evidence](C:/gcsc-platform/.worktrees/qa/docs/migration/POSTGRES-BASELINE.md).
+Следующий независимый шаг P3.1: профили, документы и admin ACL на локальной PG.
+Backup/restore остаётся P2.6: в установленном минимальном PG нет pg_dump/pg_restore.
+
 13 сентября, позднее: по просьбе владельца мобильная разработка, WebAuth и перенос
 старых файлов отложены. Выполнен первый независимый серверный шаг P2.6:
 в ветке codex/local-postgres-baseline-20260913 создан запускатель изолированной
@@ -49,7 +60,7 @@ static и TypeScript PASS; браузер320/390/768px с локальными f
 | P2.3 | ОЧЕРЕДЬ | Desktop/web: вход, восстановление, выход, смена кошелька/сети, истёкшая сессия. Проверка на реальном интерфейсе с локальным API; mock отдельно от интеграции. |
 | P2.4 | СТАРТ НА ТЕЛЕФОНЕ ПРОВЕРЕН; AUTH ОТКРЫТ | APK2094b69c, опубликованный отчёт7acb7662: 0.1.3/code5 ARM64,28 504 933байта, SHA256 начинается6b06ca9ce5a0. Offline-сборка exit0 за24м11с,488задач; lintVitalRelease PASS,46/46+static PASS, независимое source-review APPROVED. Сертификат совпал со старой версией; install-r Success без удаления данных. Pixel8 подтверждает0.1.3/code5: два холодных старта и Sign in без прежнего красного экрана. Остались предупреждение(auth) layout, серверный вход, callbacks и покупка. API не запущен. [Evidence](C:/gcsc-platform/.worktrees/frontend/docs/migration/MOBILE-STARTUP-RECOVERY.md). Код кандидата в main не включён. |
 | P2.5 | ОЧЕРЕДЬ | Покупка лида: eligibility до предложения оплаты, сумма/получатель/memo, подпись пользователем, проверка перевода, повтор callback, отложенное подтверждение, отсутствие двойной покупки. Web и mobile отдельно. |
-| P2.6 | ЧАСТИЧНО ГОТОВО | e9f954fb: свежая PostgreSQL18.4, schema init, проекты/заявки/роли/audit, FK/UNIQUE и повторное открытие API проверены:9/9. Root43/43+static и API159/159 PASS. Независимое ревью APPROVED; candidate не включён в main. Следующий подтверждённый разрыв: migration-readiness требует исключённый database/schema.sql. SQL migration/upgrade, payment-endpoint races и backup/restore открыты. Evidence: POSTGRES-BASELINE.md в QA. |
+| P2.6 | ЧАСТИЧНО ГОТОВО | 1a2814f1: единая canonical schema, fresh/export parity, additive/legacy-action upgrade, повторный запуск, rollback и concurrency на PostgreSQL18.4:15/15. Root48/48+readiness/static, API159/159 PASS. Независимое ревью APPROVED, schema5/PG15 повторены; main не изменена. Legacy conversion, полный wallet-dependent workflow, payment-endpoint races, backup/restore и Node20 CI открыты. Evidence: POSTGRES-BASELINE.md в QA. |
 | P3.1 | ОЧЕРЕДЬ | Проверить согласованный MVP по матрице 60 возможностей: jobs, bids, документы/verification, chat, профиль, роли, proof/milestones. Вернуть отсутствующее; каждый пункт закрывается пользовательским сценарием. Отдельно согласовать выборочный перенос сохранённых renovation/Resend изменений с v1.4, SQL constraints и тестами; архив не означает работающую функцию. |
 | P3.2 | ОЧЕРЕДЬ | Security и эксплуатация: зависимости/лицензии, доступы, rate limits, наблюдаемость, backup/restore, rollback. Предупреждения устаревших пакетов не скрывать. |
 | P3.3 | ОЧЕРЕДЬ | Preview-пилот и физическое устройство: подтвердить все основные сценарии для точного артефакта; подготовить публикацию и переключение сервисов. |

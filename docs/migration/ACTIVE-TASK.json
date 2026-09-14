@@ -1,23 +1,23 @@
 {
-  "task": "local-postgres-projects-baseline",
-  "status": "P2_6_BASELINE_REVIEWED_REMAINING_GATES_OPEN",
+  "task": "canonical-postgres-migrations",
+  "status": "P2_6_MIGRATION_REVIEWED_REMAINING_GATES_OPEN",
   "owner": "019e7c87-8410-79f1-b86a-eedf78a1aa27",
   "worktree": "C:/gcsc-platform/.worktrees/qa",
-  "branch": "codex/local-postgres-baseline-20260913",
+  "branch": "codex/postgres-migrations-20260913",
   "remote": "https://github.com/Melxisedek75/gcsc-platform",
   "targetBranch": "main",
   "scope": [
     "Owner deferred mobile/WebAuth development and disk archival; continue dependency-ready server work",
-    "Fresh loopback PostgreSQL with isolated API copy and sanitized test environment",
-    "Real project/bid persistence, role separation, audit and SQL constraints",
-    "No application runtime changes, wallet calls, live services or data migration"
+    "One canonical schema for API startup and standalone SQL export; transaction, locking, preflight and data-preserving action upgrade",
+    "Only disposable owned PostgreSQL clusters and isolated API/test JSON files; no existing database migration",
+    "Keep wallet/payment business behavior unchanged; preserve source provenance and every unrelated dirty file"
   ],
   "leaseUntil": null,
-  "baseCommit": "a0834ac7917c3de57ebc02fb542814561469bca2",
-  "candidateCommit": "e9f954fbb105ba4f6e05ff54c860ecaffec6ff28",
-  "review": "APPROVED: Beauvoir, independent Sol/high agent01a09e82-0111-7803-ba04-dac9514c52a5, reviewed a0834ac7..e9f954fbb105ba4f6e05ff54c860ecaffec6ff28. Independently ran guards4/4 and real PostgreSQL18.4 tests9/9, exits0; source SHA matches, canonical gcsc.db unchanged and PostgreSQL stopped. Root43/43/API159 remain parent evidence. No main integration or production approval.",
-  "result": "Added native PostgreSQL runner without Docker or downloads. Real PostgreSQL18.4:9/9 including parent; runtime schema idempotency, project/bid creation, role isolation, audit, FK/UNIQUE and API module/connection restart pass. Root43/43 plus syntax/static and API159/159 pass. services/api/v3/.tmp/postgres-baseline-ZUU0yU/result.json: testExitCode0, postgresExitCode0. Missing pg_isready diagnosed and replaced by pg driver probe. No mobile, WebAuth or financial runtime edits.",
-  "next": "P2.6: reconcile canonical standalone SQL migration order with initStorage. check-migration-readiness.mjs fails because legacy database/schema.sql was excluded. Validate fresh/upgrade paths in new disposable databases; later backup/restore (pg_dump/pg_restore absent in minimal local distribution), then P3.1 product workflows and permissions. Mobile/WebAuth/archival deferred; no timer/quota polling.",
+  "baseCommit": "57b8ff21f6da14ff0028394d393b17ea311260db",
+  "candidateCommit": "1a2814f19634780c21d42a1e9ce2baafd605f06a",
+  "review": "APPROVED: Boole, independent Sol/high agent01a09e9a-f835-7aa0-9a80-dc8ed9d0f55f, exact57b8ff21..1a2814f19634780c21d42a1e9ce2baafd605f06a. No findings; independent90-statement comparison mismatchCount0 after intended reorder, schema5/5+readiness and PostgreSQL18.4:15/15 with exits0. Evidence .tmp/postgres-baseline-cSNuwd/result.json. Root48/API159/fake storage remain parent evidence. Not production or main integration approval.",
+  "result": "Reproduced CHECK violation23514 before fix; all90 SQL statements moved unchanged except DROP/UPDATE order. Real PostgreSQL18.4:15/15, schema5/5, root48/48+readiness/static, API159/159, fake storage PASS. Export and API catalogs match; tested repeat/additive upgrade/data+DDL rollback/concurrent startup/old init.sql rejection. First API run hit EBUSY from old shared JSON fixtures; isolated affected tests and reran PASS. Extra fake workflow remains400 wallet_missing, reproduced on pre-change57b8ff21; not a migration regression and not counted PASS.",
+  "next": "P3.1 next dependency-ready slice: real-PG profiles, contractor document upload/review, admin ACL and persistence without wallet/signatures or external providers. Include inactive/revoked admin, owner-only document visibility and re-submission review reset cases. P2.6 backup/restore remains open pending matching pg_dump/pg_restore tools; broader legacy conversion and payment endpoint/race acceptance remain open. Mobile/WebAuth/archival deferred; scheduler stays paused.",
   "deferred": [
     {
       "task": "P2.2 wallet proof and isolated API",
@@ -27,7 +27,7 @@
     {
       "task": "Remaining PostgreSQL acceptance",
       "resumeCondition": "Reviewed baseline and fresh local native cluster, never an existing/live database",
-      "checkpoint": "Docker is unnecessary for the new runner. PostgreSQL18.4 project/bid baseline passes9/9. Standalone migrations/upgrade, receipt endpoint/reconciliation races and backup/restore remain open."
+      "checkpoint": "Native PostgreSQL18.4 real baseline advanced to15/15. Canonical SQL/runtime fresh, additive and legacy-action upgrades verified; arbitrary v2 conversion unproven and known shapes rejected. Receipt/payment endpoint and reconciliation races, backup/restore, Node20 CI remain open; pg_dump/pg_restore missing from minimal installed runtime."
     },
     {
       "task": "Large generated-directory cleanup",
@@ -38,6 +38,11 @@
       "task": "Mobile frontend UI-2 and new APK",
       "resumeCondition": "Owner lifts current mobile-work deferral and build/device prerequisites are available",
       "checkpoint": "UI-1 retained on frontend branch; previousMobileDesignTask preserves source/review/device state."
+    },
+    {
+      "task": "Legacy fake-PG complete workflow",
+      "resumeCondition": "Resume the wallet-dependent acceptance slice; replace unsigned wallet metadata fixture with an explicitly verified local fixture without weakening runtime ownership checks",
+      "checkpoint": "Current API and pre-change57b8ff21 both return400 wallet_missing at bid acceptance. Existing assertion preserved. Test now isolated; no repeated dispatch while unchanged."
     }
   ],
   "previousWalletRestoreTask": {
@@ -52,7 +57,7 @@
     "publishedRef": "refs/heads/codex/mobile-startup-recovery-20260913",
     "result": "Native build exit0,24m11s,488tasks; lintVitalRelease PASS;46tests/static PASS and scoped independent source review approved. APK28504933bytes SHA2566b06ca9ce5a0cb3ee5bfae1e806c2abfa528ea8f4a29355efff5267aae1eef56, delivery C:/Users/rivne/Downloads/SmartContractor-0.1.3-usb-2094b69c.apk. Physical USB was present; ADB NATIVE process-local switch restored transport. Old/new certificates match; install-r Success. Pixel8 confirms0.1.3/code5; two cold starts and Sign in navigation PASS. Nonfatal(auth) layout warning, API/auth/lead acceptance remain open. Evidence C:/gcsc-platform/.worktrees/frontend/docs/migration/MOBILE-STARTUP-RECOVERY.md. C:3.980GiB after preserving prior installed APK."
   },
-  "boundaries": "Local API/DB test infrastructure only. Mobile/WebAuth and cleanup deferred. No live accounts/database, wallet signatures/payments, production migration, merge or deployment. Preserve original data and paused scheduler.",
+  "boundaries": "Local canonical schema candidate and test infrastructure only. Mobile/WebAuth and cleanup deferred. No live accounts/database, signatures/payments, production migration, merge or deployment. No automatic source integration; preserve paused scheduler.",
   "publishedAnchorCommit": "4fcb08ea78738ea49baf11389ec98114d9b4a535",
   "candidatePublishedHead": null,
   "candidatePublishedRef": null,
@@ -69,5 +74,15 @@
     "candidatePublishedHead": "eb59e0218e8f74ee319372cd404ae63cc6e96d92",
     "candidatePublishedRef": "refs/heads/codex/mobile-design-foundation-20260913"
   },
-  "completedAt": "2026-09-14T06:07:47.098Z"
+  "completedAt": "2026-09-14T06:07:47.098Z",
+  "previousPostgresTask": {
+    "task": "local-postgres-projects-baseline",
+    "status": "P2_6_BASELINE_REVIEWED_REMAINING_GATES_OPEN",
+    "branch": "codex/local-postgres-baseline-20260913",
+    "baseCommit": "a0834ac7917c3de57ebc02fb542814561469bca2",
+    "candidateCommit": "e9f954fbb105ba4f6e05ff54c860ecaffec6ff28",
+    "review": "APPROVED: Beauvoir, independent Sol/high agent01a09e82-0111-7803-ba04-dac9514c52a5, reviewed a0834ac7..e9f954fbb105ba4f6e05ff54c860ecaffec6ff28. Independently ran guards4/4 and real PostgreSQL18.4 tests9/9, exits0; source SHA matches, canonical gcsc.db unchanged and PostgreSQL stopped. Root43/43/API159 remain parent evidence. No main integration or production approval.",
+    "result": "Added native PostgreSQL runner without Docker or downloads. Real PostgreSQL18.4:9/9 including parent; runtime schema idempotency, project/bid creation, role isolation, audit, FK/UNIQUE and API module/connection restart pass. Root43/43 plus syntax/static and API159/159 pass. services/api/v3/.tmp/postgres-baseline-ZUU0yU/result.json: testExitCode0, postgresExitCode0. Missing pg_isready diagnosed and replaced by pg driver probe. No mobile, WebAuth or financial runtime edits."
+  },
+  "updatedAt": "2026-09-14T06:40:40.698Z"
 }
