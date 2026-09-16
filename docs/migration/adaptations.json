@@ -117,5 +117,19 @@
     "sha256": "dfe95fecf03ee369633b6db93313f7e03ef8115409b4e650da85231bd2a4a687",
     "reason": "Reject non-loopback and non-test PostgreSQL cleanup targets before storage initialization.",
     "test": "node --test tests/local-test-database.test.mjs"
+  },
+  {
+    "path": "docs/whitepaper/whitepaper-v1-4-renovation-financing-changelog.md",
+    "sourceBlob": "97fa1fcae83eedb9d5b5a8da049f14a76567c669",
+    "sha256": "f0f6473520136a43aa5d0b43a009817e7af3ac07532b64b114b29de7988c0821",
+    "reason": "Record the internal Priority Access Marketplace design and its non-live financial boundary in the v1.4 changelog.",
+    "test": "npm test"
+  },
+  {
+    "path": "docs/whitepaper/whitepaper-v1-4-renovation-financing-draft.md",
+    "sourceBlob": "4cc030152dc317babf827fc717102724e0454dc3",
+    "sha256": "a77fabdfd072af6e43f506b2fb37fd438f2447bd0d0756b79a2eeebf7d903b4a",
+    "reason": "Add the internal Priority Access Marketplace product model while preserving wallet, legal, security and production gates.",
+    "test": "npm test"
   }
 ]

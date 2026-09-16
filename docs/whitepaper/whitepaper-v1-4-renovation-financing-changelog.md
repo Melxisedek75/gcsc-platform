@@ -29,6 +29,19 @@ The planned \`gcscrenovate\` contract is a no-transfer state and audit design. I
 
 It must not support deposits, token transfers, stablecoin settlement, credit issuance, interest calculation, custody, payment execution, or automatic disbursement.
 
+## Priority Access Marketplace Added
+
+The draft now distinguishes the homeowner's Project Opportunity, a contractor's
+XPR-denominated Access Priority Offer, and the contractor's Work Proposal. A
+planned bounded marketplace can award one time-limited exclusive access grant,
+after which the contractor submits a proposal and the homeowner may accept,
+reject, or request revision.
+
+This is an internal specification only. It does not activate XPR payments or a
+wallet flow. Anti-abuse, privacy, refund, legal, economic, security, and
+production gates remain mandatory. The detailed design is recorded in
+`docs/product/priority-access-marketplace.md`.
+
 ## Built / In Development / Long-Term Changes
 
 - Built or existing: workflow and audit-oriented prototype capabilities are documented without a claim of live financial functionality.
