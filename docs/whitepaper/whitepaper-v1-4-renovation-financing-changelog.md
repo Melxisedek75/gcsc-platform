@@ -42,6 +42,15 @@ wallet flow. Anti-abuse, privacy, refund, legal, economic, security, and
 production gates remain mandatory. The detailed design is recorded in
 `docs/product/priority-access-marketplace.md`.
 
+The intended marketplace economics now retain 100% of the access fee when the
+contractor wins the project. A contractor who submits a compliant proposal but
+is not selected receives a 50% refund, while 50% is retained as platform
+revenue. Exceptional full-refund and policy-violation cases are separately
+defined. Future approved settlement may use fiat-denominated rails, USDC, USDT,
+or another permitted asset; XPR and future GCSC tokens remain utility, staking,
+reward, and access candidates under separate token-economic and legal review.
+XPR and XRP are explicitly treated as different assets and networks.
+
 ## Built / In Development / Long-Term Changes
 
 - Built or existing: workflow and audit-oriented prototype capabilities are documented without a claim of live financial functionality.

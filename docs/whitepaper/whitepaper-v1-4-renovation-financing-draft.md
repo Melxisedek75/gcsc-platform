@@ -97,10 +97,22 @@ rejection or expiry can reopen a new access round with an auditable reason.
 The design must prevent double grants, indefinite exclusivity, repeated
 homeowner rejection for fee generation, payment replay, account or network
 substitution, and disclosure of homeowner contact data before authorization.
-The recommended pilot uses bounded 1-, 4-, or 12-hour windows, gives the
-homeowner no share of access fees, and makes a fee non-refundable only after
-exclusive access is successfully delivered, subject to documented refund and
-abuse rules.
+The recommended pilot uses bounded 1-, 4-, or 12-hour windows and gives the
+homeowner no share of access fees. If a contractor submits a compliant Work
+Proposal but is not awarded the project, the intended policy returns 50% of the
+verified access fee and retains 50% as platform revenue. If that contractor is
+awarded the project, 100% of the access fee is retained as platform revenue.
+Full refunds remain available for defined platform failure, cancellation,
+duplicate settlement, invalid-project, and abuse cases. No-show, abandoned, or
+non-compliant submissions do not automatically qualify for the 50% refund.
+
+XPR may be used for testnet and early wallet integration. Future production
+settlement may use approved fiat-denominated rails, USDC, USDT, or another
+permitted asset after legal, provider, treasury, accounting, custody, and
+security approval. XPR and future GCSC ecosystem tokens may provide staking,
+rewards, membership, access, and other utility benefits under separately
+approved token economics. XPR is not XRP, and neither token may be represented
+as guaranteed yield or investment return.
 
 This capability is a product specification, not a live payment feature. The
 canonical backend state machine and verified chain receipts should precede any

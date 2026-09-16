@@ -121,15 +121,15 @@
   {
     "path": "docs/whitepaper/whitepaper-v1-4-renovation-financing-changelog.md",
     "sourceBlob": "97fa1fcae83eedb9d5b5a8da049f14a76567c669",
-    "sha256": "f0f6473520136a43aa5d0b43a009817e7af3ac07532b64b114b29de7988c0821",
-    "reason": "Record the internal Priority Access Marketplace design and its non-live financial boundary in the v1.4 changelog.",
+    "sha256": "c982a43e0054de2afc7e97b6868f74ef5e4440e3909856f7b571eaa786c7624f",
+    "reason": "Record the internal Priority Access Marketplace design, 100/0 or 50/50 access-fee policy, future settlement direction, and non-live financial boundary in the v1.4 changelog.",
     "test": "npm test"
   },
   {
     "path": "docs/whitepaper/whitepaper-v1-4-renovation-financing-draft.md",
     "sourceBlob": "4cc030152dc317babf827fc717102724e0454dc3",
-    "sha256": "a77fabdfd072af6e43f506b2fb37fd438f2447bd0d0756b79a2eeebf7d903b4a",
-    "reason": "Add the internal Priority Access Marketplace product model while preserving wallet, legal, security and production gates.",
+    "sha256": "d651240f1302602ae1606456af5db6ff0d0908a617dabf1dff818e8950ce162c",
+    "reason": "Add the internal Priority Access Marketplace product model, 100/0 or 50/50 access-fee policy, and future asset roles while preserving wallet, legal, security and production gates.",
     "test": "npm test"
   }
 ]
