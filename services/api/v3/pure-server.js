@@ -17,7 +17,17 @@ const { createOwnershipChallenge, createOwnershipVerifier } = require('./wallet-
 const { createJsonChallengeStore, createPostgresChallengeStore } = require('./wallet-challenge-store.cjs');
 
 const PORT = process.env.PORT || 10000;
-const JWT_SECRET = process.env.JWT_SECRET || 'gcsc-dev-secret-256-bits-minimum-length';
+const DEV_JWT_SECRET = 'gcsc-dev-secret-256-bits-minimum-length';
+const UNSAFE_JWT_SECRETS = new Set(['secret', 'changeme', 'password', 'gcsc-dev-secret', DEV_JWT_SECRET]);
+function resolveJwtSecret() {
+  const configured = String(process.env.JWT_SECRET || '').trim();
+  if (process.env.NODE_ENV === 'production'
+    && (configured.length < 32 || UNSAFE_JWT_SECRETS.has(configured.toLowerCase()))) {
+    throw new Error('Unsafe JWT_SECRET configuration');
+  }
+  return configured || DEV_JWT_SECRET;
+}
+const JWT_SECRET = resolveJwtSecret();
 const DB_FILE = path.join(__dirname, 'gcsc.db');
 const USE_POSTGRES = !!process.env.DATABASE_URL;
 const XPR_TESTNET_CHAIN_ID = '71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd';
@@ -1652,6 +1662,18 @@ async function verifyXprAccountKey({ accountName, permission, publicKey }) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 8000);
     try {
+      const infoResp = await fetch(`${normalizeEndpoint(node)}/v1/chain/get_info`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+        signal: controller.signal,
+      });
+      if (!infoResp.ok) { lastError = `chain_info_http_${infoResp.status}@${node}`; continue; }
+      const info = await infoResp.json();
+      if (info?.chain_id !== XPR_TESTNET_CHAIN_ID) {
+        lastError = `chain_id_mismatch@${node}`;
+        continue;
+      }
       const resp = await fetch(`${normalizeEndpoint(node)}/v1/chain/get_account`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2943,8 +2965,9 @@ function rateLimitConfigForRoute(pattern) {
 }
 
 function clientIdentity(req) {
-  const forwardedFor = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
-  const ip = forwardedFor || req.socket?.remoteAddress || 'unknown';
+  // The process has no configured trusted-proxy boundary. A direct client can
+  // forge X-Forwarded-For, so rate limits key only on the transport peer.
+  const ip = req.socket?.remoteAddress || 'unknown';
   const auth = String(req.headers.authorization || '');
   const tokenHash = auth.startsWith('Bearer ')
     ? crypto.createHash('sha256').update(auth.slice(7)).digest('hex').slice(0, 16)
@@ -4503,3 +4526,5 @@ module.exports.recoverXprPublicKey = recoverXprPublicKey;
 module.exports.issueWalletChallenge = issueWalletChallenge;
 module.exports.consumeWalletChallenge = consumeWalletChallenge;
 module.exports.walletChallengeMessage = walletChallengeMessage;
+module.exports.resolveJwtSecret = resolveJwtSecret;
+module.exports.clientIdentity = clientIdentity;

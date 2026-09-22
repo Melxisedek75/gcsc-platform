@@ -2,16 +2,16 @@
   {
     "path": "services/api/v3/package.json",
     "sourceBlob": "b9cfb0115f8397470f152032fb954155d53064f8",
-    "sha256": "5efe26cf93e70f9051caeb36ddc437755fb8d617bb591c3e55255555eec4d1f0",
-    "reason": "Select pure-server.js for main/start/dev, matching the canonical runtime. No dependency changes.",
-    "test": "node --test tests/migration.test.mjs; witnessed red before correction"
+    "sha256": "de5f7ec74d9df32fddacb99262bbe7540491827309edf1ca4101231b3c387166",
+    "reason": "Select pure-server.js for main/start/dev and include the versioned wallet-auth PostgreSQL migration in the declared migration sequence. No dependency changes.",
+    "test": "npm run test:api; node --test tests/migration.test.mjs; security-boundaries migration assertion"
   },
   {
     "path": "services/api/v3/pure-server.js",
     "sourceBlob": "952128e9316fe78bef42dba8ddc7b04eb09e29e5",
-    "sha256": "231737e8259637c7e31836be7f9fe971c1ff8f4826e6229bbdf254bdec523516",
-    "reason": "Require verified wallet ownership before payment challenges and bid readiness; add wallet-first canonical transaction proof with durable single-use challenge storage, current testnet authority verification and JWT issuance only for one existing verified binding.",
-    "test": "npm run test:api (220/220); npm run check:integration-contracts (7/7); node --test tests/migration.test.mjs; red provenance hash witnessed before adaptation update"
+    "sha256": "b0f96e4ed21891fa178c411f42702c90e82362144cfe14a4f6289105dedc9800",
+    "reason": "Require verified wallet ownership before payment challenges and bid readiness; add wallet-first canonical transaction proof, durable single-use storage, strict XPR Testnet endpoint identity, non-spoofable direct-peer rate limiting and production JWT-secret fail-closed validation.",
+    "test": "npm run test:api; npm run check:integration-contracts; node --test tests/migration.test.mjs; independent review b95ffe75 findings reproduced and corrected"
   },
   {
     "path": "services/api/v3/tests/payments-402.test.js",

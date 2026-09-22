@@ -46,6 +46,9 @@ function createJsonChallengeStore({ database, save }) {
   return {
     async put(record) {
       validateRecord(record);
+      const now = Date.now();
+      database.wallet_challenges = database.wallet_challenges.filter(row =>
+        Number.isSafeInteger(row.expiresAt) && row.expiresAt > now);
       const index = database.wallet_challenges.findIndex(row => row.challengeId === record.challengeId);
       const stored = JSON.parse(JSON.stringify(record));
       if (index === -1) database.wallet_challenges.push(stored);
@@ -72,6 +75,7 @@ function createPostgresChallengeStore({ query }) {
   return {
     async put(record) {
       validateRecord(record);
+      await query('DELETE FROM wallet_challenges WHERE expires_at <= NOW()', []);
       await query(
         `INSERT INTO wallet_challenges
           (challenge_id, purpose, audience, chain_id, account_name, permission,

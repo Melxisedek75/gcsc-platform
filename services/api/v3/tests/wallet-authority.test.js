@@ -37,7 +37,9 @@ function authority(threshold = 1, weight = 1) {
 }
 
 function lookup(requiredAuth, extraPermissions = []) {
-  fetchMock.mockResolvedValue({ ok: true, json: async () => ({
+  fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({
+    chain_id: '71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd',
+  }) }).mockResolvedValueOnce({ ok: true, json: async () => ({
     account_name: identity.accountName,
     permissions: [
       { perm_name: identity.permission, required_auth: requiredAuth },
@@ -50,10 +52,22 @@ function lookup(requiredAuth, extraPermissions = []) {
 test.each([[1, 1], [2, 2], [2, 3], [65535, 65535]])(
   'accepts direct key meeting threshold %i with weight %i', async (threshold, weight) => {
     expect(await lookup(authority(threshold, weight))).toEqual({ ok: true });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:9/v1/chain/get_account',
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://127.0.0.1:9/v1/chain/get_info',
+      expect.objectContaining({ method: 'POST', body: '{}' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://127.0.0.1:9/v1/chain/get_account',
       expect.objectContaining({ method: 'POST', body: JSON.stringify({ account_name: identity.accountName }) }));
   });
+
+test('rejects an authority endpoint serving a different chain', async () => {
+  fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ chain_id: 'f'.repeat(64) }) });
+  expect(await _hooks.verifyAccountKey(identity)).toMatchObject({
+    ok: false,
+    error: 'account_lookup_failed',
+    detail: expect.stringContaining('chain_id_mismatch'),
+  });
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+});
 
 test('rejects one key of a two-key threshold authority', async () => {
   const auth = authority(2, 1);

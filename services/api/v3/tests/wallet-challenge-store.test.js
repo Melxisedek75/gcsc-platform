@@ -82,6 +82,19 @@ test('PostgreSQL take is one atomic delete bound to the complete context', async
   ]);
 });
 
+test('stores prune expired unused challenges before inserting a new record', async () => {
+  const database = { wallet_challenges: [record({
+    challengeId: 'd'.repeat(64), issuedAt: 1, expiresAt: 2,
+  })] };
+  await createJsonChallengeStore({ database, save: () => {} }).put(record());
+  expect(database.wallet_challenges.map(item => item.challengeId)).toEqual(['a'.repeat(64)]);
+
+  const query = jest.fn(async () => ({ rows: [] }));
+  await createPostgresChallengeStore({ query }).put(record());
+  expect(query.mock.calls[0][0]).toMatch(/DELETE FROM wallet_challenges WHERE expires_at <= NOW\(\)/i);
+  expect(query.mock.calls[1][0]).toMatch(/INSERT INTO wallet_challenges/i);
+});
+
 test('stores reject malformed or mismatched challenge records', async () => {
   const store = createJsonChallengeStore({ database: { wallet_challenges: [] }, save: () => {} });
   await expect(store.put(record({ challengeId: 'short' }))).rejects.toThrow('wallet_proof_store_invalid');
