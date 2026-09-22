@@ -28,15 +28,19 @@ UI/QA-кандидаты без пересечения файлов. Назна�
 Backend evidence 22 сентября: `d2175c5d` перенёс только проверенный server proof
 codec (без frontend-файлов), `f381f13b` добавил durable JSON/PG challenge stores,
 `b95ffe75` реализовал wallet-first `/api/auth/wallet/challenge` и `/verify`.
-API220/220, proof/store/auth tests57+4, migration7/7, syntax и declared contract
-gate7/7 PASS. JWT выдаётся только единственному активному пользователю с ранее
-верифицированным wallet binding; replay, wrong session и unbound account отклонены.
-Это source/local fixture evidence: PostgreSQL runtime, независимое review, web/mobile
-consumer и физический WebAuth response остаются открытыми.
+Первое независимое ревью вернуло `CHANGES_REQUIRED`: fallback JWT secret,
+непроверенный chain ID RPC, доверие к `X-Forwarded-For`/отсутствие pruning и
+отсутствующая PostgreSQL migration. Commit `c808f80a` закрыл все четыре finding;
+повторное независимое ревью точного SHA вернуло `APPROVED`. API225/225,
+provenance/migration7/7, contract routes7/7 и production fail-closed smoke PASS.
+JWT выдаётся только единственному активному пользователю с ранее верифицированным
+wallet binding; replay, wrong session и unbound account отклонены. Это source/local
+fixture evidence: реальный PostgreSQL runtime, web/mobile consumer и физический
+WebAuth response остаются открытыми. Подробности: `WALLET-FIRST-AUTH-REVIEW.md`.
 
 ### 23-24 сентября - серверная основа и лёгкий UI параллельно
 
-- [ ] **Codex/backend:** TDD для durable atomic challenge store, одноразового
+- [x] **Codex/backend:** TDD для durable atomic challenge store, одноразового
   redemption, актуальной authority XPR Testnet, replay/expiry/account/network
   substitution и безопасных audit events. Только локальная PostgreSQL/fixtures.
 - [ ] **Design worker:** реализовать jobs/bids loading, empty, error, denied и
@@ -73,8 +77,9 @@ consumer и физический WebAuth response остаются открыт�
 
 ### 27-28 сентября - review, решение об интеграции и следующий цикл
 
-- [ ] Независимый reviewer проверяет точные candidate commits backend, frontend,
+- [ ] Независимый reviewer проверяет точные candidate commits frontend,
   design и QA; автор не одобряет собственную работу.
+- [x] Backend candidate `c808f80a` независимо проверен и получил `APPROVED`.
 - [ ] Исправить блокирующие findings в owning worktree и повторить проверки.
 - [ ] Coordinator обновляет capability matrix и этот checklist; готовит порядок
   интеграции без merge/deploy, если gate ещё не PASS.
