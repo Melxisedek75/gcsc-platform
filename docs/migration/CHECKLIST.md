@@ -38,6 +38,15 @@ wallet binding; replay, wrong session и unbound account отклонены. Э�
 fixture evidence: реальный PostgreSQL runtime, web/mobile consumer и физический
 WebAuth response остаются открытыми. Подробности: `WALLET-FIRST-AUTH-REVIEW.md`.
 
+Mobile evidence 22 сентября: `07002382` подключил существующий native sign-only
+adapter к frozen challenge/verify contract и вернул рабочую команду WebAuth login.
+Первое независимое ревью обнаружило два P1: concurrent double verify/save и abort
+после signing. Commit `6e67d6f3` добавил single-flight и fail-closed abort checks;
+повторное независимое ревью точного SHA вернуло `APPROVED`. Login5/5, proof15/15,
+restore11/11, migration24/24, build guards12/12, design10/10 и TypeScript PASS.
+Это source-кандидат: APK этого SHA ещё не собран/установлен, физическая WebAuth
+подпись не выполнена. Подробности: `MOBILE-WALLET-FIRST-REVIEW.md`.
+
 ### 23-24 сентября - серверная основа и лёгкий UI параллельно
 
 - [x] **Codex/backend:** TDD для durable atomic challenge store, одноразового
@@ -50,11 +59,18 @@ WebAuth response остаются открытыми. Подробности: `W
 - **Приёмка этапа:** API и real local PostgreSQL tests PASS; UI build/lint и
   browser checks на desktop/mobile viewport PASS; mock обозначен как mock.
 
+Локальный PostgreSQL gate 22 сентября: `psql` не установлен; Docker Desktop
+установлен, но daemon не поднялся и pipe `dockerDesktopLinuxEngine` отсутствует.
+Одинаковый запуск не повторять до восстановления daemon или появления локального
+PostgreSQL runtime. Backend fixture/tests остаются зелёными, real PG acceptance открыт.
+
 ### 25 сентября - WebAuth на устройстве и клиенты
 
 - [ ] **Frontend worker:** на уже установленном диагностическом APK подтвердить
   XPR Testnet и выполнить только user-approved sign-only challenge; сохранить
   sanitized response type/bytes/error без broadcast и оплаты.
+- [x] Frozen challenge/verify contract подключён к mobile source и независимо
+  одобрен в `6e67d6f3`; device/build acceptance остаётся отдельным пунктом выше.
 - [ ] После подтверждения формата подключить frozen HTTP contract в web/mobile.
   Cancellation, late callback, duplicate callback, account/network switch и
   restore должны иметь явные состояния.
@@ -77,9 +93,10 @@ WebAuth response остаются открытыми. Подробности: `W
 
 ### 27-28 сентября - review, решение об интеграции и следующий цикл
 
-- [ ] Независимый reviewer проверяет точные candidate commits frontend,
-  design и QA; автор не одобряет собственную работу.
+- [ ] Независимый reviewer проверяет точные candidate commits design и QA;
+  автор не одобряет собственную работу.
 - [x] Backend candidate `c808f80a` независимо проверен и получил `APPROVED`.
+- [x] Mobile wallet candidate `6e67d6f3` независимо проверен и получил `APPROVED`.
 - [ ] Исправить блокирующие findings в owning worktree и повторить проверки.
 - [ ] Coordinator обновляет capability matrix и этот checklist; готовит порядок
   интеграции без merge/deploy, если gate ещё не PASS.
