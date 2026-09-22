@@ -9,9 +9,9 @@
   {
     "path": "services/api/v3/pure-server.js",
     "sourceBlob": "952128e9316fe78bef42dba8ddc7b04eb09e29e5",
-    "sha256": "81852557dcc26816fc177ce0a72e5c7a4901b10b075ca9f8ca12904cc3457f2e",
-    "reason": "Require verified wallet ownership before payment challenges and bid readiness; invalidate changed identity proof; enforce single-key authority threshold and remove the ownership-check environment bypass.",
-    "test": "npm run test:api; reproduced earlier metadata/threshold/bypass failures and 15 pre-payment/bid-readiness regression failures before fixes"
+    "sha256": "231737e8259637c7e31836be7f9fe971c1ff8f4826e6229bbdf254bdec523516",
+    "reason": "Require verified wallet ownership before payment challenges and bid readiness; add wallet-first canonical transaction proof with durable single-use challenge storage, current testnet authority verification and JWT issuance only for one existing verified binding.",
+    "test": "npm run test:api (220/220); npm run check:integration-contracts (7/7); node --test tests/migration.test.mjs; red provenance hash witnessed before adaptation update"
   },
   {
     "path": "services/api/v3/tests/payments-402.test.js",

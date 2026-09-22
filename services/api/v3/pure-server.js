@@ -13,12 +13,15 @@ const { parse } = require('url');
 const { ec: EllipticEC } = require('elliptic');
 const { Numeric: XprNumeric } = require('@proton/js');
 const xprSecp256k1 = new EllipticEC('secp256k1');
+const { createOwnershipChallenge, createOwnershipVerifier } = require('./wallet-ownership-proof.cjs');
+const { createJsonChallengeStore, createPostgresChallengeStore } = require('./wallet-challenge-store.cjs');
 
 const PORT = process.env.PORT || 10000;
 const JWT_SECRET = process.env.JWT_SECRET || 'gcsc-dev-secret-256-bits-minimum-length';
 const DB_FILE = path.join(__dirname, 'gcsc.db');
 const USE_POSTGRES = !!process.env.DATABASE_URL;
 const XPR_TESTNET_CHAIN_ID = '71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd';
+const WALLET_PROOF_AUDIENCE = process.env.WALLET_PROOF_AUDIENCE || `http://127.0.0.1:${PORT}`;
 const XPR_TX_VERIFIER_ENABLED = process.env.XPR_TX_VERIFIER_ENABLED !== 'false';
 const XPR_TX_VERIFIER_INTERVAL_MS = parseInt(process.env.XPR_TX_VERIFIER_INTERVAL_MS || '300000', 10);
 // Verified 2026-07-15 against the live testnet. Health-checked by real tx lookup,
@@ -221,6 +224,7 @@ function createEmptyDatabase() {
     payment_receipts: [],
     lead_tokens: [],
     job_posting_payments: [],
+    wallet_challenges: [],
   };
 }
 
@@ -334,6 +338,24 @@ async function initStorage() {
   await queryPostgres(`ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
   await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_users_email_lower ON users (LOWER(email))`);
   await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_users_role ON users (role)`);
+
+  await queryPostgres(`
+    CREATE TABLE IF NOT EXISTS wallet_challenges (
+      challenge_id TEXT PRIMARY KEY CHECK (challenge_id ~ '^[0-9a-f]{64}$'),
+      purpose TEXT NOT NULL CHECK (purpose IN ('link', 'login')),
+      audience TEXT NOT NULL,
+      chain_id TEXT NOT NULL CHECK (chain_id ~ '^[0-9a-f]{64}$'),
+      account_name TEXT NOT NULL,
+      permission TEXT NOT NULL,
+      session_binding TEXT NOT NULL CHECK (session_binding ~ '^[0-9a-f]{64}$'),
+      issued_at TIMESTAMPTZ NOT NULL,
+      expires_at TIMESTAMPTZ NOT NULL,
+      challenge_record JSONB NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CHECK (expires_at > issued_at)
+    )
+  `);
+  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_wallet_challenges_expiry ON wallet_challenges (expires_at)`);
 
   await queryPostgres(`
     CREATE TABLE IF NOT EXISTS user_documents (
@@ -1664,6 +1686,43 @@ async function verifyXprAccountKey({ accountName, permission, publicKey }) {
 }
 
 _hooks.verifyAccountKey = verifyXprAccountKey;
+_hooks.verifyOwnershipAuthority = async (identity) => {
+  if (identity.chainId !== XPR_TESTNET_CHAIN_ID) return false;
+  const result = await _hooks.verifyAccountKey({
+    accountName: identity.accountName,
+    permission: identity.permission,
+    publicKey: identity.publicKey,
+  });
+  return result?.ok === true;
+};
+
+function walletChallengeStore() {
+  return USE_POSTGRES
+    ? createPostgresChallengeStore({ query: queryPostgres })
+    : createJsonChallengeStore({ database: db, save: saveDatabase });
+}
+
+async function findUserByVerifiedWallet(accountName, permission) {
+  if (USE_POSTGRES) {
+    const result = await queryPostgres(
+      `SELECT * FROM users
+       WHERE is_active = TRUE
+         AND wallet->>'accountName' = $1
+         AND COALESCE(wallet->>'permission', 'active') = $2
+         AND wallet->>'verified' = 'true'
+       ORDER BY id ASC
+       LIMIT 2`,
+      [accountName, permission],
+    );
+    if (result.rows.length !== 1) return null;
+    return normalizeUser(result.rows[0]);
+  }
+  const matches = db.users.filter(user => user.is_active
+    && user.wallet?.accountName === accountName
+    && (user.wallet.permission || 'active') === permission
+    && user.wallet.verified === true);
+  return matches.length === 1 ? matches[0] : null;
+}
 
 async function getProjectCount() {
   if (USE_POSTGRES) {
@@ -2872,7 +2931,10 @@ function rateLimitConfigForRoute(pattern) {
     },
   };
 
-  if (pattern === 'POST /api/auth/register' || pattern === 'POST /api/auth/login') return { name: 'auth', ...configs.auth };
+  if (pattern === 'POST /api/auth/register' || pattern === 'POST /api/auth/login'
+    || pattern === 'POST /api/auth/wallet/challenge' || pattern === 'POST /api/auth/wallet/verify') {
+    return { name: 'auth', ...configs.auth };
+  }
   if (pattern === 'GET /api/auth/profile' || pattern === 'PUT /api/auth/profile') return { name: 'profile', ...configs.profile };
   if (pattern === 'GET /api/auth/documents' || pattern === 'POST /api/auth/documents') return { name: 'documents', ...configs.documents };
   if (pattern === 'POST /api/wallet/connect') return { name: 'wallet', ...configs.wallet };
@@ -3108,6 +3170,81 @@ const routes = {
   },
 
   // Direct auth API used by the production dashboard
+  'POST /api/auth/wallet/challenge': async (req, res) => {
+    const body = await parseBody(req);
+    const accountName = cleanString(body.accountName || body.account || body.actor, 12).toLowerCase();
+    const permission = cleanString(body.permission || 'active', 12).toLowerCase();
+    if (!/^[a-z1-5](?:[a-z1-5.]{0,10}[a-z1-5])?$/.test(accountName)) {
+      return json(res, 400, { error: 'Valid XPR account name required', code: 'wallet_proof_config_invalid' });
+    }
+    if (!/^[a-z1-5](?:[a-z1-5.]{0,10}[a-z1-5])?$/.test(permission)) {
+      return json(res, 400, { error: 'Valid XPR permission required', code: 'wallet_proof_config_invalid' });
+    }
+    try {
+      const challenge = createOwnershipChallenge({
+        purpose: 'login',
+        audience: WALLET_PROOF_AUDIENCE,
+        chainId: XPR_TESTNET_CHAIN_ID,
+        accountName,
+        permission,
+        sessionBinding: crypto.randomBytes(32).toString('hex'),
+      });
+      await walletChallengeStore().put(challenge);
+      json(res, 200, challenge);
+    } catch (err) {
+      json(res, 503, { error: 'Wallet challenge unavailable', code: err.message || 'wallet_proof_unavailable' });
+    }
+  },
+
+  'POST /api/auth/wallet/verify': async (req, res) => {
+    const body = await parseBody(req);
+    const accountName = cleanString(body.accountName || body.account || body.actor, 12).toLowerCase();
+    const permission = cleanString(body.permission || 'active', 12).toLowerCase();
+    const sessionBinding = cleanString(body.sessionBinding || '', 64).toLowerCase();
+    const context = {
+      purpose: 'login',
+      audience: WALLET_PROOF_AUDIENCE,
+      chainId: XPR_TESTNET_CHAIN_ID,
+      accountName,
+      permission,
+      sessionBinding,
+    };
+    try {
+      const verify = createOwnershipVerifier({
+        store: walletChallengeStore(),
+        verifyAuthority: (identity, signal) => _hooks.verifyOwnershipAuthority(identity, signal),
+      });
+      const identity = await verify(body.proof, context);
+      const user = await findUserByVerifiedWallet(identity.accountName, identity.permission);
+      if (!user) {
+        return json(res, 401, {
+          error: 'Wallet login is not available for this application account',
+          code: 'wallet_login_unavailable',
+        });
+      }
+      const token = jwtSign({ userId: user.id, email: user.email, role: user.role });
+      await recordAuditEvent(req, {
+        actorId: user.id,
+        targetUserId: user.id,
+        action: 'wallet.login',
+        entityType: 'wallet',
+        entityId: user.id,
+        metadata: {
+          accountName: identity.accountName,
+          permission: identity.permission,
+          chainId: identity.chainId,
+          publicKey: identity.publicKey,
+        },
+      });
+      json(res, 200, { message: 'Wallet login verified', token, user: publicUser(user) });
+    } catch (err) {
+      const code = String(err?.message || 'wallet_proof_invalid');
+      const status = code === 'wallet_proof_store_timeout'
+        || code === 'wallet_proof_authority_timeout' ? 503 : 400;
+      json(res, status, { error: 'Wallet proof verification failed', code });
+    }
+  },
+
   'POST /api/auth/register': async (req, res) => {
     const body = await parseBody(req);
     const email = cleanString(body.email, 160).toLowerCase();
