@@ -2,9 +2,77 @@
 
 ## Главный план: сначала единый репозиторий
 
-Обновлено: 14 сентября 2026, America/Los_Angeles. Этот раздел определяет текущий
+Обновлено: 22 сентября 2026, America/Los_Angeles. Этот раздел определяет текущий
 порядок; подробная история и критерии ниже сохраняются, но не меняют приоритеты.
 Статус «ГОТОВО» означает проверенный результат, а не намерение.
+
+## План недели: 22-28 сентября 2026
+
+Цель недели: получить один согласованный и проверяемый wallet/auth контракт для
+web и Android, не смешивая его с реальными платежами, и подготовить независимые
+UI/QA-кандидаты без пересечения файлов. Назначение worktree и границы записаны в
+`WORK-LANES.md`.
+
+### 22 сентября - baseline и заморозка контракта
+
+- [ ] **Codex/backend:** сверить `0b2dcebb`, `0d597d9b`, `04561155` и текущие
+  canonical routes; оформить единственный HTTP challenge/verify/login контракт,
+  включая chain, account, session, expiry, purpose, audience и error codes.
+- [ ] **QA worker:** повторить обязательные offline suites на точных SHA и записать
+  красные пробелы отдельно от уже зелёных доказательств.
+- [ ] **Design worker:** инвентаризировать jobs/bids desktop и mobile-width states;
+  никаких auth, payment или API-изменений.
+- **Приёмка дня:** versioned fixtures/API contract доступны всем lanes; baseline
+  содержит точные команды, exit codes и SHA.
+
+### 23-24 сентября - серверная основа и лёгкий UI параллельно
+
+- [ ] **Codex/backend:** TDD для durable atomic challenge store, одноразового
+  redemption, актуальной authority XPR Testnet, replay/expiry/account/network
+  substitution и безопасных audit events. Только локальная PostgreSQL/fixtures.
+- [ ] **Design worker:** реализовать jobs/bids loading, empty, error, denied и
+  responsive states в `apps/web`; сохранить существующий design system и API.
+- [ ] **QA worker:** подготовить конкурентные и restart-тесты хранилища, не меняя
+  runtime implementation.
+- **Приёмка этапа:** API и real local PostgreSQL tests PASS; UI build/lint и
+  browser checks на desktop/mobile viewport PASS; mock обозначен как mock.
+
+### 25 сентября - WebAuth на устройстве и клиенты
+
+- [ ] **Frontend worker:** на уже установленном диагностическом APK подтвердить
+  XPR Testnet и выполнить только user-approved sign-only challenge; сохранить
+  sanitized response type/bytes/error без broadcast и оплаты.
+- [ ] После подтверждения формата подключить frozen HTTP contract в web/mobile.
+  Cancellation, late callback, duplicate callback, account/network switch и
+  restore должны иметь явные состояния.
+- **Внешний gate:** физическое подтверждение подписи делает владелец. Если телефон
+  недоступен, worker переходит к детерминированным client fixtures и не объявляет
+  device acceptance.
+- **Приёмка этапа:** web browser round trip и Android sign-only evidence для одного
+  точного build; настоящий app login остаётся закрыт до backend/QA review.
+
+### 26 сентября - интеграционный пользовательский сценарий
+
+- [ ] **Codex + frontend:** локально пройти register/login -> wallet proof ->
+  profile -> project preview -> bid/proposal без реального платежа.
+- [ ] **QA worker:** проверить чужой аккаунт, неверную сеть, истёкший proof,
+  повторный callback, restart API/DB и две конкурентные попытки.
+- [ ] Priority Access Marketplace остаётся `SPEC ONLY`; на этой неделе допустимы
+  только schema/API test design, без USDC/USDT/XPR settlement реализации.
+- **Приёмка этапа:** один сценарий web/API/PG и один mobile/API сценарий имеют
+  точное evidence; сборка или mock сами по себе не закрывают пункт.
+
+### 27-28 сентября - review, решение об интеграции и следующий цикл
+
+- [ ] Независимый reviewer проверяет точные candidate commits backend, frontend,
+  design и QA; автор не одобряет собственную работу.
+- [ ] Исправить блокирующие findings в owning worktree и повторить проверки.
+- [ ] Coordinator обновляет capability matrix и этот checklist; готовит порядок
+  интеграции без merge/deploy, если gate ещё не PASS.
+- **Результат недели:** либо review-ready пакет с зелёными обязательными тестами и
+  device evidence, либо точный blocker с условием продолжения и независимая
+  следующая задача. Никаких production, real payment, public whitepaper, live
+  Supabase, wallet broadcast или deploy в недельный scope не входит.
 
 14 сентября, новый приоритет по просьбе владельца: WebAuth/mobile возобновлены.
 P2.2a: в ветке `codex/wallet-proof-20260914` создан кандидат `0d597d9b`:
