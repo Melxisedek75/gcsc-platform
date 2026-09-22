@@ -6,7 +6,7 @@ import { Header } from '../../components/Header';
 import { Input } from '../../components/Input';
 import { Screen } from '../../components/Screen';
 import { ApiError } from '../../lib/api';
-import { login } from '../../lib/auth';
+import { login, loginWithWallet } from '../../lib/auth';
 import { primeSessionFromBackend } from '../../lib/webauth';
 import { colors, spacing, typography } from '../../lib/tokens';
 
@@ -40,6 +40,22 @@ export default function SignIn() {
     } catch (err) {
       const apiErr = err as ApiError;
       setError(apiErr.message ?? 'Sign in failed');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleWalletSignIn() {
+    if (submitting) return;
+    setError(null);
+    setSubmitting(true);
+    try {
+      const user = await loginWithWallet();
+      const target = user.role === 'contractor' ? '/(contractor)/jobs' : '/(homeowner)/jobs';
+      router.replace(target);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : (err as ApiError).message;
+      setError(message || 'WebAuth sign in failed');
     } finally {
       setSubmitting(false);
     }
@@ -83,8 +99,12 @@ export default function SignIn() {
           onPress={handleSignIn}
           disabled={submitting}
         />
-        {/* Wallet-first login is a future feature; the button was a no-op and
-            confused testers, so it is removed until the flow exists. */}
+        <Button
+          label="Continue with WebAuth wallet"
+          fullWidth
+          onPress={handleWalletSignIn}
+          disabled={submitting}
+        />
       </View>
 
       <Text style={[typography.caption, { color: colors.textMuted, textAlign: 'center' }]}>

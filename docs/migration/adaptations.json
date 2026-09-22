@@ -142,9 +142,9 @@
   {
     "path": "apps/mobile/app/(auth)/sign-in.tsx",
     "sourceBlob": "67b9f324ea5fb59de86c7c8fb56a8588d4bb3671",
-    "sha256": "1308c08a180f3598ff8fe8d75353a8888c6d6e86c80fe140b1323d6f71da1ada",
-    "reason": "Add autocomplete, accessible error announcement and stable loading-button labeling without changing authentication or wallet requests.",
-    "test": "npm run test:mobile-design; npm run check:mobile-types; browser UI verification in MOBILE-DESIGN.md"
+    "sha256": "b429f1b696cd4392ca148091fb0411d49fce989e276ad1f42eeb9fa59e5c69d3",
+    "reason": "Preserve accessible email login and activate the previously absent WebAuth command through the reviewed wallet-first challenge/sign/verify flow; no payment or broadcast action is used.",
+    "test": "npm run test:wallet-login-client; npm run test:wallet-proof-client; npm run check:mobile-types; physical WebAuth acceptance remains open"
   },
   {
     "path": "apps/mobile/app/(contractor)/_layout.tsx",
@@ -229,6 +229,13 @@
     "sha256": "f0923333a2ee656940e01f1bf5dd3a0406839b5a3d501e98e155f3626e763031",
     "reason": "P2.2 candidate: add an explicit sign-only ownership-proof adapter using the existing native SDK session. No UI caller, binding, login, or broadcast activation.",
     "test": "npm run test:wallet-proof-client; npm run check:mobile-types; npm run check; independent wallet SDK serialization review"
+  },
+  {
+    "path": "apps/mobile/lib/auth.ts",
+    "sourceBlob": "4e7e9d388994624f7b45a8cc0601c76c62ccab24",
+    "sha256": "0c42355bf748e58588872ab42c4cef6920071a4ff75589afd37de6ebc6b14b31",
+    "reason": "Add wallet-first application login orchestration using the frozen unauthenticated challenge/verify HTTP contract, sign-only WebAuth proof and existing local session persistence.",
+    "test": "npm run test:wallet-login-client; npm run test:wallet-proof-client; npm run test:wallet-restore; npm run check:mobile-types"
   },
   {
     "path": "apps/web/src/services/webauth.ts",

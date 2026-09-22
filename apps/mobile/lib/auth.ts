@@ -2,6 +2,8 @@
 // Saves JWT + user to AsyncStorage on success via api.saveSession.
 
 import { apiRequest, AuthUser, clearSession, normalizeUser, saveSession, UserRole } from './api';
+import { connectWallet, signWalletOwnershipChallenge } from './webauth';
+import { createWalletFirstLogin } from './wallet-login-core.mjs';
 
 interface AuthResponse {
   message?: string;
@@ -33,6 +35,26 @@ export async function login(email: string, password: string): Promise<AuthUser> 
   });
   await saveSession(res.token, res.user);
   return normalizeUser(res.user);
+}
+
+const walletFirstLogin = createWalletFirstLogin<AuthUser>({
+  connect: connectWallet,
+  issueChallenge: body => apiRequest('/api/auth/wallet/challenge', {
+    method: 'POST',
+    auth: false,
+    body,
+  }),
+  sign: signWalletOwnershipChallenge,
+  verify: body => apiRequest<AuthResponse>('/api/auth/wallet/verify', {
+    method: 'POST',
+    auth: false,
+    body,
+  }),
+  save: saveSession,
+});
+
+export async function loginWithWallet(signal?: AbortSignal): Promise<AuthUser> {
+  return normalizeUser(await walletFirstLogin({ signal }));
 }
 
 interface RegisterArgs {

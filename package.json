@@ -9,6 +9,7 @@
     "test:wallet-sdk": "node --test tests/wallet-sdk-identity.test.mjs",
     "test:wallet-payload": "node --test tests/wallet-challenge-payload.test.mjs",
     "test:wallet-proof-client": "node --test tests/wallet-proof-client.test.mjs",
+    "test:wallet-login-client": "node --test tests/wallet-login-client.test.mjs",
     "test:wallet-device-probe": "node --test tests/wallet-device-probe.test.mjs",
     "check:api-syntax": "node --check services/api/v3/pure-server.js",
     "check:web": "node scripts/check-web.mjs",
