@@ -81,3 +81,42 @@ test('wallet-first client never saves an incomplete verification response', asyn
   await assert.rejects(login(), /wallet_login_response_invalid/);
   assert.equal(saved, false);
 });
+
+test('wallet-first client rejects a concurrent login before a second verify or save', async () => {
+  let releaseSign;
+  let verifyCount = 0;
+  let saveCount = 0;
+  const login = createWalletFirstLogin({
+    connect: async () => ({ account: 'fixture11111', permission: 'active' }),
+    issueChallenge: async () => challenge,
+    sign: async () => new Promise(resolve => { releaseSign = () => resolve(proof); }),
+    verify: async () => { verifyCount += 1; return { token: 'jwt', user: { id: 31 } }; },
+    save: async () => { saveCount += 1; },
+  });
+
+  const first = login();
+  await new Promise(resolve => setImmediate(resolve));
+  await assert.rejects(login(), /wallet_login_request_pending/);
+  releaseSign();
+  await first;
+
+  assert.equal(verifyCount, 1);
+  assert.equal(saveCount, 1);
+});
+
+test('abort after signing prevents verify and session persistence', async () => {
+  const controller = new AbortController();
+  let verifyCount = 0;
+  let saveCount = 0;
+  const login = createWalletFirstLogin({
+    connect: async () => ({ account: 'fixture11111', permission: 'active' }),
+    issueChallenge: async () => challenge,
+    sign: async () => { controller.abort(); return proof; },
+    verify: async () => { verifyCount += 1; return { token: 'jwt', user: { id: 31 } }; },
+    save: async () => { saveCount += 1; },
+  });
+
+  await assert.rejects(login({ signal: controller.signal }), /wallet_login_cancelled/);
+  assert.equal(verifyCount, 0);
+  assert.equal(saveCount, 0);
+});
