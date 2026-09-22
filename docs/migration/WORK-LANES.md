@@ -6,7 +6,7 @@ codex/monorepo-publication. Week: 2026-09-22 through 2026-09-28.
 
 | Lane | Worktree | Branch | Ownership | Next task |
 | --- | --- | --- | --- | --- |
-| Backend / Codex | C:\gcsc-platform\.worktrees\backend | codex/backend-integration @ 0b2dcebb | services/api, packages; no UI | Freeze wallet HTTP contract; add durable one-time challenge storage, current testnet authority checks and negative tests; no real signature or broadcast |
+| Backend / Codex | C:\gcsc-platform\.worktrees\backend | codex/backend-integration @ b95ffe75 | services/api, packages; no UI | Candidate complete: canonical proof, durable JSON/PG stores and wallet-first challenge/verify. Next: real local PG acceptance and independent review; no real signature or broadcast |
 | Frontend worker | C:\gcsc-platform\.worktrees\frontend | codex/mobile-wallet-probe-20260914 @ ec61480f | apps/mobile and wallet consumer docs only; no API/schema | Resume installed sign-only probe, capture real response shape with owner approval, then implement only the frozen client contract |
 | Design worker | C:\gcsc-platform\.worktrees\web-design | codex/web-design-system-20260914 @ 3f90ab28 | apps/web UI and design evidence; no auth/payment/API changes | Jobs/bids responsive states, empty/loading/error/accessibility review using fixtures and existing endpoints |
 | QA worker | C:\gcsc-platform\.worktrees\qa | codex/wallet-proof-20260914 @ e58c4931 | tests, scripts, CI and review evidence; no production code | Baseline exact candidates; test replay, expiry, account/network substitution, concurrency and PostgreSQL persistence |

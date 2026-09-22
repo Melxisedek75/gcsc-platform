@@ -15,7 +15,7 @@ UI/QA-кандидаты без пересечения файлов. Назна�
 
 ### 22 сентября - baseline и заморозка контракта
 
-- [ ] **Codex/backend:** сверить `0b2dcebb`, `0d597d9b`, `04561155` и текущие
+- [x] **Codex/backend:** сверить `0b2dcebb`, `0d597d9b`, `04561155` и текущие
   canonical routes; оформить единственный HTTP challenge/verify/login контракт,
   включая chain, account, session, expiry, purpose, audience и error codes.
 - [ ] **QA worker:** повторить обязательные offline suites на точных SHA и записать
@@ -24,6 +24,15 @@ UI/QA-кандидаты без пересечения файлов. Назна�
   никаких auth, payment или API-изменений.
 - **Приёмка дня:** versioned fixtures/API contract доступны всем lanes; baseline
   содержит точные команды, exit codes и SHA.
+
+Backend evidence 22 сентября: `d2175c5d` перенёс только проверенный server proof
+codec (без frontend-файлов), `f381f13b` добавил durable JSON/PG challenge stores,
+`b95ffe75` реализовал wallet-first `/api/auth/wallet/challenge` и `/verify`.
+API220/220, proof/store/auth tests57+4, migration7/7, syntax и declared contract
+gate7/7 PASS. JWT выдаётся только единственному активному пользователю с ранее
+верифицированным wallet binding; replay, wrong session и unbound account отклонены.
+Это source/local fixture evidence: PostgreSQL runtime, независимое review, web/mobile
+consumer и физический WebAuth response остаются открытыми.
 
 ### 23-24 сентября - серверная основа и лёгкий UI параллельно
 
