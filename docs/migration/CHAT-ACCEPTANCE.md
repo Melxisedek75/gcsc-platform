@@ -119,17 +119,32 @@ Independently repeated PG36/36, API168/168, root48/static, fake storage and diff
   repeated PASS (51.031s); fake storage and diff checks PASS. Focused independent
   re-review is recorded below once completed; no self-approval.
 
-## Next consumer slice (not implemented)
+## Web consumer candidate (2026-09-23)
 
-1. Extend the existing `apps/web/src/services/api.ts` client with the four typed
-   routes above; keep its configured base URL/application JWT, no second API client.
-2. Add participant-only Chat to the existing Dashboard section navigation. Open a
-   conversation from an actual bid in ProjectsPanel/BidsPanel, never a typed user id.
-3. Render plain text, ordered sequences, loading/empty/forbidden/read-only states.
-   A pending send keeps its UUID/text until acknowledged or explicitly abandoned.
-   Uncertain network failure must not append a second apparently delivered message.
-4. Clear history and pending UI on account/session change, ignore stale responses,
-   bound polling to the visible conversation, and paginate using server cursors.
-5. Run two browser contexts against the canonical API and disposable PostgreSQL:
-   send/receive, reload history, outsider isolation, stale access and retry. Distinguish
-   fixture JWT from registration. Native UI/APK and wallet callbacks remain deferred.
+Candidate `2ff61777` on `codex/web-chat-integration-20260923` extends the existing
+configured web API client with the four typed routes and adds participant-only Chat
+to Dashboard. Conversations open from stored bid ids in ProjectsPanel/BidsPanel,
+never from a typed recipient. Messages render as plain text in server sequence order;
+only the visible conversation polls. Account changes clear local thread, message and
+pending-send state. An uncertain send retains its text and UUID and retry reuses the
+same idempotency key until the server acknowledges it.
+
+Verification from `C:/gcsc-platform/.worktrees/web-chat`, all exit0:
+
+- `node --test tests/api-config.test.mjs`: **16/16**, including exact chat routes,
+  application Bearer token and unchanged message UUID/body.
+- `tsc -b apps/web --pretty false`: PASS.
+- scoped ESLint for all changed web files: PASS.
+- Vite production build: **2979 modules**, ChatPanel emitted as a lazy chunk.
+- `npm run check:web`: all three static migration validators PASS.
+- `node scripts/check-chat-ui.mjs --playwright-dir C:\\Users\\rivne\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\node_modules`:
+  Edge headless at 1280x900 and 390x844, real React ChatPanel with isolated mock
+  HTTP; existing history, no horizontal overflow, uncertain 503 then retry with the
+  same UUID, one delivered bubble and no page errors. Evidence is regenerated under
+  `apps/web/.tmp/chat-ui-*/result.json` and is intentionally not committed.
+
+This browser smoke is not real API/PostgreSQL acceptance. Remaining: server-cursor
+pagination beyond the first bounded page, two simultaneous browser identities against
+the canonical API and disposable PostgreSQL, outsider/stale-access verification,
+independent review of the exact web candidate, and owner-checklist integration.
+Native UI/APK and wallet callbacks remain separate and deferred.
