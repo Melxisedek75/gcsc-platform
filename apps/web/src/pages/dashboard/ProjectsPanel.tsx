@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { motion } from 'framer-motion';
 import {
@@ -22,6 +22,7 @@ import {
   type GcscProject,
   type GcscUser,
 } from '../../services/api';
+import { createLatestRequestGate } from '../../services/latest-request.mjs';
 import { fieldClass, formatCurrency, projectStatusLabel, bidStatusLabel } from './format';
 import { StatusBadge, ContractorTrustBadge } from './shared';
 import { MilestoneManager } from './MilestoneManager';
@@ -246,15 +247,19 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState('');
   const [detailMessage, setDetailMessage] = useState('');
+  const requestGate = useRef(createLatestRequestGate()).current;
   const isHomeowner = user.role === 'homeowner';
 
   const loadProjects = useCallback(async () => {
+    const requestId = requestGate.start();
     setLoading(true);
     setError('');
+    setProjects([]);
     try {
+      let nextProjects: GcscProject[];
       if (isHomeowner) {
         const response = await api.getMyProjects();
-        setProjects(response.projects || []);
+        nextProjects = response.projects || [];
       } else {
         const [openResponse, myResponse] = await Promise.all([
           api.getProjects({ status: 'open' }),
@@ -264,18 +269,27 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
         for (const project of [...(openResponse.projects || []), ...(myResponse.projects || [])]) {
           merged.set(project.id, project);
         }
-        setProjects([...merged.values()]);
+        nextProjects = [...merged.values()];
       }
+      if (!requestGate.isCurrent(requestId)) return;
+      setProjects(nextProjects);
     } catch (err) {
+      if (!requestGate.isCurrent(requestId)) return;
+      setProjects([]);
+      setSelectedProject(null);
+      setSelectedBids([]);
+      setSelectedEscrow(null);
+      setSelectedMilestones([]);
       setError(err instanceof Error ? err.message : 'Could not load projects');
     } finally {
-      setLoading(false);
+      if (requestGate.isCurrent(requestId)) setLoading(false);
     }
-  }, [isHomeowner]);
+  }, [isHomeowner, requestGate]);
 
   useEffect(() => {
     void loadProjects();
-  }, [loadProjects]);
+    return () => requestGate.invalidate();
+  }, [loadProjects, requestGate]);
 
   const loadDetails = async (projectId: number) => {
     setDetailLoading(true);

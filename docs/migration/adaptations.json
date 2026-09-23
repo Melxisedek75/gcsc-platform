@@ -121,15 +121,15 @@
   {
     "path": "apps/web/src/pages/dashboard/BidsPanel.tsx",
     "sourceBlob": "c9573afbbd78338281811aff2e0186d530001035",
-    "sha256": "4e67c82b65680e8d92fe70e0aa247e29a80b256349e57469a277a395b771d91a",
-    "reason": "Add accessible loading/error/retry/empty states and replace the wide mobile table with stable bid cards while retaining the desktop table and existing API behavior.",
+    "sha256": "a4180245037a306160053e22303a313fa09b5fe3176cd12ea2814d0f5315ec3b",
+    "reason": "Add accessible loading/error/retry/empty states, replace the wide mobile table with stable bid cards, and ignore stale out-of-order refresh responses while retaining the desktop table and existing API behavior.",
     "test": "npm run test:web-jobs-bids-states; npm run build:web; npm run lint:web"
   },
   {
     "path": "apps/web/src/pages/dashboard/ProjectsPanel.tsx",
     "sourceBlob": "11b314e2e4936411906e898cadb2cf94356a2a18",
-    "sha256": "ad8984fe103609ca119fbd3d1e5046b8e6b43516aef20add5bdc375f694e3c12",
-    "reason": "Expose accessible loading and recoverable API error states for projects without changing project, bid, escrow or milestone behavior.",
+    "sha256": "9876ce217394f47ab4732c7b169a1afa93b4ccb71dfc735a653cc5859244faa8",
+    "reason": "Expose accessible loading and recoverable API error states, ignore stale out-of-order refresh responses, and clear failed refresh data without changing project, bid, escrow or milestone API behavior.",
     "test": "npm run test:web-jobs-bids-states; npm run build:web; npm run lint:web"
   }
 ]

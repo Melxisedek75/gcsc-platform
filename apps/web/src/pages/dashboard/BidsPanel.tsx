@@ -1,18 +1,21 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Loader2, ClipboardList, RefreshCw } from 'lucide-react';
 import { api, type GcscBid, type GcscUser } from '../../services/api';
 import { formatCurrency, formatDate, bidStatusLabel } from './format';
 import { StatusBadge } from './shared';
+import { createLatestRequestGate } from '../../services/latest-request.mjs';
 
 export function BidsPanel({ user }: { user: GcscUser }) {
   const [filter, setFilter] = useState<string>('All');
   const [bids, setBids] = useState<GcscBid[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const requestGate = useRef(createLatestRequestGate()).current;
   const isContractor = user.role === 'contractor';
 
   const loadBids = useCallback(async () => {
+    const requestId = requestGate.start();
     if (!isContractor) {
       setBids([]);
       setLoading(false);
@@ -20,19 +23,24 @@ export function BidsPanel({ user }: { user: GcscUser }) {
     }
     setLoading(true);
     setError('');
+    setBids([]);
     try {
       const response = await api.getMyBids();
+      if (!requestGate.isCurrent(requestId)) return;
       setBids(response.bids || []);
     } catch (err) {
+      if (!requestGate.isCurrent(requestId)) return;
+      setBids([]);
       setError(err instanceof Error ? err.message : 'Could not load bids');
     } finally {
-      setLoading(false);
+      if (requestGate.isCurrent(requestId)) setLoading(false);
     }
-  }, [isContractor]);
+  }, [isContractor, requestGate]);
 
   useEffect(() => {
     void loadBids();
-  }, [loadBids]);
+    return () => requestGate.invalidate();
+  }, [loadBids, requestGate]);
 
   const filtered = useMemo(() => {
     if (filter === 'All') return bids;
