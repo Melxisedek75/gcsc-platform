@@ -64,7 +64,7 @@ lint:0 errors/1 существующая warning. Это source-кандидат
   substitution и безопасных audit events. Только локальная PostgreSQL/fixtures.
 - [x] **Design worker:** реализовать jobs/bids loading, empty, error, denied и
   responsive states в `apps/web`; сохранить существующий design system и API.
-- [ ] **QA worker:** подготовить конкурентные и restart-тесты хранилища, не меняя
+- [x] **QA worker:** подготовить конкурентные и restart-тесты хранилища, не меняя
   runtime implementation.
 - **Приёмка этапа:** API и real local PostgreSQL tests PASS; UI build/lint и
   browser checks на desktop/mobile viewport PASS; mock обозначен как mock.
@@ -73,6 +73,11 @@ lint:0 errors/1 существующая warning. Это source-кандидат
 установлен, но daemon не поднялся и pipe `dockerDesktopLinuxEngine` отсутствует.
 Одинаковый запуск не повторять до восстановления daemon или появления локального
 PostgreSQL runtime. Backend fixture/tests остаются зелёными, real PG acceptance открыт.
+
+QA evidence 22 сентября: `wallet-challenge-store.test.js` покрывает JSON restart,
+одноразовый take, concurrent winner и expiry pruning; ownership/auth suites покрывают
+replay, delayed expiry, wrong chain/account/session и timeout. Эти проверки вошли
+в независимо одобренный backend `c808f80a`; новый дублирующий suite не создавался.
 
 Design evidence 22 сентября: `500e1152` добавил responsive bids cards, сохранил
 desktop tables и реализовал loading/empty/error/denied/retry states. Первое
@@ -113,14 +118,14 @@ errors/1 существующая warning. Live API/browser responsive acceptanc
 
 ### 27-28 сентября - review, решение об интеграции и следующий цикл
 
-- [ ] Независимый reviewer проверяет точные candidate commits design и QA;
+- [x] Независимый reviewer проверяет точные candidate commits design и QA;
   автор не одобряет собственную работу.
 - [x] Backend candidate `c808f80a` независимо проверен и получил `APPROVED`.
 - [x] Mobile wallet candidate `6e67d6f3` независимо проверен и получил `APPROVED`.
 - [x] Web wallet candidate `3702e457` независимо проверен и получил `APPROVED`.
 - [x] Web jobs/bids candidate `a587c2ab` независимо проверен и получил `APPROVED`.
-- [ ] Исправить блокирующие findings в owning worktree и повторить проверки.
-- [ ] Coordinator обновляет capability matrix и этот checklist; готовит порядок
+- [x] Исправить блокирующие findings в owning worktree и повторить проверки.
+- [x] Coordinator обновляет capability matrix и этот checklist; готовит порядок
   интеграции без merge/deploy, если gate ещё не PASS.
 - **Результат недели:** либо review-ready пакет с зелёными обязательными тестами и
   device evidence, либо точный blocker с условием продолжения и независимая
