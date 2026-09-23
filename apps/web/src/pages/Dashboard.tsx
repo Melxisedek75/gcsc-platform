@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api, type GcscUser } from '../services/api';
@@ -39,11 +39,11 @@ const AdminAuditLogPanel = lazy(() => import('./dashboard/AdminAuditLogPanel').t
 const WalletPanel = lazy(() => import('./dashboard/WalletPanel').then((m) => ({ default: m.WalletPanel })));
 const TokenRedirect = lazy(() => import('./dashboard/TokenRedirect').then((m) => ({ default: m.TokenRedirect })));
 
-const navItems: { key: Section; label: string; icon: typeof LayoutDashboard; adminOnly?: boolean }[] = [
+const navItems: { key: Section; label: string; icon: typeof LayoutDashboard; adminOnly?: boolean; participantOnly?: boolean }[] = [
   { key: 'projects', label: 'Projects', icon: LayoutDashboard },
   { key: 'estimator', label: 'Estimator', icon: Calculator },
   { key: 'bids', label: 'My Bids', icon: ClipboardList },
-  { key: 'chat', label: 'Chat', icon: MessageCircle },
+  { key: 'chat', label: 'Chat', icon: MessageCircle, participantOnly: true },
   { key: 'loans', label: 'Loans', icon: DollarSign },
   { key: 'profile', label: 'Profile', icon: UserCircle },
   { key: 'compliance', label: 'Compliance', icon: ShieldCheck },
@@ -61,11 +61,12 @@ export default function Dashboard() {
   const [registrationNotice, setRegistrationNotice] = useState<{ email?: string; phone?: string } | null>(null);
   const [chatBidId, setChatBidId] = useState<number | null>(null);
 
-  const openChatForBid = (bidId: number) => {
+  const openChatForBid = useCallback((bidId: number) => {
     setChatBidId(bidId);
     setActiveSection('chat');
     setMobileMenuOpen(false);
-  };
+  }, []);
+  const consumeChatBid = useCallback(() => setChatBidId(null), []);
 
   useEffect(() => {
     let mounted = true;
@@ -121,7 +122,7 @@ export default function Dashboard() {
       case 'bids':
         return <BidsPanel user={user} onOpenChat={openChatForBid} />;
       case 'chat':
-        return <ChatPanel user={user} initialBidId={chatBidId} onBidConsumed={() => setChatBidId(null)} />;
+        return <ChatPanel user={user} initialBidId={chatBidId} onBidConsumed={consumeChatBid} />;
       case 'loans':
         return <LoansFinancingPanel user={user} />;
       case 'profile':
@@ -159,7 +160,8 @@ export default function Dashboard() {
   }
 
   const profile = getProfile(user);
-  const visibleNavItems = navItems.filter((item) => !item.adminOnly || user.role === 'admin');
+  const visibleNavItems = navItems.filter((item) =>
+    (!item.adminOnly || user.role === 'admin') && (!item.participantOnly || user.role === 'homeowner' || user.role === 'contractor'));
 
   return (
     <div className="min-h-[100dvh] bg-white flex">
