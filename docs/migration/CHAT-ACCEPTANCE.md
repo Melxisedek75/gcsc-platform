@@ -128,6 +128,8 @@ never from a typed recipient. Messages render as plain text in server sequence o
 only the visible conversation polls. Account changes clear local thread, message and
 pending-send state. An uncertain send retains its text and UUID and retry reuses the
 same idempotency key until the server acknowledges it.
+Thread and message lists expose bounded server-cursor continuation controls rather
+than unbounded reads.
 
 Verification from `C:/gcsc-platform/.worktrees/web-chat`, all exit0:
 
@@ -143,8 +145,7 @@ Verification from `C:/gcsc-platform/.worktrees/web-chat`, all exit0:
   same UUID, one delivered bubble and no page errors. Evidence is regenerated under
   `apps/web/.tmp/chat-ui-*/result.json` and is intentionally not committed.
 
-This browser smoke is not real API/PostgreSQL acceptance. Remaining: server-cursor
-pagination beyond the first bounded page, two simultaneous browser identities against
+This browser smoke is not real API/PostgreSQL acceptance. Remaining: two simultaneous browser identities against
 the canonical API and disposable PostgreSQL, outsider/stale-access verification,
 independent review of the exact web candidate, and owner-checklist integration.
 Native UI/APK and wallet callbacks remain separate and deferred.

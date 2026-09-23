@@ -25,24 +25,31 @@ export function ChatPanel({
   onBidConsumed: () => void;
 }) {
   const [threads, setThreads] = useState<GcscChatThread[]>([]);
+  const [hasMoreThreads, setHasMoreThreads] = useState(false);
   const [selected, setSelected] = useState<GcscChatThread | null>(null);
   const [messages, setMessages] = useState<GcscChatMessage[]>([]);
+  const [hasMoreMessages, setHasMoreMessages] = useState(false);
   const [draft, setDraft] = useState('');
   const [pending, setPending] = useState<PendingMessage | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const requestVersion = useRef(0);
+  const threadsCursorRef = useRef<number | null>(null);
 
-  const loadThreads = useCallback(async () => {
+  const loadThreads = useCallback(async (append = false) => {
     const version = ++requestVersion.current;
     setLoading(true);
     setError('');
     try {
-      const response = await api.getChatThreads(undefined, 50);
+      const response = await api.getChatThreads(append ? threadsCursorRef.current ?? undefined : undefined, 50);
       if (version !== requestVersion.current) return;
-      setThreads(response.threads);
-      setSelected((current) => current && response.threads.find((thread) => thread.id === current.id) || response.threads[0] || null);
+      setThreads((current) => append
+        ? [...new Map([...current, ...response.threads].map((thread) => [thread.id, thread])).values()]
+        : response.threads);
+      threadsCursorRef.current = response.next_before;
+      setHasMoreThreads(response.has_more);
+      if (!append) setSelected((current) => current && response.threads.find((thread) => thread.id === current.id) || response.threads[0] || null);
     } catch (err) {
       if (version === requestVersion.current) setError(err instanceof Error ? err.message : 'Could not load conversations');
     } finally {
@@ -52,11 +59,13 @@ export function ChatPanel({
 
   useEffect(() => {
     setThreads([]);
+    threadsCursorRef.current = null;
+    setHasMoreThreads(false);
     setSelected(null);
     setMessages([]);
     setPending(null);
     setDraft('');
-    void loadThreads();
+    void loadThreads(false);
     return () => { requestVersion.current += 1; };
   }, [user.id, loadThreads]);
 
@@ -82,6 +91,7 @@ export function ChatPanel({
       if (selected?.id !== thread.id && incremental) return;
       setSelected(response.thread);
       setMessages((current) => incremental ? mergeMessages(current, response.messages) : response.messages);
+      setHasMoreMessages(response.has_more);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load messages');
     }
@@ -93,6 +103,7 @@ export function ChatPanel({
       return;
     }
     setMessages([]);
+    setHasMoreMessages(false);
     setPending((current) => current?.threadId === selected.id ? current : null);
     void loadMessages(selected);
   // The selected id defines the conversation reset; polling performs incremental reads.
@@ -142,7 +153,7 @@ export function ChatPanel({
         <aside className="border-b border-[#E2E8F0] bg-[#F8FAFC] lg:border-b-0 lg:border-r">
           <div className="flex items-center justify-between border-b border-[#E2E8F0] p-4">
             <span className="font-semibold text-[#0F172A]">Conversations</span>
-            <button type="button" onClick={() => void loadThreads()} aria-label="Refresh conversations" className="p-2 text-[#64748B] hover:text-[#7B2FF7]">
+            <button type="button" onClick={() => void loadThreads(false)} aria-label="Refresh conversations" className="p-2 text-[#64748B] hover:text-[#7B2FF7]">
               <RefreshCw size={16} />
             </button>
           </div>
@@ -156,6 +167,11 @@ export function ChatPanel({
               <p className="mt-1 truncate text-xs text-[#64748B]">{thread.title}</p>
             </button>
           ))}
+          {hasMoreThreads && (
+            <button type="button" onClick={() => void loadThreads(true)} disabled={loading} className="w-full px-4 py-3 text-sm font-semibold text-[#7B2FF7] disabled:opacity-50">
+              Load more conversations
+            </button>
+          )}
         </aside>
         <section className="flex min-h-[420px] flex-col">
           {!selected ? (
@@ -167,6 +183,11 @@ export function ChatPanel({
                 <p className="text-xs text-[#64748B]">{selected.title} {!selected.can_send && '- Read only'}</p>
               </header>
               <div className="flex-1 space-y-3 overflow-y-auto p-4">
+                {hasMoreMessages && (
+                  <button type="button" onClick={() => void loadMessages(selected, true)} className="mx-auto block rounded-md border border-[#C4B5FD] px-3 py-1.5 text-xs font-semibold text-[#7B2FF7]">
+                    Load more messages
+                  </button>
+                )}
                 {messages.length === 0 && <p className="py-12 text-center text-sm text-[#94A3B8]">No messages yet.</p>}
                 {messages.map((message) => {
                   const mine = message.sender_id === user.id;

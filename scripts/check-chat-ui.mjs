@@ -26,6 +26,8 @@ const thread = {
   counterparty: { id: 2, full_name: 'Fixture Owner', role: 'homeowner' }, can_send: true,
   last_sequence: 1, created_at: '2026-09-23T15:00:00Z', updated_at: '2026-09-23T15:00:00Z',
 };
+const olderThread = { ...thread, id: 2, project_id: 10, title: 'Older bathroom fixture',
+  counterparty: { id: 4, full_name: 'Older Fixture Owner', role: 'homeowner' } };
 const messages = [{ id: 1, thread_id: 3, sequence: 1, sender_id: 2,
   client_message_id: '123e4567-e89b-12d3-a456-426614174111', text: 'Existing server message', created_at: '2026-09-23T15:00:00Z' }];
 const sends = [];
@@ -39,7 +41,11 @@ const apiServer = http.createServer(async (req, res) => {
   const reply = (status, body) => { res.writeHead(status); res.end(JSON.stringify(body)); };
   if (req.headers.authorization !== 'Bearer chat-ui-fixture-only') return reply(401, { error: 'Fixture token required' });
   const url = new URL(req.url, 'http://127.0.0.1');
-  if (url.pathname === '/api/chat/threads' && req.method === 'GET') return reply(200, { threads: [thread], next_before: 3, has_more: false });
+  if (url.pathname === '/api/chat/threads' && req.method === 'GET') {
+    return url.searchParams.has('before')
+      ? reply(200, { threads: [olderThread], next_before: 2, has_more: false })
+      : reply(200, { threads: [thread], next_before: 3, has_more: true });
+  }
   if (url.pathname === '/api/chat/threads' && req.method === 'POST') return reply(200, { thread });
   if (url.pathname === '/api/chat/threads/3/messages' && req.method === 'GET') {
     const after = Number(url.searchParams.get('after') || 0);
@@ -89,6 +95,8 @@ try {
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'No horizontal page overflow');
     await page.screenshot({ path: path.join(scratch, `chat-${viewport.width}.png`), fullPage: true });
   }
+  await page.getByRole('button', { name: 'Load more conversations' }).click();
+  await page.getByText('Older Fixture Owner', { exact: true }).waitFor();
   const composer = page.getByPlaceholder('Write a message');
   await composer.fill('Retry-safe fixture message');
   await page.getByRole('button', { name: 'Send message' }).click();
