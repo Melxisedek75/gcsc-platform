@@ -12,6 +12,7 @@ import {
   Building2,
   UserCircle,
   ClipboardList,
+  RefreshCw,
 } from 'lucide-react';
 import {
   api,
@@ -340,6 +341,7 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
       className="space-y-6"
+      aria-busy={loading}
     >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -386,7 +388,18 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
         </div>
       </div>
 
-      {error && <div className="glass-card p-4 text-sm text-[#EF4444]">{error}</div>}
+      {error && (
+        <div role="alert" className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border border-[#FECACA] bg-[#FEF2F2] p-4 text-sm text-[#B91C1C]">
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={() => void loadProjects()}
+            className="inline-flex min-h-11 items-center justify-center gap-2 border border-[#FCA5A5] bg-white px-4 font-semibold text-[#991B1B] hover:bg-[#FFF7F7]"
+          >
+            <RefreshCw size={16} /> Retry
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-[1.35fr_0.95fr] gap-6">
         <div className="glass-card overflow-hidden">

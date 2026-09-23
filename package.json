@@ -8,6 +8,7 @@
     "test:legacy-preservation": "node --test tests/legacy-preservation.test.mjs",
     "test:wallet-sdk": "node --test tests/wallet-sdk-identity.test.mjs",
     "test:wallet-payload": "node --test tests/wallet-challenge-payload.test.mjs",
+    "test:web-jobs-bids-states": "node --test tests/web-jobs-bids-states.test.mjs",
     "check:api-syntax": "node --check services/api/v3/pure-server.js",
     "check:web": "node scripts/check-web.mjs",
     "check:integration-contracts": "node scripts/check-api-contracts.mjs",

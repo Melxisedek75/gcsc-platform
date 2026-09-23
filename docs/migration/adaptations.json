@@ -117,5 +117,19 @@
     "sha256": "dfe95fecf03ee369633b6db93313f7e03ef8115409b4e650da85231bd2a4a687",
     "reason": "Reject non-loopback and non-test PostgreSQL cleanup targets before storage initialization.",
     "test": "node --test tests/local-test-database.test.mjs"
+  },
+  {
+    "path": "apps/web/src/pages/dashboard/BidsPanel.tsx",
+    "sourceBlob": "c9573afbbd78338281811aff2e0186d530001035",
+    "sha256": "4e67c82b65680e8d92fe70e0aa247e29a80b256349e57469a277a395b771d91a",
+    "reason": "Add accessible loading/error/retry/empty states and replace the wide mobile table with stable bid cards while retaining the desktop table and existing API behavior.",
+    "test": "npm run test:web-jobs-bids-states; npm run build:web; npm run lint:web"
+  },
+  {
+    "path": "apps/web/src/pages/dashboard/ProjectsPanel.tsx",
+    "sourceBlob": "11b314e2e4936411906e898cadb2cf94356a2a18",
+    "sha256": "ad8984fe103609ca119fbd3d1e5046b8e6b43516aef20add5bdc375f694e3c12",
+    "reason": "Expose accessible loading and recoverable API error states for projects without changing project, bid, escrow or milestone behavior.",
+    "test": "npm run test:web-jobs-bids-states; npm run build:web; npm run lint:web"
   }
 ]

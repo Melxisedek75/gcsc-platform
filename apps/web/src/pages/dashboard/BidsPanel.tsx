@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, ClipboardList } from 'lucide-react';
+import { Loader2, ClipboardList, RefreshCw } from 'lucide-react';
 import { api, type GcscBid, type GcscUser } from '../../services/api';
 import { formatCurrency, formatDate, bidStatusLabel } from './format';
 import { StatusBadge } from './shared';
@@ -68,6 +68,7 @@ export function BidsPanel({ user }: { user: GcscUser }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
       className="space-y-6"
+      aria-busy={loading}
     >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -97,9 +98,50 @@ export function BidsPanel({ user }: { user: GcscUser }) {
         </div>
       </div>
 
-      {error && <div className="glass-card p-4 text-sm text-[#EF4444]">{error}</div>}
+      {error && (
+        <div role="alert" className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border border-[#FECACA] bg-[#FEF2F2] p-4 text-sm text-[#B91C1C]">
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={() => void loadBids()}
+            className="inline-flex min-h-11 items-center justify-center gap-2 border border-[#FCA5A5] bg-white px-4 font-semibold text-[#991B1B] hover:bg-[#FFF7F7]"
+          >
+            <RefreshCw size={16} /> Retry
+          </button>
+        </div>
+      )}
 
-      <div className="glass-card overflow-hidden">
+      <div className="md:hidden space-y-3">
+        {loading && (
+          <div className="py-10 text-center text-sm text-[#64748B]">
+            <Loader2 size={18} className="animate-spin inline mr-2" /> Loading bids...
+          </div>
+        )}
+        {!loading && filtered.map((bid) => (
+          <article key={bid.id} className="border border-[#E2E8F0] bg-white p-4 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-semibold text-[#0F172A]">Project #{bid.project_id}</p>
+                <p className="mt-1 font-mono text-xs text-[#3B6BF7]">Bid #{bid.id}</p>
+              </div>
+              <StatusBadge status={bidStatusLabel(bid.status)} />
+            </div>
+            <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <dt className="text-xs text-[#64748B]">Amount</dt>
+                <dd className="mt-1 font-semibold text-[#0F172A]">{formatCurrency(bid.amount)}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-[#64748B]">Timeline</dt>
+                <dd className="mt-1 font-medium text-[#0F172A]">{bid.proposed_timeline_days || 30} days</dd>
+              </div>
+            </dl>
+            <p className="mt-4 text-xs text-[#64748B]">Submitted {formatDate(bid.created_at)}</p>
+          </article>
+        ))}
+      </div>
+
+      <div className="hidden md:block glass-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -135,12 +177,14 @@ export function BidsPanel({ user }: { user: GcscUser }) {
             </tbody>
           </table>
         </div>
-        {!loading && filtered.length === 0 && (
-          <div className="text-center py-12 text-[#94A3B8]">
-            No bids match your filter. Open Projects and submit your first proposal.
-          </div>
-        )}
       </div>
+      {!loading && filtered.length === 0 && (
+        <div className="text-center py-12 text-[#64748B]">
+          <ClipboardList size={30} className="mx-auto mb-3 text-[#94A3B8]" />
+          <p className="font-semibold text-[#0F172A]">No bids match your filter.</p>
+          <p className="mt-1 text-sm">Open Projects and submit your first proposal.</p>
+        </div>
+      )}
     </motion.div>
   );
 }
