@@ -117,6 +117,13 @@ errors/1 существующая warning. Live API/browser responsive acceptanc
 - **Приёмка этапа:** один сценарий web/API/PG и один mobile/API сценарий имеют
   точное evidence; сборка или mock сами по себе не закрывают пункт.
 
+Priority Access evidence 22 сентября: candidates `ee2059f4`, `4e607b5b` и
+`92829794` последовательно закрыли reviewer findings по receipt binding,
+transition map, BigInt minor-unit accounting и state-bound outcomes. Final exact
+`92829794` независимо `APPROVED`; spec10/10 и migration24/24 PASS. Это только
+`SPEC ONLY`, без API/DB/UI/payment implementation. Подробности:
+`PRIORITY-ACCESS-SPEC-REVIEW.md`.
+
 ### 27-28 сентября - review, решение об интеграции и следующий цикл
 
 - [x] Независимый reviewer проверяет точные candidate commits design и QA;
