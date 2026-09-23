@@ -73,6 +73,7 @@ test('transfer or extra action in a purported auth challenge is refused before s
     tx => { tx.actions[0].account = 'eosio.token'; tx.actions[0].name = 'transfer'; },
     tx => tx.actions.push({ ...tx.actions[0] }),
     tx => { tx.actions[0].authorization[0].actor = 'another11111'; },
+    tx => { tx.actions[0].data = '00'.repeat(16); },
     tx => { tx.context_free_actions[0].authorization.push(signer); },
     tx => { tx.transaction_extensions.push([1, 'ff']); },
   ]) {
