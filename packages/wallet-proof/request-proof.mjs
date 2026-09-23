@@ -49,7 +49,7 @@ function validateChallenge(challenge, now) {
     || !Array.isArray(action.authorization) || action.authorization.length !== 1
     || action.authorization[0].actor !== challenge.accountName
     || action.authorization[0].permission !== challenge.permission
-    || action.data !== `${encodeName(challenge.accountName)}${encodeName(challenge.permission)}`
+    || action.data !== `01${encodeName(challenge.accountName)}${encodeName(challenge.permission)}`
     || !Array.isArray(tx.context_free_actions) || tx.context_free_actions.length !== 1
     || nonce?.account !== 'eosio.null' || nonce.name !== 'nonce'
     || !Array.isArray(nonce.authorization) || nonce.authorization.length !== 0
