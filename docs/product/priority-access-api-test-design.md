@@ -23,6 +23,10 @@ The machine-readable `transitions` table is authoritative for prior states,
 result states, actor, idempotency scope and rejection code. Callback after
 challenge expiry, finalization outside `bidding`, proposal after grant closure,
 and reopen outside an expired/rejected/refunded round must fail without mutation.
+Accounting selection is also state-bound: 0/100 requires an accepted proposal
+and awarded project; 50/50 requires a compliant rejected proposal; 100/0 requires
+an expired, undelivered grant with no proposal. The outcome endpoint cannot
+choose a percentage independently of those product states.
 
 ## Required acceptance cases
 

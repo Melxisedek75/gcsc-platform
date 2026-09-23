@@ -96,7 +96,8 @@ test('every state-changing operation has prior state, actor, idempotency and rej
   const requiredOperations = [
     'create_offer', 'verify_receipt', 'finalize_round', 'submit_proposal',
     'accept_proposal', 'reject_proposal', 'request_revision', 'expire_grant',
-    'record_outcome', 'reopen_round',
+    'record_awarded_outcome', 'record_non_award_outcome',
+    'record_access_not_delivered_outcome', 'reopen_round',
   ]
   assert.deepEqual(contract.transitions.map(item => item.operation), requiredOperations)
   for (const transition of contract.transitions) {
@@ -109,6 +110,35 @@ test('every state-changing operation has prior state, actor, idempotency and rej
   assert.deepEqual(reopen.roundFrom, ['expired', 'rejected', 'refunded'])
   const finalize = contract.transitions.find(item => item.operation === 'finalize_round')
   assert.deepEqual(finalize.roundFrom, ['bidding'])
+})
+
+test('each accounting outcome accepts only its authorised product state', () => {
+  const outcomeTransitions = contract.transitions.filter(item => item.outcome)
+  const states = {
+    awarded_to_grant_holder: { project: 'awarded', round: 'closed', grant: 'closed', proposal: 'accepted' },
+    compliant_proposal_not_awarded: { project: 'reopened', round: 'rejected', grant: 'closed', proposal: 'rejected' },
+    access_not_delivered: { project: 'reopened', round: 'expired', grant: 'expired', proposal: 'none' },
+  }
+  const permits = (transition, state) => (
+    transition.projectFrom.includes(state.project)
+    && transition.roundFrom.includes(state.round)
+    && transition.grantFrom.includes(state.grant)
+    && transition.proposalFrom.includes(state.proposal)
+  )
+
+  assert.equal(outcomeTransitions.length, 3)
+  for (const transition of outcomeTransitions) {
+    for (const [outcome, state] of Object.entries(states)) {
+      assert.equal(permits(transition, state), transition.outcome === outcome)
+    }
+  }
+  const refunded = outcomeTransitions.filter(item => item.roundTo === 'refunded')
+  assert.deepEqual(refunded.map(item => item.outcome).sort(), [
+    'access_not_delivered',
+    'compliant_proposal_not_awarded',
+  ])
+  const reopen = contract.transitions.find(item => item.operation === 'reopen_round')
+  assert.ok(reopen.roundFrom.includes('refunded'))
 })
 
 test('planned API has distinct offer, grant, proposal and decision boundaries', () => {
