@@ -128,6 +128,8 @@ never from a typed recipient. Messages render as plain text in server sequence o
 only the visible conversation polls. Account changes clear local thread, message and
 pending-send state. An uncertain send retains its text and UUID and retry reuses the
 same idempotency key until the server acknowledges it.
+The UI also provides an explicit discard action that clears both the pending key
+and draft; it never silently replaces an uncertain key.
 Thread and message lists expose bounded server-cursor continuation controls rather
 than unbounded reads. Fresh 401/403/404 history responses mark the selected thread
 read-only and stop its polling loop instead of repeatedly querying revoked access.

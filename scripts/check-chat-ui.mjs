@@ -69,6 +69,7 @@ const apiServer = http.createServer(async (req, res) => {
     for await (const chunk of req) raw += chunk;
     const body = JSON.parse(raw);
     sends.push(body);
+    if (body.text === 'Conflict fixture') return reply(409, { error: 'Fixture key conflict' });
     let message = messages.find(item => item.client_message_id === body.client_message_id);
     if (!message) {
       message = { id: 2, thread_id: 3, sequence: 2,
@@ -126,6 +127,11 @@ try {
   assert.equal(sends.length, 2);
   assert.equal(sends[0].client_message_id, sends[1].client_message_id);
   assert.equal(await page.getByText('Retry-safe fixture message', { exact: true }).count(), 1);
+  await composer.fill('Conflict fixture');
+  await page.getByRole('button', { name: 'Send message' }).click();
+  await page.getByText(/Fixture key conflict/).waitFor();
+  await page.getByRole('button', { name: 'Discard pending' }).click();
+  assert.equal(await composer.inputValue(), '');
 
   const ownerContext = await browser.newContext();
   await ownerContext.addInitScript(() => localStorage.setItem('gcsc_auth_token', 'chat-ui-owner'));
