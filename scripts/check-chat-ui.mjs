@@ -32,29 +32,37 @@ const messages = [{ id: 1, thread_id: 3, sequence: 1, sender_id: 2,
   client_message_id: '123e4567-e89b-12d3-a456-426614174111', text: 'Existing server message', created_at: '2026-09-23T15:00:00Z' }];
 const sends = [];
 let uncertain = true;
+const threadFor = (req, value) => ({
+  ...value,
+  can_send: req.headers['x-fixture-mode'] !== 'readonly',
+  counterparty: req.headers.authorization === 'Bearer chat-ui-owner'
+    ? { id: 7, full_name: 'Fixture Contractor', role: 'contractor' }
+    : value.counterparty,
+});
 const apiServer = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Fixture-Mode');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Content-Type', 'application/json');
   if (req.method === 'OPTIONS') { res.writeHead(204).end(); return; }
   const reply = (status, body) => { res.writeHead(status); res.end(JSON.stringify(body)); };
-  if (req.headers.authorization !== 'Bearer chat-ui-fixture-only') return reply(401, { error: 'Fixture token required' });
+  if (!['Bearer chat-ui-contractor', 'Bearer chat-ui-owner'].includes(req.headers.authorization)) return reply(401, { error: 'Fixture token required' });
+  if (req.headers['x-fixture-mode'] === 'forbidden') return reply(403, { error: 'Forbidden fixture' });
   const url = new URL(req.url, 'http://127.0.0.1');
   if (url.pathname === '/api/chat/threads' && req.method === 'GET') {
     return url.searchParams.has('before')
-      ? reply(200, { threads: [olderThread], next_before: 2, has_more: false })
-      : reply(200, { threads: [thread], next_before: 3, has_more: true });
+      ? reply(200, { threads: [threadFor(req, olderThread)], next_before: 2, has_more: false })
+      : reply(200, { threads: [threadFor(req, thread)], next_before: 3, has_more: true });
   }
-  if (url.pathname === '/api/chat/threads' && req.method === 'POST') return reply(200, { thread });
+  if (url.pathname === '/api/chat/threads' && req.method === 'POST') return reply(200, { thread: threadFor(req, thread) });
   if (url.pathname === '/api/chat/threads/3/messages' && req.method === 'GET') {
     const after = Number(url.searchParams.get('after') || 0);
-    return reply(200, { thread: { ...thread, last_sequence: messages.at(-1)?.sequence || 0 }, messages: messages.filter(message => message.sequence > after), next_after: messages.at(-1)?.sequence || after, has_more: false });
+    return reply(200, { thread: { ...threadFor(req, thread), last_sequence: messages.at(-1)?.sequence || 0 }, messages: messages.filter(message => message.sequence > after), next_after: messages.at(-1)?.sequence || after, has_more: false });
   }
   if (url.pathname === '/api/chat/threads/2/messages' && req.method === 'GET') {
     const olderMessage = { id: 4, thread_id: 2, sequence: 1, sender_id: 4,
       client_message_id: '123e4567-e89b-12d3-a456-426614174222', text: 'Older conversation message', created_at: '2026-09-22T15:00:00Z' };
-    return reply(200, { thread: { ...olderThread, last_sequence: 1 }, messages: [olderMessage], next_after: 1, has_more: false });
+    return reply(200, { thread: { ...threadFor(req, olderThread), last_sequence: 1 }, messages: [olderMessage], next_after: 1, has_more: false });
   }
   if (url.pathname === '/api/chat/threads/3/messages' && req.method === 'POST') {
     let raw = '';
@@ -63,7 +71,9 @@ const apiServer = http.createServer(async (req, res) => {
     sends.push(body);
     let message = messages.find(item => item.client_message_id === body.client_message_id);
     if (!message) {
-      message = { id: 2, thread_id: 3, sequence: 2, sender_id: 7, client_message_id: body.client_message_id, text: body.text, created_at: '2026-09-23T15:01:00Z' };
+      message = { id: 2, thread_id: 3, sequence: 2,
+        sender_id: req.headers.authorization === 'Bearer chat-ui-owner' ? 2 : 7,
+        client_message_id: body.client_message_id, text: body.text, created_at: '2026-09-23T15:01:00Z' };
       messages.push(message);
     }
     if (uncertain) { uncertain = false; return reply(503, { error: 'Fixture uncertain response' }); }
@@ -88,7 +98,7 @@ try {
   const url = `http://127.0.0.1:${vite.httpServer.address().port}/${path.relative(webRoot, scratch).split(path.sep).join('/')}/index.html`;
   browser = await chromium.launch({ channel: 'msedge', headless: true });
   const context = await browser.newContext();
-  await context.addInitScript(() => localStorage.setItem('gcsc_auth_token', 'chat-ui-fixture-only'));
+  await context.addInitScript(() => localStorage.setItem('gcsc_auth_token', 'chat-ui-contractor'));
   await context.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
   const page = await context.newPage();
   page.setDefaultTimeout(60000);
@@ -116,6 +126,35 @@ try {
   assert.equal(sends.length, 2);
   assert.equal(sends[0].client_message_id, sends[1].client_message_id);
   assert.equal(await page.getByText('Retry-safe fixture message', { exact: true }).count(), 1);
+
+  const ownerContext = await browser.newContext();
+  await ownerContext.addInitScript(() => localStorage.setItem('gcsc_auth_token', 'chat-ui-owner'));
+  await ownerContext.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
+  const ownerPage = await ownerContext.newPage();
+  ownerPage.setDefaultTimeout(60000);
+  ownerPage.on('pageerror', error => errors.push(error.message));
+  await ownerPage.goto(url + '?owner');
+  await ownerPage.getByText('Retry-safe fixture message', { exact: true }).waitFor();
+  await ownerContext.close();
+
+  const readOnlyContext = await browser.newContext({ extraHTTPHeaders: { 'X-Fixture-Mode': 'readonly' } });
+  await readOnlyContext.addInitScript(() => localStorage.setItem('gcsc_auth_token', 'chat-ui-owner'));
+  await readOnlyContext.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
+  const readOnlyPage = await readOnlyContext.newPage();
+  await readOnlyPage.goto(url + '?owner');
+  const readOnlyComposer = readOnlyPage.getByPlaceholder('This conversation is read only');
+  await readOnlyComposer.waitFor();
+  assert.equal(await readOnlyComposer.isDisabled(), true);
+  await readOnlyContext.close();
+
+  const forbiddenContext = await browser.newContext({ extraHTTPHeaders: { 'X-Fixture-Mode': 'forbidden' } });
+  await forbiddenContext.addInitScript(() => localStorage.setItem('gcsc_auth_token', 'chat-ui-contractor'));
+  await forbiddenContext.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
+  const forbiddenPage = await forbiddenContext.newPage();
+  await forbiddenPage.goto(url);
+  await forbiddenPage.getByText('Forbidden fixture', { exact: false }).first().waitFor();
+  await forbiddenContext.close();
+
   assert.deepEqual(errors, []);
   await writeFile(path.join(scratch, 'result.json'), JSON.stringify({ status: 'PASS', boundary: 'Real React chat client; isolated mock HTTP backend.', sends, pageErrors: errors }, null, 2));
   console.log(`Chat UI smoke PASS: ${scratch}`);
