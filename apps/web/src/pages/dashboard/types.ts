@@ -5,6 +5,7 @@ export type Section =
   | 'projects'
   | 'estimator'
   | 'bids'
+  | 'chat'
   | 'loans'
   | 'profile'
   | 'compliance'

@@ -30,7 +30,7 @@ async function client(entry, value) {
     } }],
   });
   const context = vm.createContext({
-    module: { exports: {} }, exports: {}, URL, setTimeout, clearTimeout, signCalls: 0, calls: [],
+    module: { exports: {} }, exports: {}, URL, URLSearchParams, setTimeout, clearTimeout, signCalls: 0, calls: [],
     localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
     fetch: async (url, options) => {
       context.calls.push({ url, options });
@@ -57,6 +57,28 @@ test('web: HTTP failures expose status without clearing stored authentication', 
       error instanceof configured.exports.ApiError && error.status === status && error.message === 'fixture failure');
   }
   assert.equal(cleared, false);
+});
+
+test('web: chat client uses the canonical participant-only routes and stable message key', async () => {
+  const c = await client('apps/web/src/services/api.ts', 'http://127.0.0.1:3001');
+  c.exports.api.setToken('fixture-token');
+  const message = { text: 'Fixture message', client_message_id: '123e4567-e89b-12d3-a456-426614174000' };
+
+  await c.exports.api.openChatThread(17);
+  await c.exports.api.getChatThreads(91, 25);
+  await c.exports.api.getChatMessages(8, 12, 40);
+  await c.exports.api.sendChatMessage(8, message);
+
+  assert.deepEqual(c.calls.map(call => new URL(call.url).pathname + new URL(call.url).search), [
+    '/api/chat/threads',
+    '/api/chat/threads?limit=25&before=91',
+    '/api/chat/threads/8/messages?after=12&limit=40',
+    '/api/chat/threads/8/messages',
+  ]);
+  assert.deepEqual(c.calls.map(call => call.options.method || 'GET'), ['POST', 'GET', 'GET', 'POST']);
+  assert.equal(c.calls.every(call => call.options.headers.Authorization === 'Bearer fixture-token'), true);
+  assert.equal(c.calls[0].options.body, JSON.stringify({ bid_id: 17 }));
+  assert.equal(c.calls[3].options.body, JSON.stringify(message));
 });
 
 test('web: missing API config imports safely and rejects before fetch', async () => {
