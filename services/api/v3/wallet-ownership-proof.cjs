@@ -51,6 +51,7 @@ function createOwnershipChallenge(context, options = {}) {
   for (const field of contextFields) payload[field] = context[field];
   Object.assign(payload, { nonce: challengeId, issuedAt, expiresAt });
   const identity = new Serialize.SerialBuffer();
+  identity.push(1); // ABI optional<permission_level> is present.
   identity.pushName(context.accountName);
   identity.pushName(context.permission);
   const transaction = {
