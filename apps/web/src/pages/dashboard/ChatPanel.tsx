@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { Loader2, MessageCircle, RefreshCw, Send } from 'lucide-react';
 import {
   api,
+  ApiError,
   type GcscChatMessage,
   type GcscChatThread,
   type GcscUser,
@@ -33,6 +34,7 @@ export function ChatPanel({
   const [pending, setPending] = useState<PendingMessage | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [pollingBlocked, setPollingBlocked] = useState(false);
   const [error, setError] = useState('');
   const requestVersion = useRef(0);
   const threadsCursorRef = useRef<number | null>(null);
@@ -41,6 +43,7 @@ export function ChatPanel({
 
   const selectThread = useCallback((thread: GcscChatThread | null) => {
     selectedIdRef.current = thread?.id ?? null;
+    setPollingBlocked(false);
     setSelected(thread);
   }, []);
 
@@ -78,6 +81,7 @@ export function ChatPanel({
     selectThread(null);
     setMessages([]);
     setPending(null);
+    setPollingBlocked(false);
     setDraft('');
     void loadThreads(false);
     return () => { requestVersion.current += 1; };
@@ -108,6 +112,10 @@ export function ChatPanel({
       setMessages((current) => incremental ? mergeMessages(current, response.messages) : response.messages);
       setHasMoreMessages(response.has_more);
     } catch (err) {
+      if (err instanceof ApiError && [401, 403, 404].includes(err.status)) {
+        setPollingBlocked(true);
+        setSelected((current) => current?.id === thread.id ? { ...current, can_send: false } : current);
+      }
       setError(err instanceof Error ? err.message : 'Could not load messages');
     }
   }, [messages]);
@@ -126,10 +134,10 @@ export function ChatPanel({
   }, [selected?.id]);
 
   useEffect(() => {
-    if (!selected) return;
+    if (!selected || pollingBlocked) return;
     const timer = window.setInterval(() => void loadMessages(selected, true), 5000);
     return () => window.clearInterval(timer);
-  }, [selected, loadMessages]);
+  }, [selected, pollingBlocked, loadMessages]);
 
   const send = async (event?: FormEvent) => {
     event?.preventDefault();
@@ -198,7 +206,7 @@ export function ChatPanel({
                 <p className="text-xs text-[#64748B]">{selected.title} {!selected.can_send && '- Read only'}</p>
               </header>
               <div className="flex-1 space-y-3 overflow-y-auto p-4">
-                {hasMoreMessages && (
+                {hasMoreMessages && !pollingBlocked && (
                   <button type="button" onClick={() => void loadMessages(selected, true)} className="mx-auto block rounded-md border border-[#C4B5FD] px-3 py-1.5 text-xs font-semibold text-[#7B2FF7]">
                     Load more messages
                   </button>

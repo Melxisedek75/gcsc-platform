@@ -129,7 +129,8 @@ only the visible conversation polls. Account changes clear local thread, message
 pending-send state. An uncertain send retains its text and UUID and retry reuses the
 same idempotency key until the server acknowledges it.
 Thread and message lists expose bounded server-cursor continuation controls rather
-than unbounded reads.
+than unbounded reads. Fresh 401/403/404 history responses mark the selected thread
+read-only and stop its polling loop instead of repeatedly querying revoked access.
 
 Verification from `C:/gcsc-platform/.worktrees/web-chat`, all exit0:
 
