@@ -1,0 +1,76 @@
+{
+  "status": "SPEC_ONLY",
+  "version": "priority-access-v1-draft",
+  "liveSettlementEnabled": false,
+  "records": [
+    "project_opportunity",
+    "access_round",
+    "access_offer",
+    "access_grant",
+    "access_settlement",
+    "work_proposal",
+    "marketplace_audit_event"
+  ],
+  "projectStates": [
+    "draft",
+    "open_preview",
+    "access_round",
+    "exclusive_access",
+    "proposal_review",
+    "awarded",
+    "reopened",
+    "cancelled",
+    "moderation_hold"
+  ],
+  "roundStates": [
+    "scheduled",
+    "bidding",
+    "finalized",
+    "active",
+    "proposal_submitted",
+    "expired",
+    "rejected",
+    "refunded",
+    "closed"
+  ],
+  "durationHours": [1, 4, 12],
+  "paymentChallengeFields": [
+    "amountMinor",
+    "asset",
+    "network",
+    "recipient",
+    "memo",
+    "policyVersion",
+    "expiresAt",
+    "idempotencyKey"
+  ],
+  "endpoints": [
+    { "method": "GET", "path": "/api/priority-access/opportunities", "result": "privacy_safe_preview" },
+    { "method": "POST", "path": "/api/priority-access/rounds/:roundId/offers", "result": "versioned_payment_challenge" },
+    { "method": "POST", "path": "/api/priority-access/settlements/verify", "result": "idempotent_receipt" },
+    { "method": "POST", "path": "/api/priority-access/rounds/:roundId/finalize", "result": "single_access_grant" },
+    { "method": "GET", "path": "/api/priority-access/grants/:grantId/opportunity", "result": "grant_holder_full_record" },
+    { "method": "POST", "path": "/api/priority-access/grants/:grantId/proposals", "result": "versioned_work_proposal" },
+    { "method": "POST", "path": "/api/priority-access/proposals/:proposalId/decision", "result": "homeowner_decision" },
+    { "method": "POST", "path": "/api/priority-access/rounds/:roundId/reopen", "result": "audited_new_round" }
+  ],
+  "uniqueness": [
+    "one_active_grant_per_project",
+    "one_active_grant_per_contractor",
+    "one_receipt_per_network_transaction",
+    "one_outcome_per_access_settlement",
+    "one_reopen_transition_per_closed_round"
+  ],
+  "settlementOutcomes": {
+    "awarded_to_grant_holder": { "refundBps": 0, "platformBps": 10000 },
+    "compliant_proposal_not_awarded": { "refundBps": 5000, "platformBps": 5000 },
+    "access_not_delivered": { "refundBps": 10000, "platformBps": 0 }
+  },
+  "prohibited": [
+    "label_access_offer_as_work_bid",
+    "expose_contact_before_active_grant",
+    "finalize_without_verified_receipt",
+    "extend_active_grant_after_award",
+    "enable_live_asset_without_legal_security_founder_gates"
+  ]
+}

@@ -43,7 +43,7 @@
 | 28 | Disputes | API milestones/:id/dispute | Код, часть escrow suite; старый Express disputes не активировать | HIGH |
 | 29 | Reviews | Клиентские/старые модульные реализации | Canonical review маршрут не подтверждён; не включать старый router вслепую | MEDIUM |
 | 30 | Lead purchase | API payment/lead-token; native payments.ts | 402/reconciler unit PASS; device purchase НЕ проверена | CRITICAL |
-| 30a | Priority Access Marketplace | docs/product/priority-access-marketplace.md | SPEC ONLY: opportunity preview, access offer/grant and work proposal are separated; API/DB/UI/payment implementation absent | CRITICAL |
+| 30a | Priority Access Marketplace | product spec, versioned contract fixture and acceptance-test design | SPEC ONLY: invariants and 5/5 deterministic spec tests; API/DB/UI/payment implementation absent | CRITICAL |
 | 31 | Financing / loan UI or workflows | API financing/prechecks; web LoansFinancingPanel; v1.4 | Код/план, только precheck/decision support, не кредитование | CRITICAL |
 | 32 | Wallet connection | Wallet-first API plus shared proof/login clients and web/native adapters | Replay/network/account/session guards и независимое source review PASS; проверить browser/API/PG и device round trip | HIGH |
 | 33 | WebAuth | apps/web/src/services/webauth.ts; apps/mobile/lib/webauth.ts | Оба consumer используют frozen Testnet sign-only contract; popup/device E2E нет | HIGH |

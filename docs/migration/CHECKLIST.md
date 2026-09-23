@@ -111,7 +111,8 @@ errors/1 существующая warning. Live API/browser responsive acceptanc
   profile -> project preview -> bid/proposal без реального платежа.
 - [ ] **QA worker:** проверить чужой аккаунт, неверную сеть, истёкший proof,
   повторный callback, restart API/DB и две конкурентные попытки.
-- [ ] Priority Access Marketplace остаётся `SPEC ONLY`; на этой неделе допустимы
+- [x] Priority Access Marketplace остаётся `SPEC ONLY`; versioned schema/API test
+  design и deterministic spec tests добавлены без runtime implementation. Допустимы
   только schema/API test design, без USDC/USDT/XPR settlement реализации.
 - **Приёмка этапа:** один сценарий web/API/PG и один mobile/API сценарий имеют
   точное evidence; сборка или mock сами по себе не закрывают пункт.
