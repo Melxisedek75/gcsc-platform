@@ -36,7 +36,7 @@ test('challenge is canonical, unpredictable, and contains no payment actions', (
   expect(first.transaction.actions).toEqual([{
     account: '', name: 'identity',
     authorization: [{ actor: context.accountName, permission: context.permission }],
-    data: expect.stringMatching(/^[a-f0-9]{32}$/),
+    data: expect.stringMatching(/^01[a-f0-9]{32}$/),
   }]);
   const nonceAction = first.transaction.context_free_actions[0];
   expect(nonceAction).toMatchObject({ account: 'eosio.null', name: 'nonce', authorization: [] });
