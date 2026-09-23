@@ -14,6 +14,16 @@ Money fields use integer minor units and an explicit asset/network. Every state
 change carries actor, policy version, server timestamp, idempotency key and an
 append-only audit event.
 
+An offer owns exactly one challenge. A verified receipt must repeat and match
+`offerId`, `challengeId`, `quoteHash`, amount, asset, network, recipient and memo;
+it creates at most one settlement for that offer. A transaction ID, challenge,
+receipt, offer or settlement cannot be reused for another binding.
+
+The machine-readable `transitions` table is authoritative for prior states,
+result states, actor, idempotency scope and rejection code. Callback after
+challenge expiry, finalization outside `bidding`, proposal after grant closure,
+and reopen outside an expired/rejected/refunded round must fail without mutation.
+
 ## Required acceptance cases
 
 | Area | Case | Expected result |
@@ -43,6 +53,23 @@ Future implementation must prove in a real disposable PostgreSQL database:
    outcomes and duplicate reopen transitions under concurrent requests.
 4. API/process restart preserves rounds, grants, proposals and idempotency keys.
 5. A failed audit insert rolls back the entire state transition.
+
+## Minor-unit accounting
+
+The allocation base is the immutable `accessSettlement.verifiedAmountMinor`,
+represented as a non-negative integer/BigInt. Refund is calculated with integer
+floor division; platform allocation receives the residual:
+
+`refundMinor = floor(verifiedAmountMinor * refundBps / 10000)`
+
+`platformMinor = verifiedAmountMinor - refundMinor`
+
+Therefore 100 minor units at 50/50 becomes 50/50, while 101 becomes 50 refund
+and 51 platform. For every outcome, `refundMinor + platformMinor` must equal the
+verified amount. Immutable entries use
+`settlementId:outcomeVersion:entryType`; repeated callbacks return the same
+entries and never create another refund or allocation. These are accounting
+records only: this SPEC-ONLY design authorizes no transfer.
 
 ## Client contract tests
 
