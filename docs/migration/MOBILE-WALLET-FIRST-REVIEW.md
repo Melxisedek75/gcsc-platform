@@ -50,5 +50,6 @@ Reviewer reports remain available locally at:
 
 - No APK containing `6e67d6f3` has been built or installed.
 - No physical WebAuth sign-only response has been accepted by this candidate.
-- No web consumer is integrated yet.
+- Web source consumer was integrated later and independently approved at
+  `3702e457`; real combined browser/backend acceptance remains open.
 - No payment, transaction broadcast, merge, deploy or production approval occurred.

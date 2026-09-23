@@ -18,9 +18,9 @@ UI/QA-кандидаты без пересечения файлов. Назна�
 - [x] **Codex/backend:** сверить `0b2dcebb`, `0d597d9b`, `04561155` и текущие
   canonical routes; оформить единственный HTTP challenge/verify/login контракт,
   включая chain, account, session, expiry, purpose, audience и error codes.
-- [ ] **QA worker:** повторить обязательные offline suites на точных SHA и записать
+- [x] **QA worker:** повторить обязательные offline suites на точных SHA и записать
   красные пробелы отдельно от уже зелёных доказательств.
-- [ ] **Design worker:** инвентаризировать jobs/bids desktop и mobile-width states;
+- [x] **Design worker:** инвентаризировать jobs/bids desktop и mobile-width states;
   никаких auth, payment или API-изменений.
 - **Приёмка дня:** versioned fixtures/API contract доступны всем lanes; baseline
   содержит точные команды, exit codes и SHA.
@@ -47,12 +47,22 @@ restore11/11, migration24/24, build guards12/12, design10/10 и TypeScript PASS.
 Это source-кандидат: APK этого SHA ещё не собран/установлен, физическая WebAuth
 подпись не выполнена. Подробности: `MOBILE-WALLET-FIRST-REVIEW.md`.
 
+Web evidence 22 сентября: `10b2861b` подключил тот же shared sign-only login
+contract к web API и активной команде WebAuth. Первое независимое ревью выявило
+P1: SDK мог выбрать mainnet по умолчанию, тогда как backend принимает только XPR
+Testnet. Commit `3702e457` зафиксировал exact Testnet chain ID и vetted RPC,
+а wrong-network session теперь отклоняется до challenge и signing. Повторное
+независимое ревью exact SHA вернуло `APPROVED`. Web login3/3, shared login5/5,
+proof15/15, restore11/11, migration24/24, mobile TypeScript и web build PASS;
+lint:0 errors/1 существующая warning. Это source-кандидат: реальный WebAuth popup
+и browser round trip ещё не выполнены. Подробности: `WEB-WALLET-FIRST-REVIEW.md`.
+
 ### 23-24 сентября - серверная основа и лёгкий UI параллельно
 
 - [x] **Codex/backend:** TDD для durable atomic challenge store, одноразового
   redemption, актуальной authority XPR Testnet, replay/expiry/account/network
   substitution и безопасных audit events. Только локальная PostgreSQL/fixtures.
-- [ ] **Design worker:** реализовать jobs/bids loading, empty, error, denied и
+- [x] **Design worker:** реализовать jobs/bids loading, empty, error, denied и
   responsive states в `apps/web`; сохранить существующий design system и API.
 - [ ] **QA worker:** подготовить конкурентные и restart-тесты хранилища, не меняя
   runtime implementation.
@@ -64,6 +74,15 @@ restore11/11, migration24/24, build guards12/12, design10/10 и TypeScript PASS.
 Одинаковый запуск не повторять до восстановления daemon или появления локального
 PostgreSQL runtime. Backend fixture/tests остаются зелёными, real PG acceptance открыт.
 
+Design evidence 22 сентября: `500e1152` добавил responsive bids cards, сохранил
+desktop tables и реализовал loading/empty/error/denied/retry states. Первое
+независимое ревью выявило P2 race при повторном Retry и stale data после failed
+refresh. Commit `a587c2ab` добавил monotonic latest-request gate, invalidation
+после unmount и очистку stale list/detail state. Повторное независимое ревью exact
+SHA вернуло `APPROVED`. State/gate4/4, migration24/24, web build PASS, lint:0
+errors/1 существующая warning. Live API/browser responsive acceptance остаётся
+открытым. Подробности: `WEB-JOBS-BIDS-REVIEW.md`.
+
 ### 25 сентября - WebAuth на устройстве и клиенты
 
 - [ ] **Frontend worker:** на уже установленном диагностическом APK подтвердить
@@ -71,9 +90,10 @@ PostgreSQL runtime. Backend fixture/tests остаются зелёными, rea
   sanitized response type/bytes/error без broadcast и оплаты.
 - [x] Frozen challenge/verify contract подключён к mobile source и независимо
   одобрен в `6e67d6f3`; device/build acceptance остаётся отдельным пунктом выше.
-- [ ] После подтверждения формата подключить frozen HTTP contract в web/mobile.
+- [x] Frozen HTTP contract подключён к web/mobile source и независимо одобрен:
+  mobile `6e67d6f3`, web `3702e457`.
   Cancellation, late callback, duplicate callback, account/network switch и
-  restore должны иметь явные состояния.
+  restore покрыты локальными guards; browser/device acceptance остаётся открытым.
 - **Внешний gate:** физическое подтверждение подписи делает владелец. Если телефон
   недоступен, worker переходит к детерминированным client fixtures и не объявляет
   device acceptance.
@@ -97,6 +117,8 @@ PostgreSQL runtime. Backend fixture/tests остаются зелёными, rea
   автор не одобряет собственную работу.
 - [x] Backend candidate `c808f80a` независимо проверен и получил `APPROVED`.
 - [x] Mobile wallet candidate `6e67d6f3` независимо проверен и получил `APPROVED`.
+- [x] Web wallet candidate `3702e457` независимо проверен и получил `APPROVED`.
+- [x] Web jobs/bids candidate `a587c2ab` независимо проверен и получил `APPROVED`.
 - [ ] Исправить блокирующие findings в owning worktree и повторить проверки.
 - [ ] Coordinator обновляет capability matrix и этот checklist; готовит порядок
   интеграции без merge/deploy, если gate ещё не PASS.

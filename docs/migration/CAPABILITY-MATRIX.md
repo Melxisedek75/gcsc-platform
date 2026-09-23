@@ -1,6 +1,6 @@
 # Матрица 60 возможностей GCSC
 
-Дата: 2026-09-06. Названия взяты из переданного migration prompt, строки 379-438,
+Дата: 2026-09-22. Названия взяты из переданного migration prompt, строки 379-438,
 прочитанные основным агентом. Это карта происхождения и пробелов, НЕ 60 готовых функций.
 
 Обозначения: **код** — исходник найден; **тест** — указан конкретный локальный набор;
@@ -13,7 +13,7 @@
 
 | # | Capability | Источник / кандидат | Проверено и что остаётся | Риск |
 | --- | --- | --- | --- | --- |
-| 1 | Authentication | services/api/v3/pure-server.js, /api/auth/login | Код; дубль старых /api/login; wallet-first отсутствует | HIGH |
+| 1 | Authentication | services/api/v3/pure-server.js; `/api/auth/wallet/challenge`, `/verify`; web/native consumers | Wallet-first source contract независимо одобрен: backend `c808f80a`, mobile `6e67d6f3`, web `3702e457`; combined E2E и device acceptance открыты | HIGH |
 | 2 | Registration | API /api/auth/register | Код; /api/register — второй путь; проверить единый контракт ролей | HIGH |
 | 3 | Session management | API JWT; web api.ts; native lib/auth.ts | Код; JWT, профиль и signing session не эквивалентны | HIGH |
 | 4 | User profiles | API /api/auth/profile | Код; проверить запрет подмены wallet binding | HIGH |
@@ -23,10 +23,10 @@
 | 8 | Contractor compliance documents | API auth/documents, admin review; web CompliancePanel | Код, static trust validator; provider/E2E проверить | HIGH |
 | 9 | Insurance records | UI compliance; contracts/gcsc-core | Проверить: UI/контракт не доказывает страховой продукт | HIGH |
 | 10 | Bonds | Требование продукта | Проверить; действующая bond-интеграция не подтверждена | HIGH |
-| 11 | Projects | API /api/projects; web ProjectsPanel; native jobs | Код, разные клиенты; совместимость payload проверить | HIGH |
+| 11 | Projects | API /api/projects; web ProjectsPanel; native jobs | Web loading/error/empty/latest-request states independently approved in `a587c2ab`; live API payload/E2E проверить | HIGH |
 | 12 | Project creation | API POST /api/projects | Код; регистрация → создание → чтение требует E2E | HIGH |
 | 13 | Project discovery | API GET /api/projects, /:id | Код; права/фильтры/пагинация проверить | MEDIUM |
-| 14 | Bids | API /api/bids, /:id/accept; web/native | Код; escrow unit suite покрывает часть принятия | HIGH |
+| 14 | Bids | API /api/bids, /:id/accept; web/native | Responsive/list states independently approved in `a587c2ab`; escrow unit suite покрывает часть принятия, live E2E открыт | HIGH |
 | 15 | Contracts | contracts; bid/escrow API | On-chain исходники есть; отдельный lifecycle договора проверить | HIGH |
 | 16 | Milestones | API /api/escrow/:id/milestones, /api/milestones/* | Код; escrow-milestones.test.js PASS, не реальная выплата | HIGH |
 | 17 | Evidence upload | API milestones/:id/submit, auth/documents | Код; storage/размеры/MIME/ACL требуют отдельного теста | HIGH |
@@ -45,16 +45,16 @@
 | 30 | Lead purchase | API payment/lead-token; native payments.ts | 402/reconciler unit PASS; device purchase НЕ проверена | CRITICAL |
 | 30a | Priority Access Marketplace | docs/product/priority-access-marketplace.md | SPEC ONLY: opportunity preview, access offer/grant and work proposal are separated; API/DB/UI/payment implementation absent | CRITICAL |
 | 31 | Financing / loan UI or workflows | API financing/prechecks; web LoansFinancingPanel; v1.4 | Код/план, только precheck/decision support, не кредитование | CRITICAL |
-| 32 | Wallet connection | API wallet/challenge, connect, me; web/native | Код, offline proof tests; проверить весь round trip | HIGH |
-| 33 | WebAuth | apps/web/src/services/webauth.ts; apps/mobile/lib/webauth.ts | Два platform adapters; static validator PASS, E2E нет | HIGH |
+| 32 | Wallet connection | Wallet-first API plus shared proof/login clients and web/native adapters | Replay/network/account/session guards и независимое source review PASS; проверить browser/API/PG и device round trip | HIGH |
+| 33 | WebAuth | apps/web/src/services/webauth.ts; apps/mobile/lib/webauth.ts | Оба consumer используют frozen Testnet sign-only contract; popup/device E2E нет | HIGH |
 | 34 | XPR signing | Native SDK / web xprSettlement.ts | Код; реальные подписи не выполнялись | CRITICAL |
 | 35 | XPR settlement | Web adapter / API chain-txs / gcscrow1111 | Код; web static validator PASS; broadcast не запускался | CRITICAL |
 | 36 | Chain transaction audit | API chain-txs/:txId/verify | Код; соответствие chain/actor/amount/receipt отдельно проверить | HIGH |
-| 37 | Desktop wallet flow | apps/web | Static проверки PASS; browser-wallet round trip не выполнен | HIGH |
-| 38 | Mobile wallet flow | apps/mobile | Upstream base сохранён; unreviewed recovery отдельно в archive refs | HIGH |
+| 37 | Desktop wallet flow | apps/web; candidate `3702e457` | Independently APPROVED source consumer; browser-wallet round trip не выполнен | HIGH |
+| 38 | Mobile wallet flow | apps/mobile; candidate `6e67d6f3` | Independently APPROVED source consumer; exact APK/device sign-only acceptance не выполнены | HIGH |
 | 39 | Deep links / return flow | Native app.json, lib/webauth.ts | Код; cancellation/duplicate/late callback нужны на устройстве | HIGH |
 | 40 | React web application | apps/web из gcsc-store/api-backend | Build PASS; lint 0 errors/1 warning | MEDIUM |
-| 41 | React Native mobile application | apps/mobile из gcsc-website/main | Импорт/хеши PASS; новый APK и native typecheck пока не выполнены | HIGH |
+| 41 | React Native mobile application | apps/mobile из gcsc-website/main | Импорт/хеши и current TypeScript PASS; APK с current wallet candidate не собран и не установлен | HIGH |
 | 42 | Store / marketplace application | apps/web | Код; сохранить MarketingShell/AppShell и HashRouter | MEDIUM |
 | 43 | Public marketing site | apps/marketing | HTML/CSS перенесены побайтно; публикация не менялась | MEDIUM |
 | 44 | Admin dashboard | apps/web + API admin routes | Код, static trust validator; административный E2E/ACL проверить | HIGH |
