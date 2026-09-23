@@ -7,6 +7,7 @@ Integration candidate: C:\gcsc-platform, branch codex/monorepo-migration.
 | Backend / Codex | C:\gcsc-platform\.worktrees\backend | codex/backend-integration | services/api, packages | verified wallet binding/protocol audit; no real signatures |
 | Frontend worker | C:\gcsc-platform\.worktrees\frontend | codex/frontend-integration | apps/web, apps/marketing, apps/mobile | build baseline, API config/consumer inventory |
 | QA / CLI worker | C:\gcsc-platform\.worktrees\qa | codex/qa-integration | tests, scripts, CI, review records | independent source import/entrypoint review and web/native acceptance |
+| Web chat candidate | C:\gcsc-platform\.worktrees\web-chat | codex/web-chat-integration-20260923 | apps/web chat consumer, focused fixtures and chat evidence | independent review, then canonical API/PostgreSQL browser acceptance |
 
 These are repository ownership lanes, not a promise of three always-running paid
 models. Codex CLI is another interface to an agent, not an additional model.

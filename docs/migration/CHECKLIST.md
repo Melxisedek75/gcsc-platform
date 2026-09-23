@@ -23,6 +23,15 @@ reviewer повторил PG23/23, API164/164 и lint0/0. В main код не в
 - [x] P3.1e: независимое ревью точного кандидата8814b919, APPROVED.
 - [ ] P3.1f: полная регистрация -> браузер -> API -> БД и оставшиеся возможности MVP.
 
+23 сентября: web-chat кандидат `3f64636c` (включая защиту от stale-ответов
+`26e5121d` и role-navigation `3bea2716`) находится в отдельной lane
+`codex/web-chat-integration-20260923`. Он использует одобренный server-chat base
+`6666e8e7`: типизированные маршруты, открытие только из сохранённого bid, cursor
+pagination, idempotent retry и participant/read-only/forbidden UI. API-client16/16,
+TypeScript, ESLint, Vite2979, static web и Edge1280/390 mock-HTTP acceptance PASS.
+Это не закрывает P3.1f: независимое ревью exact candidate и browser/API/local-PG
+двухсторонний сценарий ещё обязательны; main не изменена.
+
 Продолжение P2.6: кандидат1a2814f1 в codex/postgres-migrations-20260913 объединяет
 схему API и SQL-экспорт, исправляет CHECK-ошибку обновления старых действий и
 откатывает всю миграцию при сбое. Real PostgreSQL18.4:15/15, root48/48+readiness/static,
