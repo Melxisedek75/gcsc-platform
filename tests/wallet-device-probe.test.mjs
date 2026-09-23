@@ -96,6 +96,8 @@ test('probe launch guard precedes any application session access', () => {
   const probe = fs.readFileSync(new URL('../apps/mobile/lib/wallet-probe.ts', import.meta.url), 'utf8');
   assert.match(probe, /restoreSession: false, storagePrefix: '@gcsc\/probe\/'/);
   assert.match(probe, /storage: \{ read: async key => memory.get\(key\) \?\? null/);
+  assert.match(probe, /const result = await link\.transact\(/);
+  assert.doesNotMatch(probe, /const result = await session\.transact\(/);
   assert.doesNotMatch(probe, /AsyncStorage|clearSession|saveSession|primeSessionFromBackend/);
 });
 

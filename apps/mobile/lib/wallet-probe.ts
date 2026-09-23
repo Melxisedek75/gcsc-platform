@@ -1,4 +1,4 @@
-import ProtonRNSDK, { type LinkSession } from '@proton/react-native-sdk';
+import ProtonRNSDK, { type LinkSession, type ProtonLink } from '@proton/react-native-sdk';
 import { createOwnershipProofRequester, type OwnershipChallenge, type OwnershipProof } from '../../../packages/wallet-proof/request-proof.mjs';
 import { inspectProofResponse } from '../../../packages/wallet-proof/probe-support.mjs';
 
@@ -38,6 +38,7 @@ export async function connectProbeWallet(onObservation: (summary: ReturnType<typ
   if (pairingPending || signingPending) throw new Error('wallet_proof_request_pending');
   pairingPending = true;
   let session: LinkSession;
+  let link: ProtonLink;
   try {
     // Isolated, process-only SDK storage: never replace the user's application or payment session.
     const result = await ProtonRNSDK({
@@ -50,7 +51,10 @@ export async function connectProbeWallet(onObservation: (summary: ReturnType<typ
       },
       transportOptions: { requestAccount: 'gcsctoken111', getReturnUrl: () => 'smartcontractor://wallet-probe' },
     });
-    if (!result.session || String(result.session.chainId) !== CHAIN_ID) throw new Error('probe_wrong_network');
+    if (!result.link || !result.session || String(result.session.chainId) !== CHAIN_ID) {
+      throw new Error('probe_wrong_network');
+    }
+    link = result.link;
     session = result.session;
   } finally { pairingPending = false; }
   const request = createOwnershipProofRequester({
@@ -59,7 +63,14 @@ export async function connectProbeWallet(onObservation: (summary: ReturnType<typ
       if (signingPending) throw new Error('wallet_proof_request_pending');
       signingPending = true;
       try {
-        const result = await session.transact(args as Parameters<typeof session.transact>[0], options);
+        // A paired channel request only opens `proton-dev://link` and depends on
+        // the wallet's push channel. Current Android WebAuth pairs successfully
+        // but does not receive that follow-up request. Use the link transport so
+        // the complete sign-only ESR is handed to WebAuth in the deep link.
+        const result = await link.transact(
+          args as Parameters<typeof link.transact>[0],
+          { ...options, chain: session.chainId },
+        );
         const summary = inspectProofResponse(result);
         onObservation(summary);
         await probeApi('observation', summary).catch(() => undefined);

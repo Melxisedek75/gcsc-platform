@@ -107,3 +107,30 @@ ADB reverse10001, confirm XPR Testnet, inspect the actual enabled probe screen,
 then let the owner approve pairing and a sign-only challenge. Record the SDK
 response shape and exact proof result. SIG_WA handling, durable store/current
 authority, app HTTP/JWT, desktop and lead purchase acceptance remain open.
+
+## 23 September Channel Failure And Candidate Fix
+
+- Pixel8 reproduced successful pairing for `gcsctoken111@active`, followed by a
+  failed sign-only request. The local challenge was created, but no sanitized
+  wallet response reached the probe server. USB reverse and loopback health were
+  both available, so this was not classified as an ADB or probe-server failure.
+- Android ActivityTaskManager evidence distinguished the two paths: pairing
+  opened a complete `proton-dev:<ESR payload>` URI and returned to
+  `smartcontractor://wallet-probe`; signing opened only `proton-dev://link`.
+  The latter relies on the paired push channel and produced no proof callback.
+- The candidate keeps the paired identity snapshot but sends the exact same
+  `broadcast:false`, `noModify:true` ownership transaction through the parent
+  Proton Link transport. This hands the complete ESR to WebAuth instead of using
+  the failed session channel. Exact bytes, signer and expiry still fail closed in
+  the shared proof requester and verifier.
+- Focused probe tests: 9/9 PASS. Mobile TypeScript: PASS. `git diff --check`: PASS.
+- Release probe build: BUILD SUCCESSFUL in 26m10s, 488 tasks; embedded bundle
+  1317 modules and 28 assets. APK size 29825201 bytes; SHA256
+  `5260f4b4e0b6396b8c0993a67f2b286291948dcecb4838843da3cbddf604df07`.
+- `adb install -r` returned Success. Package manager confirms 0.1.4/code6,
+  targetSdk36 and update time 2026-09-22 23:35:39. The diagnostic screen rendered
+  `Paired; ownership not yet checked`, `Application login: Not granted`, and
+  `Payments: None. Broadcast disabled.`
+- Device acceptance remains OPEN: only the owner may approve the next WebAuth
+  sign-only prompt. Until its response is observed and exact bytes verify, this
+  is a built and installed fix candidate, not a completed wallet login.
