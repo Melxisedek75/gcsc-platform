@@ -50,8 +50,9 @@ function createOwnershipChallenge(context, options = {}) {
   const payload = { version: 1 };
   for (const field of contextFields) payload[field] = context[field];
   Object.assign(payload, { nonce: challengeId, issuedAt, expiresAt });
-  const from = new Serialize.SerialBuffer();
-  from.pushName(context.accountName);
+  const identity = new Serialize.SerialBuffer();
+  identity.pushName(context.accountName);
+  identity.pushName(context.permission);
   const transaction = {
     expiration: new Date(expiresAt).toISOString().slice(0, 19),
     ref_block_num: 0, ref_block_prefix: 0,
@@ -62,9 +63,10 @@ function createOwnershipChallenge(context, options = {}) {
       data: Buffer.from(JSON.stringify(payload), 'utf8').toString('hex'),
     }],
     actions: [{
-      account: 'eosio', name: 'reqauth',
+      // WebAuth recognizes the ESR identity pseudo-action and signs it without broadcasting.
+      account: '', name: 'identity',
       authorization: [{ actor: context.accountName, permission: context.permission }],
-      data: Buffer.from(from.asUint8Array()).toString('hex'),
+      data: Buffer.from(identity.asUint8Array()).toString('hex'),
     }],
     transaction_extensions: [],
   };
