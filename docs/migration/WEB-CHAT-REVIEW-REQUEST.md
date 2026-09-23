@@ -3,14 +3,14 @@
 Status: READY_FOR_REVIEW, not approved and not integrated.
 
 - Base: `6666e8e7`
-- Exact candidate: `18a3e4e4`
+- Exact code candidate: `cbc88d49`
 - Branch: `codex/web-chat-integration-20260923`
 - Worktree: `C:\gcsc-platform\.worktrees\web-chat`
 - Author: Codex; the author MUST NOT approve this candidate.
 
 ## Review scope
 
-Review `6666e8e7..18a3e4e4`, especially:
+Review `6666e8e7..cbc88d49`, especially:
 
 - the four typed routes in `apps/web/src/services/api.ts`;
 - bid-only entry from ProjectsPanel/BidsPanel and participant-only navigation;
@@ -36,7 +36,7 @@ Set-Location apps/web
 Set-Location ..\..
 node scripts/check-chat-ui.mjs --playwright-dir C:\Users\rivne\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules
 npm run check:web
-git diff --check 6666e8e7..18a3e4e4
+git diff --check 6666e8e7..cbc88d49
 ```
 
 Observed evidence: API config/client **16/16**; TypeScript and scoped ESLint PASS;

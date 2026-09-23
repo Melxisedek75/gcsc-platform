@@ -23,8 +23,8 @@ reviewer повторил PG23/23, API164/164 и lint0/0. В main код не в
 - [x] P3.1e: независимое ревью точного кандидата8814b919, APPROVED.
 - [ ] P3.1f: полная регистрация -> браузер -> API -> БД и оставшиеся возможности MVP.
 
-23 сентября: web-chat кандидат `3f64636c` (включая защиту от stale-ответов
-`26e5121d` и role-navigation `3bea2716`) находится в отдельной lane
+23 сентября: web-chat code candidate `cbc88d49` (включая защиту от stale-ответов,
+role-navigation и явный discard неподтверждённой отправки) находится в отдельной lane
 `codex/web-chat-integration-20260923`. Он использует одобренный server-chat base
 `6666e8e7`: типизированные маршруты, открытие только из сохранённого bid, cursor
 pagination, idempotent retry и participant/read-only/forbidden UI. API-client16/16,
