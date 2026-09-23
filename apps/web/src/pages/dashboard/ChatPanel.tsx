@@ -36,6 +36,13 @@ export function ChatPanel({
   const [error, setError] = useState('');
   const requestVersion = useRef(0);
   const threadsCursorRef = useRef<number | null>(null);
+  const selectedIdRef = useRef<number | null>(null);
+  const sessionVersionRef = useRef(0);
+
+  const selectThread = useCallback((thread: GcscChatThread | null) => {
+    selectedIdRef.current = thread?.id ?? null;
+    setSelected(thread);
+  }, []);
 
   const loadThreads = useCallback(async (append = false) => {
     const version = ++requestVersion.current;
@@ -49,7 +56,13 @@ export function ChatPanel({
         : response.threads);
       threadsCursorRef.current = response.next_before;
       setHasMoreThreads(response.has_more);
-      if (!append) setSelected((current) => current && response.threads.find((thread) => thread.id === current.id) || response.threads[0] || null);
+      if (!append) setSelected((current) => {
+        const next = current
+          ? response.threads.find((thread) => thread.id === current.id) || current
+          : response.threads[0] || null;
+        selectedIdRef.current = next?.id ?? null;
+        return next;
+      });
     } catch (err) {
       if (version === requestVersion.current) setError(err instanceof Error ? err.message : 'Could not load conversations');
     } finally {
@@ -58,16 +71,17 @@ export function ChatPanel({
   }, []);
 
   useEffect(() => {
+    sessionVersionRef.current += 1;
     setThreads([]);
     threadsCursorRef.current = null;
     setHasMoreThreads(false);
-    setSelected(null);
+    selectThread(null);
     setMessages([]);
     setPending(null);
     setDraft('');
     void loadThreads(false);
     return () => { requestVersion.current += 1; };
-  }, [user.id, loadThreads]);
+  }, [user.id, loadThreads, selectThread]);
 
   useEffect(() => {
     if (!initialBidId) return;
@@ -76,26 +90,27 @@ export function ChatPanel({
     void api.openChatThread(initialBidId).then(({ thread }) => {
       if (!active) return;
       setThreads((current) => [thread, ...current.filter((item) => item.id !== thread.id)]);
-      setSelected(thread);
+      selectThread(thread);
       onBidConsumed();
     }).catch((err) => {
       if (active) setError(err instanceof Error ? err.message : 'Could not open conversation');
     });
     return () => { active = false; };
-  }, [initialBidId, onBidConsumed]);
+  }, [initialBidId, onBidConsumed, selectThread]);
 
   const loadMessages = useCallback(async (thread: GcscChatThread, incremental = false) => {
     const after = incremental ? messages.at(-1)?.sequence || 0 : 0;
+    const sessionVersion = sessionVersionRef.current;
     try {
       const response = await api.getChatMessages(thread.id, after, 100);
-      if (selected?.id !== thread.id && incremental) return;
+      if (sessionVersion !== sessionVersionRef.current || selectedIdRef.current !== thread.id) return;
       setSelected(response.thread);
       setMessages((current) => incremental ? mergeMessages(current, response.messages) : response.messages);
       setHasMoreMessages(response.has_more);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load messages');
     }
-  }, [messages, selected?.id]);
+  }, [messages]);
 
   useEffect(() => {
     if (!selected) {
@@ -162,7 +177,7 @@ export function ChatPanel({
           ) : threads.length === 0 ? (
             <div className="p-8 text-center text-sm text-[#64748B]"><MessageCircle size={28} className="mx-auto mb-3 text-[#94A3B8]" />Open chat from a project bid.</div>
           ) : threads.map((thread) => (
-            <button key={thread.id} type="button" onClick={() => setSelected(thread)} className={`w-full border-b border-[#E2E8F0] p-4 text-left ${selected?.id === thread.id ? 'bg-white' : 'hover:bg-white/70'}`}>
+            <button key={thread.id} type="button" onClick={() => selectThread(thread)} className={`w-full border-b border-[#E2E8F0] p-4 text-left ${selected?.id === thread.id ? 'bg-white' : 'hover:bg-white/70'}`}>
               <p className="truncate font-semibold text-[#0F172A]">{thread.counterparty.full_name}</p>
               <p className="mt-1 truncate text-xs text-[#64748B]">{thread.title}</p>
             </button>

@@ -142,7 +142,8 @@ Verification from `C:/gcsc-platform/.worktrees/web-chat`, all exit0:
 - `node scripts/check-chat-ui.mjs --playwright-dir C:\\Users\\rivne\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\node_modules`:
   Edge headless at 1280x900 and 390x844, real React ChatPanel with isolated mock
   HTTP; existing history, no horizontal overflow, uncertain 503 then retry with the
-  same UUID, one delivered bubble and no page errors. Evidence is regenerated under
+  same UUID, one delivered bubble, cursor-loaded conversation switching without
+  stale message leakage and no page errors. Evidence is regenerated under
   `apps/web/.tmp/chat-ui-*/result.json` and is intentionally not committed.
 
 This browser smoke is not real API/PostgreSQL acceptance. Remaining: two simultaneous browser identities against

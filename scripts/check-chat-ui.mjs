@@ -51,6 +51,11 @@ const apiServer = http.createServer(async (req, res) => {
     const after = Number(url.searchParams.get('after') || 0);
     return reply(200, { thread: { ...thread, last_sequence: messages.at(-1)?.sequence || 0 }, messages: messages.filter(message => message.sequence > after), next_after: messages.at(-1)?.sequence || after, has_more: false });
   }
+  if (url.pathname === '/api/chat/threads/2/messages' && req.method === 'GET') {
+    const olderMessage = { id: 4, thread_id: 2, sequence: 1, sender_id: 4,
+      client_message_id: '123e4567-e89b-12d3-a456-426614174222', text: 'Older conversation message', created_at: '2026-09-22T15:00:00Z' };
+    return reply(200, { thread: { ...olderThread, last_sequence: 1 }, messages: [olderMessage], next_after: 1, has_more: false });
+  }
   if (url.pathname === '/api/chat/threads/3/messages' && req.method === 'POST') {
     let raw = '';
     for await (const chunk of req) raw += chunk;
@@ -97,6 +102,11 @@ try {
   }
   await page.getByRole('button', { name: 'Load more conversations' }).click();
   await page.getByText('Older Fixture Owner', { exact: true }).waitFor();
+  await page.getByText('Older Fixture Owner', { exact: true }).click();
+  await page.getByText('Older conversation message', { exact: true }).waitFor();
+  assert.equal(await page.getByText('Existing server message', { exact: true }).count(), 0);
+  await page.getByText('Fixture Owner', { exact: true }).click();
+  await page.getByText('Existing server message', { exact: true }).waitFor();
   const composer = page.getByPlaceholder('Write a message');
   await composer.fill('Retry-safe fixture message');
   await page.getByRole('button', { name: 'Send message' }).click();
