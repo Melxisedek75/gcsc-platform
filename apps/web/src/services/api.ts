@@ -1,5 +1,6 @@
 // GCSC API Client
 import { resolveApiUrl } from '../../../../packages/api-config/index.mjs'
+import type { OwnershipChallenge, OwnershipProof } from '../../../../packages/wallet-proof/request-proof.mjs'
 
 export interface GcscProfile {
   accountType: 'homeowner' | 'contractor'
@@ -253,13 +254,13 @@ class ApiClient {
     localStorage.removeItem('gcsc_auth_token')
   }
 
-  private async request(path: string, options: RequestInit = {}) {
+  private async request(path: string, options: RequestInit = {}, useAuth = true) {
     const url = resolveApiUrl(import.meta.env.VITE_API_URL, `/api${path}`, 'VITE_API_URL')
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...options.headers as Record<string, string>
     }
-    if (this.token) headers['Authorization'] = `Bearer ${this.token}`
+    if (useAuth && this.token) headers['Authorization'] = `Bearer ${this.token}`
 
     const res = await fetch(url, { ...options, headers })
     const data = await res.json().catch(() => ({}))
@@ -276,6 +277,17 @@ class ApiClient {
   }
   login(body: { email: string; password: string }) {
     return this.request('/auth/login', { method: 'POST', body: JSON.stringify(body) })
+  }
+  walletLoginChallenge(body: { accountName: string; permission: string }): Promise<OwnershipChallenge> {
+    return this.request('/auth/wallet/challenge', { method: 'POST', body: JSON.stringify(body) }, false)
+  }
+  walletLoginVerify(body: {
+    accountName: string
+    permission: string
+    sessionBinding: string
+    proof: OwnershipProof
+  }): Promise<{ message?: string; token: string; user: GcscUser }> {
+    return this.request('/auth/wallet/verify', { method: 'POST', body: JSON.stringify(body) }, false)
   }
   getProfile() {
     return this.request('/auth/profile')

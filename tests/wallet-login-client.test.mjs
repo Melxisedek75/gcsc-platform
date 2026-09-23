@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createWalletFirstLogin } from '../apps/mobile/lib/wallet-login-core.mjs';
+import { createWalletFirstLogin } from '../packages/wallet-proof/login-client.mjs';
 
 const challenge = {
   version: 1,

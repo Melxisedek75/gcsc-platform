@@ -1,4 +1,4 @@
-import type { OwnershipChallenge, OwnershipProof } from '../../../packages/wallet-proof/request-proof.mjs';
+import type { OwnershipChallenge, OwnershipProof } from './request-proof.mjs';
 
 export interface WalletLoginSession {
   account: string;

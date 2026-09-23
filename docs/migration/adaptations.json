@@ -37,9 +37,16 @@
   {
     "path": "apps/web/src/services/api.ts",
     "sourceBlob": "386771574699c2d98c025c8bcae2e27b91bfa9c9",
-    "sha256": "b2ff8e83ff6643acc12cbbf70c5ba1d45345f3463080a85630eb2f72442c0e79",
-    "reason": "Explicit API origin (existing adaptation) plus typed HTTP status for scoped authentication error handling.",
-    "test": "node --test tests/wallet-restore.test.mjs tests/api-config.test.mjs; regression red witnessed before fix"
+    "sha256": "aefe875f208437ee25e634a89fb90bfb32eb7c8b60e6fc29a7b2d18206b63d01",
+    "reason": "Preserve explicit API origin and typed HTTP errors; add the frozen wallet-first challenge/verify methods while explicitly suppressing stale application JWT headers on both unauthenticated routes.",
+    "test": "npm run test:web-wallet-login; npm run build:web; npm test"
+  },
+  {
+    "path": "apps/web/src/pages/dashboard/AccountAccess.tsx",
+    "sourceBlob": "6eecb5d7c25b12dcf5091364a945c268d8ed1eca",
+    "sha256": "5724358f05670f7df1fe770b48085166dc5ae16bc8f44b7435e3c0f1053f628d",
+    "reason": "Add an active WebAuth login command to login mode, reusing the existing status/loading state and the reviewed sign-only wallet-first service; registration and email login remain unchanged.",
+    "test": "npm run test:web-wallet-login; npm run build:web"
   },
   {
     "path": "apps/mobile/lib/api.ts",
@@ -233,8 +240,8 @@
   {
     "path": "apps/mobile/lib/auth.ts",
     "sourceBlob": "4e7e9d388994624f7b45a8cc0601c76c62ccab24",
-    "sha256": "0c42355bf748e58588872ab42c4cef6920071a4ff75589afd37de6ebc6b14b31",
-    "reason": "Add wallet-first application login orchestration using the frozen unauthenticated challenge/verify HTTP contract, sign-only WebAuth proof and existing local session persistence.",
+    "sha256": "1569907e4ad5af3650b2721f2692928bc307a06604be901bf10ca8b50c99553d",
+    "reason": "Use the shared wallet-first application login orchestration for the frozen unauthenticated challenge/verify HTTP contract, sign-only WebAuth proof and existing local session persistence.",
     "test": "npm run test:wallet-login-client; npm run test:wallet-proof-client; npm run test:wallet-restore; npm run check:mobile-types"
   },
   {

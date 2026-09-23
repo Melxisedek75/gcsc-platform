@@ -3,7 +3,7 @@
 
 import { apiRequest, AuthUser, clearSession, normalizeUser, saveSession, UserRole } from './api';
 import { connectWallet, signWalletOwnershipChallenge } from './webauth';
-import { createWalletFirstLogin } from './wallet-login-core.mjs';
+import { createWalletFirstLogin } from '../../../packages/wallet-proof/login-client.mjs';
 
 interface AuthResponse {
   message?: string;

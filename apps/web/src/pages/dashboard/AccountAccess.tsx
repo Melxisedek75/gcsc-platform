@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { motion } from 'framer-motion';
 import { ShieldCheck, CheckCircle2, Building2, Home, Loader2 } from 'lucide-react';
 import { api, type GcscUser } from '../../services/api';
+import { loginWithWebAuth } from '../../services/walletLogin';
 import { fieldClass } from './format';
 import type { AccountRole } from './types';
 
@@ -101,6 +102,19 @@ export function AccountAccess({ onAuthenticated }: { onAuthenticated: (user: Gcs
       }
     } catch (err) {
       setStatus(err instanceof Error ? err.message : 'Could not send code again');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const loginWithWallet = async () => {
+    if (submitting) return;
+    setStatus('');
+    setSubmitting(true);
+    try {
+      onAuthenticated(await loginWithWebAuth());
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : 'Could not sign in with WebAuth');
     } finally {
       setSubmitting(false);
     }
@@ -269,6 +283,16 @@ export function AccountAccess({ onAuthenticated }: { onAuthenticated: (user: Gcs
             {submitting && <Loader2 size={16} className="animate-spin" />}
             {verificationPending ? 'Verify and Open Dashboard' : mode === 'register' ? 'Create GCSC Account' : 'Open Dashboard'}
           </button>
+          {mode === 'login' && !verificationPending && (
+            <button
+              type="button"
+              onClick={loginWithWallet}
+              disabled={submitting}
+              className="w-full inline-flex items-center justify-center py-3 border border-[#CBD5E1] bg-white text-[#0F172A] font-inter font-semibold text-sm transition-colors hover:bg-[#F8FAFC] disabled:opacity-60"
+            >
+              Continue with WebAuth wallet
+            </button>
+          )}
         </form>
       </motion.div>
     </div>
