@@ -18,6 +18,10 @@ test('web wallet login uses the shared sign-only orchestration and persists only
   assert.match(service, /api\.walletLoginChallenge/);
   assert.match(service, /api\.walletLoginVerify/);
   assert.match(service, /api\.setToken\(token\)/);
+  assert.match(service, /71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd/);
+  assert.match(service, /https:\/\/testnet-api\.alvosec\.com/);
+  assert.match(service, /connected\.session\.chainId !== XPR_TESTNET_CHAIN_ID/);
+  assert.match(service, /wallet_login_wrong_network/);
   assert.doesNotMatch(service, /broadcast\s*:\s*true|connectWallet\(/);
 });
 
