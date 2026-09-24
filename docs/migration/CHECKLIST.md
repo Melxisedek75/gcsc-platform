@@ -1,5 +1,26 @@
 # GCSC: контрольный список завершения проекта
 
+## Итоговая интеграция монорепозитория - 23 сентября 2026
+
+- [x] Локально объединены backend, mobile wallet, ownership proof, web design и
+  web chat кандидаты в `codex/monorepo-publication`.
+- [x] Сохранены provenance, Whitepaper 1.4 материалы, Priority Access спецификация,
+  support evidence и архив старых agent-инструкций.
+- [x] Обязательные проверки кандидата `8cbca0b5498720397434bc497ce34b324c626add`:
+  integration contracts 54 routes и 7/7 entrypoints; API 234/234; wallet proof
+  15/15; wallet login 5/5; web login 3/3; device probe 10/10; jobs/bids 4/4;
+  chat 1/1; PostgreSQL schema 5/5; mobile TypeScript и web production build PASS.
+- [x] Все зарегистрированные worktree приведены к чистому состоянию перед
+  созданием финальной review-записи.
+- [ ] Независимый финальный review exact SHA. Блокер: Claude Code `2.1.186`
+  возвращает `401 OAuth access token is invalid`; self-review не считается
+  независимым.
+- [ ] После `APPROVED` исправить возможные findings, повторить gate и обновить
+  приватную `main`. Production/deploy, реальные подписи и платежи не входят в
+  этот этап.
+
+Review record: `ai-review/records/2026-09-23-monorepo-final-integration.md`.
+
 ## Главный план: сначала единый репозиторий
 
 Обновлено: 22 сентября 2026, America/Los_Angeles. Этот раздел определяет текущий
