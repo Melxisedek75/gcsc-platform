@@ -1,58 +1,27 @@
 import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { migrationStatements, renderSchemaSql, schemaDigest } from '../database/migrate-schema.cjs';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const repoRoot = path.resolve(__dirname, '..', '..');
-
-const expectedOrder = [
-  'database/schema.sql',
-  'v3/database/schema_v3_migration.sql',
-  'v3/database/persistent-storage-migration.sql',
-  'v3/database/stripe-payments-migration.sql',
-  'v3/database/escrow-audit-migration.sql',
-  'v3/database/bid-audit-migration.sql',
-];
-
-const incompatibleMigration = 'database/migrations/001-add-contractor-verifications.sql';
-const requiredPersistentColumns = ['document_image_url', 'verification_token'];
+const api = fs.readFileSync(new URL('../pure-server.js', import.meta.url), 'utf8');
+const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const errors = [];
-
-function readRelative(file) {
-  return fs.readFileSync(path.join(repoRoot, file), 'utf8');
+if (!api.includes("require('./database/migrate-schema.cjs')") || !api.includes('await migrateSchema(getPgPool())')) {
+  errors.push('API startup must use the canonical schema migrator');
 }
-
-console.log('GCSC migration readiness check');
-console.log('Expected production migration order:');
-
-for (const [index, file] of expectedOrder.entries()) {
-  const fullPath = path.join(repoRoot, file);
-  const exists = fs.existsSync(fullPath);
-  console.log(`${index + 1}. ${file}: ${exists ? 'present' : 'missing'}`);
-  if (!exists) errors.push(`missing required migration file: ${file}`);
+if (pkg.scripts['db:migrate'] !== 'node scripts/migrate-postgres.mjs') {
+  errors.push('db:migrate must use the canonical SQL exporter, not historical v2 migrations');
 }
-
-const persistentFile = 'v3/database/persistent-storage-migration.sql';
-if (fs.existsSync(path.join(repoRoot, persistentFile))) {
-  const persistentSql = readRelative(persistentFile);
-  for (const column of requiredPersistentColumns) {
-    if (!persistentSql.includes(column)) {
-      errors.push(`${persistentFile} must include ${column}`);
-    }
-  }
+if (migrationStatements.length < 1 || !renderSchemaSql().endsWith('COMMIT;\n')) {
+  errors.push('Canonical transaction is missing');
 }
-
-if (fs.existsSync(path.join(repoRoot, incompatibleMigration))) {
-  console.log(`warning: ${incompatibleMigration} exists for older route assumptions; do not run it for v3 production without manual column comparison.`);
-} else {
-  console.log(`warning: ${incompatibleMigration} not present; no incompatible legacy migration detected.`);
-}
-
-if (errors.length > 0) {
-  console.error('migration readiness failed');
+console.log('GCSC canonical migration readiness check (local/static only)');
+console.log('Schema: v3/database/schema-statements.cjs');
+console.log('Executor/export: v3/database/migrate-schema.cjs');
+console.log(`Statements: ${migrationStatements.length}; SHA256: ${schemaDigest}`);
+console.log('Historical *.sql files are retained for provenance; do not run the old v2/Express sequence.');
+console.log('Production readiness is NOT established: live schema inventory, backup/restore and release approval remain required.');
+if (errors.length) {
   for (const error of errors) console.error(`- ${error}`);
-  process.exit(1);
+  process.exitCode = 1;
+} else {
+  console.log('migration readiness ready: canonical local recipe available');
 }
-
-console.log('migration readiness ready');

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Loader2, ShieldCheck, CheckCircle2, Clock4, XCircle, Upload } from 'lucide-react';
 import { api, type GcscCompliance, type GcscRequiredDocument, type GcscUser } from '../../services/api';
 import { complianceStatusCopy, formatFileSize } from './format';
+import { DocumentDownloadButton } from './DocumentDownloadButton';
 
 export function CompliancePanel({ user }: { user: GcscUser }) {
   const [compliance, setCompliance] = useState<GcscCompliance | null>(null);
@@ -171,6 +172,7 @@ export function CompliancePanel({ user }: { user: GcscUser }) {
                   {uploaded?.review_note && (
                     <p className="mt-3 text-xs text-[#64748B]">{uploaded.review_note}</p>
                   )}
+                  {uploaded && <DocumentDownloadButton document={uploaded} />}
                   <label className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#C4B5FD] px-4 py-2 text-sm font-semibold text-[#7B2FF7] cursor-pointer hover:bg-[rgba(123,47,247,0.06)] transition-colors">
                     {isUploading ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
                     {uploaded ? 'Replace file' : 'Upload file'}

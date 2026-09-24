@@ -8,6 +8,16 @@
  * changes upstream, these tests are what catches it.
  */
 
+const fs = require('fs');
+const path = require('path');
+const exists = fs.existsSync;
+const write = fs.writeFileSync;
+// Fixture receipts must never read or overwrite the checkout's JSON database.
+jest.spyOn(fs, 'existsSync').mockImplementation(file =>
+  path.basename(String(file)) === 'gcsc.db' ? false : exists(file));
+jest.spyOn(fs, 'writeFileSync').mockImplementation((file, ...args) => {
+  if (path.basename(String(file)) !== 'gcsc.db') return write(file, ...args);
+});
 const mod = require('../pure-server');
 const {
   db,

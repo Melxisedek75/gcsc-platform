@@ -53,10 +53,15 @@ function normalize(text) {
 }
 
 class Pool {
+  async connect() { return { query: this.query.bind(this), release() {} }; }
   async query(text, params = []) {
     const sql = normalize(text);
 
     if (
+      ['begin', 'commit', 'rollback'].includes(sql) ||
+      sql.startsWith('set local ') ||
+      sql.startsWith('select pg_advisory_xact_lock(') ||
+      sql.startsWith('do $gcsc$') ||
       sql.startsWith('create table') ||
       sql.startsWith('alter table') ||
       sql.startsWith('create index') ||
@@ -131,8 +136,10 @@ class Pool {
 
     if (sql.startsWith('insert into user_documents')) {
       const [userId, documentType, fileName, mimeType, fileDataUrl, fileSize, fileSha256, status, reviewNote] = params;
+      const previous = userDocuments.find((item) => item.user_id === Number(userId) && item.document_type === documentType);
       const document = {
-        id: nextDocumentId++,
+        id: previous?.id || nextDocumentId++,
+        revision: (previous?.revision || 0) + 1,
         user_id: Number(userId),
         document_type: documentType,
         file_name: fileName,
@@ -176,9 +183,9 @@ class Pool {
     }
 
     if (sql.startsWith('update user_documents set status')) {
-      const [status, reviewNote, reviewedBy, id] = params;
+      const [status, reviewNote, reviewedBy, id, revision] = params;
       const document = userDocuments.find((row) => row.id === Number(id));
-      if (!document) return { rows: [], rowCount: 0 };
+      if (!document || document.revision !== revision) return { rows: [], rowCount: 0 };
       document.status = status;
       document.review_note = reviewNote || '';
       document.reviewed_by = reviewedBy;
@@ -484,14 +491,7 @@ async function waitForServer(child) {
     assert.strictEqual(documents.status, 200);
     assert.strictEqual(documents.data.documents.length, 3);
 
-    const adminToken = (() => {
-      const crypto = require('crypto');
-      const base64Url = (value) => Buffer.from(value).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-      const header = base64Url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-      const body = base64Url(JSON.stringify({ userId: 999, email: 'admin@gcsc.store', role: 'admin', iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 3600 }));
-      const sig = crypto.createHmac('sha256', 'test-secret-minimum-length-for-hs256').update(header + '.' + body).digest('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-      return header + '.' + body + '.' + sig;
-    })();
+    const adminToken = adminLogin.data.token;
 
     const unauthAdminDocuments = await request('GET', '/api/admin/documents?status=submitted');
     assert.strictEqual(unauthAdminDocuments.status, 401);
@@ -528,6 +528,7 @@ async function waitForServer(child) {
     const rejected = await request('PUT', `/api/admin/documents/${licenseForRejection.id}/review`, {
       status: 'rejected',
       reviewNote: rejectionNote,
+      expectedRevision: licenseForRejection.revision,
     }, adminToken);
     assert.strictEqual(rejected.status, 200);
     assert.strictEqual(rejected.data.document.status, 'rejected');
@@ -577,6 +578,7 @@ async function waitForServer(child) {
       const reviewed = await request('PUT', `/api/admin/documents/${doc.id}/review`, {
         status: 'approved',
         reviewNote: 'Approved in smoke test',
+        expectedRevision: doc.revision,
       }, adminToken);
       assert.strictEqual(reviewed.status, 200);
       assert.strictEqual(reviewed.data.document.status, 'approved');

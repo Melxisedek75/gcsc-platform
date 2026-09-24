@@ -9,6 +9,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { parse } = require('url');
+const { TextDecoder } = require('util');
 // P1-2/P1-4: XPR (Antelope/EOSIO) K1 signature verification for wallet ownership proof.
 const { ec: EllipticEC } = require('elliptic');
 const { Numeric: XprNumeric } = require('@proton/js');
@@ -299,300 +300,8 @@ async function withPostgresTransaction(work) {
 
 async function initStorage() {
   if (!USE_POSTGRES) return;
-
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS users (
-      id SERIAL PRIMARY KEY,
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      role TEXT NOT NULL CHECK (role IN ('homeowner', 'contractor', 'admin')),
-      full_name TEXT NOT NULL DEFAULT '',
-      phone TEXT NOT NULL DEFAULT '',
-      profile JSONB NOT NULL DEFAULT '{}'::jsonb,
-      wallet JSONB,
-      is_verified BOOLEAN NOT NULL DEFAULT TRUE,
-      is_active BOOLEAN NOT NULL DEFAULT TRUE,
-      email_verified BOOLEAN NOT NULL DEFAULT FALSE,
-      phone_verified BOOLEAN NOT NULL DEFAULT FALSE,
-      verification_status TEXT NOT NULL DEFAULT 'legacy_unverified',
-      verification_channel TEXT NOT NULL DEFAULT '',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-
-  await queryPostgres(`ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name TEXT NOT NULL DEFAULT ''`);
-  await queryPostgres(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT NOT NULL DEFAULT ''`);
-  await queryPostgres(`ALTER TABLE users ADD COLUMN IF NOT EXISTS profile JSONB NOT NULL DEFAULT '{}'::jsonb`);
-  await queryPostgres(`ALTER TABLE users ADD COLUMN IF NOT EXISTS wallet JSONB`);
-  await queryPostgres(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT TRUE`);
-  await queryPostgres(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE`);
-  await queryPostgres(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT FALSE`);
-  await queryPostgres(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_verified BOOLEAN NOT NULL DEFAULT FALSE`);
-  await queryPostgres(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_status TEXT NOT NULL DEFAULT 'legacy_unverified'`);
-  await queryPostgres(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_channel TEXT NOT NULL DEFAULT ''`);
-  await queryPostgres(`ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_users_email_lower ON users (LOWER(email))`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_users_role ON users (role)`);
-
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS user_documents (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      document_type TEXT NOT NULL,
-      file_name TEXT NOT NULL DEFAULT '',
-      mime_type TEXT NOT NULL DEFAULT '',
-      file_data_url TEXT NOT NULL DEFAULT '',
-      file_size INTEGER NOT NULL DEFAULT 0,
-      file_sha256 TEXT NOT NULL DEFAULT '',
-      status TEXT NOT NULL DEFAULT 'submitted' CHECK (status IN ('submitted', 'approved', 'rejected')),
-      review_note TEXT NOT NULL DEFAULT '',
-      submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      reviewed_at TIMESTAMPTZ,
-      reviewed_by INTEGER,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-
-  await queryPostgres(`ALTER TABLE user_documents ADD COLUMN IF NOT EXISTS file_data_url TEXT NOT NULL DEFAULT ''`);
-  await queryPostgres(`ALTER TABLE user_documents ADD COLUMN IF NOT EXISTS file_size INTEGER NOT NULL DEFAULT 0`);
-  await queryPostgres(`ALTER TABLE user_documents ADD COLUMN IF NOT EXISTS file_sha256 TEXT NOT NULL DEFAULT ''`);
-  await queryPostgres(`ALTER TABLE user_documents ADD COLUMN IF NOT EXISTS review_note TEXT NOT NULL DEFAULT ''`);
-  await queryPostgres(`ALTER TABLE user_documents ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
-  await queryPostgres(`ALTER TABLE user_documents ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ`);
-  await queryPostgres(`ALTER TABLE user_documents ADD COLUMN IF NOT EXISTS reviewed_by INTEGER`);
-  await queryPostgres(`ALTER TABLE user_documents ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
-  await queryPostgres(`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_documents_user_type ON user_documents (user_id, document_type)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_user_documents_status ON user_documents (status)`);
-
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS projects (
-      id SERIAL PRIMARY KEY,
-      homeowner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      title TEXT NOT NULL,
-      description TEXT NOT NULL DEFAULT '',
-      category TEXT NOT NULL DEFAULT 'general',
-      budget_min INTEGER NOT NULL DEFAULT 0,
-      budget_max INTEGER NOT NULL DEFAULT 0,
-      location TEXT NOT NULL DEFAULT '',
-      timeline_days INTEGER NOT NULL DEFAULT 30,
-      status TEXT NOT NULL DEFAULT 'open',
-      escrow_id INTEGER,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS bids (
-      id SERIAL PRIMARY KEY,
-      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-      contractor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      amount INTEGER NOT NULL,
-      proposed_timeline_days INTEGER NOT NULL DEFAULT 30,
-      message TEXT NOT NULL DEFAULT '',
-      status TEXT NOT NULL DEFAULT 'pending',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS escrow_contracts (
-      id SERIAL PRIMARY KEY,
-      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-      homeowner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      contractor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      total_amount INTEGER NOT NULL,
-      status TEXT NOT NULL DEFAULT 'pending',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS milestones (
-      id SERIAL PRIMARY KEY,
-      escrow_id INTEGER NOT NULL REFERENCES escrow_contracts(id) ON DELETE CASCADE,
-      title TEXT NOT NULL DEFAULT '',
-      description TEXT NOT NULL DEFAULT '',
-      amount INTEGER NOT NULL DEFAULT 0,
-      status TEXT NOT NULL DEFAULT 'pending',
-      verified_by TEXT,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS milestone_chain_txs (
-      id SERIAL PRIMARY KEY,
-      milestone_id INTEGER NOT NULL REFERENCES milestones(id) ON DELETE CASCADE,
-      escrow_id INTEGER NOT NULL REFERENCES escrow_contracts(id) ON DELETE CASCADE,
-      action TEXT NOT NULL CHECK (action IN ('submitms', 'approvems', 'releasems', 'disputems')),
-      tx_id TEXT UNIQUE NOT NULL,
-      chain_id TEXT NOT NULL DEFAULT '',
-      contract_account TEXT NOT NULL DEFAULT 'gcscrow1111',
-      actor TEXT NOT NULL DEFAULT '',
-      status TEXT NOT NULL DEFAULT 'broadcast',
-      created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      verified_at TIMESTAMPTZ,
-      verification_error TEXT
-    )
-  `);
-
-  await queryPostgres(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS escrow_id INTEGER`);
-  await queryPostgres(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS published BOOLEAN NOT NULL DEFAULT FALSE`);
-  await queryPostgres(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ`);
-  await queryPostgres(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
-  await queryPostgres(`ALTER TABLE bids ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
-  await queryPostgres(`ALTER TABLE escrow_contracts ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
-  await queryPostgres(`ALTER TABLE milestones ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
-  await queryPostgres(`ALTER TABLE milestone_chain_txs ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'broadcast'`);
-  await queryPostgres(`ALTER TABLE milestone_chain_txs ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ`);
-  await queryPostgres(`ALTER TABLE milestone_chain_txs ADD COLUMN IF NOT EXISTS verification_error TEXT`);
-  await queryPostgres(`
-    UPDATE milestone_chain_txs
-    SET action = CASE action
-      WHEN 'submitmilestone' THEN 'submitms'
-      WHEN 'approvemilestone' THEN 'approvems'
-      WHEN 'releasemilestone' THEN 'releasems'
-      WHEN 'disputemilestone' THEN 'disputems'
-      ELSE action
-    END
-    WHERE action IN ('submitmilestone', 'approvemilestone', 'releasemilestone', 'disputemilestone')
-  `);
-  await queryPostgres(`ALTER TABLE milestone_chain_txs DROP CONSTRAINT IF EXISTS milestone_chain_txs_action_check`);
-  await queryPostgres(`
-    ALTER TABLE milestone_chain_txs
-    ADD CONSTRAINT milestone_chain_txs_action_check
-    CHECK (action IN ('submitms', 'approvems', 'releasems', 'disputems'))
-  `);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_projects_homeowner ON projects (homeowner_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_projects_status ON projects (status)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_bids_project ON bids (project_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_bids_contractor ON bids (contractor_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_escrow_homeowner ON escrow_contracts (homeowner_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_escrow_contractor ON escrow_contracts (contractor_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_milestones_escrow ON milestones (escrow_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_milestone_chain_txs_milestone ON milestone_chain_txs (milestone_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_milestone_chain_txs_escrow ON milestone_chain_txs (escrow_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_milestone_chain_txs_status ON milestone_chain_txs (status)`);
-
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS payment_receipts (
-      id SERIAL PRIMARY KEY,
-      tx_hash TEXT UNIQUE NOT NULL,
-      kind TEXT NOT NULL,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-      from_account TEXT NOT NULL DEFAULT '',
-      amount TEXT NOT NULL,
-      block_num BIGINT,
-      project_id INTEGER REFERENCES projects(id) ON DELETE RESTRICT,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS lead_tokens (
-      id TEXT PRIMARY KEY,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-      tx_hash TEXT UNIQUE NOT NULL,
-      status TEXT NOT NULL DEFAULT 'active',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS job_posting_payments (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE RESTRICT,
-      tx_hash TEXT UNIQUE NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-  // Verification state lives on the receipt so a payment accepted during a history
-  // outage stays visibly unproven until the reconciler settles it.
-  await queryPostgres(`ALTER TABLE payment_receipts ADD COLUMN IF NOT EXISTS verification_status TEXT NOT NULL DEFAULT 'confirmed'`);
-  await queryPostgres(`ALTER TABLE payment_receipts ADD COLUMN IF NOT EXISTS verify_error TEXT NOT NULL DEFAULT ''`);
-  await queryPostgres(`ALTER TABLE payment_receipts ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_payment_receipts_verification ON payment_receipts (verification_status)`);
-  await queryPostgres(`CREATE UNIQUE INDEX IF NOT EXISTS idx_payment_receipts_tx_hash ON payment_receipts (tx_hash)`);
-  await queryPostgres(`CREATE UNIQUE INDEX IF NOT EXISTS idx_lead_tokens_tx_hash ON lead_tokens (tx_hash)`);
-  await queryPostgres(`CREATE UNIQUE INDEX IF NOT EXISTS idx_job_posting_payments_tx_hash ON job_posting_payments (tx_hash)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_payment_receipts_user ON payment_receipts (user_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_job_posting_payments_project ON job_posting_payments (project_id)`);
-
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS stripe_payment_intents (
-      id SERIAL PRIMARY KEY,
-      project_id INTEGER,
-      user_id INTEGER,
-      payment_intent_id TEXT UNIQUE NOT NULL,
-      amount_cents INTEGER NOT NULL DEFAULT 0,
-      currency TEXT NOT NULL DEFAULT 'usd',
-      status TEXT NOT NULL DEFAULT 'requires_payment_method',
-      stripe_mode TEXT NOT NULL DEFAULT 'test',
-      client_secret TEXT NOT NULL DEFAULT '',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-  await queryPostgres(`ALTER TABLE stripe_payment_intents ADD COLUMN IF NOT EXISTS project_id INTEGER`);
-  await queryPostgres(`ALTER TABLE stripe_payment_intents ADD COLUMN IF NOT EXISTS user_id INTEGER`);
-  await queryPostgres(`ALTER TABLE stripe_payment_intents ADD COLUMN IF NOT EXISTS amount_cents INTEGER NOT NULL DEFAULT 0`);
-  await queryPostgres(`ALTER TABLE stripe_payment_intents ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'usd'`);
-  await queryPostgres(`ALTER TABLE stripe_payment_intents ADD COLUMN IF NOT EXISTS stripe_mode TEXT NOT NULL DEFAULT 'test'`);
-  await queryPostgres(`ALTER TABLE stripe_payment_intents ADD COLUMN IF NOT EXISTS client_secret TEXT NOT NULL DEFAULT ''`);
-  await queryPostgres(`ALTER TABLE stripe_payment_intents ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_stripe_payment_intents_project ON stripe_payment_intents (project_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_stripe_payment_intents_user ON stripe_payment_intents (user_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_stripe_payment_intents_status ON stripe_payment_intents (status)`);
-
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS audit_events (
-      id SERIAL PRIMARY KEY,
-      actor_id INTEGER,
-      target_user_id INTEGER,
-      action TEXT NOT NULL,
-      entity_type TEXT NOT NULL DEFAULT '',
-      entity_id INTEGER,
-      metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-      ip_address TEXT NOT NULL DEFAULT '',
-      user_agent TEXT NOT NULL DEFAULT '',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_audit_events_action ON audit_events (action)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_audit_events_actor ON audit_events (actor_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_audit_events_target ON audit_events (target_user_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_audit_events_created ON audit_events (created_at DESC)`);
-
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS financing_prechecks (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      role TEXT NOT NULL CHECK (role IN ('homeowner', 'contractor', 'admin')),
-      product_type TEXT NOT NULL,
-      state TEXT NOT NULL DEFAULT '',
-      context JSONB NOT NULL DEFAULT '{}'::jsonb,
-      safety_acknowledged BOOLEAN NOT NULL DEFAULT FALSE,
-      status TEXT NOT NULL DEFAULT 'demo_precheck',
-      admin_note TEXT NOT NULL DEFAULT '',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-  await queryPostgres(`ALTER TABLE financing_prechecks ADD COLUMN IF NOT EXISTS state TEXT NOT NULL DEFAULT ''`);
-  await queryPostgres(`ALTER TABLE financing_prechecks ADD COLUMN IF NOT EXISTS context JSONB NOT NULL DEFAULT '{}'::jsonb`);
-  await queryPostgres(`ALTER TABLE financing_prechecks ADD COLUMN IF NOT EXISTS safety_acknowledged BOOLEAN NOT NULL DEFAULT FALSE`);
-  await queryPostgres(`ALTER TABLE financing_prechecks ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'demo_precheck'`);
-  await queryPostgres(`ALTER TABLE financing_prechecks ADD COLUMN IF NOT EXISTS admin_note TEXT NOT NULL DEFAULT ''`);
-  await queryPostgres(`ALTER TABLE financing_prechecks ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_financing_prechecks_user ON financing_prechecks (user_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_financing_prechecks_status ON financing_prechecks (status)`);
-
+  const { migrateSchema } = require('./database/migrate-schema.cjs');
+  await migrateSchema(getPgPool());
   await ensureBootstrapAdmin();
 }
 
@@ -625,9 +334,9 @@ async function findUserByEmail(email) {
   return db.users.find(u => u.email.toLowerCase() === String(email).toLowerCase()) || null;
 }
 
-async function findUserById(id) {
+async function findUserById(id, query = queryPostgres) {
   if (USE_POSTGRES) {
-    const result = await queryPostgres('SELECT * FROM users WHERE id = $1 LIMIT 1', [id]);
+    const result = await query('SELECT * FROM users WHERE id = $1 LIMIT 1', [id]);
     return normalizeStoredUser(result.rows[0]);
   }
 
@@ -758,6 +467,7 @@ function normalizeDocument(row) {
     mime_type: row.mime_type || '',
     file_size: Number(row.file_size) || 0,
     file_sha256: row.file_sha256 || '',
+    revision: Number(row.revision) || 1,
     status: row.status || 'submitted',
     review_note: row.review_note || '',
     submitted_at: row.submitted_at,
@@ -785,13 +495,17 @@ async function listStoredUserDocuments(userId) {
     .map(normalizeDocument);
 }
 
-async function findStoredUserDocumentById(id) {
+async function findStoredUserDocumentById(id, includeFile = false) {
+  let row;
   if (USE_POSTGRES) {
     const result = await queryPostgres('SELECT * FROM user_documents WHERE id = $1 LIMIT 1', [id]);
-    return normalizeDocument(result.rows[0]);
+    row = result.rows[0];
+  } else {
+    row = db.user_documents.find((doc) => doc.id === Number(id));
   }
-
-  return normalizeDocument(db.user_documents.find((doc) => doc.id === Number(id)));
+  const document = normalizeDocument(row);
+  if (document && includeFile) document.file_data_url = row.file_data_url || '';
+  return document;
 }
 
 async function listStoredDocumentsForReview(status = '') {
@@ -830,6 +544,7 @@ async function upsertStoredUserDocument(user, body) {
         file_data_url = EXCLUDED.file_data_url,
         file_size = EXCLUDED.file_size,
         file_sha256 = EXCLUDED.file_sha256,
+        revision = user_documents.revision + 1,
         status = EXCLUDED.status,
         review_note = EXCLUDED.review_note,
         submitted_at = NOW(),
@@ -857,6 +572,7 @@ async function upsertStoredUserDocument(user, body) {
     Object.assign(existing, {
       ...document,
       id: existing.id,
+      revision: (Number(existing.revision) || 1) + 1,
       submitted_at: new Date().toISOString(),
       reviewed_at: null,
       reviewed_by: null,
@@ -869,6 +585,7 @@ async function upsertStoredUserDocument(user, body) {
   const stored = {
     id: db.nextId('user_documents'),
     ...document,
+    revision: 1,
     submitted_at: new Date().toISOString(),
     reviewed_at: null,
     reviewed_by: null,
@@ -884,15 +601,15 @@ async function reviewStoredUserDocument(document, status, reviewNote, reviewedBy
   if (USE_POSTGRES) {
     const result = await queryPostgres(
       `UPDATE user_documents SET status = $1, review_note = $2, reviewed_by = $3, reviewed_at = NOW(), updated_at = NOW()
-       WHERE id = $4
+       WHERE id = $4 AND revision = $5
        RETURNING *`,
-      [status, reviewNote, reviewedBy, document.id]
+      [status, reviewNote, reviewedBy, document.id, document.revision]
     );
     return normalizeDocument(result.rows[0]);
   }
 
   const stored = db.user_documents.find((doc) => doc.id === Number(document.id));
-  if (!stored) return null;
+  if (!stored || (Number(stored.revision) || 1) !== document.revision) return null;
   stored.status = status;
   stored.review_note = reviewNote;
   stored.reviewed_by = reviewedBy;
@@ -922,7 +639,7 @@ function requestIp(req) {
   return String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket?.remoteAddress || '';
 }
 
-async function recordAuditEvent(req, input) {
+async function recordAuditEvent(req, input, query = queryPostgres) {
   const event = {
     actor_id: input.actorId === undefined ? null : input.actorId,
     target_user_id: input.targetUserId === undefined ? null : input.targetUserId,
@@ -935,7 +652,7 @@ async function recordAuditEvent(req, input) {
   };
 
   if (USE_POSTGRES) {
-    const result = await queryPostgres(
+    const result = await query(
       `INSERT INTO audit_events
         (actor_id, target_user_id, action, entity_type, entity_id, metadata, ip_address, user_agent)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -1820,6 +1537,220 @@ async function listStoredBidsForContractor(contractorId) {
   return db.bids.filter(b => b.contractor_id === contractorId);
 }
 
+// Chat never falls back to a simulated delivery in the JSON demo database.
+function chatError(status, message) {
+  return Object.assign(new Error(message), { status });
+}
+
+function chatInteger(value, minimum = 1) {
+  if (!/^(0|[1-9]\d*)$/.test(String(value)) || !Number.isSafeInteger(Number(value))
+    || Number(value) < minimum || Number(value) > 2147483647) {
+    throw chatError(400, 'Invalid chat id or cursor');
+  }
+  return Number(value);
+}
+
+function chatPage(req, cursorName, initialCursor) {
+  const params = new URL(req.url, 'http://localhost').searchParams;
+  for (const key of params.keys()) {
+    if (![cursorName, 'limit'].includes(key) || params.getAll(key).length !== 1) {
+      throw chatError(400, 'Invalid pagination');
+    }
+  }
+  const cursor = params.has(cursorName) ? chatInteger(params.get(cursorName), cursorName === 'after' ? 0 : 1) : initialCursor;
+  const limit = params.has('limit') ? chatInteger(params.get('limit')) : 50;
+  if (limit > 100) throw chatError(400, 'Maximum page size is 100');
+  return { cursor, limit };
+}
+
+function parseChatBody(req, allowed) {
+  if (String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase() !== 'application/json') {
+    throw chatError(400, 'Chat requires application/json');
+  }
+  return new Promise((resolve, reject) => {
+    let size = 0;
+    let chunks = [];
+    let failed = false;
+    req.on('data', chunk => {
+      size += chunk.length;
+      if (size > 32768) {
+        failed = true;
+        chunks = [];
+        reject(chatError(413, 'Chat request exceeds 32 KiB'));
+      } else if (!failed) chunks.push(chunk);
+    });
+    req.on('error', reject);
+    req.on('aborted', () => reject(chatError(400, 'Chat request interrupted')));
+    req.on('end', () => {
+      if (failed) return;
+      try {
+        const body = JSON.parse(new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(Buffer.concat(chunks)));
+        if (!body || Array.isArray(body) || typeof body !== 'object'
+          || Object.keys(body).some(key => !allowed.includes(key))) throw new Error('Invalid fields');
+        resolve(body);
+      } catch { reject(chatError(400, 'Invalid chat JSON or fields')); }
+    });
+  });
+}
+
+async function requireChatUser(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+  let user;
+  try {
+    const lookup = USE_POSTGRES
+      ? id => withChatTransaction(client => findUserById(id, client.query.bind(client)))
+      : findUserById;
+    user = await requireActiveUser(req, res, undefined, lookup);
+  } catch (err) {
+    if (!err.status) throw err;
+    json(res, err.status, { error: err.message });
+    return null;
+  }
+  if (!user) return null;
+  if (!['homeowner', 'contractor'].includes(user.role)) {
+    json(res, 403, { error: 'Chat is limited to project participants' });
+    return null;
+  }
+  const limited = checkRateLimit(req, req.method === 'GET' ? 'chat_read' : 'chat_write', `user:${user.id}`);
+  if (limited) {
+    res.setHeader('Retry-After', String(limited.retryAfterSeconds));
+    json(res, 429, { error: 'Too many chat requests', retry_after_seconds: limited.retryAfterSeconds });
+    return null;
+  }
+  if (!USE_POSTGRES) {
+    json(res, 503, { error: 'Chat requires PostgreSQL storage' });
+    return null;
+  }
+  return user;
+}
+
+async function chatRelationship(client, projectId, contractorId, userId) {
+  // Lock the authoritative relationships while a message/history transaction runs.
+  const result = await client.query(`SELECT p.id AS project_id, p.homeowner_id, p.title,
+      p.status AS project_status, b.status AS bid_status, c.id AS contractor_id,
+      h.full_name AS homeowner_name, c.full_name AS contractor_name
+    FROM bids b JOIN projects p ON p.id=b.project_id
+    JOIN users h ON h.id=p.homeowner_id JOIN users c ON c.id=b.contractor_id
+    WHERE p.id=$1 AND c.id=$2 AND (h.id=$3 OR c.id=$3)
+      AND h.role='homeowner' AND c.role='contractor' AND h.is_active AND c.is_active
+    ORDER BY b.id FOR SHARE OF b,p,h,c`, [projectId, contractorId, userId]);
+  if (!result.rowCount) throw chatError(404, 'Conversation not found');
+  return { ...result.rows[0], can_send: result.rows.some(row =>
+    (row.bid_status === 'pending' && row.project_status === 'open')
+    || (row.bid_status === 'accepted' && row.project_status === 'in_progress')) };
+}
+
+function publicChatThread(thread, relationship, userId) {
+  const isOwner = userId === thread.homeowner_id;
+  return {
+    id: thread.id, project_id: thread.project_id, homeowner_id: thread.homeowner_id,
+    contractor_id: thread.contractor_id, title: relationship.title,
+    counterparty: { id: isOwner ? thread.contractor_id : thread.homeowner_id,
+      full_name: isOwner ? relationship.contractor_name : relationship.homeowner_name,
+      role: isOwner ? 'contractor' : 'homeowner' },
+    can_send: relationship.can_send, last_sequence: thread.last_sequence,
+    created_at: thread.created_at, updated_at: thread.updated_at,
+  };
+}
+
+async function lockChatThread(client, threadId, userId, write = false) {
+  const result = await client.query(`SELECT * FROM chat_threads
+    WHERE id=$1 AND (homeowner_id=$2 OR contractor_id=$2) FOR ${write ? 'UPDATE' : 'SHARE'}`, [threadId, userId]);
+  const thread = result.rows[0];
+  if (!thread) throw chatError(404, 'Conversation not found');
+  const relationship = await chatRelationship(client, thread.project_id, thread.contractor_id, userId);
+  if (relationship.homeowner_id !== thread.homeowner_id) throw chatError(404, 'Conversation not found');
+  return { thread, relationship };
+}
+
+async function withChatTransaction(work) {
+  try {
+    return await withPostgresTransaction(async client => {
+      await client.query("SET LOCAL lock_timeout='3s'");
+      await client.query("SET LOCAL statement_timeout='5s'");
+      return work(client);
+    });
+  } catch (err) {
+    if (['55P03', '57014', '40P01'].includes(err.code)) throw chatError(503, 'Chat is temporarily busy; retry with the same message key');
+    throw err;
+  }
+}
+
+async function openChatThread(bidId, userId) {
+  return withChatTransaction(async client => {
+    const bid = (await client.query('SELECT project_id,contractor_id FROM bids WHERE id=$1', [bidId])).rows[0];
+    if (!bid) throw chatError(404, 'Conversation not found');
+    const relationship = await chatRelationship(client, bid.project_id, bid.contractor_id, userId);
+    const params = [bid.project_id, relationship.homeowner_id, bid.contractor_id];
+    const existing = await client.query(`SELECT * FROM chat_threads
+      WHERE project_id=$1 AND homeowner_id=$2 AND contractor_id=$3`, params);
+    if (existing.rowCount) return { thread: publicChatThread(existing.rows[0], relationship, userId), created: false };
+    if (!relationship.can_send) throw chatError(409, 'Conversation is read-only');
+    const inserted = await client.query(`INSERT INTO chat_threads(project_id,homeowner_id,contractor_id)
+      VALUES($1,$2,$3) ON CONFLICT(project_id,homeowner_id,contractor_id) DO NOTHING RETURNING *`, params);
+    const thread = inserted.rows[0] || (await client.query(`SELECT * FROM chat_threads
+      WHERE project_id=$1 AND homeowner_id=$2 AND contractor_id=$3`, params)).rows[0];
+    return { thread: publicChatThread(thread, relationship, userId), created: inserted.rowCount === 1 };
+  });
+}
+
+async function listChatThreads(userId, before, limit) {
+  return withChatTransaction(async client => {
+    const result = await client.query(`SELECT t.*,p.title,h.full_name AS homeowner_name,c.full_name AS contractor_name,
+      EXISTS(SELECT 1 FROM bids b WHERE b.project_id=p.id AND b.contractor_id=c.id
+        AND ((b.status='pending' AND p.status='open') OR (b.status='accepted' AND p.status='in_progress'))) AS can_send
+    FROM chat_threads t JOIN projects p ON p.id=t.project_id AND p.homeowner_id=t.homeowner_id
+    JOIN users h ON h.id=t.homeowner_id JOIN users c ON c.id=t.contractor_id
+    WHERE (t.homeowner_id=$1 OR t.contractor_id=$1) AND ($2::integer IS NULL OR t.id<$2)
+      AND h.role='homeowner' AND c.role='contractor' AND h.is_active AND c.is_active
+      AND EXISTS(SELECT 1 FROM bids b WHERE b.project_id=t.project_id AND b.contractor_id=t.contractor_id)
+    ORDER BY t.id DESC LIMIT $3`, [userId, before, limit + 1]);
+    const threads = result.rows.slice(0, limit).map(row => publicChatThread(row, row, userId));
+    return { threads, has_more: result.rows.length > limit, next_before: threads.at(-1)?.id ?? before };
+  });
+}
+
+async function readChatMessages(threadId, userId, after, limit) {
+  return withChatTransaction(async client => {
+    const { thread, relationship } = await lockChatThread(client, threadId, userId);
+    const result = await client.query(`SELECT * FROM chat_messages WHERE thread_id=$1 AND sequence>$2
+      ORDER BY sequence LIMIT $3`, [threadId, after, limit + 1]);
+    const messages = result.rows.slice(0, limit);
+    return { thread: publicChatThread(thread, relationship, userId), messages,
+      has_more: result.rows.length > limit, next_after: messages.at(-1)?.sequence ?? after };
+  });
+}
+
+async function sendChatMessage(req, threadId, userId, body) {
+  if (typeof body.text !== 'string' || !body.text.trim() || body.text.trim().length > 4000 || body.text.includes('\0')
+    || Buffer.from(body.text, 'utf8').toString('utf8') !== body.text
+    || typeof body.client_message_id !== 'string'
+    || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(body.client_message_id)) {
+    throw chatError(400, 'A UUID client_message_id and 1..4000 text characters are required');
+  }
+  const text = body.text.trim();
+  return withChatTransaction(async client => {
+    // Allocate the cursor under the thread lock, not from a pre-commit global sequence.
+    const { thread, relationship } = await lockChatThread(client, threadId, userId, true);
+    const existing = await client.query(`SELECT * FROM chat_messages
+      WHERE thread_id=$1 AND sender_id=$2 AND client_message_id=$3`, [threadId, userId, body.client_message_id]);
+    if (existing.rowCount) {
+      if (existing.rows[0].text !== text) throw chatError(409, 'Message key already used with different text');
+      return { message: existing.rows[0], duplicate: true };
+    }
+    if (!relationship.can_send) throw chatError(409, 'Conversation is read-only');
+    const result = await client.query(`INSERT INTO chat_messages(thread_id,sequence,sender_id,client_message_id,text)
+      VALUES($1,$2,$3,$4,$5) RETURNING *`, [threadId, thread.last_sequence + 1, userId, body.client_message_id, text]);
+    const message = result.rows[0];
+    await client.query('UPDATE chat_threads SET last_sequence=$2,updated_at=clock_timestamp() WHERE id=$1', [threadId, message.sequence]);
+    await recordAuditEvent(req, { actorId: userId,
+      targetUserId: userId === thread.homeowner_id ? thread.contractor_id : thread.homeowner_id,
+      action: 'chat.message_sent', entityType: 'chat_thread', entityId: threadId,
+      metadata: { message_id: message.id, thread_id: threadId, sequence: message.sequence } }, client.query.bind(client));
+    return { message, duplicate: false };
+  });
+}
+
 function publicContractorProfile(user) {
   const profile = { ...defaultProfile(user.role), ...(user.profile || {}) };
   return {
@@ -2603,10 +2534,12 @@ function parseDataUrl(value) {
   const input = String(value || '');
   const match = input.match(/^data:([a-z0-9.+/-]+);base64,([a-z0-9+/=]+)$/i);
   if (!match) return null;
+  const buffer = Buffer.from(match[2], 'base64');
+  if (!buffer.length || buffer.toString('base64') !== match[2]) return null;
   return {
     mimeType: match[1].toLowerCase(),
     payload: match[2],
-    buffer: Buffer.from(match[2], 'base64'),
+    buffer,
   };
 }
 
@@ -2655,7 +2588,7 @@ function buildDocumentPayload(user, body) {
     file_size: parsed.buffer.length,
     file_sha256: crypto.createHash('sha256').update(parsed.buffer).digest('hex'),
     status: 'submitted',
-    review_note: cleanString(body.reviewNote || body.review_note, 300),
+    review_note: '',
   };
 }
 
@@ -2842,6 +2775,17 @@ function getUser(req) {
   try { return jwtVerify(token); } catch { return null; }
 }
 
+async function requireActiveUser(req, res, role, lookup = findUserById) {
+  const auth = getUser(req);
+  if (!auth) { json(res, 401, { error: 'Unauthorized' }); return null; }
+  const user = await lookup(auth.userId);
+  if (!user) { json(res, 404, { error: 'User not found' }); return null; }
+  if (!user.is_active) { json(res, 403, { error: 'Account is inactive' }); return null; }
+  // Roles in a still-valid JWT may have been revoked since login.
+  if (role && user.role !== role) { json(res, 403, { error: 'Admin only' }); return null; }
+  return user;
+}
+
 function envInt(name, fallback) {
   const value = parseInt(process.env[name] || '', 10);
   return Number.isFinite(value) && value > 0 ? value : fallback;
@@ -2877,6 +2821,8 @@ function rateLimitConfigForRoute(pattern) {
   if (pattern === 'GET /api/auth/documents' || pattern === 'POST /api/auth/documents') return { name: 'documents', ...configs.documents };
   if (pattern === 'POST /api/wallet/connect') return { name: 'wallet', ...configs.wallet };
   if (pattern === 'POST /api/bids/:id/accept') return { name: 'bid_accept', ...configs.bid_accept };
+  if (pattern === 'chat_read' || pattern === 'chat_write') return { name: pattern,
+    max: pattern === 'chat_read' ? 240 : 60, windowMs: 60000 };
   return null;
 }
 
@@ -2890,7 +2836,7 @@ function clientIdentity(req) {
   return tokenHash ? `${ip}:${tokenHash}` : ip;
 }
 
-function checkRateLimit(req, pattern) {
+function checkRateLimit(req, pattern, identity = clientIdentity(req)) {
   if (process.env.RATE_LIMITS_DISABLED === 'true') return null;
   const config = rateLimitConfigForRoute(pattern);
   if (!config) return null;
@@ -2902,7 +2848,7 @@ function checkRateLimit(req, pattern) {
     }
   }
 
-  const key = `${config.name}:${pattern}:${clientIdentity(req)}`;
+  const key = `${config.name}:${pattern}:${identity}`;
   const current = rateLimitStore.get(key);
   if (!current || current.resetAt <= now) {
     rateLimitStore.set(key, { count: 1, resetAt: now + config.windowMs });
@@ -3335,6 +3281,7 @@ const routes = {
           document_type: document.document_type,
           file_name: document.file_name,
           file_sha256: document.file_sha256,
+          revision: document.revision,
           status: document.status,
         },
       });
@@ -3347,6 +3294,35 @@ const routes = {
     } catch (err) {
       json(res, err.status || 400, { error: err.message || 'Could not submit document' });
     }
+  },
+
+  'GET /api/auth/documents/:id/file': async (req, res, params) => {
+    res.setHeader('Cache-Control', 'no-store');
+    const user = await requireActiveUser(req, res);
+    if (!user) return;
+    const id = Number(params.id);
+    if (!Number.isSafeInteger(id) || id <= 0) return json(res, 404, { error: 'Document not found' });
+    const document = await findStoredUserDocumentById(id, true);
+    if (!document || (document.user_id !== user.id && user.role !== 'admin')) {
+      return json(res, 404, { error: 'Document not found' });
+    }
+    const rawRevision = parse(req.url, true).query.revision;
+    if (rawRevision === undefined) return json(res, 428, { error: 'Document revision required. Refresh the document list.' });
+    const revision = typeof rawRevision === 'string' && /^[1-9][0-9]*$/.test(rawRevision) ? Number(rawRevision) : 0;
+    if (!Number.isSafeInteger(revision) || revision <= 0) return json(res, 400, { error: 'Invalid document revision' });
+    if (document.revision !== revision) return json(res, 409, { error: 'Document changed. Refresh the document list.' });
+    const parsed = parseDataUrl(document.file_data_url);
+    if (!parsed || !ALLOWED_DOCUMENT_MIME_TYPES.includes(parsed.mimeType)
+      || crypto.createHash('sha256').update(parsed.buffer).digest('hex') !== document.file_sha256) {
+      return json(res, 409, { error: 'Document file is unavailable. Ask the owner to upload it again.' });
+    }
+    await recordAuditEvent(req, {
+      actorId: user.id, targetUserId: document.user_id, action: 'document.downloaded',
+      entityType: 'user_document', entityId: document.id,
+      metadata: { revision: document.revision, file_sha256: document.file_sha256 },
+    });
+    const { file_data_url, ...metadata } = document;
+    json(res, 200, { document: metadata, file_data_url });
   },
 
   'GET /api/auth/compliance': async (req, res) => {
@@ -3504,9 +3480,7 @@ const routes = {
   },
 
   'GET /api/admin/documents': async (req, res) => {
-    const auth = getUser(req);
-    if (!auth) return json(res, 401, { error: 'Unauthorized' });
-    if (auth.role !== 'admin') return json(res, 403, { error: 'Admin only' });
+    if (!await requireActiveUser(req, res, 'admin')) return;
 
     const parsed = parse(req.url, true);
     const status = cleanString(parsed.query.status || '', 40);
@@ -3516,9 +3490,7 @@ const routes = {
   },
 
   'GET /api/admin/audit-events': async (req, res) => {
-    const auth = getUser(req);
-    if (!auth) return json(res, 401, { error: 'Unauthorized' });
-    if (auth.role !== 'admin') return json(res, 403, { error: 'Admin only' });
+    if (!await requireActiveUser(req, res, 'admin')) return;
 
     const parsed = parse(req.url, true);
     const events = await listStoredAuditEvents({
@@ -3531,9 +3503,7 @@ const routes = {
   },
 
   'GET /api/admin/financing-prechecks': async (req, res) => {
-    const auth = getUser(req);
-    if (!auth) return json(res, 401, { error: 'Unauthorized' });
-    if (auth.role !== 'admin') return json(res, 403, { error: 'Admin only' });
+    if (!await requireActiveUser(req, res, 'admin')) return;
 
     const parsed = parse(req.url, true);
     const prechecks = await listFinancingPrechecks({
@@ -3544,11 +3514,12 @@ const routes = {
   },
 
   'PUT /api/admin/documents/:id/review': async (req, res, params) => {
-    const auth = getUser(req);
-    if (!auth) return json(res, 401, { error: 'Unauthorized' });
-    if (auth.role !== 'admin') return json(res, 403, { error: 'Admin only' });
+    const reviewer = await requireActiveUser(req, res, 'admin');
+    if (!reviewer) return;
 
-    const document = await findStoredUserDocumentById(parseInt(params.id));
+    const id = Number(params.id);
+    if (!Number.isSafeInteger(id) || id <= 0) return json(res, 404, { error: 'Document not found' });
+    const document = await findStoredUserDocumentById(id);
     if (!document) return json(res, 404, { error: 'Document not found' });
 
     const body = await parseBody(req);
@@ -3556,22 +3527,30 @@ const routes = {
     if (status !== 'approved' && status !== 'rejected') {
       return json(res, 400, { error: 'Review status must be approved or rejected' });
     }
+    if (body.expectedRevision === undefined) return json(res, 428, { error: 'Document revision required. Refresh the document list.' });
+    if (!Number.isSafeInteger(body.expectedRevision) || body.expectedRevision <= 0) return json(res, 400, { error: 'Invalid document revision' });
+    if (document.revision !== body.expectedRevision) return json(res, 409, { error: 'Document changed. Refresh the document list.' });
+    const reviewNote = cleanString(body.reviewNote || body.review_note, 300);
+    if (status === 'rejected' && !reviewNote) return json(res, 400, { error: 'Rejection reason required' });
 
     const reviewed = await reviewStoredUserDocument(
       document,
       status,
-      cleanString(body.reviewNote || body.review_note, 300),
-      auth.userId || null
+      reviewNote,
+      reviewer.id
     );
+    if (!reviewed) return json(res, 409, { error: 'Document changed. Refresh the document list.' });
     const enrichedDocument = await enrichDocumentWithUser(reviewed);
     await recordAuditEvent(req, {
-      actorId: auth.userId || null,
+      actorId: reviewer.id,
       targetUserId: document.user_id,
       action: 'document.reviewed',
       entityType: 'user_document',
       entityId: document.id,
       metadata: {
         document_type: document.document_type,
+        revision: document.revision,
+        file_sha256: document.file_sha256,
         status: reviewed.status,
         review_note_present: !!reviewed.review_note,
       },
@@ -3670,6 +3649,47 @@ const routes = {
     const u = await findUserById(user.userId);
     if (!u) return json(res, 404, { error: 'User not found' });
     json(res, 200, { user: publicUser(u) });
+  },
+
+  // Private project conversations; native/web consumers integrate separately.
+  'POST /api/chat/threads': async (req, res) => {
+    const user = await requireChatUser(req, res);
+    if (!user) return;
+    try {
+      const body = await parseChatBody(req, ['bid_id']);
+      if (typeof body.bid_id !== 'number') throw chatError(400, 'bid_id must be an integer');
+      const result = await openChatThread(chatInteger(body.bid_id), user.id);
+      json(res, result.created ? 201 : 200, { thread: result.thread });
+    } catch (err) { if (err.status) json(res, err.status, { error: err.message }); else throw err; }
+  },
+
+  'GET /api/chat/threads': async (req, res) => {
+    const user = await requireChatUser(req, res);
+    if (!user) return;
+    try {
+      const { cursor, limit } = chatPage(req, 'before', null);
+      json(res, 200, await listChatThreads(user.id, cursor, limit));
+    } catch (err) { if (err.status) json(res, err.status, { error: err.message }); else throw err; }
+  },
+
+  'GET /api/chat/threads/:id/messages': async (req, res, params) => {
+    const user = await requireChatUser(req, res);
+    if (!user) return;
+    try {
+      const { cursor, limit } = chatPage(req, 'after', 0);
+      json(res, 200, await readChatMessages(chatInteger(params.id), user.id, cursor, limit));
+    } catch (err) { if (err.status) json(res, err.status, { error: err.message }); else throw err; }
+  },
+
+  'POST /api/chat/threads/:id/messages': async (req, res, params) => {
+    const user = await requireChatUser(req, res);
+    if (!user) return;
+    try {
+      const threadId = chatInteger(params.id);
+      const body = await parseChatBody(req, ['text', 'client_message_id']);
+      const result = await sendChatMessage(req, threadId, user.id, body);
+      json(res, result.duplicate ? 200 : 201, result);
+    } catch (err) { if (err.status) json(res, err.status, { error: err.message }); else throw err; }
   },
 
   // Create project

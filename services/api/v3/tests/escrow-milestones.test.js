@@ -22,6 +22,16 @@
 process.env.RATE_LIMITS_DISABLED = 'true';
 
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const exists = fs.existsSync;
+const write = fs.writeFileSync;
+// This suite tests endpoint behavior, not shared on-disk JSON persistence.
+jest.spyOn(fs, 'existsSync').mockImplementation(file =>
+  path.basename(String(file)) === 'gcsc.db' ? false : exists(file));
+jest.spyOn(fs, 'writeFileSync').mockImplementation((file, ...args) => {
+  if (path.basename(String(file)) !== 'gcsc.db') return write(file, ...args);
+});
 const mod = require('../pure-server');
 
 const server = mod;
