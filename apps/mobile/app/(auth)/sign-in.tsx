@@ -6,7 +6,7 @@ import { Header } from '../../components/Header';
 import { Input } from '../../components/Input';
 import { Screen } from '../../components/Screen';
 import { ApiError } from '../../lib/api';
-import { login } from '../../lib/auth';
+import { login, loginWithWallet } from '../../lib/auth';
 import { primeSessionFromBackend } from '../../lib/webauth';
 import { colors, spacing, typography } from '../../lib/tokens';
 
@@ -45,6 +45,22 @@ export default function SignIn() {
     }
   }
 
+  async function handleWalletSignIn() {
+    if (submitting) return;
+    setError(null);
+    setSubmitting(true);
+    try {
+      const user = await loginWithWallet();
+      const target = user.role === 'contractor' ? '/(contractor)/jobs' : '/(homeowner)/jobs';
+      router.replace(target);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : (err as ApiError).message;
+      setError(message || 'WebAuth sign in failed');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
     <Screen>
       <Header title="Welcome back" subtitle="Sign in to continue to SmartContractor" />
@@ -57,6 +73,7 @@ export default function SignIn() {
           placeholder="you@example.com"
           autoCapitalize="none"
           keyboardType="email-address"
+          autoComplete="email"
         />
         <Input
           label="Password"
@@ -64,9 +81,10 @@ export default function SignIn() {
           onChangeText={setPassword}
           placeholder="••••••••"
           secureTextEntry
+          autoComplete="current-password"
         />
         {error && (
-          <Text style={[typography.caption, { color: colors.danger }]}>{error}</Text>
+          <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={[typography.caption, { color: colors.danger }]}>{error}</Text>
         )}
         <Text style={[typography.caption, { color: colors.brand, alignSelf: 'flex-end' }]}>
           Forgot password?
@@ -75,13 +93,18 @@ export default function SignIn() {
 
       <View style={styles.actions}>
         <Button
-          label={submitting ? 'Signing in…' : 'Sign in'}
+          label="Sign in"
+          loading={submitting}
           fullWidth
           onPress={handleSignIn}
           disabled={submitting}
         />
-        {/* Wallet-first login is a future feature; the button was a no-op and
-            confused testers, so it is removed until the flow exists. */}
+        <Button
+          label="Continue with WebAuth wallet"
+          fullWidth
+          onPress={handleWalletSignIn}
+          disabled={submitting}
+        />
       </View>
 
       <Text style={[typography.caption, { color: colors.textMuted, textAlign: 'center' }]}>

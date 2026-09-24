@@ -37,9 +37,16 @@
   {
     "path": "apps/web/src/services/api.ts",
     "sourceBlob": "386771574699c2d98c025c8bcae2e27b91bfa9c9",
-    "sha256": "07a93f9f5df941a60382655d7af5835532f99c4d696a09d1cd27725635ba32d1",
-    "reason": "Explicit API origin (existing adaptation) plus typed HTTP status for scoped authentication error handling. P3.1: expose authenticated document download and mandatory expectedRevision on document review.",
-    "test": "npm run check; npm run test:api; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage; npm --prefix apps/web run build; browser document review smoke"
+    "sha256": "5cf759b085518a71662fa290c03b3cae5a7865a4d583f5f234ac80031f8ea971",
+    "reason": "Preserve explicit API origin and typed HTTP errors; expose authenticated document download with mandatory expectedRevision and add wallet-first challenge/verify methods while suppressing stale application JWT headers on unauthenticated wallet routes.",
+    "test": "npm run check; npm run test:api; npm run test:web-wallet-login; npm run build:web; browser document review smoke"
+  },
+  {
+    "path": "apps/web/src/pages/dashboard/AccountAccess.tsx",
+    "sourceBlob": "6eecb5d7c25b12dcf5091364a945c268d8ed1eca",
+    "sha256": "5724358f05670f7df1fe770b48085166dc5ae16bc8f44b7435e3c0f1053f628d",
+    "reason": "Add an active WebAuth login command to login mode, reusing the existing status/loading state and the reviewed sign-only wallet-first service; registration and email login remain unchanged.",
+    "test": "npm run test:web-wallet-login; npm run build:web"
   },
   {
     "path": "apps/mobile/lib/api.ts",
@@ -175,11 +182,123 @@
     "test": "npm run check; npm run test:api; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage; npm --prefix apps/web run build; browser document review smoke"
   },
   {
+    "path": "apps/mobile/app.json",
+    "sourceBlob": "34e7fb48f1cefe1fffbda1c5ffd28b33a80c5699",
+    "sha256": "f9c4b806a87c09b989ab6de5e47a2cdbaab9e71a421d1c6e0244ca45c39cdd46",
+    "reason": "Advance candidate to 0.1.4/versionCode 6 for the explicit USB sign-only wallet probe without uninstalling user data. No APK or device acceptance implied.",
+    "test": "node --test tests/mobile-apk.test.mjs; version regression failed before correction"
+  },
+  {
+    "path": "apps/mobile/package.json",
+    "sourceBlob": "4c492c185d9c189ae5ab919457976b40f381df7c",
+    "sha256": "eeecd4981efd2f3a80a404953c8e6ed88aa30c80138dedaed5ebf2d4a53d00bd",
+    "reason": "Retain Expo native run commands and guarded standalone APK build. Pin Material-compatible React Native Paper and explicitly declare the existing Expo icon family for the mobile design foundation.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; npm run check"
+  },
+  {
+    "path": "apps/mobile/package-lock.json",
+    "sourceBlob": "9b2b588f37c3bb646c10a285f08b665996ca4483",
+    "sha256": "01b384d1809c393f0a99460883d444f6947157947e1d8956090d0338d15f8a48",
+    "reason": "Lock Paper 5.15.3 and its six newly installed packages without unrelated upgrades; installation disabled lifecycle scripts.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; npm run check"
+  },
+  {
+    "path": "apps/mobile/app/(auth)/sign-in.tsx",
+    "sourceBlob": "67b9f324ea5fb59de86c7c8fb56a8588d4bb3671",
+    "sha256": "b429f1b696cd4392ca148091fb0411d49fce989e276ad1f42eeb9fa59e5c69d3",
+    "reason": "Preserve accessible email login and activate the previously absent WebAuth command through the reviewed wallet-first challenge/sign/verify flow; no payment or broadcast action is used.",
+    "test": "npm run test:wallet-login-client; npm run test:wallet-proof-client; npm run check:mobile-types; physical WebAuth acceptance remains open"
+  },
+  {
+    "path": "apps/mobile/app/(contractor)/_layout.tsx",
+    "sourceBlob": "f9536c49791c370015635d2e0424ce1080478a0c",
+    "sha256": "38e2ff20b26d193c9b815cd549564b7288e120e04e02061c0e72fcdb4c0f8da3",
+    "reason": "Use shared accessible role tabs with real icons and explicit hidden detail routes; retain all existing route files.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/app/(homeowner)/_layout.tsx",
+    "sourceBlob": "9ff26f42b838d6a8047c572b53f0dcef901a52c1",
+    "sha256": "d29426a518b9ddddd1fc2c84703c58197f1a4f5dfd65fb534e1c137cd1ca8355",
+    "reason": "Use shared accessible role tabs with real icons and explicit hidden detail routes; retain all existing route files.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/app/_layout.tsx",
+    "sourceBlob": "41af3e10e5fe6a1cb594a835e297ee3332c30f77",
+    "sha256": "2d637a5d218047da2c4d6dd554c2052b0e335b968048e4f2bbc0782cac2ce3d8",
+    "reason": "Retain Material theme and icons. Only an exact wallet-probe deep link in an explicitly enabled diagnostic build skips normal hydration, preserving existing application credentials during USB diagnostics.",
+    "test": "npm run test:mobile-design; npm run test:wallet-device-probe; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/app/(contractor)/profile.tsx",
+    "sourceBlob": "7c2445c10ba77a8aae3422be637b52983832e509",
+    "sha256": "1cb78861c3ab338b500412d1c6b39726dbc68afddf204bdcc0b062db8e5382c1",
+    "reason": "Remove the fictional shared review score and show unavailable reviews honestly; wrap selectable account/profile values without changing account actions.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/components/Avatar.tsx",
+    "sourceBlob": "b4f7789fe82d125c1a72571cd0586de0fa560375",
+    "sha256": "e66616a9d9b2e738dd93140bbd4dcc523a0d4f8642b330bb211dd359a9dc3e33",
+    "reason": "Use contrasting on-brand initials with the shared light palette.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/components/Badge.tsx",
+    "sourceBlob": "1ea8668dacadf45537fd0637ad00ea3701177309",
+    "sha256": "2783209e3871063b212866da7d7f33b0346098a3b539a5d7f62f857318fffd53",
+    "reason": "Use contrasting badge text and normal letter spacing with the shared light palette.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/components/Button.tsx",
+    "sourceBlob": "0184a22a2c72e0961289f981c51a7d05843141c5",
+    "sha256": "3947efb8d6ba35b831e1e990b2bf77e2cd204b786e77769008e27cb2d397c473",
+    "reason": "Use Material ripple/loading primitives, accessible disabled/busy state, a 56dp minimum and wrapping labels without changing consumers' callbacks.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/components/Input.tsx",
+    "sourceBlob": "e0ad54bc96bab1726d6cda1d5fea6d6e6454fd79",
+    "sha256": "f1e33a119adf2fc464430e7f9c5613fc0ad806e067cbeac2021a3e2ab34e2f19",
+    "reason": "Adopt outlined Material input with labels, helper state, focus and explicit password visibility; preserve controlled value callbacks.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; browser UI verification in MOBILE-DESIGN.md"
+  },
+  {
+    "path": "apps/mobile/components/Screen.tsx",
+    "sourceBlob": "39271b0a6db5042e7afd9e4eb02e04adbded2b85",
+    "sha256": "dc730daaa39be9df686fe35dc81f09fde371094c5f3a130cc6fd2a17b957ef3c",
+    "reason": "Constrain wide content and provide keyboard-aware scroll/forms with handled taps.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; native keyboard acceptance remains open"
+  },
+  {
+    "path": "apps/mobile/lib/tokens.ts",
+    "sourceBlob": "136d415e5244d0211deb1a09be9de7b5efbf2810",
+    "sha256": "9a75644ba24c893808eaae2ea2ba67d1a6bf867adf44daf2f7927e7bc8280e20",
+    "reason": "Define a neutral light work-focused palette, contrasting semantic colors, readable typography, compact corners and minimum touch dimensions.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/app/(homeowner)/profile.tsx",
+    "sourceBlob": "2d7664da35e4e1e5ec49c0af70e4bc92702b7975",
+    "sha256": "b4e5135ad1c7d1b798efce860aa01ab062d0f23169a4cad49e5f3185f2f41970",
+    "reason": "Wrap selectable full account values consistently for both roles; no change to profile or wallet actions.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; browser UI verification in MOBILE-DESIGN.md"
+  },
+  {
     "path": "apps/mobile/lib/webauth.ts",
     "sourceBlob": "b3ffa5c39bb62d63dbb21babef2768546796edd4",
     "sha256": "f0923333a2ee656940e01f1bf5dd3a0406839b5a3d501e98e155f3626e763031",
     "reason": "P2.2 candidate: add an explicit sign-only ownership-proof adapter using the existing native SDK session. No UI caller, binding, login, or broadcast activation.",
     "test": "npm run test:wallet-proof-client; npm run check:mobile-types; npm run check; independent wallet SDK serialization review"
+  },
+  {
+    "path": "apps/mobile/lib/auth.ts",
+    "sourceBlob": "4e7e9d388994624f7b45a8cc0601c76c62ccab24",
+    "sha256": "1569907e4ad5af3650b2721f2692928bc307a06604be901bf10ca8b50c99553d",
+    "reason": "Use the shared wallet-first application login orchestration for the frozen unauthenticated challenge/verify HTTP contract, sign-only WebAuth proof and existing local session persistence.",
+    "test": "npm run test:wallet-login-client; npm run test:wallet-proof-client; npm run test:wallet-restore; npm run check:mobile-types"
   },
   {
     "path": "apps/web/src/services/webauth.ts",

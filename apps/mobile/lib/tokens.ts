@@ -1,26 +1,33 @@
 export const colors = {
-  bg: '#0B0F17',
-  surface: '#141A24',
-  surfaceAlt: '#1C2433',
-  border: '#27324A',
-  text: '#F4F6FA',
-  textMuted: '#8A94A8',
-  textDim: '#5C6678',
-  brand: '#FF7A1A',
-  brandDark: '#E5660A',
-  accent: '#3DD9A6',
-  warning: '#FFB020',
-  danger: '#FF5C5C',
-  homeowner: '#5B8DEF',
-  contractor: '#FF7A1A',
+  bg: '#F6F8F8',
+  surface: '#FFFFFF',
+  surfaceAlt: '#EDF1F1',
+  border: '#CCD5D4',
+  text: '#172421',
+  textMuted: '#4E625C',
+  textDim: '#596C66',
+  brand: '#A64200',
+  brandDark: '#803300',
+  onBrand: '#FFFFFF',
+  accent: '#08734F',
+  warning: '#856000',
+  danger: '#B3261E',
+  homeowner: '#005B9A',
+  contractor: '#A64200',
 } as const;
 
 export const radius = {
   sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
+  md: 8,
+  lg: 8,
+  xl: 16,
   pill: 999,
+} as const;
+
+export const control = {
+  minTouch: 48,
+  primaryHeight: 56,
+  contentMaxWidth: 760,
 } as const;
 
 export const spacing = {
@@ -33,12 +40,12 @@ export const spacing = {
 } as const;
 
 export const typography = {
-  display: { fontSize: 32, fontWeight: '700' as const, lineHeight: 40 },
-  h1: { fontSize: 24, fontWeight: '700' as const, lineHeight: 32 },
-  h2: { fontSize: 20, fontWeight: '600' as const, lineHeight: 28 },
-  h3: { fontSize: 17, fontWeight: '600' as const, lineHeight: 24 },
-  body: { fontSize: 15, fontWeight: '400' as const, lineHeight: 22 },
-  bodyStrong: { fontSize: 15, fontWeight: '600' as const, lineHeight: 22 },
-  caption: { fontSize: 13, fontWeight: '400' as const, lineHeight: 18 },
-  micro: { fontSize: 11, fontWeight: '500' as const, lineHeight: 14 },
+  display: { fontSize: 28, fontWeight: '700' as const, lineHeight: 36, letterSpacing: 0 },
+  h1: { fontSize: 24, fontWeight: '700' as const, lineHeight: 32, letterSpacing: 0 },
+  h2: { fontSize: 20, fontWeight: '600' as const, lineHeight: 28, letterSpacing: 0 },
+  h3: { fontSize: 17, fontWeight: '600' as const, lineHeight: 24, letterSpacing: 0 },
+  body: { fontSize: 16, fontWeight: '400' as const, lineHeight: 24, letterSpacing: 0 },
+  bodyStrong: { fontSize: 16, fontWeight: '600' as const, lineHeight: 24, letterSpacing: 0 },
+  caption: { fontSize: 14, fontWeight: '400' as const, lineHeight: 20, letterSpacing: 0 },
+  micro: { fontSize: 12, fontWeight: '500' as const, lineHeight: 18, letterSpacing: 0 },
 } as const;

@@ -1,5 +1,22 @@
 const fail = code => { throw new Error(code); };
 const hex256 = /^[a-f0-9]{64}$/;
+const nameAlphabet = '.12345abcdefghijklmnopqrstuvwxyz';
+
+function encodeName(name) {
+  if (typeof name !== 'string' || name.length > 12) fail('wallet_proof_challenge_invalid');
+  let value = 0n;
+  for (let index = 0; index <= 12; index += 1) {
+    const symbol = index < name.length ? nameAlphabet.indexOf(name[index]) : 0;
+    if (symbol < 0 || (index === 12 && symbol > 15)) fail('wallet_proof_challenge_invalid');
+    value |= BigInt(index === 12 ? symbol & 0x0f : symbol & 0x1f)
+      << BigInt(index === 12 ? 0 : 64 - (5 * (index + 1)));
+  }
+  const bytes = [];
+  for (let index = 0; index < 8; index += 1) {
+    bytes.push(Number((value >> BigInt(index * 8)) & 0xffn).toString(16).padStart(2, '0'));
+  }
+  return bytes.join('');
+}
 
 function bytesHex(value) {
   if (typeof value === 'string' && value.length <= 16384 && /^(?:[a-fA-F0-9]{2})+$/.test(value)) {
@@ -28,11 +45,11 @@ function validateChallenge(challenge, now) {
     || !Number.isSafeInteger(challenge.issuedAt) || !Number.isSafeInteger(challenge.expiresAt)
     || challenge.expiresAt - challenge.issuedAt < 1000 || challenge.expiresAt - challenge.issuedAt > 300000
     || !Array.isArray(tx?.actions) || tx.actions.length !== 1
-    || action?.account !== 'eosio' || action.name !== 'reqauth'
+    || action?.account !== '' || action.name !== 'identity'
     || !Array.isArray(action.authorization) || action.authorization.length !== 1
     || action.authorization[0].actor !== challenge.accountName
     || action.authorization[0].permission !== challenge.permission
-    || typeof action.data !== 'string' || !/^[a-f0-9]{16}$/.test(action.data)
+    || action.data !== `01${encodeName(challenge.accountName)}${encodeName(challenge.permission)}`
     || !Array.isArray(tx.context_free_actions) || tx.context_free_actions.length !== 1
     || nonce?.account !== 'eosio.null' || nonce.name !== 'nonce'
     || !Array.isArray(nonce.authorization) || nonce.authorization.length !== 0

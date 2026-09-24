@@ -8,7 +8,7 @@ export function createBuildPlan(inputEnv) {
     throw new Error('Local Android baseline requires an explicit loopback or emulator API URL.');
   }
   const env = Object.fromEntries(Object.entries(inputEnv).filter(([key]) =>
-    /^(path|systemroot|windir|comspec|temp|tmp|home|userprofile|appdata|localappdata)$/i.test(key)));
+    /^(path|pathext|os|systemroot|windir|comspec|temp|tmp|home|userprofile|appdata|localappdata)$/i.test(key)));
   Object.assign(env, {
     NODE_ENV: 'production', CI: '1', EXPO_OFFLINE: '1', EXPO_NO_TELEMETRY: '1',
     EXPO_NO_DOTENV: '1', EXPO_PUBLIC_API_BASE_URL: origin,
