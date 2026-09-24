@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api, type GcscUser } from '../services/api';
@@ -18,6 +18,7 @@ import {
   Loader2,
   ShieldCheck,
   Activity,
+  MessageCircle,
 } from 'lucide-react';
 import { getProfile, initials } from './dashboard/format';
 import type { Section } from './dashboard/types';
@@ -28,6 +29,7 @@ import { AccountAccess } from './dashboard/AccountAccess';
 const ProjectsPanel = lazy(() => import('./dashboard/ProjectsPanel').then((m) => ({ default: m.ProjectsPanel })));
 const EstimatorPanel = lazy(() => import('./dashboard/EstimatorPanel').then((m) => ({ default: m.EstimatorPanel })));
 const BidsPanel = lazy(() => import('./dashboard/BidsPanel').then((m) => ({ default: m.BidsPanel })));
+const ChatPanel = lazy(() => import('./dashboard/ChatPanel').then((m) => ({ default: m.ChatPanel })));
 const LoansFinancingPanel = lazy(() => import('./dashboard/LoansFinancingPanel').then((m) => ({ default: m.LoansFinancingPanel })));
 const ProfilePanel = lazy(() => import('./dashboard/ProfilePanel').then((m) => ({ default: m.ProfilePanel })));
 const CompliancePanel = lazy(() => import('./dashboard/CompliancePanel').then((m) => ({ default: m.CompliancePanel })));
@@ -37,10 +39,11 @@ const AdminAuditLogPanel = lazy(() => import('./dashboard/AdminAuditLogPanel').t
 const WalletPanel = lazy(() => import('./dashboard/WalletPanel').then((m) => ({ default: m.WalletPanel })));
 const TokenRedirect = lazy(() => import('./dashboard/TokenRedirect').then((m) => ({ default: m.TokenRedirect })));
 
-const navItems: { key: Section; label: string; icon: typeof LayoutDashboard; adminOnly?: boolean }[] = [
+const navItems: { key: Section; label: string; icon: typeof LayoutDashboard; adminOnly?: boolean; participantOnly?: boolean }[] = [
   { key: 'projects', label: 'Projects', icon: LayoutDashboard },
   { key: 'estimator', label: 'Estimator', icon: Calculator },
   { key: 'bids', label: 'My Bids', icon: ClipboardList },
+  { key: 'chat', label: 'Chat', icon: MessageCircle, participantOnly: true },
   { key: 'loans', label: 'Loans', icon: DollarSign },
   { key: 'profile', label: 'Profile', icon: UserCircle },
   { key: 'compliance', label: 'Compliance', icon: ShieldCheck },
@@ -56,6 +59,14 @@ export default function Dashboard() {
   const [user, setUser] = useState<GcscUser | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [registrationNotice, setRegistrationNotice] = useState<{ email?: string; phone?: string } | null>(null);
+  const [chatBidId, setChatBidId] = useState<number | null>(null);
+
+  const openChatForBid = useCallback((bidId: number) => {
+    setChatBidId(bidId);
+    setActiveSection('chat');
+    setMobileMenuOpen(false);
+  }, []);
+  const consumeChatBid = useCallback(() => setChatBidId(null), []);
 
   useEffect(() => {
     let mounted = true;
@@ -105,11 +116,13 @@ export default function Dashboard() {
 
     switch (activeSection) {
       case 'projects':
-        return <ProjectsPanel user={user} />;
+        return <ProjectsPanel user={user} onOpenChat={openChatForBid} />;
       case 'estimator':
         return <EstimatorPanel />;
       case 'bids':
-        return <BidsPanel user={user} />;
+        return <BidsPanel user={user} onOpenChat={openChatForBid} />;
+      case 'chat':
+        return <ChatPanel user={user} initialBidId={chatBidId} onBidConsumed={consumeChatBid} />;
       case 'loans':
         return <LoansFinancingPanel user={user} />;
       case 'profile':
@@ -117,17 +130,17 @@ export default function Dashboard() {
       case 'compliance':
         return <CompliancePanel user={user} />;
       case 'admin-review':
-        return user.role === 'admin' ? <AdminDocumentReviewPanel /> : <ProjectsPanel user={user} />;
+        return user.role === 'admin' ? <AdminDocumentReviewPanel /> : <ProjectsPanel user={user} onOpenChat={openChatForBid} />;
       case 'admin-financing':
-        return user.role === 'admin' ? <AdminFinancingPrechecksPanel /> : <ProjectsPanel user={user} />;
+        return user.role === 'admin' ? <AdminFinancingPrechecksPanel /> : <ProjectsPanel user={user} onOpenChat={openChatForBid} />;
       case 'admin-audit':
-        return user.role === 'admin' ? <AdminAuditLogPanel /> : <ProjectsPanel user={user} />;
+        return user.role === 'admin' ? <AdminAuditLogPanel /> : <ProjectsPanel user={user} onOpenChat={openChatForBid} />;
       case 'wallet':
         return user ? <WalletPanel user={user} onUserChange={setUser} /> : null;
       case 'token':
         return <TokenRedirect />;
       default:
-        return <ProjectsPanel user={user} />;
+        return <ProjectsPanel user={user} onOpenChat={openChatForBid} />;
     }
   };
 
@@ -147,7 +160,8 @@ export default function Dashboard() {
   }
 
   const profile = getProfile(user);
-  const visibleNavItems = navItems.filter((item) => !item.adminOnly || user.role === 'admin');
+  const visibleNavItems = navItems.filter((item) =>
+    (!item.adminOnly || user.role === 'admin') && (!item.participantOnly || user.role === 'homeowner' || user.role === 'contractor'));
 
   return (
     <div className="min-h-[100dvh] bg-white flex">

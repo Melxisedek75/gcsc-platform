@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, ClipboardList, RefreshCw } from 'lucide-react';
+import { Loader2, ClipboardList, MessageCircle, RefreshCw } from 'lucide-react';
 import { api, type GcscBid, type GcscUser } from '../../services/api';
 import { formatCurrency, formatDate, bidStatusLabel } from './format';
 import { StatusBadge } from './shared';
 import { createLatestRequestGate } from '../../services/latest-request.mjs';
 
-export function BidsPanel({ user }: { user: GcscUser }) {
+export function BidsPanel({ user, onOpenChat }: { user: GcscUser; onOpenChat: (bidId: number) => void }) {
   const [filter, setFilter] = useState<string>('All');
   const [bids, setBids] = useState<GcscBid[]>([]);
   const [loading, setLoading] = useState(true);
@@ -160,12 +160,13 @@ export function BidsPanel({ user }: { user: GcscUser }) {
                 <th className="text-left px-4 py-3 font-semibold text-[#0F172A] text-xs uppercase tracking-wider">Timeline</th>
                 <th className="text-left px-4 py-3 font-semibold text-[#0F172A] text-xs uppercase tracking-wider">Status</th>
                 <th className="text-left px-4 py-3 font-semibold text-[#0F172A] text-xs uppercase tracking-wider">Date</th>
+                <th className="text-left px-4 py-3 font-semibold text-[#0F172A] text-xs uppercase tracking-wider">Chat</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-[#64748B]">
+                  <td colSpan={7} className="px-4 py-10 text-center text-[#64748B]">
                     <Loader2 size={18} className="animate-spin inline mr-2" /> Loading bids...
                   </td>
                 </tr>
@@ -179,6 +180,15 @@ export function BidsPanel({ user }: { user: GcscUser }) {
                     <td className="px-4 py-3 text-[#475569]">{bid.proposed_timeline_days || 30} days</td>
                     <td className="px-4 py-3"><StatusBadge status={label} /></td>
                     <td className="px-4 py-3 text-[#475569]">{formatDate(bid.created_at)}</td>
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        onClick={() => onOpenChat(bid.id)}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-[#C4B5FD] px-3 py-1.5 text-xs font-semibold text-[#7B2FF7] hover:bg-[rgba(123,47,247,0.06)]"
+                      >
+                        <MessageCircle size={13} /> Open
+                      </button>
+                    </td>
                   </tr>
                 );
               })}

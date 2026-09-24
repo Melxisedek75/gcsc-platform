@@ -13,6 +13,7 @@ import {
   UserCircle,
   ClipboardList,
   RefreshCw,
+  MessageCircle,
 } from 'lucide-react';
 import {
   api,
@@ -234,7 +235,7 @@ function BidComposer({ project, onSubmitted }: { project: GcscProject; onSubmitt
   );
 }
 
-export function ProjectsPanel({ user }: { user: GcscUser }) {
+export function ProjectsPanel({ user, onOpenChat }: { user: GcscUser; onOpenChat: (bidId: number) => void }) {
   const [filter, setFilter] = useState<string>('All');
   const [search, setSearch] = useState('');
   const [projects, setProjects] = useState<GcscProject[]>([]);
@@ -567,6 +568,13 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
                         >
                           <UserCircle size={14} /> View profile
                         </Link>
+                        <button
+                          type="button"
+                          onClick={() => onOpenChat(bid.id)}
+                          className="inline-flex items-center gap-2 rounded-full border border-[#C4B5FD] px-4 py-2 text-xs font-semibold text-[#7B2FF7] hover:bg-[rgba(123,47,247,0.06)] transition-colors"
+                        >
+                          <MessageCircle size={14} /> Open chat
+                        </button>
                         {bid.status === 'pending' && selectedProject.status === 'open' && (
                           <button
                             onClick={() => void acceptBid(bid)}

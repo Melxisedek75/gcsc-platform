@@ -37,9 +37,9 @@
   {
     "path": "apps/web/src/services/api.ts",
     "sourceBlob": "386771574699c2d98c025c8bcae2e27b91bfa9c9",
-    "sha256": "5cf759b085518a71662fa290c03b3cae5a7865a4d583f5f234ac80031f8ea971",
-    "reason": "Preserve explicit API origin and typed HTTP errors; expose authenticated document download with mandatory expectedRevision and add wallet-first challenge/verify methods while suppressing stale application JWT headers on unauthenticated wallet routes.",
-    "test": "npm run check; npm run test:api; npm run test:web-wallet-login; npm run build:web; browser document review smoke"
+    "sha256": "524369e0c6d898f6c8b514ba66a0d257bba31bdce59dfc7f9590c28e4e8716c0",
+    "reason": "Preserve explicit API origin and typed HTTP errors; expose document review, wallet-first challenge/verify and participant chat methods while suppressing stale application JWT headers on unauthenticated wallet routes.",
+    "test": "npm run check; npm run test:api; npm run test:web-wallet-login; node scripts/check-chat-ui.mjs; npm run build:web; browser document and chat smoke"
   },
   {
     "path": "apps/web/src/pages/dashboard/AccountAccess.tsx",
@@ -310,15 +310,29 @@
   {
     "path": "apps/web/src/pages/dashboard/BidsPanel.tsx",
     "sourceBlob": "c9573afbbd78338281811aff2e0186d530001035",
-    "sha256": "a4180245037a306160053e22303a313fa09b5fe3176cd12ea2814d0f5315ec3b",
-    "reason": "Add accessible loading/error/retry/empty states, replace the wide mobile table with stable bid cards, and ignore stale out-of-order refresh responses while retaining the desktop table and existing API behavior.",
-    "test": "npm run test:web-jobs-bids-states; npm run build:web; npm run lint:web"
+    "sha256": "8e481626d3d9972c549512dc373ab0c9974716fec111b5c9f4883ccc9d431946",
+    "reason": "Add accessible loading/error/retry/empty states, stable mobile bid cards and stale-response protection while exposing participant chat navigation without changing bid API behavior.",
+    "test": "npm run test:web-jobs-bids-states; node scripts/check-chat-ui.mjs; npm run build:web; npm run lint:web"
   },
   {
     "path": "apps/web/src/pages/dashboard/ProjectsPanel.tsx",
     "sourceBlob": "11b314e2e4936411906e898cadb2cf94356a2a18",
-    "sha256": "9876ce217394f47ab4732c7b169a1afa93b4ccb71dfc735a653cc5859244faa8",
-    "reason": "Expose accessible loading and recoverable API error states, ignore stale out-of-order refresh responses, and clear failed refresh data without changing project, bid, escrow or milestone API behavior.",
-    "test": "npm run test:web-jobs-bids-states; npm run build:web; npm run lint:web"
+    "sha256": "068ccdacb1e293782eb71fa2ea512083cb233d45cd3823d5bb12188e47e9b2b0",
+    "reason": "Expose accessible loading and recoverable API error states, ignore stale out-of-order refresh responses, and add participant chat navigation without changing project, bid, escrow or milestone API behavior.",
+    "test": "npm run test:web-jobs-bids-states; node scripts/check-chat-ui.mjs; npm run build:web; npm run lint:web"
+  },
+  {
+    "path": "apps/web/src/pages/Dashboard.tsx",
+    "sourceBlob": "ba747aeac2490dd44470a4816daa546962701fb4",
+    "sha256": "3970b4322b758bf8c9f27b72b5118b7b98feba07b50639a1b19065807f331378",
+    "reason": "Add the participant chat destination and route bid/project chat actions into it without changing authentication, payment or project ownership behavior.",
+    "test": "node scripts/check-chat-ui.mjs --playwright-dir <installed node_modules>; npm run build:web"
+  },
+  {
+    "path": "apps/web/src/pages/dashboard/types.ts",
+    "sourceBlob": "dd088ca4c0b5a8327fbe86a8c204808712d3b27b",
+    "sha256": "ddb9007cea89bfc91879de117f73208c1dc02e94919df42defef28d4d3b68682",
+    "reason": "Add the chat dashboard destination to the existing typed navigation union.",
+    "test": "npm --prefix apps/web run build; node scripts/check-chat-ui.mjs --playwright-dir <installed node_modules>"
   }
 ]

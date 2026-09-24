@@ -11,6 +11,7 @@ codex/monorepo-publication. Week: 2026-09-22 through 2026-09-28.
 | Design worker | C:\gcsc-platform\.worktrees\web-design | codex/web-design-system-20260914 @ a587c2ab | apps/web jobs/bids UI and design evidence; no auth/payment/API changes | Independently approved responsive states and latest-request guard. Next: browser/live-API acceptance; no auth/payment changes |
 | QA worker | C:\gcsc-platform\.worktrees\qa | codex/wallet-proof-20260914 @ e58c4931 | tests, scripts, CI and review evidence; no production code | Baseline exact candidates; test replay, expiry, account/network substitution, concurrency and PostgreSQL persistence |
 | Publication / coordinator | C:\gcsc-platform\.worktrees\publication | codex/monorepo-publication @ 3aba4508 | docs/migration, docs/product, docs/whitepaper | Maintain the single plan, reconcile evidence and prepare integration order; no public whitepaper replacement |
+| Web chat candidate | C:\gcsc-platform\.worktrees\web-chat | codex/web-chat-integration-20260923 | apps/web chat consumer, focused fixtures and chat evidence | independent review, then canonical API/PostgreSQL browser acceptance |
 
 These are repository ownership lanes, not a promise of three always-running paid
 models. Codex CLI is another interface to an agent, not an additional model.

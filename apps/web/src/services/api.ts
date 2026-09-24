@@ -187,6 +187,48 @@ export interface GcscBid {
   created_at: string
 }
 
+export interface GcscChatCounterparty {
+  id: number
+  full_name: string
+  role: 'homeowner' | 'contractor'
+}
+
+export interface GcscChatThread {
+  id: number
+  project_id: number
+  homeowner_id: number
+  contractor_id: number
+  title: string
+  counterparty: GcscChatCounterparty
+  can_send: boolean
+  last_sequence: number
+  created_at: string
+  updated_at: string
+}
+
+export interface GcscChatMessage {
+  id: number
+  thread_id: number
+  sequence: number
+  sender_id: number
+  client_message_id: string
+  text: string
+  created_at: string
+}
+
+export interface GcscChatThreadList {
+  threads: GcscChatThread[]
+  next_before: number | null
+  has_more: boolean
+}
+
+export interface GcscChatMessageList {
+  thread: GcscChatThread
+  messages: GcscChatMessage[]
+  next_after: number
+  has_more: boolean
+}
+
 export interface GcscEscrow {
   id: number
   project_id: number
@@ -378,6 +420,23 @@ class ApiClient {
   }
   acceptBid(id: number) {
     return this.request(`/bids/${id}/accept`, { method: 'POST' })
+  }
+
+  // CHAT
+  openChatThread(bidId: number): Promise<{ thread: GcscChatThread }> {
+    return this.request('/chat/threads', { method: 'POST', body: JSON.stringify({ bid_id: bidId }) })
+  }
+  getChatThreads(before?: number, limit = 50): Promise<GcscChatThreadList> {
+    const params = new URLSearchParams({ limit: String(limit) })
+    if (before !== undefined) params.set('before', String(before))
+    return this.request(`/chat/threads?${params.toString()}`)
+  }
+  getChatMessages(threadId: number, after = 0, limit = 50): Promise<GcscChatMessageList> {
+    const params = new URLSearchParams({ after: String(after), limit: String(limit) })
+    return this.request(`/chat/threads/${threadId}/messages?${params.toString()}`)
+  }
+  sendChatMessage(threadId: number, body: { text: string; client_message_id: string }): Promise<{ message: GcscChatMessage; duplicate: boolean }> {
+    return this.request(`/chat/threads/${threadId}/messages`, { method: 'POST', body: JSON.stringify(body) })
   }
 
   // ESCROW
