@@ -40,6 +40,8 @@ test('SQL export is exactly the runtime transaction including preflight and lock
   const update = migrationStatements.findIndex(sql => sql.startsWith('UPDATE milestone_chain_txs'));
   const add = migrationStatements.findIndex(sql => sql.includes('ADD CONSTRAINT milestone_chain_txs_action_check'));
   assert.ok(drop >= 0 && drop < update && update < add);
+  assert.ok(migrationStatements.some(sql => sql.includes('CREATE TABLE IF NOT EXISTS wallet_challenges')));
+  assert.ok(migrationStatements.some(sql => sql.includes('idx_wallet_challenges_expiry')));
 });
 
 test('failed DDL rolls back, never commits and releases the failed connection', async () => {

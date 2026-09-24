@@ -34,9 +34,9 @@ test('challenge is canonical, unpredictable, and contains no payment actions', (
   expect(first.challengeId).toMatch(/^[a-f0-9]{64}$/);
   expect(challenge().challengeId).not.toBe(first.challengeId);
   expect(first.transaction.actions).toEqual([{
-    account: 'eosio', name: 'reqauth',
+    account: '', name: 'identity',
     authorization: [{ actor: context.accountName, permission: context.permission }],
-    data: expect.stringMatching(/^[a-f0-9]{16}$/),
+    data: expect.stringMatching(/^01[a-f0-9]{32}$/),
   }]);
   const nonceAction = first.transaction.context_free_actions[0];
   expect(nonceAction).toMatchObject({ account: 'eosio.null', name: 'nonce', authorization: [] });

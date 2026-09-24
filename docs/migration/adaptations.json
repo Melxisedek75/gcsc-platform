@@ -9,8 +9,8 @@
   {
     "path": "services/api/v3/pure-server.js",
     "sourceBlob": "952128e9316fe78bef42dba8ddc7b04eb09e29e5",
-    "sha256": "3ca446048fad63942d55ecb8dc2910c94e5061cf63e8bc970b9ba3d376e77b1e",
-    "reason": "Require verified wallet ownership before payment challenges and bid readiness; invalidate changed identity proof; enforce single-key authority threshold and remove the ownership-check environment bypass. Move all 90 schema statements to one shared source; transact and serialize schema initialization, reject known incompatible legacy shapes and drop the old action CHECK before updating legacy values. Bootstrap remains after successful schema commit. P3.1: fresh stored admin ACL, private revision-bound file download, strict nonempty base64, conditional version review and audit metadata. P3.1 chat: PostgreSQL-only pair-isolated threads, fresh participant ACL, bounded payload/pagination/rate limits, idempotent ordered sends and atomic metadata audit. No wallet or native changes.",
+    "sha256": "a86d430b72a607b7007d4f2444aea1b07e517d1ebf788fb59357d05ce978069e",
+    "reason": "Require verified wallet ownership before payment challenges and bid readiness; invalidate changed identity proof; enforce single-key authority threshold and remove the ownership-check environment bypass. Add wallet-first canonical transaction proof, durable single-use challenge storage, strict XPR Testnet endpoint identity, direct-peer rate limiting and production JWT-secret fail-closed validation. Use one shared transactional schema source, including wallet challenges, profile documents, projects, chat and payment state. Preserve fresh admin ACL, revision-bound document review and PostgreSQL-only participant chat controls.",
     "test": "npm run check; npm run test:api; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage; npm --prefix apps/web run build; browser document review smoke"
   },
   {
