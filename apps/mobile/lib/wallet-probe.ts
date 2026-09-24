@@ -89,6 +89,10 @@ export function probeErrorMessage(error: unknown): string {
   if (message.includes('transaction_mismatch')) return 'WebAuth changed the transaction. Proof rejected.';
   if (message.includes('signature_missing')) return 'Unsupported signature format. No authentication granted.';
   if (message.includes('bytes_missing')) return 'WebAuth did not return signed transaction bytes.';
+  if (message.includes('session_changed')) return 'WebAuth returned a different signer or permission. Proof rejected.';
+  if (message.includes('result_unsupported')) return 'WebAuth returned an unsupported proof response.';
+  if (message.includes('broadcast')) return 'WebAuth attempted to broadcast the proof. Proof rejected.';
+  if (message.includes('challenge_invalid')) return 'The ownership challenge was invalid.';
   if (message.includes('expired')) return 'The challenge expired.';
   if (/cancel|reject|closed/i.test(message)) return 'Wallet request cancelled.';
   if (/timeout|abort/i.test(message)) return 'Wallet request timed out.';

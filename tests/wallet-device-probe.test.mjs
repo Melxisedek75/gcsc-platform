@@ -101,6 +101,13 @@ test('probe launch guard precedes any application session access', () => {
   assert.doesNotMatch(probe, /AsyncStorage|clearSession|saveSession|primeSessionFromBackend/);
 });
 
+test('probe presents bounded messages for rejected proof responses', () => {
+  const probe = fs.readFileSync(new URL('../apps/mobile/lib/wallet-probe.ts', import.meta.url), 'utf8');
+  for (const code of ['session_changed', 'result_unsupported', 'broadcast', 'challenge_invalid']) {
+    assert.match(probe, new RegExp(`message\\.includes\\('${code}'\\)`));
+  }
+});
+
 test('probe rejects unsupported wallet signatures without exposing the proof in logs', async t => {
   const events = [];
   const { call } = await fixture(t, { onEvent: value => events.push(value) });
