@@ -12,6 +12,7 @@
     "test:wallet-login-client": "node --test tests/wallet-login-client.test.mjs",
     "test:web-wallet-login": "node --test tests/web-wallet-login.test.mjs",
     "test:wallet-device-probe": "node --test tests/wallet-device-probe.test.mjs",
+    "test:web-jobs-bids-states": "node --test tests/web-jobs-bids-states.test.mjs tests/latest-request.test.mjs",
     "check:api-syntax": "node --check services/api/v3/pure-server.js",
     "check:web": "node scripts/check-web.mjs",
     "check:integration-contracts": "node scripts/check-api-contracts.mjs",

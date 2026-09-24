@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { motion } from 'framer-motion';
 import {
@@ -12,6 +12,7 @@ import {
   Building2,
   UserCircle,
   ClipboardList,
+  RefreshCw,
 } from 'lucide-react';
 import {
   api,
@@ -21,6 +22,7 @@ import {
   type GcscProject,
   type GcscUser,
 } from '../../services/api';
+import { createLatestRequestGate } from '../../services/latest-request.mjs';
 import { fieldClass, formatCurrency, projectStatusLabel, bidStatusLabel } from './format';
 import { StatusBadge, ContractorTrustBadge } from './shared';
 import { MilestoneManager } from './MilestoneManager';
@@ -245,15 +247,19 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState('');
   const [detailMessage, setDetailMessage] = useState('');
+  const requestGate = useRef(createLatestRequestGate()).current;
   const isHomeowner = user.role === 'homeowner';
 
   const loadProjects = useCallback(async () => {
+    const requestId = requestGate.start();
     setLoading(true);
     setError('');
+    setProjects([]);
     try {
+      let nextProjects: GcscProject[];
       if (isHomeowner) {
         const response = await api.getMyProjects();
-        setProjects(response.projects || []);
+        nextProjects = response.projects || [];
       } else {
         const [openResponse, myResponse] = await Promise.all([
           api.getProjects({ status: 'open' }),
@@ -263,18 +269,27 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
         for (const project of [...(openResponse.projects || []), ...(myResponse.projects || [])]) {
           merged.set(project.id, project);
         }
-        setProjects([...merged.values()]);
+        nextProjects = [...merged.values()];
       }
+      if (!requestGate.isCurrent(requestId)) return;
+      setProjects(nextProjects);
     } catch (err) {
+      if (!requestGate.isCurrent(requestId)) return;
+      setProjects([]);
+      setSelectedProject(null);
+      setSelectedBids([]);
+      setSelectedEscrow(null);
+      setSelectedMilestones([]);
       setError(err instanceof Error ? err.message : 'Could not load projects');
     } finally {
-      setLoading(false);
+      if (requestGate.isCurrent(requestId)) setLoading(false);
     }
-  }, [isHomeowner]);
+  }, [isHomeowner, requestGate]);
 
   useEffect(() => {
     void loadProjects();
-  }, [loadProjects]);
+    return () => requestGate.invalidate();
+  }, [loadProjects, requestGate]);
 
   const loadDetails = async (projectId: number) => {
     setDetailLoading(true);
@@ -340,6 +355,7 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
       className="space-y-6"
+      aria-busy={loading}
     >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -386,7 +402,18 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
         </div>
       </div>
 
-      {error && <div className="glass-card p-4 text-sm text-[#EF4444]">{error}</div>}
+      {error && (
+        <div role="alert" className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border border-[#FECACA] bg-[#FEF2F2] p-4 text-sm text-[#B91C1C]">
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={() => void loadProjects()}
+            className="inline-flex min-h-11 items-center justify-center gap-2 border border-[#FCA5A5] bg-white px-4 font-semibold text-[#991B1B] hover:bg-[#FFF7F7]"
+          >
+            <RefreshCw size={16} /> Retry
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-[1.35fr_0.95fr] gap-6">
         <div className="glass-card overflow-hidden">
