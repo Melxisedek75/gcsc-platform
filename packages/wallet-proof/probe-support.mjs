@@ -7,6 +7,19 @@ export function isWalletProbeLink(value, enabled) {
   } catch { return false; }
 }
 
+export function inspectWalletLaunch(value, expectedScheme) {
+  const uriLength = typeof value === 'string' ? Math.min(value.length, 100000) : 0;
+  if (typeof value !== 'string' || typeof expectedScheme !== 'string'
+    || !value.startsWith(`${expectedScheme}:`)) {
+    return { scheme: 'unexpected', uriLength, transport: 'invalid' };
+  }
+  return {
+    scheme: expectedScheme,
+    uriLength,
+    transport: value === `${expectedScheme}://link` ? 'session-link' : 'encoded-request',
+  };
+}
+
 export function inspectProofResponse(result) {
   const signatures = Array.isArray(result?.signatures) ? result.signatures : [];
   const prefix = signatures.length ? String(signatures[0]).match(/^SIG_(K1|R1|WA)_/)?.[1] : null;

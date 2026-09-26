@@ -102,7 +102,10 @@ export function createOwnershipProofRequester({ transact, getIdentity, now = Dat
     pending = true;
     let operation;
     try {
-      operation = Promise.resolve(transact({ transaction: challenge.transaction }, { broadcast: false, noModify: true }))
+      // Some wallet SDKs normalize the transaction object in place. Hand them a
+      // disposable copy so the validated challenge snapshot remains immutable.
+      const transactionForWallet = JSON.parse(JSON.stringify(challenge.transaction));
+      operation = Promise.resolve(transact({ transaction: transactionForWallet }, { broadcast: false, noModify: true }))
         .then(value => { pending = false; return value; }, error => { pending = false; throw error; });
     } catch (error) { pending = false; throw error; }
     let timer;

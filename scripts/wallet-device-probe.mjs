@@ -12,6 +12,7 @@ const contextFields = ['purpose', 'audience', 'chainId', 'accountName', 'permiss
 // Disposable USB diagnostic listener, NOT an application API or authentication service.
 export function createProbeServer({ now = Date.now, maxChallenges = 20, onEvent = () => {} } = {}) {
   const pending = new Map();
+  let lastLaunch = null;
   let lastObservation = null;
   let lastResult = null;
   function event(value) { onEvent({ at: new Date(now()).toISOString(), ...value }); }
@@ -26,9 +27,9 @@ export function createProbeServer({ now = Date.now, maxChallenges = 20, onEvent 
         || (req.headers.origin && req.headers.origin !== audience)) return json(res, 403, { code: 'probe_local_only' });
       if (req.method === 'GET' && req.url === '/probe/status') {
         return json(res, 200, { mode: 'diagnostic-only', chainId, authenticationGranted: false,
-          broadcast: false, lastObservation, lastResult });
+          broadcast: false, lastLaunch, lastObservation, lastResult });
       }
-      if (req.method !== 'POST' || !['/probe/challenge', '/probe/proof', '/probe/observation'].includes(req.url)) {
+      if (req.method !== 'POST' || !['/probe/challenge', '/probe/proof', '/probe/launch', '/probe/observation'].includes(req.url)) {
         return json(res, 404, { code: 'probe_route_not_found' });
       }
       if (req.headers['content-type']?.split(';')[0] !== 'application/json') return json(res, 415, { code: 'probe_json_required' });
@@ -42,6 +43,16 @@ export function createProbeServer({ now = Date.now, maxChallenges = 20, onEvent 
       const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
       if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('probe_body_invalid');
       for (const [id, record] of pending) if (now() >= record.expiresAt) pending.delete(id);
+      if (req.url === '/probe/launch') {
+        if (!['proton-dev', 'unexpected'].includes(body.scheme)
+          || !Number.isInteger(body.uriLength) || body.uriLength < 0 || body.uriLength > 100000
+          || !['encoded-request', 'session-link', 'invalid'].includes(body.transport)) {
+          throw new Error('probe_launch_invalid');
+        }
+        lastLaunch = Object.fromEntries(['scheme', 'uriLength', 'transport'].map(field => [field, body[field]]));
+        event({ stage: 'wallet_request_launch', ...lastLaunch });
+        return json(res, 200, { recorded: true });
+      }
       if (req.url === '/probe/challenge') {
         if (pending.size >= maxChallenges) return json(res, 429, { code: 'probe_challenge_limit' });
         const record = createOwnershipChallenge({ purpose: 'link', audience, chainId,

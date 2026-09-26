@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import { createProbeServer } from '../scripts/wallet-device-probe.mjs';
-import { inspectProofResponse, isWalletProbeLink } from '../packages/wallet-proof/probe-support.mjs';
+import { inspectProofResponse, inspectWalletLaunch, isWalletProbeLink } from '../packages/wallet-proof/probe-support.mjs';
 
 const require = createRequire(new URL('../services/api/v3/package.json', import.meta.url));
 const { Key, Numeric, digestFromSerializedData } = require('@proton/js');
@@ -77,6 +77,29 @@ test('response observations contain only shape, never signature/payload/session 
   assert(!JSON.stringify(summary).includes('secret-signature'));
 });
 
+test('wallet launch observations distinguish encoded requests without retaining payloads', () => {
+  const secretPayload = 'SECRET_ESR_PAYLOAD';
+  const encoded = inspectWalletLaunch(`proton-dev:${secretPayload}`, 'proton-dev');
+  assert.deepEqual(encoded, { scheme: 'proton-dev', uriLength: 29, transport: 'encoded-request' });
+  assert(!JSON.stringify(encoded).includes(secretPayload));
+  assert.deepEqual(inspectWalletLaunch('proton-dev://link', 'proton-dev'), {
+    scheme: 'proton-dev', uriLength: 17, transport: 'session-link',
+  });
+  assert.deepEqual(inspectWalletLaunch('proton:SECRET', 'proton-dev'), {
+    scheme: 'unexpected', uriLength: 13, transport: 'invalid',
+  });
+});
+
+test('probe records only sanitized wallet launch metadata', async t => {
+  const events = [];
+  const { call } = await fixture(t, { onEvent: value => events.push(value) });
+  const launch = inspectWalletLaunch('proton-dev:SECRET_ESR_PAYLOAD', 'proton-dev');
+  assert.equal((await call('/probe/launch', launch)).status, 200);
+  const status = await call('/probe/status');
+  assert.deepEqual(status.body.lastLaunch, launch);
+  assert(!JSON.stringify(events).includes('SECRET_ESR_PAYLOAD'));
+});
+
 test('only exact probe deep links bypass normal app hydration in explicit probe builds', () => {
   assert.equal(isWalletProbeLink('smartcontractor://wallet-probe', true), true);
   for (const link of [null, 'smartcontractor://webauth-callback', 'evil://wallet-probe',
@@ -97,6 +120,7 @@ test('probe launch guard precedes any application session access', () => {
   assert.match(probe, /restoreSession: false, storagePrefix: '@gcsc\/probe\/'/);
   assert.match(probe, /storage: \{ read: async key => memory.get\(key\) \?\? null/);
   assert.match(probe, /const result = await link\.transact\(/);
+  assert.match(probe, /probeTransport,/);
   assert.doesNotMatch(probe, /const result = await session\.transact\(/);
   assert.doesNotMatch(probe, /AsyncStorage|clearSession|saveSession|primeSessionFromBackend/);
 });

@@ -91,14 +91,21 @@ export function getSession(): WebAuthSession | null {
 // Sign-only adapter. API binding/login stays disabled until the candidate protocol is accepted.
 export async function signWalletOwnershipChallenge(challenge: OwnershipChallenge, signal?: AbortSignal) {
   const session = protonSession;
-  if (!session) throw new Error('Connect WebAuth before requesting an ownership proof.');
+  const link = protonLink;
+  if (!session || !link) throw new Error('Connect WebAuth before requesting an ownership proof.');
   let request = ownershipRequests.get(session);
   if (!request) {
     request = createOwnershipProofRequester({
-      getIdentity: () => protonSession === session ? {
+      getIdentity: () => protonSession === session && protonLink === link ? {
         actor: session.auth.actor, permission: session.auth.permission, chainId: session.chainId,
       } : null,
-      transact: (args, options) => session.transact(args as Parameters<typeof session.transact>[0], options),
+      // The paired session channel opens only `proton-dev://link` and depends on
+      // push delivery. The parent transport sends the complete sign-only ESR,
+      // which is the path verified against Android WebAuth on XPR Testnet.
+      transact: (args, options) => link.transact(
+        args as Parameters<typeof link.transact>[0],
+        { ...options, chain: session.chainId },
+      ),
     });
     ownershipRequests.set(session, request);
   }

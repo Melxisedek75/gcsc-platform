@@ -134,3 +134,39 @@ authority, app HTTP/JWT, desktop and lead purchase acceptance remain open.
 - Device acceptance remains OPEN: only the owner may approve the next WebAuth
   sign-only prompt. Until its response is observed and exact bytes verify, this
   is a built and installed fix candidate, not a completed wallet login.
+
+## 25 September Physical-Device Acceptance
+
+- Pixel 8 USB transport, `adb reverse tcp:10001 tcp:10001`, XPR Network Testnet,
+  WebAuth pairing and the isolated `smartcontractor://wallet-probe` screen were
+  verified again. Pairing returned `gcsctoken111@active`.
+- Safe launch telemetry proved the signing request was a complete
+  `proton-dev:<encoded request>` URI, not `proton-dev://link`. Only its scheme,
+  length and transport class were retained; no ESR payload or session secret
+  was logged.
+- WebAuth returned one K1 signature with 490 serialized transaction bytes.
+  The first response exposed a client defect: Proton Link normalizes the passed
+  transaction object in place, which invalidated the requester's protected
+  challenge snapshot during its post-wallet validation.
+- `createOwnershipProofRequester` now gives the SDK a disposable deep copy while
+  retaining the originally validated snapshot. A regression test that mutates
+  the SDK input failed before the fix and passes after it.
+- Rebuilt APK SHA256:
+  `45eebc74963a66af0b893839bb849bcc5335596fdecd695e70817d6549a0e281`.
+  Existing and candidate signer SHA256 remained
+  `fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c`;
+  `adb install -r` returned `Success` without uninstall or data clearing.
+- Final physical-device result: encoded request length 698, signature type K1,
+  signature count 1, 490 exact bytes, `broadcastResult:false`. The local verifier
+  recovered public key
+  `PUB_K1_5dzdoCoNxAN8i9V3mysg1EL6TLBE4Z9fifpgotYdxAP4johQjG` and returned
+  `exactBytes:true`, `authenticationGranted:false`, `authorityChecked:false`,
+  `broadcast:false`.
+- The production mobile ownership consumer now also uses parent `link.transact`
+  with the paired chain, matching the proven device transport. Focused checks:
+  34/34 PASS, mobile TypeScript PASS, `git diff --check` PASS.
+
+This closes native delivery plus exact-byte proof acceptance for the isolated
+device probe. It does not by itself close application login: current on-chain
+authority verification, wallet-first API persistence/JWT issuance, combined
+branch integration and end-to-end login acceptance remain required.

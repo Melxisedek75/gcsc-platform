@@ -1,6 +1,8 @@
 import ProtonRNSDK, { type LinkSession, type ProtonLink } from '@proton/react-native-sdk';
+import type { LinkTransport } from '@proton/link';
+import { Linking } from 'react-native';
 import { createOwnershipProofRequester, type OwnershipChallenge, type OwnershipProof } from '../../../packages/wallet-proof/request-proof.mjs';
-import { inspectProofResponse } from '../../../packages/wallet-proof/probe-support.mjs';
+import { inspectProofResponse, inspectWalletLaunch } from '../../../packages/wallet-proof/probe-support.mjs';
 
 export const WALLET_PROBE_ENABLED = process.env.EXPO_PUBLIC_WALLET_PROBE === '1';
 export const WALLET_PROBE_ORIGIN = 'http://127.0.0.1:10001';
@@ -10,7 +12,7 @@ let signingPending = false;
 const memory = new Map<string, string>();
 
 export async function probeApi<T>(path: string, body?: unknown): Promise<T> {
-  if (!WALLET_PROBE_ENABLED || !['status', 'challenge', 'proof', 'observation'].includes(path)) {
+  if (!WALLET_PROBE_ENABLED || !['status', 'challenge', 'proof', 'launch', 'observation'].includes(path)) {
     throw new Error('probe_disabled');
   }
   const controller = new AbortController();
@@ -33,7 +35,27 @@ export interface ProbeSession {
   sign: (challenge: OwnershipChallenge, signal: AbortSignal) => Promise<OwnershipProof>;
 }
 
-export async function connectProbeWallet(onObservation: (summary: ReturnType<typeof inspectProofResponse>) => void): Promise<ProbeSession> {
+type LaunchObservation = ReturnType<typeof inspectWalletLaunch>;
+
+function createProbeTransport(onLaunch: (summary: LaunchObservation) => void): LinkTransport {
+  return {
+    onRequest(request, cancel) {
+      const deviceRequest = request.clone();
+      deviceRequest.setInfoKey('same_device', true);
+      deviceRequest.setInfoKey('return_path', 'smartcontractor://wallet-probe');
+      request.setInfoKey('req_account', 'gcsctoken111');
+      deviceRequest.setInfoKey('req_account', 'gcsctoken111');
+      const uri = deviceRequest.encode(true, false);
+      onLaunch(inspectWalletLaunch(uri, request.getScheme()));
+      Linking.openURL(uri).catch(cancel);
+    },
+  };
+}
+
+export async function connectProbeWallet(
+  onObservation: (summary: ReturnType<typeof inspectProofResponse>) => void,
+  onLaunch: (summary: LaunchObservation) => void = () => undefined,
+): Promise<ProbeSession> {
   if (!WALLET_PROBE_ENABLED) throw new Error('probe_disabled');
   if (pairingPending || signingPending) throw new Error('wallet_proof_request_pending');
   pairingPending = true;
@@ -57,6 +79,10 @@ export async function connectProbeWallet(onObservation: (summary: ReturnType<typ
     link = result.link;
     session = result.session;
   } finally { pairingPending = false; }
+  const probeTransport = createProbeTransport(summary => {
+    onLaunch(summary);
+    probeApi('launch', summary).catch(() => undefined);
+  });
   const request = createOwnershipProofRequester({
     getIdentity: () => ({ ...session.auth, chainId: session.chainId }),
     transact: async (args, options) => {
@@ -70,6 +96,7 @@ export async function connectProbeWallet(onObservation: (summary: ReturnType<typ
         const result = await link.transact(
           args as Parameters<typeof link.transact>[0],
           { ...options, chain: session.chainId },
+          probeTransport,
         );
         const summary = inspectProofResponse(result);
         onObservation(summary);

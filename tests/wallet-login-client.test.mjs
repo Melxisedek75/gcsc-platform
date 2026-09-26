@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 
 import { createWalletFirstLogin } from '../packages/wallet-proof/login-client.mjs';
 
@@ -119,4 +120,14 @@ test('abort after signing prevents verify and session persistence', async () => 
   await assert.rejects(login({ signal: controller.signal }), /wallet_login_cancelled/);
   assert.equal(verifyCount, 0);
   assert.equal(saveCount, 0);
+});
+
+test('mobile wallet login sends the full ownership ESR through the parent link transport', () => {
+  const source = fs.readFileSync(new URL('../apps/mobile/lib/webauth.ts', import.meta.url), 'utf8');
+  const start = source.indexOf('export async function signWalletOwnershipChallenge');
+  const end = source.indexOf('export async function loadWebauthSession', start);
+  const implementation = source.slice(start, end);
+  assert.match(implementation, /const link = protonLink;/);
+  assert.match(implementation, /link\.transact\(/);
+  assert.doesNotMatch(implementation, /session\.transact\(/);
 });

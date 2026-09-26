@@ -15,7 +15,7 @@ function fixture(result, options = {}) {
   const calls = [];
   const request = createOwnershipProofRequester({
     getIdentity: () => signer, now: () => now,
-    transact: async (...args) => { calls.push(args); return typeof result === 'function' ? result() : result; },
+    transact: async (...args) => { calls.push(args); return typeof result === 'function' ? result(...args) : result; },
     ...options,
   });
   return { request, calls };
@@ -40,6 +40,17 @@ test('native typed SDK result preserves exact serialized bytes and signature', a
     signatures: [{ toString: () => signature }], signer,
   });
   assert.equal((await request(record)).serializedTransaction, record.serializedTransaction);
+});
+
+test('wallet SDK mutation cannot alter the protected challenge snapshot', async () => {
+  const record = challenge();
+  const originalTransaction = structuredClone(record.transaction);
+  const { request } = fixture(({ transaction }) => {
+    transaction.actions[0].account = 'wallet-mutated';
+    return response(record);
+  });
+  assert.equal((await request(record)).serializedTransaction, record.serializedTransaction);
+  assert.deepEqual(record.transaction, originalTransaction);
 });
 
 for (const result of [

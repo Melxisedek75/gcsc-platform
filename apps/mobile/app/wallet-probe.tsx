@@ -12,6 +12,7 @@ export default function WalletProbe() {
   const [busy, setBusy] = useState(false);
   const [stage, setStage] = useState('Ready');
   const [shape, setShape] = useState('Not received');
+  const [launch, setLaunch] = useState('Not sent');
   const [error, setError] = useState('');
   const alive = useRef(true);
   const controller = useRef<AbortController | null>(null);
@@ -30,9 +31,14 @@ export default function WalletProbe() {
       let timer: ReturnType<typeof setTimeout> | undefined;
       try {
         const connected = await Promise.race([
-          connectProbeWallet(summary => {
-            if (alive.current) setShape(`${summary.signatureType} / ${summary.serializedBytes} bytes / ${summary.format}`);
-          }),
+          connectProbeWallet(
+            summary => {
+              if (alive.current) setShape(`${summary.signatureType} / ${summary.serializedBytes} bytes / ${summary.format}`);
+            },
+            summary => {
+              if (alive.current) setLaunch(`${summary.transport} / ${summary.uriLength} chars / ${summary.scheme}`);
+            },
+          ),
           new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('probe_timeout')), 90000); }),
         ]);
         if (alive.current) { setSession(connected); setStage('Paired; ownership not yet checked'); }
@@ -67,6 +73,7 @@ export default function WalletProbe() {
         <Text style={styles.label}>Connection</Text><Text style={styles.value}>{stage}</Text>
         <Text style={styles.label}>Account</Text><Text style={styles.value}>{session ? `${session.accountName}@${session.permission}` : 'Not paired'}</Text>
         <Text style={styles.label}>Wallet response</Text><Text style={styles.value}>{shape}</Text>
+        <Text style={styles.label}>Wallet request</Text><Text style={styles.value}>{launch}</Text>
         <Text style={styles.label}>Application login</Text><Text style={styles.value}>Not granted</Text>
         <Text style={styles.label}>Payments</Text><Text style={styles.value}>None. Broadcast disabled.</Text>
       </View>

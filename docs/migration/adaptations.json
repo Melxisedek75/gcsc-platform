@@ -331,9 +331,9 @@
   {
     "path": "apps/mobile/lib/webauth.ts",
     "sourceBlob": "b3ffa5c39bb62d63dbb21babef2768546796edd4",
-    "sha256": "f0923333a2ee656940e01f1bf5dd3a0406839b5a3d501e98e155f3626e763031",
-    "reason": "P2.2 candidate: add an explicit sign-only ownership-proof adapter using the existing native SDK session. No UI caller, binding, login, or broadcast activation.",
-    "test": "npm run test:wallet-proof-client; npm run check:mobile-types; npm run check; independent wallet SDK serialization review"
+    "sha256": "c9e6344deb0350a0c13136a6811f4616689f109308fcb6507a956df4137a9f65",
+    "reason": "P2.2 mobile wallet-login candidate: send the sign-only ownership transaction through the parent Proton Link transport so Android WebAuth receives the complete ESR instead of the unavailable paired push channel. Device proof remained broadcast false.",
+    "test": "node --test tests/wallet-login-client.test.mjs tests/wallet-proof-client.test.mjs tests/wallet-device-probe.test.mjs; npm run check:mobile-types; npm run check; Pixel 8 XPR Testnet exact-byte probe in MOBILE-WALLET-PROBE.md"
   },
   {
     "path": "apps/mobile/lib/auth.ts",
