@@ -1724,6 +1724,35 @@ function walletChallengeStore() {
     : createJsonChallengeStore({ database: db, save: saveDatabase });
 }
 
+function walletSessionBinding(req) {
+  const authorization = String(req.headers.authorization || '');
+  if (!authorization.startsWith('Bearer ')) return null;
+  return crypto.createHash('sha256')
+    .update('gcsc-wallet-link-v1\0')
+    .update(authorization.slice(7))
+    .digest('hex');
+}
+
+async function findVerifiedWalletOwner(accountName, permission) {
+  if (USE_POSTGRES) {
+    const result = await queryPostgres(
+      `SELECT * FROM users
+       WHERE is_active = TRUE
+         AND wallet->>'accountName' = $1
+         AND COALESCE(wallet->>'permission', 'active') = $2
+         AND wallet->>'verified' = 'true'
+       ORDER BY id ASC
+       LIMIT 1`,
+      [accountName, permission],
+    );
+    return normalizeStoredUser(result.rows[0]);
+  }
+  return db.users.find(user => user.is_active
+    && user.wallet?.accountName === accountName
+    && (user.wallet.permission || 'active') === permission
+    && user.wallet.verified === true) || null;
+}
+
 async function findUserByVerifiedWallet(accountName, permission) {
   if (USE_POSTGRES) {
     const result = await queryPostgres(
@@ -2959,7 +2988,11 @@ function rateLimitConfigForRoute(pattern) {
   }
   if (pattern === 'GET /api/auth/profile' || pattern === 'PUT /api/auth/profile') return { name: 'profile', ...configs.profile };
   if (pattern === 'GET /api/auth/documents' || pattern === 'POST /api/auth/documents') return { name: 'documents', ...configs.documents };
-  if (pattern === 'POST /api/wallet/connect') return { name: 'wallet', ...configs.wallet };
+  if (pattern === 'POST /api/wallet/connect'
+    || pattern === 'POST /api/wallet/ownership/challenge'
+    || pattern === 'POST /api/wallet/ownership/verify') {
+    return { name: 'wallet', ...configs.wallet };
+  }
   if (pattern === 'POST /api/bids/:id/accept') return { name: 'bid_accept', ...configs.bid_accept };
   return null;
 }
@@ -3521,6 +3554,102 @@ const routes = {
       ...complianceForUser(user, documents),
       documents,
     });
+  },
+
+  'POST /api/wallet/ownership/challenge': async (req, res) => {
+    const auth = getUser(req);
+    if (!auth) return json(res, 401, { error: 'Unauthorized' });
+    const user = await findUserById(auth.userId);
+    if (!user) return json(res, 404, { error: 'User not found' });
+    if (!user.is_active) return json(res, 403, { error: 'Account is inactive' });
+
+    const body = await parseBody(req);
+    const accountName = cleanString(body.accountName || body.account || body.actor, 12).toLowerCase();
+    const permission = cleanString(body.permission || 'active', 12).toLowerCase();
+    const sessionBinding = walletSessionBinding(req);
+    if (!/^[a-z1-5](?:[a-z1-5.]{0,10}[a-z1-5])?$/.test(accountName)
+      || !/^[a-z1-5](?:[a-z1-5.]{0,10}[a-z1-5])?$/.test(permission)
+      || !sessionBinding) {
+      return json(res, 400, { error: 'Valid wallet identity required', code: 'wallet_proof_config_invalid' });
+    }
+    try {
+      const challenge = createOwnershipChallenge({
+        purpose: 'link',
+        audience: WALLET_PROOF_AUDIENCE,
+        chainId: XPR_TESTNET_CHAIN_ID,
+        accountName,
+        permission,
+        sessionBinding,
+      });
+      await walletChallengeStore().put(challenge);
+      json(res, 200, challenge);
+    } catch (err) {
+      json(res, 503, { error: 'Wallet challenge unavailable', code: err.message || 'wallet_proof_unavailable' });
+    }
+  },
+
+  'POST /api/wallet/ownership/verify': async (req, res) => {
+    const auth = getUser(req);
+    if (!auth) return json(res, 401, { error: 'Unauthorized' });
+    const user = await findUserById(auth.userId);
+    if (!user) return json(res, 404, { error: 'User not found' });
+    if (!user.is_active) return json(res, 403, { error: 'Account is inactive' });
+
+    const body = await parseBody(req);
+    const accountName = cleanString(body.accountName || body.account || body.actor, 12).toLowerCase();
+    const permission = cleanString(body.permission || 'active', 12).toLowerCase();
+    const sessionBinding = walletSessionBinding(req);
+    const context = {
+      purpose: 'link',
+      audience: WALLET_PROOF_AUDIENCE,
+      chainId: XPR_TESTNET_CHAIN_ID,
+      accountName,
+      permission,
+      sessionBinding,
+    };
+    try {
+      const verify = createOwnershipVerifier({
+        store: walletChallengeStore(),
+        verifyAuthority: (identity, signal) => _hooks.verifyOwnershipAuthority(identity, signal),
+      });
+      const identity = await verify(body.proof, context);
+      const existingOwner = await findVerifiedWalletOwner(identity.accountName, identity.permission);
+      if (existingOwner && Number(existingOwner.id) !== Number(user.id)) {
+        return json(res, 409, {
+          error: 'Wallet is already linked to another application account',
+          code: 'wallet_already_linked',
+        });
+      }
+      const wallet = {
+        accountName: identity.accountName,
+        permission: identity.permission,
+        publicKey: identity.publicKey,
+        walletType: 'webauth',
+        verified: true,
+        verifiedAt: new Date().toISOString(),
+        connectedAt: new Date().toISOString(),
+      };
+      const updatedUser = await updateStoredWallet(user, wallet);
+      await recordAuditEvent(req, {
+        actorId: user.id,
+        targetUserId: user.id,
+        action: 'wallet.connected',
+        entityType: 'wallet',
+        entityId: user.id,
+        metadata: {
+          accountName: identity.accountName,
+          permission: identity.permission,
+          chainId: identity.chainId,
+          publicKey: identity.publicKey,
+        },
+      });
+      json(res, 200, { message: 'Wallet ownership verified', wallet, user: publicUser(updatedUser) });
+    } catch (err) {
+      const code = String(err?.message || 'wallet_proof_invalid');
+      const status = code === 'wallet_proof_store_timeout'
+        || code === 'wallet_proof_authority_timeout' ? 503 : 400;
+      json(res, status, { error: 'Wallet proof verification failed', code });
+    }
   },
 
   'POST /api/wallet/challenge': async (req, res) => {

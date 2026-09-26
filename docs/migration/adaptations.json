@@ -9,9 +9,9 @@
   {
     "path": "services/api/v3/pure-server.js",
     "sourceBlob": "952128e9316fe78bef42dba8ddc7b04eb09e29e5",
-    "sha256": "b0f96e4ed21891fa178c411f42702c90e82362144cfe14a4f6289105dedc9800",
-    "reason": "Require verified wallet ownership before payment challenges and bid readiness; add wallet-first canonical transaction proof, durable single-use storage, strict XPR Testnet endpoint identity, non-spoofable direct-peer rate limiting and production JWT-secret fail-closed validation.",
-    "test": "npm run test:api; npm run check:integration-contracts; node --test tests/migration.test.mjs; independent review b95ffe75 findings reproduced and corrected"
+    "sha256": "36b8a4355bd847b5fb62d4a2cbb162cb3b68062bd8c7519ade5aca648d0faca1",
+    "reason": "Require verified wallet ownership before payment challenges and bid readiness; retain wallet-first login and add authenticated canonical sign-only ownership binding tied to the application JWT session, durable single-use storage, current XPR Testnet authority checks, direct-peer rate limiting and production JWT-secret fail-closed validation.",
+    "test": "npm test -- --runInBand (services/api/v3): 227 passed; npm run check:integration-contracts; node --test tests/migration.test.mjs"
   },
   {
     "path": "services/api/v3/tests/payments-402.test.js",
