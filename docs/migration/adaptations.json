@@ -338,9 +338,16 @@
   {
     "path": "apps/mobile/lib/auth.ts",
     "sourceBlob": "4e7e9d388994624f7b45a8cc0601c76c62ccab24",
-    "sha256": "1569907e4ad5af3650b2721f2692928bc307a06604be901bf10ca8b50c99553d",
-    "reason": "Use the shared wallet-first application login orchestration for the frozen unauthenticated challenge/verify HTTP contract, sign-only WebAuth proof and existing local session persistence.",
-    "test": "npm run test:wallet-login-client; npm run test:wallet-proof-client; npm run test:wallet-restore; npm run check:mobile-types"
+    "sha256": "3e030d0e20f79ec4b36442673de98512f44d99d78706982d67ed20c75ab93117",
+    "reason": "Use shared sign-only ownership proof orchestration for both wallet-first login and authenticated wallet binding. Binding calls only the canonical ownership challenge/verify API and accepts only a server-verified wallet response.",
+    "test": "node --test tests/wallet-binding-client.test.mjs tests/wallet-login-client.test.mjs tests/wallet-proof-client.test.mjs; npm run test:wallet-restore; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/app/(auth)/connect-wallet.tsx",
+    "sourceBlob": "f7b47bf1f9dfbb0959a4549996b03535a7b0af6b",
+    "sha256": "a8e1e48dfde23d360bb22c21a3fe8f30d6eba2b1a6f1fe4ebae099a9fc74d1a2",
+    "reason": "Replace metadata-only profile wallet assignment with authenticated canonical ownership binding; preserve existing navigation and session persistence after the server returns a verified wallet.",
+    "test": "node --test tests/wallet-binding-client.test.mjs; npm run check:mobile-types; physical device acceptance remains open"
   },
   {
     "path": "apps/web/src/services/webauth.ts",

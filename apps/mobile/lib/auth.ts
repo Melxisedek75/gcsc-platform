@@ -4,6 +4,7 @@
 import { apiRequest, AuthUser, clearSession, normalizeUser, saveSession, UserRole } from './api';
 import { connectWallet, signWalletOwnershipChallenge } from './webauth';
 import { createWalletFirstLogin } from '../../../packages/wallet-proof/login-client.mjs';
+import { createWalletBinding } from '../../../packages/wallet-proof/binding-client.mjs';
 
 interface AuthResponse {
   message?: string;
@@ -55,6 +56,23 @@ const walletFirstLogin = createWalletFirstLogin<AuthUser>({
 
 export async function loginWithWallet(signal?: AbortSignal): Promise<AuthUser> {
   return normalizeUser(await walletFirstLogin({ signal }));
+}
+
+const walletBinding = createWalletBinding<AuthUser>({
+  connect: connectWallet,
+  issueChallenge: body => apiRequest('/api/wallet/ownership/challenge', {
+    method: 'POST',
+    body,
+  }),
+  sign: signWalletOwnershipChallenge,
+  verify: body => apiRequest<{ user: AuthUser }>('/api/wallet/ownership/verify', {
+    method: 'POST',
+    body,
+  }),
+});
+
+export async function bindWallet(signal?: AbortSignal): Promise<AuthUser> {
+  return normalizeUser(await walletBinding({ signal }));
 }
 
 interface RegisterArgs {
