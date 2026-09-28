@@ -96,6 +96,9 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   правила отмены/возврата и маршрут отправки предложения. Приёмка: один
   документ/API fixtures, одинаково используемые сервером и UI; founder
   подтверждает только коммерческие/юридические условия перед live оплатой.
+  Черновик v1: `docs/product/october-mvp-contract.v1.md` (28 сентября).
+  Он фиксирует границы и предложенные маршруты; машинные fixtures, согласованные
+  consumer-типы и коммерческие условия ещё не утверждены. L03 остаётся открытым.
 - [ ] **L04 / координатор.** Выбрать один preview origin/API/database и
   сценарий восстановления; сверить `xprnet.org` -> `gcsc.store`, cookies/CORS,
   секреты, email-доставку и DNS без изменения production. Приёмка: чистый

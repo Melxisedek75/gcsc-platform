@@ -1,26 +1,26 @@
 {
-  "task": "monorepo-final-integration-review",
-  "status": "LOCAL_INTEGRATION_CANDIDATE_COMPLETE_REVIEW_BLOCKED",
+  "task": "october-launch-mvp-and-marketing",
+  "status": "IN_PROGRESS_SECURITY_FINDINGS_OPEN",
   "owner": "019e7c87-8410-79f1-b86a-eedf78a1aa27",
   "worktree": "C:/gcsc-platform/.worktrees/publication",
   "branch": "codex/monorepo-publication",
   "remote": "https://github.com/Melxisedek75/gcsc-platform",
   "targetBranch": "main",
   "scope": [
-    "Integrate reviewed backend, mobile wallet, ownership proof, web design and web chat candidates into one canonical private monorepo candidate",
-    "Preserve provenance, historical agent instructions and exact verification evidence without production or live-risk actions",
-    "Obtain independent Claude review before updating private main"
+    "Build the October lightweight SmartContractor web journey for owner and contractor with private project previews and project-specific lead access",
+    "Build a truthful professional GCSC marketing site and video package without claiming future financial functions are live",
+    "Close independent security findings and complete local preview acceptance before any authorized production cutover"
   ],
   "leaseUntil": null,
   "baseCommit": "a0834ac7917c3de57ebc02fb542814561469bca2",
-  "candidateCommit": "8cbca0b5498720397434bc497ce34b324c626add",
-  "review": "BLOCKED: Claude Code 2.1.186 returned 401 OAuth access token is invalid. Author verification is green, but no independent verdict exists and private main was not updated.",
-  "result": "Five reviewed candidate branches integrated locally. Integration contracts PASS with 54 routes and 7/7 required entrypoints; root check PASS; API 234/234; wallet proof 15/15; wallet login 5/5; web wallet login 3/3; device probe 10/10; jobs/bids 4/4; chat acceptance 1/1; mobile TypeScript PASS; web production build PASS with 2983 modules; PostgreSQL schema 5/5; diff check PASS. Every registered worktree was clean before this checkpoint.",
-  "next": "Use docs/migration/CHECKLIST.md L01-L25 for the October lightweight launch. L01: independently review the exact current integration candidate, fix findings, repeat gates, then update private main. L03 product/API contract and L18 static marketing work may proceed in separate ownership lanes without waiting for Claude authentication; do not deploy or activate live payments before their gates.",
+  "candidateCommit": "1d1b4c69c223605304be92a18728d2071e1089ba",
+  "review": "Independent read-only Codex review on 2026-09-28: CHANGES_REQUIRED for exact 1d1b4c69 vs a0834ac7. One Critical anonymous project/privacy leak and seven High findings including wallet/lead/payment/auth boundaries. Claude CLI 401 is no longer the only review gate; findings require fixes and new exact-diff review.",
+  "result": "Publication checklist commits d89f15e6 and 8577db59 define October plan and record review. Marketing candidate 65f0029c has static site, generated hero image and video brief; links/assets parse passed, no browser visual acceptance or deploy. Backend worktree contains pre-existing dirty security work plus local privacy patch: 5/5 targeted and 242/242 Jest PASS, node syntax/diff PASS; mock-PG workflow still fails late on pending-vs-failed chain transaction. docs/product/october-mvp-contract.v1.md is a draft, not implemented shared fixtures or approved commerce policy.",
+  "next": "Use checklist L01-L25. First close privacy/security findings in backend lane, diagnose mock-PG pending-vs-failed without weakening checks, run isolated real PG, obtain independent review before integration. In parallel advance L03 shared API fixtures and L18-L21 marketing/video visual/content acceptance. Do not deploy or activate real payments/signatures without separate approval.",
   "integrationBlocker": {
-    "type": "independent-review-authentication",
-    "evidence": "Claude Code 2.1.186: API Error 401 OAuth access token is invalid",
-    "resumeCondition": "An independent reviewer in a separate Codex execution context, or restored Claude CLI, records a verdict for the exact final candidate SHA"
+    "type": "confirmed-security-findings",
+    "evidence": "Independent review of 1d1b4c69: Critical anonymous project data leak; High wallet, lead/payment and auth findings; checklist L01 records the summary",
+    "resumeCondition": "Fix findings, repeat relevant tests including isolated PostgreSQL and consumer journeys, then review the exact final candidate"
   },
   "nativeProbe": {
     "runtimeCommit": "04561155",
@@ -91,7 +91,6 @@
     "candidatePublishedHead": "eb59e0218e8f74ee319372cd404ae63cc6e96d92",
     "candidatePublishedRef": "refs/heads/codex/mobile-design-foundation-20260913"
   },
-  "completedAt": "2026-09-14T21:21:59Z",
   "previousPostgresTask": {
     "task": "local-postgres-projects-baseline",
     "status": "P2_6_BASELINE_REVIEWED_REMAINING_GATES_OPEN",
@@ -101,7 +100,7 @@
     "review": "APPROVED: Beauvoir, independent Sol/high agent01a09e82-0111-7803-ba04-dac9514c52a5, reviewed a0834ac7..e9f954fbb105ba4f6e05ff54c860ecaffec6ff28. Independently ran guards4/4 and real PostgreSQL18.4 tests9/9, exits0; source SHA matches, canonical gcsc.db unchanged and PostgreSQL stopped. Root43/43/API159 remain parent evidence. No main integration or production approval.",
     "result": "Added native PostgreSQL runner without Docker or downloads. Real PostgreSQL18.4:9/9 including parent; runtime schema idempotency, project/bid creation, role isolation, audit, FK/UNIQUE and API module/connection restart pass. Root43/43 plus syntax/static and API159/159 pass. services/api/v3/.tmp/postgres-baseline-ZUU0yU/result.json: testExitCode0, postgresExitCode0. Missing pg_isready diagnosed and replaced by pg driver probe. No mobile, WebAuth or financial runtime edits."
   },
-  "updatedAt": "2026-09-24T05:53:54Z",
+  "updatedAt": "2026-09-28T09:09:32Z",
   "previousMigrationTask": {
     "task": "canonical-postgres-migrations",
     "status": "P2_6_MIGRATION_REVIEWED_REMAINING_GATES_OPEN",
