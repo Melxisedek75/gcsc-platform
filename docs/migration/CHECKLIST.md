@@ -285,15 +285,19 @@ Priority Access specification как будущая версия и не дол�
   браузер запретил локальный `file://` URL по своей политике; визуальная и
   пользовательская приёмка, видеофайлы, юридические тексты и deploy отсутствуют.
   L18/L19 остаются открытыми.
-- В backend worktree поверх существующего dirty security-кандидата добавлена
-  privacy-правка `GET /api/projects`, `/:id`, `/my/projects` и 5 новых
-  негативных тестов. Первый прогон 5/5 FAIL подтвердил утечку; после правки
-  5/5 PASS, полный Jest 242/242 PASS, `node --check` и scoped
-  `git diff --check` PASS. Mock-PG workflow-smoke не завершён: после
-  обновления фикстур кошелька и admin-role поздний шаг ожидает `failed`,
-  получает `pending` у chain transaction (строка 954). Нужны диагностика,
-  реальная изолированная PostgreSQL и независимое ревью до интеграции.
-  L02/L07 остаются открытыми; приватность опубликованного сервиса не подтверждена.
+- В backend worktree `codex/backend-integration` поверх существующего dirty
+  security-кандидата реализованы закрытые черновики, обезличенный публичный
+  preview, отдельный `POST /api/projects/:id/publish` только для владельца и
+  запрет принятия старого предложения к неопубликованному проекту.
+  28 сентября: `npm test -- --runInBand --silent` с локальным test JWT secret
+  PASS (12 suites, 247/247), `npm run test:pg-workflow` PASS в mock-PG,
+  `node --check services/api/v3/pure-server.js` и `git diff --check` PASS.
+  Файл `project-preview-privacy.test.js` покрывает 10 сценариев, включая
+  воспроизведённые до правки 404/400 вместо ожидаемых 401/409. Это dirty
+  кандидат, не commit/интеграция/реальная БД. Новый web consumer всё ещё
+  ожидает прежние поля полного проекта; paid entitlement и проверка на
+  изолированном PostgreSQL отсутствуют. Независимый reviewer указал на этот
+  client mismatch; L02/L06/L07/L08 остаются открытыми.
 
 **Следующий незаблокированный шаг:** L01 и L03 параллельно; L18 может идти в
 отдельном frontend worktree без ожидания кошелька. У backend worktree есть
