@@ -16,11 +16,11 @@
   "candidateCommit": "8cbca0b5498720397434bc497ce34b324c626add",
   "review": "BLOCKED: Claude Code 2.1.186 returned 401 OAuth access token is invalid. Author verification is green, but no independent verdict exists and private main was not updated.",
   "result": "Five reviewed candidate branches integrated locally. Integration contracts PASS with 54 routes and 7/7 required entrypoints; root check PASS; API 234/234; wallet proof 15/15; wallet login 5/5; web wallet login 3/3; device probe 10/10; jobs/bids 4/4; chat acceptance 1/1; mobile TypeScript PASS; web production build PASS with 2983 modules; PostgreSQL schema 5/5; diff check PASS. Every registered worktree was clean before this checkpoint.",
-  "next": "Restore Claude Code authentication, independently review exact candidate 8cbca0b5498720397434bc497ce34b324c626add, fix any findings and repeat gates, then update private main. Begin website work only after this monorepo gate.",
+  "next": "Use docs/migration/CHECKLIST.md L01-L25 for the October lightweight launch. L01: independently review the exact current integration candidate, fix findings, repeat gates, then update private main. L03 product/API contract and L18 static marketing work may proceed in separate ownership lanes without waiting for Claude authentication; do not deploy or activate live payments before their gates.",
   "integrationBlocker": {
     "type": "independent-review-authentication",
     "evidence": "Claude Code 2.1.186: API Error 401 OAuth access token is invalid",
-    "resumeCondition": "Claude CLI authentication restored and an independent verdict recorded for exact candidate SHA"
+    "resumeCondition": "An independent reviewer in a separate Codex execution context, or restored Claude CLI, records a verdict for the exact final candidate SHA"
   },
   "nativeProbe": {
     "runtimeCommit": "04561155",

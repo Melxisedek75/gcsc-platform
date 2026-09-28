@@ -5,6 +5,17 @@
 **Status:** Approved direction; implementation not yet started  
 **Owners:** GCSC founder (product and publication approval), Codex (technical delivery), creative/video services (asset production)
 
+**Schedule update, 2026-09-27:** The October lightweight release scope and
+acceptance gates now live in `docs/migration/CHECKLIST.md` (L00-L25). Its
+15 October pilot and 20 October release-candidate targets supersede the dates
+in section 12 below. For that release, keep the existing static marketing
+entrypoint and add motion progressively; defer the React/Vite migration proposed
+in section 3. Prioritize one hero loop, one explanatory film, truthful feature
+labels and working SmartContractor links. The full film
+slate remains a later creative roadmap, not a blocker for the core registration,
+project, paid-lead and proposal journeys. No actual payment or wallet footage
+may be simulated as a completed production transaction.
+
 ## 1. Objective
 
 Deliver two connected but deliberately separate products:
@@ -268,7 +279,7 @@ Large masters, project files, raw generations, and audio stems live in an approv
 - Claims matrix cross-check against the current implementation and Whitepaper 1.4.
 - Final founder walkthrough and separate code/QA review before publication.
 
-## 12. Delivery Schedule
+## 12. Original Delivery Schedule (Superseded by October MVP Checklist)
 
 ### 23-27 September - audit and creative brief
 
