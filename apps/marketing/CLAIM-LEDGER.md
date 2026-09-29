@@ -13,6 +13,7 @@ not permission to deploy. Recheck against the exact release SHA and live domains
 | `VIDEO-PRODUCTION.md` | Scripts and acceptance criteria only | Film assets, rights, captions and user comprehension tests |
 | `VIDEO-SCRIPTS-A-B.md` | Two local creative directions for a hero loop and explainer | Founder selection, animatic, fact-check and rights review; no video exists |
 | `CNAME` | Intended `xprnet.org` domain | DNS and publication authorization, without changing the live site |
+| `sitemap.xml` and `robots.txt` | Local homepage-only discovery candidate | Verify final domain, hosting root and indexability before deploy; the historical draft stays out of the sitemap but remains crawlable so its `noindex` can be read |
 
 ## Claims allowed in the local candidate
 
