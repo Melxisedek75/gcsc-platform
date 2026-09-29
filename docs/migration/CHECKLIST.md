@@ -288,10 +288,13 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   sitemap, аналитика без лишнего сбора PII, privacy/terms/support links,
   загрузка без сторонних CDN как обязательного условия. Проверка: локальный
   браузер без JS/видео и негативные проверки ссылок.
-- [ ] **L19a / creative / 1 октября.** Написать две версии сценария hero loop
+- [x] **L19a / creative / 29 сентября.** Написать две версии сценария hero loop
   (без звука) и 45-90-секундного объясняющего ролика: реальная проблема,
   работающий MVP, один понятный следующий шаг. Отделить уже доступное от
   planned; не показывать фиктивную подпись, платеж или escrow как live.
+  Проверка: `apps/marketing/VIDEO-SCRIPTS-A-B.md` @ `7500496c` содержит два
+  немых hero loop и два объясняющих сценария 63-67 с. Это только текст;
+  founder choice, съёмка, права, субтитры и browser acceptance остаются открыты.
 - [x] **L19b / creative / 29 сентября.** Раскадровка по секундам, shot list,
   экранный текст, voiceover, права на footage/музыку/голос/AI-генерацию,
   список согласований бренда и фактчекинга. Проверка: `apps/marketing/VIDEO-PRODUCTION.md`
