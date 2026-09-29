@@ -112,6 +112,17 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   syntax/diff PASS. Независимое ревью точного concurrency-среза запущено;
   это не снимает блокеры checkout, платного доступа к полным деталям,
   legacy posting и полного review gate; L01 открыт.
+  Конкурентное ревью SHA `2f67e7977d26db9674d54a14f269049a5171b35b2f326ead8769919f601f7b8c`
+  нашло оставшийся owner-role race при accept; вердикт CHANGES_REQUIRED.
+  Финальный локальный SHA-256 `78331e5226b3a4e3236256375e2c8a125624f379a73b253c7103252a6b74f584`
+  блокирует и перепроверяет активного owner в транзакции. Тест теперь
+  подтверждает `pg_blocking_pids` до commit, а не только 500 мс задержки.
+  Старый `POST /api/payment/job-posting` по умолчанию возвращает 410,
+  не предлагая 25 XPR за бесплатную публикацию; opt-in legacy-маршрут
+  сохранён только для явно включённой совместимости. QA `e1996c35`:
+  PostgreSQL 18.4 10/10 (`postgres-baseline-rTfuJV/result.json`, оба exit 0);
+  backend Jest 253/253, fake-PG и syntax/diff PASS. Новое независимое
+  ревью этого точного diff запущено; paid full details и checkout не готовы.
 - [ ] **L02 / backend + QA.** Завершить локальный security-кандидат:
   JWT/dev routes/admin role/wallet binding/payment pending, проверить
   повторное списание, привязку одного wallet к двум пользователям и хранение
@@ -377,14 +388,14 @@ Priority Access specification как будущая версия и не дол�
   `check:dashboard-live`, точечный ESLint и diff PASS. В default bundle
   отсутствуют строки `Accept and Create Escrow` и `MilestoneManager`.
   Серверные bid/escrow маршруты этим не защищены; P0/P1 находки ревью открыты.
-- Backend dirty candidate на `eb760ed0`, SHA-256 `2f67e7977d26db9674d54a14f269049a5171b35b2f326ead8769919f601f7b8c`:
+- Backend dirty candidate на `eb760ed0`, SHA-256 `78331e5226b3a4e3236256375e2c8a125624f379a73b253c7103252a6b74f584`:
   новый `project_access_entitlements` и серверный guard запрещают bid и
   принятие старого bid без действующего `paid` права на эту пару
   project/contractor. Устаревшая роль подрядчика и некорректная сумма
   отклоняются; старый JWT уже не создаёт приватный draft. PG принятие bid
   транзакционно, отключённого подрядчика принять нельзя. Jest 12 suites/253
-  tests, fake-PG workflow, `node --check` и diff PASS. QA @ `5ae6df14`:
-  isolated PostgreSQL 18.4 9/9 для
+  tests, fake-PG workflow, `node --check` и diff PASS. QA @ `e1996c35`:
+  isolated PostgreSQL 18.4 10/10 для
   draft/publish/privacy, project-specific bid доступа и rollback при
   искусственном отказе escrow INSERT; до исправления проект оставался
   `in_progress` (red evidence в QA-отчёте), а также конкурентных
@@ -392,7 +403,9 @@ Priority Access specification как будущая версия и не дол�
   Узкое ревью предыдущего SHA вернуло
   замечания; после проверки старого JWT SHA изменился. Нет checkout/webhook
   или API-выдачи `paid`; старые гонки проекта/доступа/подрядчика закрыты
-  только в локальном PostgreSQL-кандидате, owner-role и legacy posting открыты.
+  только в локальном PostgreSQL-кандидате; owner-role проверяется внутри
+  PG-транзакции, а новые legacy XPR posting запросы отключены по умолчанию.
+  Paid details, Checkout и полный независимый gate остаются открытыми.
   L01/L08/L10-L13 остаются незакрытыми.
 
 **Следующий незаблокированный шаг:** L01 и L03 параллельно; L18 может идти в
