@@ -8,7 +8,7 @@ not permission to deploy. Recheck against the exact release SHA and live domains
 | Asset | Current role | Open check |
 | --- | --- | --- |
 | `index.html` and `site.css` | Pilot landing page and CTA to `gcsc.store` | Visual, keyboard, mobile and claim review on an approved preview |
-| `whitepaper.html` and `whitepaper.css` | Historical v1.3 strategy draft | Owner and legal approval; v1.4 internal draft is not substituted |
+| `whitepaper.html` and `whitepaper.css` | Historical v1.3 strategy draft, marked `noindex` | Owner and legal approval; v1.4 internal draft is not substituted. `noindex` is not access control |
 | `assets/renovation-hero-v1.png` | Generated concept photograph, not a customer case study | Verify image rights and disclose illustrative use where needed |
 | `VIDEO-PRODUCTION.md` | Scripts and acceptance criteria only | Film assets, rights, captions and user comprehension tests |
 | `VIDEO-SCRIPTS-A-B.md` | Two local creative directions for a hero loop and explainer | Founder selection, animatic, fact-check and rights review; no video exists |
