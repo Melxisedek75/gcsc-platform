@@ -85,6 +85,15 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   реальная DB, кошелёк и платежи reviewer не запускал. Старое одобрение
   `8cbca0b5` не относится к этому SHA. Исправления идут через владельцев
   backend/frontend lanes и новое ревью точного финального diff; L01 открыт.
+  Дополнительное независимое read-only ревью 29 сентября (agent
+  `01a0edd5-92a1-7b42-ac8f-88094d6f5637`) dirty backend на `eb760ed0`
+  и web на `c5d05c87`: `CHANGES_REQUIRED`. P0: `POST /api/bids` допускает предложение
+  по публичному ID без project-specific paid entitlement. P1: путь покупки
+  в web недостижим; PostgreSQL bid-accept не атомарен; старый JWT обходит
+  текущую роль/активность; сервер принимает некорректную сумму. P2:
+  бесплатная публикация сосуществует с платным XPR job-posting, а web всё ещё
+  показывает escrow как часть первого пути. Privacy allowlist reviewer
+  оценил как закрытый локально; L01/L02/L08/L09/L22/L23 открыты.
 - [ ] **L02 / backend + QA.** Завершить локальный security-кандидат:
   JWT/dev routes/admin role/wallet binding/payment pending, проверить
   повторное списание, привязку одного wallet к двум пользователям и хранение
@@ -254,9 +263,12 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   (без звука) и 45-90-секундного объясняющего ролика: реальная проблема,
   работающий MVP, один понятный следующий шаг. Отделить уже доступное от
   planned; не показывать фиктивную подпись, платеж или escrow как live.
-- [ ] **L19b / creative / 3 октября.** Раскадровка по секундам, shot list,
+- [x] **L19b / creative / 29 сентября.** Раскадровка по секундам, shot list,
   экранный текст, voiceover, права на footage/музыку/голос/AI-генерацию,
-  список согласований бренда и фактчекинга. Проверка: storyboard и asset ledger.
+  список согласований бренда и фактчекинга. Проверка: `apps/marketing/VIDEO-PRODUCTION.md`
+  и `VIDEO-SHOT-LIST.md` @ `2d7fe4d5` содержат покадровую раскадровку,
+  VO/on-screen copy, desktop/mobile композиции, asset/rights ledger и gates.
+  Права пока не очищены, фильм не создан; L19c/L19d открыты.
 - [ ] **L19c / creative / 7 октября.** Сделать и просмотреть черновые ролики;
   отсутствие доступа к платному сервису не блокирует текст/аниматик/постеры.
   Проверка: понятность двум новым зрителям без устных пояснений.
@@ -333,6 +345,20 @@ Priority Access specification как будущая версия и не дол�
   уточнённая v1.3-страница ограничивают заявления о готовности. Видео и
   новый v1.4-публичный текст не опубликованы; L18a закрыт только как
   локальная инвентаризация и редактура, не как релизная проверка L21b.
+- `codex/october-web-20260928` @ `69312a66`: пользователь может выйти из
+  ожидающей SMS/email-проверки к входу или новой регистрации; при незавершённом
+  запросе переключение блокировано. `check:auth-registration-feedback`,
+  `check:auth-channel-verification-ui`, `tsc -b`, точечный ESLint и diff
+  PASS. Browser/E2E и существующий аккаунт ещё не проверены; L05 открыт.
+- `codex/marketing-october-20260928` @ `2d7fe4d5`: production shot list
+  готов; footage, голоса, музыка, права, видеоэкспорт и owner approval
+  отсутствуют. L19b - подготовка, а не завершённый видео-продукт.
+- `codex/october-web-20260928` @ `8310c5ec`: legacy escrow acceptance и
+  milestone UI по умолчанию скрыты в октябрьском пути; включение требует
+  явного `VITE_ENABLE_LEGACY_ESCROW_WORKFLOW=true`. Web build (2983 modules),
+  `check:dashboard-live`, точечный ESLint и diff PASS. В default bundle
+  отсутствуют строки `Accept and Create Escrow` и `MilestoneManager`.
+  Серверные bid/escrow маршруты этим не защищены; P0/P1 находки ревью открыты.
 
 **Следующий незаблокированный шаг:** L01 и L03 параллельно; L18 может идти в
 отдельном frontend worktree без ожидания кошелька. У backend worktree есть
