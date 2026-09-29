@@ -201,6 +201,42 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     assert.equal(await bidCount(), before + 1);
   });
 
+  await t.test('escrow insert failure rolls back project and bid acceptance together', async () => {
+    await pool.query(`UPDATE project_access_entitlements SET status='paid'
+      WHERE project_id=$1 AND contractor_id=$2`, [project.id, contractor.id]);
+    await pool.query(`UPDATE users SET phone='555-0100',
+      profile=$2, wallet=$3 WHERE id=$1`, [contractor.id,
+      { companyName: 'Fixture Co', ein: '12-3456789', licenseNumber: 'L-1',
+        serviceArea: 'Seattle', specialties: ['roofing'] },
+      { accountName: 'fixturewallet', permission: 'active', verified: true }]);
+    for (const documentType of ['contractor_license', 'insurance_certificate', 'business_ein']) {
+      await pool.query(`INSERT INTO user_documents (user_id, document_type, status)
+        VALUES ($1, $2, 'approved')`, [contractor.id, documentType]);
+    }
+    const bid = (await pool.query(`SELECT id FROM bids WHERE project_id=$1 AND contractor_id=$2
+      ORDER BY id DESC LIMIT 1`, [project.id, contractor.id])).rows[0];
+    assert.ok(bid);
+    await pool.query('UPDATE users SET is_active=FALSE WHERE id=$1', [contractor.id]);
+    assert.equal((await request('POST', `/api/bids/${bid.id}/accept`, owner)).status, 400);
+    await pool.query('UPDATE users SET is_active=TRUE WHERE id=$1', [contractor.id]);
+    await pool.query(`CREATE FUNCTION fixture_reject_escrow() RETURNS trigger LANGUAGE plpgsql
+      AS $$ BEGIN RAISE EXCEPTION 'fixture escrow insert failure'; END $$`);
+    await pool.query(`CREATE TRIGGER fixture_reject_escrow BEFORE INSERT ON escrow_contracts
+      FOR EACH ROW EXECUTE FUNCTION fixture_reject_escrow()`);
+    try {
+      const response = await request('POST', `/api/bids/${bid.id}/accept`, owner);
+      assert.equal(response.status, 500);
+      assert.deepEqual((await pool.query('SELECT status,escrow_id FROM projects WHERE id=$1', [project.id])).rows,
+        [{ status: 'open', escrow_id: null }]);
+      assert.equal((await pool.query('SELECT status FROM bids WHERE id=$1', [bid.id])).rows[0].status,
+        'pending');
+      assert.equal((await pool.query('SELECT COUNT(*)::int AS count FROM escrow_contracts')).rows[0].count, 0);
+    } finally {
+      await pool.query('DROP TRIGGER fixture_reject_escrow ON escrow_contracts');
+      await pool.query('DROP FUNCTION fixture_reject_escrow()');
+    }
+  });
+
   await t.test('a pre-existing bid on an unpublished draft cannot be accepted', async () => {
     const created = await request('POST', '/api/projects', owner,
       { title: 'Legacy private draft', description: 'Unpublished fixture' });
@@ -225,6 +261,6 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
   fs.writeFileSync(path.join(runDirectory, 'publication-acceptance.json'), JSON.stringify({
     status: 'PASS', apiSourceSha256: sourceSha256, database: 'fresh loopback PostgreSQL',
     projectId: project.id, checks: ['private draft', 'owner authority', 'exact public preview',
-      'project-specific paid bid access', 'legacy bid blocked'],
+      'project-specific paid bid access', 'atomic bid acceptance', 'legacy bid blocked'],
   }, null, 2) + '\n');
 });
