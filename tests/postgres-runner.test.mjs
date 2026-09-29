@@ -1,6 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { testEnvironment } from '../scripts/run-postgres-baseline.mjs';
+import path from 'node:path';
+import { parseRunnerArgs, testEnvironment } from '../scripts/run-postgres-baseline.mjs';
+
+test('PostgreSQL runner keeps baseline default and accepts only the scoped publication suite', () => {
+  const args = ['--postgres-bin', path.resolve('local/postgres/bin')];
+  assert.deepEqual(parseRunnerArgs(args), { binaryDir: args[1], suite: 'baseline' });
+  assert.deepEqual(parseRunnerArgs([...args, '--project-publication']),
+    { binaryDir: args[1], suite: 'project-publication' });
+  assert.throws(() => parseRunnerArgs([...args, '--unknown']));
+  assert.throws(() => parseRunnerArgs([...args, '--project-publication', '--extra']));
+  assert.throws(() => parseRunnerArgs(['--postgres-bin', 'relative/bin', '--project-publication']));
+});
 
 test('PostgreSQL runner strips ambient providers, DB overrides and Node injection', () => {
   const url = 'postgres://127.0.0.1:55432/gcsc_test_baseline';

@@ -1,5 +1,11 @@
 # GCSC: контрольный список завершения проекта
 
+29 сентября: локальный QA-кандидат draft/publish/privacy проверен на свежей PostgreSQL
+18.4 для SHA-256 API `a38589e559a32d8023bdd176c7f54a4b38703e9b19fb9355d9198e631197f365`:
+5/5, прежний PG baseline 39/39, guards 5/5; оба PG-процесса завершены.
+Это не интеграция и не независимое ревью. Команды, evidence и ограничения:
+[PROJECT-PUBLICATION-POSTGRES-ACCEPTANCE.md](PROJECT-PUBLICATION-POSTGRES-ACCEPTANCE.md).
+
 ## Главный план: сначала единый репозиторий
 
 Обновлено: 14 сентября 2026, America/Los_Angeles. Этот раздел определяет текущий

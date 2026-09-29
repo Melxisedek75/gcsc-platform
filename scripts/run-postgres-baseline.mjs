@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, realpath, writeFile } from 'node:fs/promises';
 import net from 'node:net';
 import { createRequire } from 'node:module';
@@ -21,6 +21,14 @@ export function testEnvironment(ambient, databaseUrl, runDirectory) {
     TEST_DATABASE_URL: databaseUrl, DATABASE_URL: databaseUrl,
     GCSC_TEST_RUN_DIRECTORY: runDirectory,
   });
+}
+
+export function parseRunnerArgs(args) {
+  if ((args.length !== 2 && args.length !== 3) || args[0] !== '--postgres-bin'
+    || !path.isAbsolute(args[1]) || (args.length === 3 && args[2] !== '--project-publication')) {
+    throw new Error('Usage: npm run test:postgres:local -- --postgres-bin <absolute PostgreSQL bin directory> [--project-publication]');
+  }
+  return { binaryDir: args[1], suite: args.length === 3 ? 'project-publication' : 'baseline' };
 }
 
 function command(binary, args, env, options = {}) {
@@ -46,10 +54,8 @@ async function unusedPort() {
 }
 
 export async function main(args = process.argv.slice(2)) {
-  if (args.length !== 2 || args[0] !== '--postgres-bin' || !path.isAbsolute(args[1])) {
-    throw new Error('Usage: npm run test:postgres:local -- --postgres-bin <absolute PostgreSQL bin directory>');
-  }
-  const binaryDir = await realpath(args[1]);
+  const options = parseRunnerArgs(args);
+  const binaryDir = await realpath(options.binaryDir);
   const binary = name => path.join(binaryDir, name + (process.platform === 'win32' ? '.exe' : ''));
   const temporaryRoot = path.join(apiRoot, '.tmp');
   await mkdir(temporaryRoot, { recursive: true });
@@ -62,14 +68,22 @@ export async function main(args = process.argv.slice(2)) {
   const password = randomBytes(24).toString('hex');
   const databaseUrl = `postgres://gcsc_test:${password}@127.0.0.1:${port}/gcsc_test_baseline`;
   const env = testEnvironment(process.env, databaseUrl, runDirectory);
+  if (options.suite === 'project-publication') {
+    const source = await realpath(path.join(root, '..', 'backend', 'services', 'api', 'v3', 'pure-server.js'));
+    env.GCSC_API_SOURCE = source;
+    env.GCSC_API_SOURCE_SHA256 = createHash('sha256').update(await readFile(source)).digest('hex');
+  }
   const { Client } = createRequire(path.join(apiRoot, 'package.json'))('pg');
   const passwordFile = path.join(runDirectory, 'init-password');
-  const report = { startedAt: new Date().toISOString(), runDirectory, port, status: 'STARTING' };
+  const report = { startedAt: new Date().toISOString(), runDirectory, port, suite: options.suite,
+    ...(env.GCSC_API_SOURCE ? { apiSource: env.GCSC_API_SOURCE, apiSourceSha256: env.GCSC_API_SOURCE_SHA256 } : {}),
+    status: 'STARTING' };
   let postgres;
   let stopped;
   let failure;
   let serverError;
   let serverLog = '';
+  let testOutput = '';
   try {
     report.version = command(binary('postgres'), ['--version'], env);
     console.log(report.version);
@@ -111,11 +125,23 @@ export async function main(args = process.argv.slice(2)) {
       await new Promise(resolve => setTimeout(resolve, 200));
     }
     if (!ready) throw new Error('Fresh PostgreSQL cluster did not become ready');
-    console.log('Fresh loopback database ready; running API/project persistence checks.');
+    console.log(`Fresh loopback database ready; running ${options.suite} checks.`);
     const result = await new Promise((resolve, reject) => {
-      const child = spawn(process.execPath, ['--test', 'tests/postgres-projects.integration.cjs'], {
-        cwd: root, env, windowsHide: true, stdio: 'inherit', timeout: 120000,
+      const testFile = options.suite === 'project-publication'
+        ? 'tests/postgres-project-publication.integration.cjs' : 'tests/postgres-projects.integration.cjs';
+      const child = spawn(process.execPath, ['--test', testFile], {
+        cwd: root, env, windowsHide: true,
+        stdio: options.suite === 'project-publication' ? ['ignore', 'pipe', 'pipe'] : 'inherit',
+        timeout: 120000,
       });
+      if (options.suite === 'project-publication') {
+        for (const [stream, output] of [[child.stdout, process.stdout], [child.stderr, process.stderr]]) {
+          stream.on('data', chunk => {
+            testOutput = (testOutput + chunk.toString()).slice(-1_000_000);
+            output.write(chunk);
+          });
+        }
+      }
       child.once('error', reject);
       child.once('exit', (code, signal) => resolve({ code, signal }));
     });
@@ -143,6 +169,9 @@ export async function main(args = process.argv.slice(2)) {
     report.finishedAt = new Date().toISOString();
     await writeFile(path.join(runDirectory, 'result.json'), JSON.stringify(report, null, 2) + '\n');
     await writeFile(path.join(runDirectory, 'postgres.log'), serverLog.replaceAll(password, '[fixture password]'));
+    if (options.suite === 'project-publication') {
+      await writeFile(path.join(runDirectory, 'test-output.log'), testOutput.replaceAll(password, '[fixture password]'));
+    }
     console.log(`Evidence: ${path.join(runDirectory, 'result.json')}`);
   }
   if (failure) throw new Error(report.error || report.shutdownError);
