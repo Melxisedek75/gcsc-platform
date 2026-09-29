@@ -59,7 +59,7 @@ async function request(method, route, user, body) {
       Authorization: `Bearer ${api.jwtSign({ userId: user.id, role: user.role, email: user.email })}`,
     } : {}) },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-    signal: AbortSignal.timeout(5000),
+    signal: AbortSignal.timeout(10000),
   });
   return { status: response.status, body: await response.json() };
 }
@@ -69,6 +69,24 @@ async function fixtureUser(role, label) {
     VALUES ($1, 'fixture-not-a-password', $2, $3) RETURNING id, role, email`,
   [`${label}@example.invalid`, role, label]);
   return result.rows[0];
+}
+
+async function expectBlockedBy(blocker, responsePromise) {
+  const pid = (await blocker.query('SELECT pg_backend_pid() AS pid')).rows[0].pid;
+  const lockObservation = (async () => {
+    const deadline = Date.now() + 4000;
+    while (Date.now() < deadline) {
+      const result = await pool.query(`SELECT COUNT(*)::int AS count FROM pg_stat_activity
+        WHERE $1 = ANY(pg_blocking_pids(pid))`, [pid]);
+      if (result.rows[0].count > 0) return { blocked: true };
+      await new Promise(resolve => setTimeout(resolve, 25));
+    }
+    return { blocked: false };
+  })();
+  const first = await Promise.race([
+    responsePromise.then(response => ({ response })), lockObservation,
+  ]);
+  assert.deepEqual(first, { blocked: true }, 'API request must reach a row lock held by the fixture');
 }
 
 test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { timeout: 90000 }, async t => {
@@ -138,6 +156,15 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     assert.ok(Number.isFinite(Date.parse(result.body.project.published_at)));
     assert.equal((await pool.query("SELECT COUNT(*)::int AS count FROM audit_events WHERE action='project.published' AND entity_id=$1",
       [String(project.id)])).rows[0].count, 1);
+  });
+
+  await t.test('October free publication does not offer the legacy XPR posting charge', async () => {
+    const response = await request('POST', '/api/payment/job-posting', owner,
+      { project_id: project.id });
+    assert.equal(response.status, 410);
+    assert.equal(response.body.code, 'legacy_job_posting_disabled');
+    assert.equal((await pool.query('SELECT COUNT(*)::int AS count FROM job_posting_payments')).rows[0].count, 0);
+    assert.equal((await pool.query('SELECT published FROM projects WHERE id=$1', [project.id])).rows[0].published, true);
   });
 
   await t.test('anonymous and stranger list/detail contain exactly allowlisted preview and PG timestamp', async () => {
@@ -231,11 +258,7 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
         await blocker.query(change.sql, change.args);
         const responsePromise = request('POST', '/api/bids', contractor,
           { project_id: concurrentId, amount: 1900 });
-        const early = await Promise.race([
-          responsePromise.then(response => ({ response })),
-          new Promise(resolve => setTimeout(() => resolve(null), 500)),
-        ]);
-        assert.equal(early, null, 'Bid must wait for the authorization row transaction');
+        await expectBlockedBy(blocker, responsePromise);
         await blocker.query('COMMIT');
         const response = await responsePromise;
         assert.equal(response.status, change.expected);
@@ -285,11 +308,13 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     }
   });
 
-  await t.test('acceptance waits for concurrent contractor and document changes', async () => {
+  await t.test('acceptance waits for concurrent owner, contractor and document changes', async () => {
     const bid = (await pool.query(`SELECT id FROM bids WHERE project_id=$1 AND contractor_id=$2
       ORDER BY id DESC LIMIT 1`, [project.id, contractor.id])).rows[0];
     assert.ok(bid);
     for (const change of [
+      { sql: 'UPDATE users SET is_active=FALSE WHERE id=$1', args: [owner.id],
+        reset: 'UPDATE users SET is_active=TRUE WHERE id=$1', expected: [owner.id] },
       { sql: 'UPDATE users SET is_active=FALSE WHERE id=$1', args: [contractor.id],
         reset: 'UPDATE users SET is_active=TRUE WHERE id=$1', expected: [contractor.id] },
       { sql: `UPDATE user_documents SET status='rejected'
@@ -302,11 +327,7 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
         await blocker.query('BEGIN');
         await blocker.query(change.sql, change.args);
         const responsePromise = request('POST', `/api/bids/${bid.id}/accept`, owner);
-        const early = await Promise.race([
-          responsePromise.then(response => ({ response })),
-          new Promise(resolve => setTimeout(() => resolve(null), 500)),
-        ]);
-        assert.equal(early, null, 'Acceptance must wait for contractor eligibility rows');
+        await expectBlockedBy(blocker, responsePromise);
         await blocker.query('COMMIT');
         assert.equal((await responsePromise).status, 409);
         assert.deepEqual((await pool.query('SELECT status,escrow_id FROM projects WHERE id=$1',
@@ -344,8 +365,8 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
 
   fs.writeFileSync(path.join(runDirectory, 'publication-acceptance.json'), JSON.stringify({
     status: 'PASS', apiSourceSha256: sourceSha256, database: 'fresh loopback PostgreSQL',
-    projectId: project.id, checks: ['private draft', 'owner authority', 'exact public preview',
+    projectId: project.id, checks: ['private draft', 'owner authority', 'legacy posting disabled', 'exact public preview',
       'project-specific paid bid access', 'concurrent close access revoke and contractor disable',
-      'atomic bid acceptance', 'concurrent contractor eligibility', 'legacy bid blocked'],
+      'atomic bid acceptance', 'concurrent owner and contractor eligibility', 'legacy bid blocked'],
   }, null, 2) + '\n');
 });
