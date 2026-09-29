@@ -13,7 +13,7 @@ branch codex/monorepo-publication. Current cycle: 2026-09-28 through 2026-10-20.
 | Publication / coordinator | C:\gcsc-platform\.worktrees\publication | codex/monorepo-publication @ 3aba4508 | docs/migration, docs/product, docs/whitepaper | Maintain the single plan, reconcile evidence and prepare integration order; no public whitepaper replacement |
 | Web chat candidate | C:\gcsc-platform\.worktrees\web-chat | codex/web-chat-integration-20260923 | apps/web chat consumer, focused fixtures and chat evidence | independent review, then canonical API/PostgreSQL browser acceptance |
 | October web MVP | C:\gcsc-platform\.worktrees\october-web | codex/october-web-20260928 @ 577a5420 | apps/web project request/list/detail and focused client contract tests; no API, mobile, wallet auth or payment provider | Connect owner draft/publish and safe contractor preview to reviewed API; do not expose bids before project-specific paid access |
-| October marketing | C:\gcsc-platform\.worktrees\marketing-october | codex/marketing-october-20260928 @ 65f0029c | apps/marketing site, original assets, video production brief; no app API or live site | Visual/content acceptance, rights-cleared video and truthful CTA; no deploy |
+| October marketing | C:\gcsc-platform\.worktrees\marketing-october | codex/marketing-october-20260928 @ 0e617bb4 | apps/marketing site, original assets, claim ledger and video production brief; no app API or live site | Visual acceptance, rights-cleared video and truthful CTA; no deploy |
 
 These are repository ownership lanes, not a promise of three always-running paid
 models. Codex CLI is another interface to an agent, not an additional model.
