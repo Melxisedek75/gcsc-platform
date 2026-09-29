@@ -1,6 +1,8 @@
 # GCSC October video package
 
-Status: creative draft, 2026-09-28. No video has been produced or published.
+Status: creative draft, 2026-09-28. Two alternate scripts are in
+`VIDEO-SCRIPTS-A-B.md`; no direction has been selected or approved. No video
+has been produced or published.
 The October site may use the static hero photograph until both films pass
 fact-check, rights review and mobile playback checks. Do not depict an untested
 wallet signature, lead payment, escrow release or AI estimate as a live product.
