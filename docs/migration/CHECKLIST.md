@@ -359,6 +359,19 @@ Priority Access specification как будущая версия и не дол�
   `check:dashboard-live`, точечный ESLint и diff PASS. В default bundle
   отсутствуют строки `Accept and Create Escrow` и `MilestoneManager`.
   Серверные bid/escrow маршруты этим не защищены; P0/P1 находки ревью открыты.
+- Backend dirty candidate на `eb760ed0`, SHA-256 `f6492cbbc745f22316e799ed0474e0b26dc38574385b75691ff559fba99b4e63`:
+  новый `project_access_entitlements` и серверный guard запрещают bid и
+  принятие старого bid без действующего `paid` права на эту пару
+  project/contractor. Устаревшая роль подрядчика и некорректная сумма
+  отклоняются. PG принятие bid теперь транзакционно, отключённого подрядчика
+  принять нельзя. Jest 12 suites/252 tests, fake-PG workflow, `node --check`
+  и diff PASS. QA @ `5f495302`: isolated PostgreSQL 18.4 7/7 для
+  draft/publish/privacy, project-specific bid доступа и rollback при
+  искусственном отказе escrow INSERT; до исправления проект оставался
+  `in_progress` (red evidence в QA-отчёте). Серверный источник закреплён
+  по hash, кластер остановлен. Узкое независимое ревью последнего diff
+  ещё идёт. Нет checkout/webhook или API-выдачи `paid`, поэтому L08/L10-L13
+  открыты.
 
 **Следующий незаблокированный шаг:** L01 и L03 параллельно; L18 может идти в
 отдельном frontend worktree без ожидания кошелька. У backend worktree есть
