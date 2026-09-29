@@ -123,8 +123,12 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     assert.equal((await request('POST', route, contractor)).status, 404);
     await pool.query('UPDATE users SET is_active=FALSE WHERE id=$1', [owner.id]);
     assert.equal((await request('POST', route, owner)).status, 404);
+    assert.equal((await request('POST', '/api/projects', owner,
+      { title: 'Disabled owner draft', description: 'Must not persist' })).status, 403);
     await pool.query("UPDATE users SET is_active=TRUE, role='contractor' WHERE id=$1", [owner.id]);
     assert.equal((await request('POST', route, owner)).status, 404);
+    assert.equal((await request('POST', '/api/projects', owner,
+      { title: 'Demoted owner draft', description: 'Must not persist' })).status, 403);
     assert.deepEqual((await pool.query('SELECT published,published_at FROM projects WHERE id=$1', [project.id])).rows,
       [{ published: false, published_at: null }]);
     await pool.query("UPDATE users SET role='homeowner' WHERE id=$1", [owner.id]);
