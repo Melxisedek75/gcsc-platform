@@ -2,6 +2,30 @@
 
 Date: 2026-09-29. Scope: local QA branch `codex/wallet-proof-20260914`; no backend changes or integration.
 
+## Follow-up: publication review findings, not yet PostgreSQL-accepted
+
+An independent read-only review of the previous backend SHA
+`78331e5226b3a4e3236256375e2c8a125624f379a73b253c7103252a6b74f584`
+found two additional publication bypasses: a concurrent owner disable after the
+free-publish route check, and confirmed old `job-posting` receipts publishing
+without checking current owner/project eligibility. The backend owner added a
+transactional owner row lock and guarded receipt publication. New candidate
+SHA-256: `cd30864a707a5664860e15b058c08425661e4bc846055bf692ed97a9f6913294`.
+
+This QA branch now contains two real-PostgreSQL race tests using
+`pg_blocking_pids` for those paths. **They have not passed or failed against the
+new source:** the first runner attempt ended in `initdb.exe: No space left on
+device`, before any test ran. That attempt still pinned the **old** source SHA,
+not the new candidate. The report is
+`services/api/v3/.tmp/postgres-baseline-BMWLhS/result.json`. C: had about
+103 MB free. There were 39 stopped generated test clusters (~2.1 GB), but
+removal was denied by the tool policy; no alternate deletion was attempted.
+The backend owner's local Jest run passed 254/254 tests and fake-PG smoke,
+syntax, diff checks passed; this does not replace the real-PG race checks.
+Independent re-review of the new SHA was unavailable due to agent capacity.
+Keep this candidate out of integration until disk space, exact-SHA real-PG
+checks and independent review are resolved.
+
 ## Candidate and command
 
 - API source: `C:\gcsc-platform\.worktrees\backend\services\api\v3\pure-server.js` (dirty backend worktree, read-only for this run).

@@ -158,6 +158,67 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
       [String(project.id)])).rows[0].count, 1);
   });
 
+  await t.test('publication waits for a concurrent owner disable and keeps the draft private', async () => {
+    const created = await request('POST', '/api/projects', owner, {
+      title: 'Owner disable race', description: 'Must remain private', category: 'roofing',
+    });
+    assert.equal(created.status, 201);
+    const draftId = created.body.project.id;
+    const blocker = await pool.connect();
+    let committed = false;
+    try {
+      await blocker.query('BEGIN');
+      await blocker.query('UPDATE users SET is_active=FALSE WHERE id=$1', [owner.id]);
+      const responsePromise = request('POST', `/api/projects/${draftId}/publish`, owner);
+      await expectBlockedBy(blocker, responsePromise);
+      await blocker.query('COMMIT');
+      committed = true;
+      assert.equal((await responsePromise).status, 409);
+      assert.deepEqual((await pool.query('SELECT published,published_at FROM projects WHERE id=$1', [draftId])).rows,
+        [{ published: false, published_at: null }]);
+    } finally {
+      if (!committed) await blocker.query('ROLLBACK');
+      blocker.release();
+      await pool.query('UPDATE users SET is_active=TRUE WHERE id=$1', [owner.id]);
+    }
+  });
+
+  await t.test('old posting receipt cannot publish after a concurrent owner disable', async () => {
+    const created = await request('POST', '/api/projects', owner, {
+      title: 'Pending posting receipt', description: 'Must remain private', category: 'roofing',
+    });
+    assert.equal(created.status, 201);
+    const draftId = created.body.project.id;
+    const txHash = `fixture-pending-posting-${draftId}`;
+    await pool.query(`INSERT INTO payment_receipts
+      (tx_hash,kind,user_id,from_account,amount,project_id,verification_status)
+      VALUES ($1,'job-posting',$2,'fixtureowner','25.0000 XPR',$3,'pending')`,
+    [txHash, owner.id, draftId]);
+    const originalVerifier = api._hooks.verifyHyperionTransfer;
+    api._hooks.verifyHyperionTransfer = async () => ({ ok: true, from: 'fixtureowner' });
+    const blocker = await pool.connect();
+    let committed = false;
+    try {
+      await blocker.query('BEGIN');
+      await blocker.query('UPDATE users SET is_active=FALSE WHERE id=$1', [owner.id]);
+      const reconcilePromise = api.reconcilePendingPayments();
+      await expectBlockedBy(blocker, reconcilePromise);
+      await blocker.query('COMMIT');
+      committed = true;
+      await reconcilePromise;
+      assert.deepEqual((await pool.query('SELECT published,published_at FROM projects WHERE id=$1', [draftId])).rows,
+        [{ published: false, published_at: null }]);
+      const receipt = (await pool.query('SELECT verification_status,verify_error FROM payment_receipts WHERE tx_hash=$1', [txHash])).rows[0];
+      assert.equal(receipt.verification_status, 'confirmed');
+      assert.equal(receipt.verify_error, 'publication_blocked_owner_or_project_ineligible');
+    } finally {
+      if (!committed) await blocker.query('ROLLBACK');
+      blocker.release();
+      api._hooks.verifyHyperionTransfer = originalVerifier;
+      await pool.query('UPDATE users SET is_active=TRUE WHERE id=$1', [owner.id]);
+    }
+  });
+
   await t.test('October free publication does not offer the legacy XPR posting charge', async () => {
     const response = await request('POST', '/api/payment/job-posting', owner,
       { project_id: project.id });
