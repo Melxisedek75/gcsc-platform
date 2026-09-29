@@ -290,6 +290,11 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   доступ подрядчика, AI-помощник, будущая инфраструктура с явным roadmap,
   единый понятный CTA в `gcsc.store` для каждой роли. Проверка: переходы ведут
   в существующие маршруты; страница понятна без воспроизведения видео.
+  Частично @ `dd15ae1a`: пять основных CTA локального `apps/marketing/index.html`
+  направлены на `https://gcsc.store/#/dashboard`. Путь подтвержден кодом
+  `HashRouter` -> `Dashboard` -> `AccountAccess` для гостя; статическая
+  проверка 5 ссылок и `git diff --check` PASS. Footer ведет на главную.
+  Проверка браузером, отдельных role-путей и опубликованного домена открыта.
 - [ ] **L18e / marketing / 10 октября.** Семантика, SEO/social previews,
   sitemap, аналитика без лишнего сбора PII, privacy/terms/support links,
   загрузка без сторонних CDN как обязательного условия. Проверка: локальный
