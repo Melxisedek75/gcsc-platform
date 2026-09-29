@@ -71,7 +71,6 @@ h1, h2, h3 { line-height: 1.12; }
 .pathway-number { display: block; margin-bottom: 28px; color: #ae4b33; font-size: 13px; font-weight: 800; text-transform: uppercase; }
 .pathway h3 { max-width: 450px; margin-bottom: 18px; font-size: 31px; }
 .pathway p { max-width: 455px; margin-bottom: 24px; color: var(--muted); }
-.pathway-line { display: block; width: 52px; height: 3px; background: var(--coral); }
 .pilot { background: var(--white); }
 .pilot-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 100px; }
 .pilot-lead p:not(.eyebrow) { max-width: 490px; margin-top: 26px; color: var(--muted); font-size: 17px; line-height: 1.7; }
