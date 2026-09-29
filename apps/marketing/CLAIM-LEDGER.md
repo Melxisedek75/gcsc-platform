@@ -7,7 +7,7 @@ not permission to deploy. Recheck against the exact release SHA and live domains
 
 | Asset | Current role | Open check |
 | --- | --- | --- |
-| `index.html` and `site.css` | Pilot landing page and CTA to `gcsc.store` | Visual, keyboard, mobile and claim review on an approved preview |
+| `index.html` and `site.css` | Pilot landing page; primary CTAs target the candidate registration route `https://gcsc.store/#/dashboard`, while the footer links to the platform home | Verify the route on an approved preview, then visual, keyboard, mobile and claim review |
 | `whitepaper.html` and `whitepaper.css` | Historical v1.3 strategy draft, marked `noindex` | Owner and legal approval; v1.4 internal draft is not substituted. `noindex` is not access control |
 | `assets/renovation-hero-v1.png` | Generated concept photograph, not a customer case study | Verify image rights and disclose illustrative use where needed |
 | `VIDEO-PRODUCTION.md` | Scripts and acceptance criteria only | Film assets, rights, captions and user comprehension tests |
@@ -31,7 +31,10 @@ not permission to deploy. Recheck against the exact release SHA and live domains
 ## Required release review
 
 1. Check every CTA against an accepted owner/contractor route on the final
-   `gcsc.store` preview. The root link alone is not proof of the journey.
+   `gcsc.store` preview. The `/#/dashboard` target follows the current web
+   candidate's `HashRouter`, `Dashboard` route and unauthenticated
+   `AccountAccess` rendering; code inspection is not live-domain or browser
+   acceptance. The footer root link alone is not proof of the journey.
 2. Have product, legal and an independent reviewer classify every headline,
    frame, caption and on-screen transaction as `available`, `pilot` or `planned`.
 3. Verify domain ownership, privacy/terms/support details, accessibility,
