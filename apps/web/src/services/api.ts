@@ -145,15 +145,18 @@ export interface GcscUser {
 
 export interface GcscProject {
   id: number
-  homeowner_id: number
+  homeowner_id?: number
   title: string
-  description: string
+  description?: string
   category: string
   budget_min: number
   budget_max: number
-  location: string
+  location?: string
   timeline_days: number
   status: string
+  published?: boolean
+  published_at?: string | null
+  access_status?: 'unpaid' | 'pending' | 'paid' | 'refunded' | 'revoked'
   escrow_id?: number | null
   created_at: string
 }
@@ -409,6 +412,9 @@ class ApiClient {
     timeline_days?: number
   }) {
     return this.request('/projects', { method: 'POST', body: JSON.stringify(body) })
+  }
+  publishProject(id: number): Promise<{ project: GcscProject }> {
+    return this.request(`/projects/${id}/publish`, { method: 'POST' })
   }
 
   // BIDS

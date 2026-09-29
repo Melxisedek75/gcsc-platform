@@ -15,6 +15,7 @@ import type { AccountRole } from './types';
 
 export const statusConfig: Record<string, { color: string; bg: string; icon: typeof CheckCircle2 }> = {
   New: { color: '#7B2FF7', bg: 'rgba(123,47,247,0.1)', icon: Award },
+  Draft: { color: '#475569', bg: '#E2E8F0', icon: ClipboardList },
   Open: { color: '#7B2FF7', bg: 'rgba(123,47,247,0.1)', icon: Award },
   Pending: { color: '#F59E0B', bg: 'rgba(245,158,11,0.1)', icon: Clock4 },
   Accepted: { color: '#3B6BF7', bg: 'rgba(59,107,247,0.1)', icon: CheckCircle2 },
