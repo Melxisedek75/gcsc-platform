@@ -276,6 +276,9 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   homeowner/contractor/grant reviewer, позиционирование GCSC и SmartContractor,
   tone of voice, три конкурентных/наградных референса и запрет копирования.
   Проверка: короткий creative brief и 2-3 прототипа направления для выбора.
+  Черновик `apps/marketing/CREATIVE-BRIEF.md` @ `f8409412` содержит три
+  композиционных направления и официальные референсы; это не визуальные
+  прототипы. Выбор founder и проверка на реальных пользователях ещё открыты.
 - [ ] **L18c / marketing / 3 октября.** Создать дизайн-систему: типографика,
   нейтральные и акцентные цвета, grid, изображение реальной стройки, motion rules,
   контраст, reduced-motion. Проверка: desktop/mobile снимки и контрастность.
