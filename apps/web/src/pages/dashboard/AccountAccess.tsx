@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { motion } from 'framer-motion';
 import { ShieldCheck, CheckCircle2, Building2, Home, Loader2 } from 'lucide-react';
 import { api, type GcscUser } from '../../services/api';
@@ -6,9 +6,9 @@ import { loginWithWebAuth } from '../../services/walletLogin';
 import { fieldClass } from './format';
 import type { AccountRole } from './types';
 
-export function AccountAccess({ onAuthenticated }: { onAuthenticated: (user: GcscUser) => void }) {
+export function AccountAccess({ initialRole, onAuthenticated }: { initialRole: AccountRole; onAuthenticated: (user: GcscUser) => void }) {
   const [mode, setMode] = useState<'register' | 'login'>('register');
-  const [role, setRole] = useState<AccountRole>('contractor');
+  const [role, setRole] = useState<AccountRole>(initialRole);
   const [form, setForm] = useState({ fullName: '', email: '', password: '', phone: '' });
   const [verificationPending, setVerificationPending] = useState<{
     email: string;
@@ -20,6 +20,10 @@ export function AccountAccess({ onAuthenticated }: { onAuthenticated: (user: Gcs
   const [status, setStatus] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const registrationChannel = role === 'homeowner' ? 'sms' : 'email';
+
+  useEffect(() => {
+    setRole(initialRole);
+  }, [initialRole]);
 
   const switchMode = (nextMode: 'register' | 'login') => {
     setMode(nextMode);
