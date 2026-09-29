@@ -294,7 +294,13 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   направлены на `https://gcsc.store/#/dashboard`. Путь подтвержден кодом
   `HashRouter` -> `Dashboard` -> `AccountAccess` для гостя; статическая
   проверка 5 ссылок и `git diff --check` PASS. Footer ведет на главную.
-  Проверка браузером, отдельных role-путей и опубликованного домена открыта.
+  Дополнение: `codex/october-web-20260928` @ `2409c780` считывает `role`
+  из маршрута и предварительно выбирает роль в форме регистрации;
+  auth validators, focused ESLint и `tsc --noEmit` PASS. Маркетинговая ветка
+  @ `975a8d6a` содержит два отдельных CTA `?role=homeowner` и
+  `?role=contractor`, локальная проверка ссылок PASS. Подсказка роли не
+  предоставляет доступ. Проверка браузером, объединенного кандидата и
+  опубликованного домена открыта.
 - [ ] **L18e / marketing / 10 октября.** Семантика, SEO/social previews,
   sitemap, аналитика без лишнего сбора PII, privacy/terms/support links,
   загрузка без сторонних CDN как обязательного условия. Проверка: локальный
