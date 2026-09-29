@@ -21,6 +21,13 @@ export function AccountAccess({ onAuthenticated }: { onAuthenticated: (user: Gcs
   const [submitting, setSubmitting] = useState(false);
   const registrationChannel = role === 'homeowner' ? 'sms' : 'email';
 
+  const switchMode = (nextMode: 'register' | 'login') => {
+    setMode(nextMode);
+    setVerificationPending(null);
+    setVerificationCode('');
+    setStatus('');
+  };
+
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setStatus('');
@@ -157,8 +164,9 @@ export function AccountAccess({ onAuthenticated }: { onAuthenticated: (user: Gcs
               <button
                 key={item}
                 type="button"
-                onClick={() => setMode(item)}
-                className="flex-1 py-2.5 rounded-full text-sm font-semibold transition-all"
+                onClick={() => switchMode(item)}
+                disabled={submitting}
+                className="flex-1 py-2.5 rounded-full text-sm font-semibold transition-all disabled:cursor-wait disabled:opacity-60"
                 style={{
                   background: mode === item ? 'linear-gradient(135deg, #7B2FF7 0%, #3B6BF7 100%)' : 'transparent',
                   color: mode === item ? '#FFFFFF' : '#475569',
