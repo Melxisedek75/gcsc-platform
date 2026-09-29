@@ -158,7 +158,7 @@ export interface GcscProject {
   published_at?: string | null
   access_status?: 'unpaid' | 'pending' | 'paid' | 'refunded' | 'revoked'
   escrow_id?: number | null
-  created_at: string
+  created_at?: string
 }
 
 export interface GcscBidContractor {
