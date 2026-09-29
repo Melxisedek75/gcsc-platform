@@ -97,8 +97,12 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   документ/API fixtures, одинаково используемые сервером и UI; founder
   подтверждает только коммерческие/юридические условия перед live оплатой.
   Черновик v1: `docs/product/october-mvp-contract.v1.md` (28 сентября).
-  Он фиксирует границы и предложенные маршруты; машинные fixtures, согласованные
-  consumer-типы и коммерческие условия ещё не утверждены. L03 остаётся открытым.
+  Он фиксирует границы и предложенные маршруты. Синтетический fixture
+  `docs/product/fixtures/october-project-v1.json` добавлен в `7f86fce7`:
+  Node-проверка точного allowlist публичного preview, отсутствия запрещённых
+  полей и приватного черновика PASS. Сервер и UI ещё не импортируют один
+  версионированный контракт, paid entitlement и коммерческие условия не
+  утверждены. L03 остаётся открытым.
 - [ ] **L04 / координатор.** Выбрать один preview origin/API/database и
   сценарий восстановления; сверить `xprnet.org` -> `gcsc.store`, cookies/CORS,
   секреты, email-доставку и DNS без изменения production. Приёмка: чистый
@@ -320,6 +324,11 @@ Priority Access specification как будущая версия и не дол�
   project-specific entitlement, покупка и AI/голос ещё не реализованы;
   L06-L09 открыты. Встроенный браузер ранее отказал в локальном preview
   по политике, поэтому визуальная приёмка не заявляется.
+- `codex/october-web-20260928` @ `c5d05c87`: preview-тип не требует
+  приватную дату создания; TypeScript `tsc -b` PASS. Backend test 10/10
+  подтвердил новую публичную дату `published_at` и отсутствие `created_at`;
+  общий API Jest после этого 247/247 PASS (12 suites). Это отдельные
+  worktree-кандидаты без совместного реального DB/browser прогона.
 - `codex/marketing-october-20260928` @ `0e617bb4`: claim ledger и
   уточнённая v1.3-страница ограничивают заявления о готовности. Видео и
   новый v1.4-публичный текст не опубликованы; L18a закрыт только как
