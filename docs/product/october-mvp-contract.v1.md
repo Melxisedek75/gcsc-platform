@@ -80,6 +80,13 @@ Do not reintroduce private `title`, `description` or `location` into a public
 Project Type to make existing cards render. Show canonical trade, safe area,
 budget and timing instead.
 
+`fixtures/october-project-v1.json` is the synthetic field-level example for
+the current local draft and redacted-preview candidates. Its public key list
+is an allowlist, not an invitation to return all other stored columns. The
+fixture does not yet specify a paid entitlement or a purchase response; those
+must be versioned after L08/L10 decisions, then consumed by server and web
+tests before L03 can be closed.
+
 ## Failure behavior and acceptance
 
 - An anonymous or unpaid account cannot retrieve a draft, address, contact,
