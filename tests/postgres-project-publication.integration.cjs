@@ -164,6 +164,43 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
       'PRIVATE_TITLE_DO_NOT_EXPOSE');
   });
 
+  await t.test('only a current paid entitlement for this project allows a bid', async () => {
+    const other = await request('POST', '/api/projects', owner,
+      { title: 'Other project', description: 'Separate access grant', category: 'roofing' });
+    assert.equal(other.status, 201);
+    assert.equal((await request('POST', `/api/projects/${other.body.project.id}/publish`, owner)).status, 200);
+
+    const bidBody = { project_id: project.id, amount: 1800 };
+    const bidCount = async () => (await pool.query('SELECT COUNT(*)::int AS count FROM bids')).rows[0].count;
+    const before = await bidCount();
+    assert.equal((await request('POST', '/api/bids', contractor, bidBody)).status, 403);
+    await pool.query(`INSERT INTO project_access_entitlements
+      (project_id, contractor_id, status, provider_payment_id, verified_at)
+      VALUES ($1, $2, 'paid', 'local-pg-fixture-other', NOW())`, [other.body.project.id, contractor.id]);
+    assert.equal((await request('POST', '/api/bids', contractor, bidBody)).status, 403);
+    await pool.query(`INSERT INTO project_access_entitlements
+      (project_id, contractor_id, status, provider_payment_id)
+      VALUES ($1, $2, 'pending', 'local-pg-fixture-target')`, [project.id, contractor.id]);
+    assert.equal((await request('POST', '/api/bids', contractor, bidBody)).status, 403);
+    assert.equal(await bidCount(), before);
+
+    await assert.rejects(pool.query(`INSERT INTO project_access_entitlements
+      (project_id, contractor_id, status, provider_payment_id)
+      VALUES ($1, $2, 'paid', 'unverified-fixture')`, [project.id, stranger.id]),
+    error => error.code === '23514');
+
+    await pool.query(`UPDATE project_access_entitlements
+      SET status='paid', verified_at=NOW() WHERE project_id=$1 AND contractor_id=$2`,
+    [project.id, contractor.id]);
+    assert.equal((await request('POST', '/api/bids', contractor, bidBody)).status, 201);
+    assert.equal(await bidCount(), before + 1);
+
+    await pool.query(`UPDATE project_access_entitlements SET status='revoked'
+      WHERE project_id=$1 AND contractor_id=$2`, [project.id, contractor.id]);
+    assert.equal((await request('POST', '/api/bids', contractor, bidBody)).status, 403);
+    assert.equal(await bidCount(), before + 1);
+  });
+
   await t.test('a pre-existing bid on an unpublished draft cannot be accepted', async () => {
     const created = await request('POST', '/api/projects', owner,
       { title: 'Legacy private draft', description: 'Unpublished fixture' });
@@ -180,11 +217,14 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     assert.equal((await pool.query('SELECT COUNT(*)::int AS count FROM escrow_contracts')).rows[0].count, 0);
     assert.equal((await pool.query("SELECT COUNT(*)::int AS count FROM audit_events WHERE action='bid.accepted'")).rows[0].count, 0);
     assert.equal((await request('GET', `/api/projects/${draftId}`, stranger)).status, 404);
-    assert.deepEqual((await request('GET', '/api/projects')).body.projects.map(item => item.id), [project.id]);
+    const visibleIds = (await request('GET', '/api/projects')).body.projects.map(item => item.id);
+    assert.ok(visibleIds.includes(project.id));
+    assert.ok(!visibleIds.includes(draftId));
   });
 
   fs.writeFileSync(path.join(runDirectory, 'publication-acceptance.json'), JSON.stringify({
     status: 'PASS', apiSourceSha256: sourceSha256, database: 'fresh loopback PostgreSQL',
-    projectId: project.id, checks: ['private draft', 'owner authority', 'exact public preview', 'legacy bid blocked'],
+    projectId: project.id, checks: ['private draft', 'owner authority', 'exact public preview',
+      'project-specific paid bid access', 'legacy bid blocked'],
   }, null, 2) + '\n');
 });
