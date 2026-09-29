@@ -29,6 +29,8 @@ import { fieldClass, formatCurrency, projectStatusLabel, bidStatusLabel } from '
 import { StatusBadge, ContractorTrustBadge } from './shared';
 import { MilestoneManager } from './MilestoneManager';
 
+const legacyEscrowWorkflowEnabled = import.meta.env.VITE_ENABLE_LEGACY_ESCROW_WORKFLOW === 'true';
+
 function ProjectRequestForm({ onCreated }: { onCreated: (project: GcscProject) => void }) {
   const [form, setForm] = useState({
     title: '',
@@ -303,7 +305,7 @@ export function ProjectsPanel({ user, onOpenChat }: { user: GcscUser; onOpenChat
       setSelectedBids(response.bids || []);
       setSelectedEscrow(null);
       setSelectedMilestones([]);
-      if (response.project?.escrow_id) {
+      if (legacyEscrowWorkflowEnabled && response.project?.escrow_id) {
         const escrowResponse = await api.getEscrow(response.project.escrow_id);
         setSelectedEscrow(escrowResponse.escrow);
         setSelectedMilestones(escrowResponse.milestones || []);
@@ -609,7 +611,7 @@ export function ProjectsPanel({ user, onOpenChat }: { user: GcscUser; onOpenChat
                         >
                           <MessageCircle size={14} /> Open chat
                         </button>
-                        {bid.status === 'pending' && selectedProject.status === 'open' && (
+                        {legacyEscrowWorkflowEnabled && bid.status === 'pending' && selectedProject.status === 'open' && (
                           <button
                             onClick={() => void acceptBid(bid)}
                             disabled={!canAccept}
@@ -639,7 +641,7 @@ export function ProjectsPanel({ user, onOpenChat }: { user: GcscUser; onOpenChat
                 </button>
               )}
 
-              {selectedEscrow && (
+              {legacyEscrowWorkflowEnabled && selectedEscrow && (
                 <MilestoneManager
                   escrow={selectedEscrow}
                   milestones={selectedMilestones}
