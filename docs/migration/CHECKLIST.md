@@ -139,6 +139,24 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   следующий шаг - сохранить обе стороны исправлений, повторить проверку
   совмещённого кандидата. Integration, checkout/webhook и реальный кошелёк
   остаются отдельными gates; L01 открыт. См. `INTEGRATION-ORDER-2026-09-22.md`.
+  Следующий проверенный этап 30 сентября: в отдельном локальном кандидате
+  `codex/october-integration-20260930` сохранены migrations/profile/chat принимающей
+  ветки и устранены все пять конфликтов. Backend merge `445a54b4` независимо
+  одобрен: Jest301/301, fake-PG и provenance; реальный PG baseline39/39.
+  QA merge `034f6225` добавил проверяемые source roots; PG project16/16.
+  Совмещённый web на staged tree `8595725851d7740138b06b49734469cce3d39c40`
+  проходит parent check/build/lint/static, role browser10/10, paid brief22/22
+  и настоящий receiving UI/API/PostgreSQL сценарий `FuE0Vg`: пять этапов,
+  test/Edge/PG exit0, все службы закрыты. Оплаченный доступ задаётся только
+  синтетическим SQL fixture, не платежом. Независимое ревью receiving web
+  завершилось PASS, точное дерево сохранено в merge `874153d9`. Marketing
+  прошёл отдельный RIVIERA PASS на tree `9d89cb68`, commit `d613c440`;
+  прежние High disclosure и Medium owner CTA закрыты для этого кандидата.
+  Локальная publication fast-forwarded `656a6469` -> `d613c440` без изменения
+  проверенного кода; remote main и публичные сайты не изменялись. Все reviewers
+  закрыты, ожидания ревью больше нет. Следующий безопасный шаг - L11-L12:
+  локальные purchase/webhook tests, затем реализация без внешнего провайдера.
+  Checkout/webhook, реальный кошелёк, AI/voice и полный L01 остаются открытыми.
 - [ ] **L02 / backend + QA.** Завершить локальный security-кандидат:
   JWT/dev routes/admin role/wallet binding/payment pending, проверить
   повторное списание, привязку одного wallet к двум пользователям и хранение
@@ -227,8 +245,10 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   обрабатывает отказ в доступе и не повторяет неопределённый POST.
   QA `f345b2fd` подтвердил реальный UI POST201, точную запись предложения
   в PostgreSQL и чтение владельцем. После отзыва: POST403/details404,
-  приватный brief очищен, второй bid не создан. Whole-backend review и
-  интеграция ещё нужны; см. `PAID-PROJECT-DETAILS-REVIEW.md`.
+  приватный brief очищен, второй bid не создан. После receiving review этот
+  путь включён в локальную publication `d613c440`; повтор `FuE0Vg` на общем
+  API/UI/PG подтвердил те же пять этапов. Checkout и полный запуск остаются
+  открытыми; см. `PAID-PROJECT-DETAILS-REVIEW.md`.
 
 ### P1 - настоящая оплата лида, 1-10 октября
 
@@ -271,10 +291,17 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
 
 ### P2 - презентация и доступность, 28 сентября-12 октября
 
-- [ ] **L18 / marketing.** Обновить `apps/marketing` на собственный стиль GCSC:
+- [x] **L18 / marketing, локальная реализация.** Обновить `apps/marketing` на собственный стиль GCSC:
   проблема -> простое решение -> три реальные функции MVP -> будущее -> CTA
   на точные owner/contractor маршруты `gcsc.store`. Сохранить whitepaper,
   SEO, CNAME и читаемость без видео/JS; не копировать чужой дизайн.
+  Выполнено в reviewed `d613c440`, локально включено в publication 30 сентября.
+  RIVIERA PASS: parser18/18, static2 страницы/7 CTA, provenance22/22;
+  parent реальные anchor/form fixtures12/12, viewport/text8/8 без внешней сети.
+  Desktop/mobile screenshots просмотрены. Видео, проверка с новым пользователем,
+  полный WCAG/производительность/права на медиа и deploy НЕ закрыты этой отметкой;
+  остаются L19-L25. Переходы проверены с локальной подменой только origin,
+  реальная регистрация/email/SMS и работа live gcsc.store не подтверждены.
 - [ ] **L19 / creative + marketing.** Сценарий, storyboard, права и производство
   минимального комплекта: hero loop и один ролик «как подать заявку/получить
   предложение». Видео не изображает непроверенную оплату/кошелёк как live.

@@ -136,9 +136,13 @@ gates or mean this code is in publication.
 - Public preview endpoints do not expand their fields because a grant exists.
   The existing accepted-contract legacy routes are not replaced by this endpoint.
 
-The UI consumer and combined API/browser journey remain unimplemented. Stored
-synthetic grants in tests do not establish checkout/webhook or real payment
-readiness. The live decisions below still apply.
+The UI consumer is implemented in receiving merge `874153d9`, with independent
+source review and actual local API/UI/PostgreSQL journey `FuE0Vg` passing five
+checkpoints. Its runtime matches reviewed October-web `b1cda59b`. This receiving
+candidate is included in local publication `d613c440`, separate from deployed
+websites. Stored synthetic grants in tests
+do not establish checkout/webhook or real payment readiness. The live decisions
+below still apply.
 
 ## Founder decisions before live payments
 

@@ -2,6 +2,29 @@
 
 ## Current review records
 
+Local receiving backend merge445a54b4 passed independent review of tree2c6e986a;
+API f24fdd7d preserves receiving migrations/profile/chat plus backend security and
+private project access. Independent301/301 and guard16/16, parent PG39/39 and
+project16/16 passed. Receiving web merge874153d9 preserves RIVIERA-approved
+tree85957258; full apps/web/src equals b1cda59b and QA equals2e6fc4fa.
+Independent31/31,4/4,selected6/6,2/2, types/lint/static passed. Parent actual
+API/UI/PG FuE0Vg passes five checkpoints with clean exits; reviewer checked
+saved manifests/results, not an independent PG/browser rerun. Two Low provenance
+descriptions were corrected in docs-only8165a19f, with runtime/hash unchanged.
+
+Marketing733e5fda receiving integration tree9d89cb68ddba3cd366fd0b9b3e9ad355baf94cc0
+passed independent RIVIERA review and is preserved exactly in merge d613c440.
+Prior High disclosure and Medium owner-CTA mismatch closed for this local tree.
+Independent parser18/18, static2pages7CTA, provenance22/22 and positive/negative
+source/harness probes pass; parent anchor/role fixtures12/12 and viewport/text8/8
+verified from saved evidence, not independently rerun. Publication fast-forwarded
+locally to d613c440; remote main/live sites untouched. Reviewers and test processes
+closed. Source review does not approve production or real payment.
+Details: BACKEND-RECEIVING-INTEGRATION-REVIEW.md, PAID-PROJECT-DETAILS-REVIEW.md,
+and RIVIERA-MARKETING-REVIEW.md in the receiving checkout.
+
+## Historical source reviews before receiving integration
+
 Marketing candidate `89e7607f` and repair `028b0ff8` have independent RIVIERA
 evidence in `RIVIERA-MARKETING-REVIEW.md` (2026-09-30). Whole integration remains
 CHANGES_REQUIRED against publication code `5166e59f`: inherited privacy disclosure

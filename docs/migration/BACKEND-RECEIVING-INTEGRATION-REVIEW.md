@@ -1,6 +1,7 @@
 # Backend receiving-tree integration review
 
-Date: 2026-09-30. Local candidate only; no publication cutover or deployment.
+Date: 2026-09-30. Local candidate only; no remote push or deployment. Subsequent
+approved web/marketing merges culminate in local publication fast-forward d613c440.
 
 ## Scope and identity
 

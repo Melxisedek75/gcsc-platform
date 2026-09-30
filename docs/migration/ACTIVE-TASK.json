@@ -1,6 +1,6 @@
 {
   "task": "october-launch-mvp-and-marketing",
-  "status": "IN_PROGRESS_SECURITY_FINDINGS_OPEN",
+  "status": "IN_PROGRESS_LOCAL_INTEGRATION_REVIEWED",
   "owner": "019e7c87-8410-79f1-b86a-eedf78a1aa27",
   "worktree": "C:/gcsc-platform/.worktrees/publication",
   "branch": "codex/monorepo-publication",
@@ -13,22 +13,28 @@
   ],
   "leaseUntil": null,
   "baseCommit": "a0834ac7917c3de57ebc02fb542814561469bca2",
-  "candidateCommit": "5166e59f17587a27a7ebd924cacfc9b5df1f55b0",
-  "review": "RIVIERA approved web repairb1cda59b with independent22/22 browserfixtures and types/lint/static/diff0. Whole accumulated backend delta c46bd1b4 independently PASS after replay and PostgreSQL login repair, source01613262; independent payment33/33 and manifests verified, baseline limits retained. QA1bceb8f5 diff independently inspected. Reviewers closed. Role74e5618d and marketing733e5fda slice approvals retained. Publication5166e59f still needs reviewed integration; no whole-MVP or production approval.",
-  "result": "Webb1cda59b consumes the guarded nine-key brief and preserves accepted-project reads while legacy actions stay off. Parent/independent browserfixtures22/22 plus types/lint/build/static PASS. Backend01613262 passes offlineJest292/292 and realPG16/16 GkZJSQ: privacy/authority/concurrency plus synthetic wallet login/denials and legacy replay after restart. Final realEdge/API/PG X3EAmR passes five journey checkpoints on unchangedweb: publish, unpaid denial, syntheticgrant, proposal persistence/owner read, revoked denial. Clean shutdown, zero external attempts. Checkout/payment, realwallet, consent/policy, AI/voice, visual/video and production remain open; candidates not integrated.",
-  "next": "Source-review gate passed; do not redispatch unchanged review. Follow INTEGRATION-ORDER-2026-09-22.md October section: isolated receiving-tree integration, reconcile five merge-tree conflicts while preserving publication migrations/profile/chat, then combined tests and independent resolution review. Backendc46bd1b4, QA1bceb8f5 and webb1cda59b are clean. Checkout/webhook, consent, AI/voice and production remain open; no real payments or signing.",
+  "candidateCommit": "d613c440af47e9097f60a889675f8dac9f527e8f",
+  "review": "Backend445a54b4 independently PASS on receiving tree2c6e986a; QA034f6225 reviewed independently of its author. Web874153d9 preserves RIVIERA PASS tree85957258. Marketingd613c440 preserves RIVIERA PASS tree9d89cb68: previous High privacy and Medium owner-CTA closed for this local combined target. Local publication fast-forwarded from656a6469; all reviewers closed. No whole-MVP, provider, wallet or production approval.",
+  "result": "Local publication now contains reviewed backend, QA, October web and marketing in one candidate d613c440. Receiving API f24fdd7d preserves migrations/profile/docs/chat; parent and independent301/301 Jest, parent PG39/39 and project16/16. Actual receiving API/UI/PG FuE0Vg1/1 five checkpoints PASS with synthetic SQL entitlement only, all exits/ports cleanup0. Webbuild/lint/check0, paidbrief22/22; marketing parser18/18, static2pages7CTA, actual anchor+role fixtures12/12, viewport/text8/8. No external service, paid provider, live DB, real signing, checkout payment, push or deployment.",
+  "next": "Start L11-L12 local project-bound checkout/webhook implementation from reviewed publication d613c440, reusing a verified free worktree and preserving one writer. Use existing October contract: server-owned versioned USD amount, current contractor/project eligibility, durable purchase/idempotency record and atomic verified-event entitlement. Begin with offline negative/replay/out-of-order tests and isolated PG; no Stripe network/key/account or live enablement without separate approval. Keep old escrow PaymentIntent separate. Continue L06 draft editing and L14-L17 AI/voice afterward; real provider/price/refund/contact terms remain L10 gates. Do not redispatch completed integration reviews.",
   "consumerInProgress": {
     "candidateCommit": "b1cda59be1d9e37cf2d282a5570444424e163798",
-    "webOwner": "parent; source frozen during review",
-    "reviewer": "01a0f0fd-0955-72e0-aa60-0caf8a412362, RIVIERA finalrepair PASS, independent22/22 and types/lint/static/diff0; context closed",
-    "backendReviewer": "01a0edd5-92a1-7b42-ac8f-88094d6f5637, final whole-delta PASS on01613262; independent33/33 and manifests0, baseline limits retained; context closed",
-    "qaWriter": "Agent01a0edde-2fc0-7652-8376-9f3bf6215c25 committedf345b2fd and closed. Parent follow-up committed1bceb8f5 after source review; QA clean, no active writer/test process",
-    "checks": "Parent22/22 actualReact/ApiClient syntheticHTTP Edge; TypeScript/focusedlint/build/static/diff exit0; web states4/4. Finalbuild38.24s. RIVIERA source/DOM PASS only; whole integration not approved. Details PAID-PROJECT-DETAILS-REVIEW.md."
+    "integrationWorktree": "C:/gcsc-platform/.worktrees/legacy-preservation",
+    "integrationBranch": "codex/october-integration-20260930",
+    "integrationHead": "d613c440af47e9097f60a889675f8dac9f527e8f",
+    "stagedTree": null,
+    "webOwner": "No active writer; local receiving integration complete",
+    "reviewer": "01a0f0fd-0955-72e0-aa60-0caf8a412362 receiving web and marketing PASS; closed",
+    "backendReviewer": "01a0edd5-92a1-7b42-ac8f-88094d6f5637 receiving-backend PASS, independent301/301 and16/16 guards; closed",
+    "qaWriter": "01a0edde-2fc0-7652-8376-9f3bf6215c25 authored2e6fc4fa explicit Git-registered source roots and manifests, parent guard12/12; closed, no writer/test process",
+    "checks": "Receiving API/UI/PG five checkpoints, paidbrief22/22, marketing role12/12, viewport8/8, parser18/18, root check/build/lint/static0. All processes exited. No actual provider registration/payment, real wallet, full WCAG or live-domain approval.",
+    "status": "LOCAL_INTEGRATION_COMPLETE",
+    "integratedWorktree": "C:/gcsc-platform/.worktrees/publication"
   },
   "integrationBlocker": {
-    "type": "confirmed-security-findings",
-    "evidence": "Backendc46bd1b4 source01613262 has independent whole-deltaPASS,292/292 offlineJest,16/16 realPG and actualbrowser/API/PG fivecheckpointPASS. Merge-tree against publicationb14eacda reports five conflicts; preserve receiving migrations/profile/chat. Candidates remain separate, so target privacy/role gates remain open. Checkout/webhook and launch acceptance incomplete; synthetic grants are not payments.",
-    "resumeCondition": "Fix findings, repeat relevant tests including isolated PostgreSQL and consumer journeys, then review the exact final candidate"
+    "type": "remaining-product-and-external-release-gates",
+    "evidence": "Source conflicts and receiving privacy/role review blockers are resolved in local publication d613c440. No integration reviewer is pending. L11-L12 project-bound checkout/webhook remains unimplemented; synthetic SQL grants are not purchases. Real provider/terms/contact, email/SMS acceptance, AI/voice, video, remaining security hardening and deployment gates remain.",
+    "resumeCondition": "Continue safe local L11-L12 tests/implementation immediately on the next execution; do not wait for phone/reviewer/provider. Only external activation and real payments need owner decisions/credentials."
   },
   "nativeProbe": {
     "runtimeCommit": "04561155",
@@ -108,16 +114,8 @@
     "review": "APPROVED: Beauvoir, independent Sol/high agent01a09e82-0111-7803-ba04-dac9514c52a5, reviewed a0834ac7..e9f954fbb105ba4f6e05ff54c860ecaffec6ff28. Independently ran guards4/4 and real PostgreSQL18.4 tests9/9, exits0; source SHA matches, canonical gcsc.db unchanged and PostgreSQL stopped. Root43/43/API159 remain parent evidence. No main integration or production approval.",
     "result": "Added native PostgreSQL runner without Docker or downloads. Real PostgreSQL18.4:9/9 including parent; runtime schema idempotency, project/bid creation, role isolation, audit, FK/UNIQUE and API module/connection restart pass. Root43/43 plus syntax/static and API159/159 pass. services/api/v3/.tmp/postgres-baseline-ZUU0yU/result.json: testExitCode0, postgresExitCode0. Missing pg_isready diagnosed and replaced by pg driver probe. No mobile, WebAuth or financial runtime edits."
   },
-  "updatedAt": "2026-09-30T09:34:23Z",
-  "latestFollowup": {
-    "marketing": "733e5fda: RIVIERA independently closed Low contrast and all reported parser gaps including robots specificity guard; tests18/18, static2pages/7CTAs, syntax/diff PASS. Parent-only local Edge8 viewport/text cases passed on unchanged028b0ff8 HTML/CSS. Overall integration CHANGES_REQUIRED: publication5166e59f still has High project disclosure and Medium owner-role mismatch; role preselection only exists in web2409c780. Reports/evidence docs/migration/RIVIERA-MARKETING-REVIEW.md. No merge/push/deploy.",
-    "accountRole": "74e5618d058f4d360c22053b292d34fa9564568e: RIVIERA independently APPROVED source repair of two Medium registration identity findings;13/13 pinned-source probes, TypeScript/auth/diff exit0. Parent exact-SHA Edge154 real-React/synthetic-API browser10/10 plus lint PASS; base2409c780 remains8/10 under the harness. No provider/API/DB/visual E2E. Evidence docs/migration/ACCOUNT-ROLE-REVIEW.md; code not integrated into publication.",
-    "backendSourceSha256": "01613262aaac5529cd11abfe298f9a399c2bd93fe52d22a45becda4973a3dd9a",
-    "backendChecks": "Parent full offline Jest13suites292/292 exit0; payment33/33, guards6/6, syntax/diff0. ActualPG16/16 GkZJSQ includes syntheticproof login200/token/profile, replay400, five401bindings and legacyreceipt409 after restart. API01613262 committedc46bd1b4, clean. Independent accumulated-deltaPASS, focused33/33 and manifests0; reviewer closed. PAID-PROJECT-DETAILS-REVIEW.md.",
-    "qaBlocker": null,
-    "qaChecks": "QA1bceb8f5 afterf345b2fd: final X3EAmR API01613262/webb1cda59b actualbrowser/API/PG fivecheckpoints PASS,1/1, all services stopped0. GkZJSQ publication16/16 and guarded localrunner6/6. Red hnQ1xN missingnormalizer, harnessrouteyaLUFY and stale-pinigsJY4 retained honestly. New test sources independently inspected; finalbrowser evidence parent-only. No real payment, CSS/device or provider acceptance.",
-    "next": "Receiving-tree integration after five known conflicts are resolved in isolation, preserving publication migrations/profile/chat and its canonical checklist. See INTEGRATION-ORDER-2026-09-22.md. Repeat acceptance on changed combined source, not unchanged prior candidates. Next missing MVP path is test-mode project-bound checkout/webhook; no live systems or real finance."
-  },
+  "updatedAt": "2026-09-30T10:37:26Z",
+  "latestFollowup": "Local publication now contains reviewed backend, QA, October web and marketing in one candidate d613c440. Receiving API f24fdd7d preserves migrations/profile/docs/chat; parent and independent301/301 Jest, parent PG39/39 and project16/16. Actual receiving API/UI/PG FuE0Vg1/1 five checkpoints PASS with synthetic SQL entitlement only, all exits/ports cleanup0. Webbuild/lint/check0, paidbrief22/22; marketing parser18/18, static2pages7CTA, actual anchor+role fixtures12/12, viewport/text8/8. No external service, paid provider, live DB, real signing, checkout payment, push or deployment.",
   "previousMigrationTask": {
     "task": "canonical-postgres-migrations",
     "status": "P2_6_MIGRATION_REVIEWED_REMAINING_GATES_OPEN",

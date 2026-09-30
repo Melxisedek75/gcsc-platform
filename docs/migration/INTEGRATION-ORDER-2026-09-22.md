@@ -2,9 +2,45 @@
 
 Date: 2026-09-22 (America/Los_Angeles)
 
-This is a conflict analysis and proposed order only. No merge or deploy occurred.
+Originally a conflict analysis; current local integration evidence is below.
+No push or deployment is authorized by this document.
 
 ## Current October continuation, 2026-09-30
+
+Receiving worktree: `C:/gcsc-platform/.worktrees/legacy-preservation`, branch
+`codex/october-integration-20260930`, based on publication656a6469. Backend
+merge445a54b4 preserves canonical migrations/profile/document/chat and passed
+independent receiving review. QA merge034f6225 includes guarded source roots
+from2e6fc4fa. Web merge874153d9 preserves approved tree85957258 exactly;
+RIVIERA receiving review PASS. Docs-only8165a19f records evidence and fixes two
+Low provenance descriptions. Both backend and web runtime are frozen and tested.
+
+Parent receiving tests: API301/301, PG baseline39/39, project16/16, actual
+API/UI/PG1/1 with five checkpoints (`FuE0Vg`), role10/10 and paidbrief22/22;
+check/build/lint/static exit0, test services stopped. These are local fixtures,
+not checkout, real wallet, provider registration or launch evidence.
+
+Completed merge: marketing733e5fda, without content conflicts. Reviewed
+tree9d89cb68ddba3cd366fd0b9b3e9ad355baf94cc0 adds marketing, correct source
+adaptations and two actual CTA-to-registration fixture cases. Parent parser18/18,
+static2pages/7CTA, role+marketing12/12 and viewport/text8/8 pass. RIVIERA returned
+PASS for the exact tree, preserved in merge `d613c440af47e9097f60a889675f8dac9f527e8f`.
+Local publication fast-forwarded from656a6469, preserving coordinator edits.
+No push/deploy; previous receiving blockers are closed only for the local tree.
+After fast-forward, `npm run check` in publication also exits0: root31/31,
+mobile12/12, wallet11/11 and API/static web. Runtime/test/package diff against
+d613c440 is empty; only nine coordinator/product/review documents changed.
+
+Remaining dependency-ready sequence:
+1. Record the passed receiving reviews and exact local publication source d613c440;
+   do not repeat resolved integration/reviewer work. No external cutover authorized.
+2. Implement L11-L12 project-bound checkout and durable webhook processing in
+   local test fixtures first. Existing Stripe escrow PaymentIntent must not be
+   relabeled lead checkout. Server-owned versioned price, contractor/project
+   binding, event/signature verification, replay/out-of-order and atomic grant
+   tests are mandatory. Real provider/account/price/refund terms remain L10 gates.
+
+## Historical pre-integration analysis
 
 The older sequence below is historical. Current reviewed local candidates:
 backend `c46bd1b45c40bf60bb683027c219b680e91c85f9`, QA

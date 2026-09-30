@@ -419,4 +419,6 @@ backend re-audit, main/publication cutover, real payment/wallet or release appro
 
 Whole-MVP L01/L08/L09/L22/L23, provider checkout/webhook, disclosure policy,
 voice/AI, marketing/video and production approval remain open. This candidate
-is local; publication branch/main and public websites are unchanged.
+is local. After separately approved marketing merge `d613c440`, the local
+publication branch fast-forwarded to that exact candidate. Remote main and
+public websites are unchanged; no provider, wallet or launch gate was bypassed.

@@ -7,8 +7,10 @@ Date: 2026-09-30 UTC. Local receiving integration only; no push or deployment.
 Local worktree `C:/gcsc-platform/.worktrees/legacy-preservation`, branch
 `codex/october-integration-20260930`. Base `8165a19f` includes independently
 reviewed backend445a54b4, QA034f6225 and web874153d9. Incoming marketing733e5fda
-has no merge conflicts; integration review is pending before the merge commit.
-Publication/main and deployed websites are unchanged.
+has no merge conflicts and was committed as `d613c440af47e9097f60a889675f8dac9f527e8f`
+after independent PASS for exact tree `9d89cb68ddba3cd366fd0b9b3e9ad355baf94cc0`.
+The local publication branch fast-forwarded from656a6469 to that exact commit;
+coordinator edits were preserved. Remote main and deployed websites are unchanged.
 
 The receiving API hash is f24fdd7d20a658b8d8e60d14b5fe5db8b1b56260269f8c7aa2a3577b5f68ff77.
 Actual receiving API/UI/PostgreSQL acceptance `FuE0Vg` proves five project-flow
@@ -16,7 +18,7 @@ checkpoints including unpaid/revoked denial; isolated SQL paid grants are not
 checkout/payment evidence. See PAID-PROJECT-DETAILS-REVIEW.md for exact sources,
 commands, independent scope and clean shutdown. The entire application runtime
 is unchanged by the marketing merge. Historical findings below refer to5166e59f,
-not the receiving runtime; their closure for this integration awaits review.
+not the receiving runtime; independent review closed both for this local integration.
 
 Parent commands from the receiving root, all completed exit0:
 - `node apps/marketing/validate-static.mjs --test`:18/18.
@@ -48,6 +50,32 @@ removed. Marketing HTML/CSS/image equal incoming733e5fda.
 Open release gates: project-specific provider checkout/webhook, commercial and
 contact policy, full registration/provider tests, AI/voice, video/media rights,
 full accessibility/performance/legal review and explicit production authorization.
+
+### Independent final receiving result
+
+RIVIERA `01a0f0fd-0955-72e0-aa60-0caf8a412362` returned
+`AI_REVIEW_GATE=PASS` for tree9d89cb68 vs HEAD8165a19f and incoming733e5fda.
+Index stable before/after; no source/index/service writes. No new findings.
+High privacy and Medium owner-CTA dependencies are closed for this local tree,
+not for old5166e59f or live sites. API/web hashes remain identical to874153d9
+and FuE0Vg inputs. Marketing equals733e5fda except its updated truthful ledger.
+
+Independent commands all exit0 from the receiving root:
+- `node apps/marketing/validate-static.mjs --test`:18/18.
+- `node apps/marketing/validate-static.mjs`:2pages,7CTA.
+- `node --test tests/migration.test.mjs tests/source-provenance.test.mjs`:22/22.
+- `node --check apps/marketing/validate-static.mjs` and
+  `node --check apps/web/scripts/verify-account-role-browser.cjs`:0.
+- `git --no-optional-locks diff --check 8165a19faa6c76acce965fbb526b2e774022344b 9d89cb68ddba3cd366fd0b9b3e9ad355baf94cc0`:0.
+- In-memory probes: query5/5, CTA callbacks2 positive+4 negative. Incorrect
+  href/payload rejected; tests observe preselection, never select roles manually.
+- Saved evidence verified:12/12CTA/role, all five source hashes match; layout
+  report8 cases with no failures. Prior FuE0Vg API+10web hashes match.
+
+Reviewer did not rerun browser/DB/build: those remain parent evidence. It did
+not grant full WCAG, media-rights, live registration/payment or release approval.
+Reviewer context closed after completion. Parent final receiving `npm run check`
+also exits0 (root31/31, mobile12/12, wallet11/11, API/static web).
 
 ## Historical source checkpoint
 
