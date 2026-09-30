@@ -104,6 +104,10 @@ def check_robots(source):
         directive, value = directive.strip().lower(), value.strip()
         if directive == "user-agent":
             agents.add(value)
+        if directive == "disallow":
+            # Both current pages must be crawlable. Do not infer RFC rule
+            # precedence from RobotFileParser's first-match implementation.
+            require(not value, "robots.txt blocks or restricts crawling; nonempty Disallow rules require separate review")
         if directive in {"allow", "disallow"}:
             require(not any(char in value for char in "*$"), "robots.txt wildcard rules require separate review")
     for agent in agents:

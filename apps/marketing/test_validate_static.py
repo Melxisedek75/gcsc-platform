@@ -58,6 +58,18 @@ class MarketingChecksTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "owner and contractor"):
             self.validate()
 
+    def test_robots_restrictions_do_not_depend_on_rule_order(self):
+        for rules in ("Allow: /\nDisallow: /whitepaper.html", "Disallow: /whitepaper.html\nAllow: /"):
+            with self.subTest(rules=rules):
+                self.files["robots.txt"] = f"User-agent: *\n{rules}\nSitemap: https://xprnet.org/sitemap.xml\n"
+                with self.assertRaisesRegex(ValueError, "robots.txt"):
+                    self.validate()
+
+    def test_robots_new_crawl_restrictions_require_review(self):
+        self.files["robots.txt"] = "User-agent: *\nDisallow: /private\nSitemap: https://xprnet.org/sitemap.xml\n"
+        with self.assertRaisesRegex(ValueError, "robots.txt"):
+            self.validate()
+
     def test_unsafe_url_schemes_are_rejected(self):
         for url in ("javascript:alert(1)", "jav&#x61;script:alert(1)", "java&#9;script:alert(1)",
                     "data:text/html,test", "//untrusted.example/", "https://user:password@example.com/"):

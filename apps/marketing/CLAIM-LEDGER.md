@@ -39,6 +39,9 @@ fixtures in memory. Checks cover local references/anchors, unsafe URL schemes,
 duplicate IDs, real account-link elements (not comments), canonical/social
 metadata, crawlability, draft `noindex` and the homepage-only sitemap. These
 focused checks are not a full HTML5 validator, CI result or receiving-app test.
+For the current two publicly crawlable pages, any nonempty `Disallow` or wildcard
+rule fails closed and requires a separate policy review. The validator does not
+pretend that Python's first-match robots parser implements crawler specificity.
 
 Optional local browser regression: `node apps/marketing/verify-browser.cjs`.
 It requires an already installed Playwright and browser; it never downloads
