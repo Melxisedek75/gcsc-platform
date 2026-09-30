@@ -4,7 +4,7 @@
   "private": true,
   "description": "GCSC three-repository migration candidate; not a production release",
   "scripts": {
-    "test": "node --test tests/migration.test.mjs tests/source-provenance.test.mjs tests/legacy-preservation.test.mjs",
+    "test": "node --test tests/migration.test.mjs tests/source-provenance.test.mjs tests/legacy-preservation.test.mjs tests/web-validator-root.test.mjs tests/postgres-schema.test.mjs",
     "test:legacy-preservation": "node --test tests/legacy-preservation.test.mjs",
     "test:wallet-sdk": "node --test tests/wallet-sdk-identity.test.mjs",
     "test:wallet-payload": "node --test tests/wallet-challenge-payload.test.mjs",
@@ -19,6 +19,9 @@
     "build:web": "npm --prefix apps/web run build",
     "lint:web": "npm --prefix apps/web run lint",
     "test:api": "node scripts/run-api-tests.mjs",
+    "test:postgres:guards": "node --test tests/local-test-database.test.mjs tests/postgres-runner.test.mjs",
+    "test:postgres:schema": "node --test tests/postgres-schema.test.mjs",
+    "test:postgres:local": "node scripts/run-postgres-baseline.mjs",
     "test:contracts": "node scripts/run-contract-tests.mjs",
     "check": "npm test && npm run test:mobile-build && npm run test:wallet-restore && npm run check:api-syntax && npm run check:web",
     "test:source-history": "node --test tests/source-history.test.mjs",

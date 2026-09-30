@@ -1,7 +1,8 @@
 # Paid project brief: local API candidate
 
 Date: 2026-09-30. Scope: L07/L08 API read dependency, not checkout or production.
-No integration, push, external provider, real payment or wallet signing occurred.
+Initial sections record separate candidates; receiving integration is recorded
+at the end. No push, external provider, real payment or real-wallet signing occurred.
 
 ## Exact inputs
 
@@ -344,7 +345,41 @@ production security audit. No existing mainnet,
 production or live database was used by the parent checks. Source-only or local
 DB evidence cannot approve a real payment or production release.
 
-Next: reconcile the five confirmed receiving-tree conflicts documented in
+Historical next step: reconcile the five confirmed receiving-tree conflicts documented in
 INTEGRATION-ORDER-2026-09-22.md, preserving its migrations/profile/chat fixes,
 then revalidate the combined exact candidate. No branch was merged. The UI must
 not offer an unimplemented checkout or treat fixture grants as sales.
+
+## Receiving integration on 2026-09-30
+
+Worktree `C:/gcsc-platform/.worktrees/legacy-preservation`, branch
+`codex/october-integration-20260930`, started from publication `656a6469`.
+Local backend merge `445a54b4` passed independent receiving-tree review;
+see `BACKEND-RECEIVING-INTEGRATION-REVIEW.md` for the exact tree and evidence.
+API SHA-256 is `f24fdd7d20a658b8d8e60d14b5fe5db8b1b56260269f8c7aa2a3577b5f68ff77`.
+Canonical migrations, document/admin ACL and participant chat remain present.
+Parent and independent reviewer passed 301/301; parent real PG baseline39/39,
+and receiving project suite16/16 (`postgres-baseline-ihRpjb`) passed with
+test and shutdown exit0. This does not close real-wallet/payment gates.
+
+QA merge `034f6225` includes `2e6fc4fa` guarded explicit source roots, module
+hashes and disposable snapshot support. Source/read guards12/12 pass. Earlier
+QA run `9hbuOD` used receiving API plus the separate October-web, not the combined
+UI checkout. No claim of combined UI acceptance is based on that run alone.
+
+Incoming October-web `b1cda59b` merged without content conflicts, pending final
+combined review. Its five changed runtime files remain byte-identical to that
+independently reviewed candidate. Updated adaptation entries retain original
+source blobs; root npm commands expose PG guards/schema/local suites and include
+the validator/root/schema regressions in default tests. No dependencies changed.
+
+Parent receiving checks so far: `npm run check` exit0 (31 root,12 mobile guards,
+11 wallet restore, static/syntax); `npm --prefix apps/web run build` exit0;
+lint exit0 with the existing DecryptText warning; auth validator exit0;
+web states4/4; real-React synthetic registration browser10/10. Paid browser22
+and real receiving API/UI/PostgreSQL journey are running/pending; no PASS yet.
+The registration fixture does not contact an actual email/SMS provider.
+
+Whole-MVP L01/L08/L09/L22/L23, provider checkout/webhook, disclosure policy,
+voice/AI, marketing/video and production approval remain open. This candidate
+is local; publication branch/main and public websites are unchanged.

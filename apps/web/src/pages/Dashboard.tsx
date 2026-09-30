@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api, type GcscUser } from '../services/api';
 import {
@@ -21,7 +21,7 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import { getProfile, initials } from './dashboard/format';
-import type { Section } from './dashboard/types';
+import type { AccountRole, Section } from './dashboard/types';
 import { AccountAccess } from './dashboard/AccountAccess';
 
 // Authenticated panels are code-split so each dashboard section loads on demand.
@@ -54,6 +54,9 @@ const navItems: { key: Section; label: string; icon: typeof LayoutDashboard; adm
 ];
 
 export default function Dashboard() {
+  const [searchParams] = useSearchParams();
+  const requestedRole = searchParams.get('role');
+  const initialRole: AccountRole = requestedRole === 'homeowner' ? 'homeowner' : 'contractor';
   const [activeSection, setActiveSection] = useState<Section>('projects');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<GcscUser | null>(null);
@@ -156,7 +159,7 @@ export default function Dashboard() {
   }
 
   if (!user) {
-    return <AccountAccess onAuthenticated={setUser} />;
+    return <AccountAccess initialRole={initialRole} onAuthenticated={setUser} />;
   }
 
   const profile = getProfile(user);

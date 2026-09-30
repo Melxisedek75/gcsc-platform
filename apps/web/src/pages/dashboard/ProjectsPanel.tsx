@@ -14,19 +14,24 @@ import {
   ClipboardList,
   RefreshCw,
   MessageCircle,
+  Send,
 } from 'lucide-react';
 import {
   api,
+  ApiError,
   type GcscBid,
   type GcscEscrow,
   type GcscMilestone,
   type GcscProject,
+  type GcscPaidProjectBrief,
   type GcscUser,
 } from '../../services/api';
 import { createLatestRequestGate } from '../../services/latest-request.mjs';
 import { fieldClass, formatCurrency, projectStatusLabel, bidStatusLabel } from './format';
 import { StatusBadge, ContractorTrustBadge } from './shared';
 import { MilestoneManager } from './MilestoneManager';
+
+const legacyEscrowWorkflowEnabled = import.meta.env.VITE_ENABLE_LEGACY_ESCROW_WORKFLOW === 'true';
 
 function ProjectRequestForm({ onCreated }: { onCreated: (project: GcscProject) => void }) {
   const [form, setForm] = useState({
@@ -69,7 +74,7 @@ function ProjectRequestForm({ onCreated }: { onCreated: (project: GcscProject) =
         location: '',
         timeline_days: '30',
       });
-      setStatus('Project posted. Contractors can now submit bids.');
+      setStatus('Draft saved. Review it below, then publish when ready.');
     } catch (err) {
       setStatus(err instanceof Error ? err.message : 'Could not create project');
     } finally {
@@ -80,9 +85,9 @@ function ProjectRequestForm({ onCreated }: { onCreated: (project: GcscProject) =
   return (
     <form onSubmit={submit} className="glass-card p-5 space-y-4">
       <div>
-        <h3 className="font-outfit font-semibold text-[#0F172A] text-lg">Post a project</h3>
+        <h3 className="font-outfit font-semibold text-[#0F172A] text-lg">New project draft</h3>
         <p className="text-sm text-[#64748B] mt-1">
-          Create a real homeowner project in the backend so contractors can bid on it.
+          Your request stays private until you publish it.
         </p>
       </div>
 
@@ -158,19 +163,29 @@ function ProjectRequestForm({ onCreated }: { onCreated: (project: GcscProject) =
         style={{ background: 'linear-gradient(135deg, #7B2FF7 0%, #3B6BF7 55%, #00D4FF 100%)' }}
       >
         {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-        Create Project
+        Save Draft
       </button>
     </form>
   );
 }
 
-function BidComposer({ project, onSubmitted }: { project: GcscProject; onSubmitted: () => void }) {
+function BidComposer({ project, onSubmitted, onAccessLost }: {
+  project: GcscPaidProjectBrief;
+  onSubmitted: () => void;
+  onAccessLost: () => void;
+}) {
   const [form, setForm] = useState({ amount: '', proposed_timeline_days: String(project.timeline_days || 30), message: '' });
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState('');
+  const [submissionComplete, setSubmissionComplete] = useState(false);
+  const submissionGate = useRef(createLatestRequestGate()).current;
+
+  useEffect(() => () => submissionGate.invalidate(), [submissionGate]);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    if (saving || submissionComplete) return;
+    const requestId = submissionGate.start();
     setSaving(true);
     setStatus('');
     try {
@@ -180,13 +195,23 @@ function BidComposer({ project, onSubmitted }: { project: GcscProject; onSubmitt
         proposed_timeline_days: Number(form.proposed_timeline_days || project.timeline_days || 30),
         message: form.message,
       });
+      if (!submissionGate.isCurrent(requestId)) return;
+      setSubmissionComplete(true);
       setStatus('Bid submitted. You can track it in My Bids.');
       setForm({ amount: '', proposed_timeline_days: String(project.timeline_days || 30), message: '' });
       onSubmitted();
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Could not submit bid');
+      if (!submissionGate.isCurrent(requestId)) return;
+      if (err instanceof ApiError && [401, 403, 404].includes(err.status)) {
+        onAccessLost();
+      } else if (!(err instanceof ApiError) || err.status >= 500) {
+        setSubmissionComplete(true);
+        setStatus('Could not confirm submission. Check My Bids before trying again.');
+      } else {
+        setStatus(err.message);
+      }
     } finally {
-      setSaving(false);
+      if (submissionGate.isCurrent(requestId)) setSaving(false);
     }
   };
 
@@ -224,7 +249,7 @@ function BidComposer({ project, onSubmitted }: { project: GcscProject; onSubmitt
       {status && <p className="text-sm text-[#475569]">{status}</p>}
       <button
         type="submit"
-        disabled={saving}
+        disabled={saving || submissionComplete}
         className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full text-white text-sm font-semibold disabled:opacity-60"
         style={{ background: 'linear-gradient(135deg, #7B2FF7 0%, #3B6BF7 100%)' }}
       >
@@ -235,11 +260,19 @@ function BidComposer({ project, onSubmitted }: { project: GcscProject; onSubmitt
   );
 }
 
-export function ProjectsPanel({ user, onOpenChat }: { user: GcscUser; onOpenChat: (bidId: number) => void }) {
+type ProjectsPanelProps = { user: GcscUser; onOpenChat: (bidId: number) => void };
+
+export function ProjectsPanel(props: ProjectsPanelProps) {
+  // Remount before painting another account: no previous private state or draft is reused.
+  return <AccountProjectsPanel key={`${props.user.id}:${props.user.role}`} {...props} />;
+}
+
+function AccountProjectsPanel({ user, onOpenChat }: ProjectsPanelProps) {
   const [filter, setFilter] = useState<string>('All');
   const [search, setSearch] = useState('');
   const [projects, setProjects] = useState<GcscProject[]>([]);
   const [selectedProject, setSelectedProject] = useState<GcscProject | null>(null);
+  const [paidBrief, setPaidBrief] = useState<{ project: GcscPaidProjectBrief; requestId: number } | null>(null);
   const [selectedBids, setSelectedBids] = useState<GcscBid[]>([]);
   const [selectedEscrow, setSelectedEscrow] = useState<GcscEscrow | null>(null);
   const [selectedMilestones, setSelectedMilestones] = useState<GcscMilestone[]>([]);
@@ -248,8 +281,11 @@ export function ProjectsPanel({ user, onOpenChat }: { user: GcscUser; onOpenChat
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState('');
   const [detailMessage, setDetailMessage] = useState('');
+  const [publishingId, setPublishingId] = useState<number | null>(null);
   const requestGate = useRef(createLatestRequestGate()).current;
+  const detailGate = useRef(createLatestRequestGate()).current;
   const isHomeowner = user.role === 'homeowner';
+  const displayedProject = paidBrief?.project ?? selectedProject;
 
   const loadProjects = useCallback(async () => {
     const requestId = requestGate.start();
@@ -278,6 +314,10 @@ export function ProjectsPanel({ user, onOpenChat }: { user: GcscUser; onOpenChat
       if (!requestGate.isCurrent(requestId)) return;
       setProjects([]);
       setSelectedProject(null);
+      detailGate.invalidate();
+      setPaidBrief(null);
+      setBiddingProjectId(null);
+      setDetailLoading(false);
       setSelectedBids([]);
       setSelectedEscrow(null);
       setSelectedMilestones([]);
@@ -285,31 +325,57 @@ export function ProjectsPanel({ user, onOpenChat }: { user: GcscUser; onOpenChat
     } finally {
       if (requestGate.isCurrent(requestId)) setLoading(false);
     }
-  }, [isHomeowner, requestGate]);
+  }, [isHomeowner, requestGate, detailGate]);
 
   useEffect(() => {
     void loadProjects();
-    return () => requestGate.invalidate();
-  }, [loadProjects, requestGate]);
+    return () => { requestGate.invalidate(); detailGate.invalidate(); };
+  }, [loadProjects, requestGate, detailGate]);
 
   const loadDetails = async (projectId: number) => {
+    const requestId = detailGate.start();
+    setSelectedProject(null);
+    setPaidBrief(null);
+    setBiddingProjectId(null);
+    setSelectedBids([]);
+    setSelectedEscrow(null);
+    setSelectedMilestones([]);
     setDetailLoading(true);
     setDetailMessage('');
     try {
       const response = await api.getProject(projectId);
-      setSelectedProject(response.project);
-      setSelectedBids(response.bids || []);
-      setSelectedEscrow(null);
-      setSelectedMilestones([]);
-      if (response.project?.escrow_id) {
+      if (!detailGate.isCurrent(requestId)) return;
+      if (!response.project || response.project.id !== projectId) throw new Error('Project unavailable. Please try again.');
+      const project: GcscProject = response.project;
+      // The server's existing accepted-contractor read is independent of escrow actions.
+      // Public previews never carry an escrow_id; this does not grant paid-lead access.
+      const acceptedProject = user.role === 'contractor'
+        && Number.isSafeInteger(project.escrow_id) && Number(project.escrow_id) > 0;
+      setSelectedProject(isHomeowner || acceptedProject ? project : {
+        id: project.id, title: project.title, category: project.category,
+        budget_min: project.budget_min, budget_max: project.budget_max,
+        timeline_days: project.timeline_days, status: project.status, published_at: project.published_at,
+      });
+      if (isHomeowner || acceptedProject) setSelectedBids(response.bids || []);
+      if (user.role === 'contractor' && project.status === 'open' && !acceptedProject) {
+        const details = await api.getProjectDetails(projectId);
+        if (!detailGate.isCurrent(requestId)) return;
+        setPaidBrief({ project: details.project, requestId });
+      }
+      if (legacyEscrowWorkflowEnabled && response.project?.escrow_id) {
         const escrowResponse = await api.getEscrow(response.project.escrow_id);
+        if (!detailGate.isCurrent(requestId)) return;
         setSelectedEscrow(escrowResponse.escrow);
         setSelectedMilestones(escrowResponse.milestones || []);
       }
     } catch (err) {
-      setDetailMessage(err instanceof Error ? err.message : 'Could not load project details');
+      if (!detailGate.isCurrent(requestId)) return;
+      setPaidBrief(null);
+      setDetailMessage(err instanceof ApiError && [401, 403, 404].includes(err.status)
+        ? 'Project details are unavailable for this account. Access may have changed.'
+        : 'Could not verify project details. Please try again.');
     } finally {
-      setDetailLoading(false);
+      if (detailGate.isCurrent(requestId)) setDetailLoading(false);
     }
   };
 
@@ -338,14 +404,29 @@ export function ProjectsPanel({ user, onOpenChat }: { user: GcscUser; onOpenChat
     setSelectedMilestones([]);
   };
 
+  const publishProject = async (project: GcscProject) => {
+    setPublishingId(project.id);
+    setDetailMessage('');
+    try {
+      const response = await api.publishProject(project.id);
+      setSelectedProject(response.project);
+      setProjects((current) => current.map((item) => item.id === project.id ? response.project : item));
+      setDetailMessage('Project published. Contractors can now see its preview.');
+    } catch (err) {
+      setDetailMessage(err instanceof Error ? err.message : 'Could not publish project');
+    } finally {
+      setPublishingId(null);
+    }
+  };
+
   const filtered = useMemo(() => {
     return projects.filter((project) => {
-      const label = projectStatusLabel(project.status);
+      const label = project.published === false ? 'Draft' : projectStatusLabel(project.status);
       const matchesFilter = filter === 'All' || label === filter;
       const q = search.toLowerCase().trim();
       const matchesSearch = !q || [project.title, project.category, project.location, String(project.id)]
         .filter(Boolean)
-        .some((item) => item.toLowerCase().includes(q));
+        .some((item) => String(item).toLowerCase().includes(q));
       return matchesFilter && matchesSearch;
     });
   }, [filter, search, projects]);
@@ -365,8 +446,8 @@ export function ProjectsPanel({ user, onOpenChat }: { user: GcscUser; onOpenChat
           </h2>
           <p className="font-inter text-sm text-[#475569] mt-1">
             {isHomeowner
-              ? 'Create project requests, review contractor bids, and move accepted work into escrow.'
-              : 'Review homeowner requests and submit real bids through the backend API.'}
+              ? 'Save a private draft, then publish it when ready.'
+              : 'Browse project previews. Full details require project-specific access.'}
           </p>
         </div>
         <div className="relative">
@@ -384,7 +465,7 @@ export function ProjectsPanel({ user, onOpenChat }: { user: GcscUser; onOpenChat
       {isHomeowner && <ProjectRequestForm onCreated={onProjectCreated} />}
 
       <div className="flex items-center gap-2 flex-wrap">
-        {(['All', 'Open', 'In Progress', 'Completed', 'Cancelled'] as const).map((status) => (
+        {(['All', ...(isHomeowner ? ['Draft'] : []), 'Open', 'In Progress', 'Completed', 'Cancelled'] as const).map((status) => (
           <button
             key={status}
             onClick={() => setFilter(status)}
@@ -438,7 +519,7 @@ export function ProjectsPanel({ user, onOpenChat }: { user: GcscUser; onOpenChat
                     </td>
                   </tr>
                 ) : filtered.map((project) => {
-                  const label = projectStatusLabel(project.status);
+                  const label = project.published === false ? 'Draft' : projectStatusLabel(project.status);
                   return (
                     <tr key={project.id} className="border-b border-[#F1F5F9] hover:bg-[#F8FAFC]/60 transition-colors">
                       <td className="px-4 py-3">
@@ -446,7 +527,9 @@ export function ProjectsPanel({ user, onOpenChat }: { user: GcscUser; onOpenChat
                         <div className="font-mono text-xs text-[#3B6BF7]">#{project.id}</div>
                       </td>
                       <td className="px-4 py-3 text-[#475569]">{project.category || 'General'}</td>
-                      <td className="px-4 py-3 text-[#475569]">{project.location || 'Not set'}</td>
+                      <td className="px-4 py-3 text-[#475569]">
+                        {isHomeowner ? project.location || 'Not set' : 'Not disclosed'}
+                      </td>
                       <td className="px-4 py-3 font-medium text-[#0F172A]">
                         {formatCurrency(project.budget_min || 0)} - {formatCurrency(project.budget_max || 0)}
                       </td>
@@ -459,21 +542,6 @@ export function ProjectsPanel({ user, onOpenChat }: { user: GcscUser; onOpenChat
                           >
                             <Eye size={12} /> View
                           </button>
-                          {!isHomeowner && project.status === 'open' && (
-                            <button
-                              onClick={() => {
-                                setBiddingProjectId(project.id);
-                                setSelectedProject(project);
-                                setSelectedBids([]);
-                                setSelectedEscrow(null);
-                                setSelectedMilestones([]);
-                              }}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium text-white transition-all hover:scale-[1.04]"
-                              style={{ background: 'linear-gradient(135deg, #7B2FF7 0%, #3B6BF7 100%)' }}
-                            >
-                              <Gavel size={12} /> Bid
-                            </button>
-                          )}
                         </div>
                       </td>
                     </tr>
@@ -489,26 +557,47 @@ export function ProjectsPanel({ user, onOpenChat }: { user: GcscUser; onOpenChat
           )}
         </div>
 
-        <aside className="glass-card p-5 min-h-[320px]">
+        <aside className="glass-card p-5 min-h-[320px]" aria-label="Project details" aria-busy={detailLoading}>
           {detailLoading ? (
             <div className="h-full flex items-center justify-center text-[#64748B]">
               <Loader2 size={18} className="animate-spin mr-2" /> Loading details...
             </div>
-          ) : selectedProject ? (
+          ) : selectedProject && displayedProject ? (
             <div className="space-y-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider gradient-text">Selected Project</p>
-                <h3 className="font-outfit font-bold text-xl text-[#0F172A] mt-1">{selectedProject.title}</h3>
-                <p className="text-sm text-[#64748B] mt-2 leading-6">{selectedProject.description}</p>
+                <h3 className="font-outfit font-bold text-xl text-[#0F172A] mt-1 break-words">{displayedProject.title}</h3>
+                <p className="text-sm text-[#64748B] mt-2 leading-6 whitespace-pre-wrap break-words">
+                  {displayedProject.description || (isHomeowner ? 'No description yet.' : 'Full project details require confirmed access to this lead.')}
+                </p>
               </div>
+              {!isHomeowner && (
+                <button type="button" onClick={() => void loadDetails(selectedProject.id)}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-md border border-[#CBD5E1] px-3 py-2 text-sm font-semibold text-[#334155]">
+                  <RefreshCw size={16} /> {paidBrief || selectedProject.escrow_id ? 'Refresh details' : 'Check access'}
+                </button>
+              )}
+              {isHomeowner && selectedProject.published !== true && selectedProject.status === 'open' && (
+                <button
+                  type="button"
+                  onClick={() => void publishProject(selectedProject)}
+                  disabled={publishingId === selectedProject.id}
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#0F766E] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                >
+                  {publishingId === selectedProject.id ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                  Publish project
+                </button>
+              )}
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="rounded-xl bg-[#F8FAFC] p-3">
                   <p className="text-xs text-[#94A3B8]">Timeline</p>
-                  <p className="font-semibold text-[#0F172A]">{selectedProject.timeline_days || 30} days</p>
+                  <p className="font-semibold text-[#0F172A]">{displayedProject.timeline_days || 30} days</p>
                 </div>
                 <div className="rounded-xl bg-[#F8FAFC] p-3">
                   <p className="text-xs text-[#94A3B8]">Status</p>
-                  <p className="font-semibold text-[#0F172A]">{projectStatusLabel(selectedProject.status)}</p>
+                  <p className="font-semibold text-[#0F172A]">
+                    {selectedProject.published === false ? 'Draft' : projectStatusLabel(selectedProject.status)}
+                  </p>
                 </div>
               </div>
 
@@ -575,7 +664,7 @@ export function ProjectsPanel({ user, onOpenChat }: { user: GcscUser; onOpenChat
                         >
                           <MessageCircle size={14} /> Open chat
                         </button>
-                        {bid.status === 'pending' && selectedProject.status === 'open' && (
+                        {legacyEscrowWorkflowEnabled && bid.status === 'pending' && selectedProject.status === 'open' && (
                           <button
                             onClick={() => void acceptBid(bid)}
                             disabled={!canAccept}
@@ -589,8 +678,22 @@ export function ProjectsPanel({ user, onOpenChat }: { user: GcscUser; onOpenChat
                     );
                   })}
                 </div>
+              ) : selectedProject.escrow_id ? (
+                <p className="text-sm text-[#475569]" role="status">You are assigned to this project.</p>
+              ) : !paidBrief ? (
+                <p className="text-sm text-[#475569]" role="status">
+                  Purchasing lead access is not available yet. No payment is requested here.
+                </p>
               ) : biddingProjectId === selectedProject.id ? (
-                <BidComposer project={selectedProject} onSubmitted={() => void loadProjects()} />
+                <BidComposer key={`${selectedProject.id}:${paidBrief.requestId}`} project={paidBrief.project}
+                  onSubmitted={() => { if (detailGate.isCurrent(paidBrief.requestId)) void loadProjects(); }}
+                  onAccessLost={() => {
+                    if (!detailGate.isCurrent(paidBrief.requestId)) return;
+                    detailGate.invalidate();
+                    setPaidBrief(null);
+                    setBiddingProjectId(null);
+                    setDetailMessage('Access has changed. Your bid was not submitted. Check access before trying again.');
+                  }} />
               ) : (
                 <button
                   onClick={() => setBiddingProjectId(selectedProject.id)}
@@ -601,7 +704,7 @@ export function ProjectsPanel({ user, onOpenChat }: { user: GcscUser; onOpenChat
                 </button>
               )}
 
-              {selectedEscrow && (
+              {legacyEscrowWorkflowEnabled && selectedEscrow && (
                 <MilestoneManager
                   escrow={selectedEscrow}
                   milestones={selectedMilestones}
@@ -616,7 +719,7 @@ export function ProjectsPanel({ user, onOpenChat }: { user: GcscUser; onOpenChat
             <div className="h-full flex flex-col items-center justify-center text-center text-[#64748B] py-10">
               <ClipboardList size={32} className="text-[#94A3B8] mb-3" />
               <p className="font-semibold text-[#0F172A]">Select a project</p>
-              <p className="text-sm mt-1">Project details, bids, and escrow actions appear here.</p>
+              <p className="text-sm mt-1">{detailMessage || 'Project details and proposals appear here.'}</p>
             </div>
           )}
         </aside>

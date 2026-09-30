@@ -9,8 +9,9 @@ Date: 2026-09-30. Local candidate only; no publication cutover or deployment.
 - Candidate: `codex/october-integration-20260930`, reused clean
   `C:/gcsc-platform/.worktrees/legacy-preservation`; archival branch retained.
 - API SHA-256: `f24fdd7d20a658b8d8e60d14b5fe5db8b1b56260269f8c7aa2a3577b5f68ff77`.
-- Review state: pending independent receiving-tree assessment. Prior lane PASS
-  does not approve this combined tree.
+- Review state: independent receiving-backend PASS, staged tree
+  `2c6e986aa3acbb611f94a60770afcda0ba878ef5`, preserved unchanged in local merge
+  `445a54b4cd676fdbf757fcd2adb133217214a9d2`.
 
 ## Conflict resolution
 
@@ -65,8 +66,23 @@ explicit empty challenge-table expiry handling, verified-wallet lookup and
 fixture-only Testnet chain identity. The auth limiter assertion now includes the
 successful admin login in the same peer budget and denies a forged Bearer/IP
 retry. Assertions on document versions, ownership verification and workflow
-results remain active. Runtime API/schema hashes did not change. Independent
-review is pending final follow-up inspection.
+results remain active. Runtime API/schema hashes did not change.
+
+## Independent result
+
+Reviewer `01a0edd5-92a1-7b42-ac8f-88094d6f5637` returned
+`AI_REVIEW_GATE=PASS` for the exact 22-file receiving-backend tree above.
+No new Critical/High/Medium findings. Independently ran all 301 Jest tests,
+both fake-PG commands, provenance/schema/runner/validator 16/16, API contract
+check and diff checks, all exit 0. Checked final index identity and the five
+production file hashes in parent PG evidence. Actual PG/browser results remain
+parent/QA evidence, not an independent rerun. Reviewer closed after completion.
+
+Later QA integration `034f6225ceb4b386093ca266092db4e6af24f0c5` brought the
+guarded harness from `2e6fc4fa` without replacing the canonical checklist.
+Parent reviewed the QA-authored six-file source delta and reran 12/12 guards;
+all six receiving files equal that QA commit. Receiving project-publication
+rerun `postgres-baseline-ihRpjb` passes 16/16 with test/PG exits 0/0.
 
 ## Limits
 

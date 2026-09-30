@@ -145,17 +145,32 @@ export interface GcscUser {
 
 export interface GcscProject {
   id: number
-  homeowner_id: number
+  homeowner_id?: number
+  title: string
+  description?: string
+  category: string
+  budget_min: number
+  budget_max: number
+  location?: string
+  timeline_days: number
+  status: string
+  published?: boolean
+  published_at?: string | null
+  access_status?: 'unpaid' | 'pending' | 'paid' | 'refunded' | 'revoked'
+  escrow_id?: number | null
+  created_at?: string
+}
+
+export interface GcscPaidProjectBrief {
+  id: number
   title: string
   description: string
   category: string
   budget_min: number
   budget_max: number
-  location: string
   timeline_days: number
-  status: string
-  escrow_id?: number | null
-  created_at: string
+  status: 'open'
+  published_at: string | null
 }
 
 export interface GcscBidContractor {
@@ -393,6 +408,24 @@ class ApiClient {
   getProject(id: number) {
     return this.request(`/projects/${id}`)
   }
+  async getProjectDetails(id: number): Promise<{ project: GcscPaidProjectBrief }> {
+    if (!Number.isSafeInteger(id) || id <= 0 || id > 2147483647) {
+      throw new ApiError('Invalid project ID', 400)
+    }
+    const { project } = await this.request(`/projects/${id}/details`, { cache: 'no-store' })
+    if (!project || project.id !== id || project.status !== 'open'
+      || !['title', 'description', 'category'].every(key => typeof project[key] === 'string')
+      || !['budget_min', 'budget_max', 'timeline_days'].every(key => typeof project[key] === 'number' && Number.isFinite(project[key]))
+      || !(project.published_at === null || typeof project.published_at === 'string')) {
+      throw new ApiError('Could not verify project details. Please try again.', 502)
+    }
+    // Only the paid-brief contract is consumed here, never owner/contact or grant metadata.
+    return { project: {
+      id: project.id, title: project.title, description: project.description,
+      category: project.category, budget_min: project.budget_min, budget_max: project.budget_max,
+      timeline_days: project.timeline_days, status: project.status, published_at: project.published_at,
+    } }
+  }
   getPublicContractorProfile(id: number | string) {
     return this.request(`/contractors/${id}/public`)
   }
@@ -409,6 +442,9 @@ class ApiClient {
     timeline_days?: number
   }) {
     return this.request('/projects', { method: 'POST', body: JSON.stringify(body) })
+  }
+  publishProject(id: number): Promise<{ project: GcscProject }> {
+    return this.request(`/projects/${id}/publish`, { method: 'POST' })
   }
 
   // BIDS

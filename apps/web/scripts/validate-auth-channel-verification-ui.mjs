@@ -7,6 +7,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 const dashboard = readDashboardSource(root);
 const api = read('src/services/api.ts');
+const router = read('src/main.tsx');
 
 const checks = [
   {
@@ -26,6 +27,14 @@ const checks = [
       dashboard.includes('Homeowners verify by SMS') &&
       dashboard.includes('Contractors verify by email'),
     message: 'Dashboard must route homeowners to SMS and contractors to email with clear copy.',
+  },
+  {
+    ok: router.includes('<HashRouter>') &&
+      dashboard.includes("searchParams.get('role')") &&
+      dashboard.includes("requestedRole === 'homeowner' ? 'homeowner' : 'contractor'") &&
+      dashboard.includes('initialRole={initialRole}') &&
+      dashboard.includes('useState<AccountRole>(initialRole)'),
+    message: 'Dashboard role links must preselect the requested registration role without granting privileges.',
   },
 ];
 
