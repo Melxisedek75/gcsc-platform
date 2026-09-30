@@ -13,7 +13,7 @@ const root = path.resolve(__dirname, '..');
 const apiRoot = path.join(root, 'services/api/v3');
 const webRoot = path.resolve(root, '../October-web/apps/web');
 const expected = {
-  api: '6e7396beedee0d9d6604b3818eff8ae0b0600f75d6ffd59fe409dc4b5c314653',
+  api: '01613262aaac5529cd11abfe298f9a399c2bd93fe52d22a45becda4973a3dd9a',
   panel: '316b708a56eada68e0b1f18df23d197e4a5b2e5ba6f3e91bace2de50633ba044',
   client: 'a51b71f7d0cbdf22850b6285c243471e28e905c8031d613303da3b23cc1649fd',
 };

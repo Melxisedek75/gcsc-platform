@@ -21,7 +21,9 @@ const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const sourceSha256 = sha256(source);
 assert.equal(sourceSha256, process.env.GCSC_API_SOURCE_SHA256, 'Candidate source changed after runner snapshot');
 
-const { Pool } = createRequire(path.join(apiRoot, 'package.json'))('pg');
+const apiRequire = createRequire(path.join(apiRoot, 'package.json'));
+const { Pool } = apiRequire('pg');
+const { Key, Numeric, digestFromSerializedData } = apiRequire('@proton/js');
 const pool = new Pool({ connectionString: databaseUrl, connectionTimeoutMillis: 3000 });
 const appDirectory = path.join(runDirectory, 'api');
 fs.mkdirSync(appDirectory);
@@ -38,9 +40,14 @@ fs.writeFileSync(path.join(runDirectory, 'api-source.sha256'), sourceSha256 + '\
 let api;
 let base;
 
-async function startApi() {
+async function startApi({ legacyPosting = false } = {}) {
   delete require.cache[require.resolve(appFile)];
-  api = require(appFile);
+  const original = process.env.ENABLE_LEGACY_XPR_JOB_POSTING;
+  process.env.ENABLE_LEGACY_XPR_JOB_POSTING = String(legacyPosting);
+  try { api = require(appFile); } finally {
+    if (original === undefined) delete process.env.ENABLE_LEGACY_XPR_JOB_POSTING;
+    else process.env.ENABLE_LEGACY_XPR_JOB_POSTING = original;
+  }
   await api.initStorage();
   api.listen(0, '127.0.0.1');
   await once(api, 'listening');
@@ -52,12 +59,12 @@ async function stopApi() {
   if (api) await api.closeStorage();
 }
 
-async function request(method, route, user, body) {
+async function request(method, route, user, body, headers = {}) {
   const response = await fetch(base + route, {
     method,
     headers: { 'Content-Type': 'application/json', ...(user ? {
       Authorization: `Bearer ${api.jwtSign({ userId: user.id, role: user.role, email: user.email })}`,
-    } : {}) },
+    } : {}), ...headers },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     signal: AbortSignal.timeout(10000),
   });
@@ -540,11 +547,125 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     assert.ok(!visibleIds.includes(draftId));
   });
 
+  await t.test('wallet login resolves exactly one verified active PostgreSQL identity and consumes its proof', async () => {
+    const user = await fixtureUser('contractor', 'wallet-login-owner');
+    const duplicate = await fixtureUser('contractor', 'wallet-login-duplicate');
+    const key = Key.PrivateKey.fromElliptic(
+      Key.constructElliptic(Numeric.KeyType.k1).genKeyPair(), Numeric.KeyType.k1);
+    const wallet = { accountName: 'fixture11111', verified: true,
+      publicKey: key.getPublicKey().toString() };
+    const originalAuthority = api._hooks.verifyOwnershipAuthority;
+    api._hooks.verifyOwnershipAuthority = async identity => identity.accountName === wallet.accountName
+      && identity.permission === 'active' && identity.publicKey === wallet.publicKey;
+    const prove = async () => {
+      const challenge = await request('POST', '/api/auth/wallet/challenge', null,
+        { accountName: wallet.accountName, permission: 'active' });
+      assert.equal(challenge.status, 200);
+      assert.deepEqual(challenge.body.signingOptions, { broadcast: false, noModify: true });
+      const digest = digestFromSerializedData(challenge.body.chainId,
+        Buffer.from(challenge.body.serializedTransaction, 'hex'));
+      const body = { accountName: wallet.accountName, permission: 'active',
+        sessionBinding: challenge.body.sessionBinding,
+        proof: { challengeId: challenge.body.challengeId,
+          serializedTransaction: challenge.body.serializedTransaction,
+          signatures: [key.sign(digest, false).toString()] } };
+      return { response: await request('POST', '/api/auth/wallet/verify', null, body), body };
+    };
+    try {
+      await pool.query('UPDATE users SET wallet=$2, profile=$3 WHERE id=$1',
+        [user.id, wallet, { companyName: 'Synthetic Login Co' }]);
+      const { response, body } = await prove();
+      assert.equal(response.status, 200, JSON.stringify(response.body));
+      assert.equal(response.body.user.id, user.id);
+      assert.equal(response.body.user.role, 'contractor');
+      assert.equal(response.body.user.wallet.accountName, wallet.accountName);
+      assert.equal(response.body.user.wallet.verified, true);
+      assert.equal(response.body.user.profile.companyName, 'Synthetic Login Co');
+      assert.ok(!Object.hasOwn(response.body.user, 'password_hash'));
+      assert.equal(typeof response.body.token, 'string');
+      const me = await request('GET', '/api/auth/profile', null, undefined,
+        { Authorization: `Bearer ${response.body.token}` });
+      assert.equal(me.status, 200);
+      assert.equal(me.body.user.id, user.id);
+      const replay = await request('POST', '/api/auth/wallet/verify', null, body);
+      assert.equal(replay.status, 400);
+      assert.equal(replay.body.code, 'wallet_proof_not_found');
+
+      for (const denied of [
+        { wallet: null, active: true },
+        { wallet: { ...wallet, verified: false }, active: true },
+        { wallet, active: false },
+        { wallet: { ...wallet, permission: 'owner' }, active: true },
+        { wallet, active: true, duplicate: true },
+      ]) {
+        await pool.query('UPDATE users SET wallet=$2, is_active=$3 WHERE id=$1',
+          [user.id, denied.wallet, denied.active]);
+        await pool.query('UPDATE users SET wallet=$2 WHERE id=$1',
+          [duplicate.id, denied.duplicate ? wallet : null]);
+        const result = await prove();
+        assert.equal(result.response.status, 401, JSON.stringify(result.response.body));
+        assert.equal(result.response.body.code, 'wallet_login_unavailable');
+        assert.ok(!Object.hasOwn(result.response.body, 'token'));
+      }
+      assert.equal((await pool.query("SELECT COUNT(*)::int AS count FROM audit_events WHERE action='wallet.login' AND actor_id=$1",
+        [user.id])).rows[0].count, 1);
+    } finally {
+      api._hooks.verifyOwnershipAuthority = originalAuthority;
+    }
+  });
+
+  await t.test('explicit legacy posting preserves receipt replay after publication and process restart', async () => {
+    await stopApi();
+    await startApi({ legacyPosting: true });
+    const paymentOwner = await fixtureUser('homeowner', 'legacy-posting-owner');
+    await pool.query('UPDATE users SET wallet=$2 WHERE id=$1', [paymentOwner.id,
+      { accountName: 'fixture11112', permission: 'active', verified: true }]);
+    const created = await request('POST', '/api/projects', paymentOwner,
+      { title: 'Synthetic legacy posting', description: 'No real payment' });
+    assert.equal(created.status, 201);
+    const body = { project_id: created.body.project.id };
+    const txHash = 'e'.repeat(64);
+    let verificationCalls = 0;
+    api._hooks.verifyHyperionTransfer = async input => {
+      verificationCalls++;
+      assert.equal(input.expectedFrom, 'fixture11112');
+      return { ok: true, from: 'fixture11112', block_num: 12345 };
+    };
+    assert.equal((await request('POST', '/api/payment/job-posting', paymentOwner, body,
+      { 'X-Payment-Tx': txHash.toUpperCase() })).status, 200);
+    assert.equal(verificationCalls, 1);
+    await stopApi();
+    await startApi({ legacyPosting: true });
+    api._hooks.verifyHyperionTransfer = async () => { throw new Error('Replay must not reach verifier'); };
+    for (const status of ['open', 'in_progress', 'completed']) {
+      await pool.query('UPDATE projects SET status=$2 WHERE id=$1', [body.project_id, status]);
+      const replay = await request('POST', '/api/payment/job-posting', paymentOwner, body,
+        { 'X-Payment-Tx': txHash });
+      assert.equal(replay.status, 409, JSON.stringify(replay.body));
+      assert.equal(replay.body.error, 'Payment already processed');
+      const fresh = await request('POST', '/api/payment/job-posting', paymentOwner, body,
+        { 'X-Payment-Tx': 'f'.repeat(64) });
+      assert.equal(fresh.status, 400);
+      assert.deepEqual((await pool.query('SELECT published,status FROM projects WHERE id=$1',
+        [body.project_id])).rows, [{ published: true, status }]);
+    }
+    const foreign = await request('POST', '/api/payment/job-posting', paymentOwner,
+      { project_id: project.id }, { 'X-Payment-Tx': txHash });
+    assert.equal(foreign.status, 400);
+    assert.ok(!Object.hasOwn(foreign.body, 'tx_hash'));
+    for (const table of ['payment_receipts', 'job_posting_payments']) {
+      assert.equal((await pool.query(`SELECT COUNT(*)::int AS count FROM ${table} WHERE tx_hash=$1`,
+        [txHash])).rows[0].count, 1);
+    }
+  });
+
   fs.writeFileSync(path.join(runDirectory, 'publication-acceptance.json'), JSON.stringify({
-    status: 'PASS', apiSourceSha256: sourceSha256, database: 'fresh loopback PostgreSQL',
+    status: 'RUN_FINISHED', verdictSource: 'result.json testExitCode and postgresExitCode',
+    apiSourceSha256: sourceSha256, database: 'fresh loopback PostgreSQL',
     projectId: project.id, checks: ['private draft', 'owner draft details and cache headers', 'owner authority',
       'legacy posting disabled', 'exact public preview', 'paid nine-field details and uniform denials',
       'project-specific paid bid access', 'concurrent close access revoke and contractor disable',
-      'atomic bid acceptance', 'concurrent owner and contractor eligibility', 'legacy bid blocked'],
+      'atomic bid acceptance', 'concurrent owner and contractor eligibility', 'legacy bid blocked',
+      'synthetic proof PostgreSQL wallet login and denials', 'legacy receipt replay after restart'],
   }, null, 2) + '\n');
 });

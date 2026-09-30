@@ -2,6 +2,69 @@
 
 Date: 2026-09-29. Scope: local QA branch `codex/wallet-proof-20260914`; no backend changes or integration.
 
+## 2026-09-30 follow-up: PostgreSQL login and legacy receipt repair
+
+Parent resumed the released QA worktree from `f345b2fd` for regression coverage.
+Backend source is now pinned to SHA-256
+`01613262aaac5529cd11abfe298f9a399c2bd93fe52d22a45becda4973a3dd9a`.
+Compared with the earlier `6e7396be...` source it fixes the missing
+`normalizeUser` call in PostgreSQL wallet login and checks an existing legacy
+job-posting receipt after ownership but before new-payment eligibility.
+The QA branch does not contain these backend edits; the runner snapshots the
+sibling backend source into its own fresh database directory.
+
+The existing `--project-publication` command completed **16/16, exit0** in
+`services/api/v3/.tmp/postgres-baseline-GkZJSQ`. `result.json` records
+PostgreSQL18.4, source hash above and clean `postgresExitCode: 0` on port49674.
+The previous14 checks remain green. Two new scenarios verify:
+
+- A fresh login challenge, locally generated K1 signature and fixture authority
+  hook authenticate exactly one active, verified PostgreSQL wallet binding.
+  The JWT then reads `/api/auth/profile`; no password hash is exposed. Reusing
+  the proof returns400. Missing, unverified, inactive, wrong-permission and
+  ambiguous bindings each return401 with no token. Exactly one login audit row
+  is recorded. The hook checks the generated key/account/permission, not a live
+  XPR authority lookup. There is no phone, wallet SDK or broadcast acceptance.
+- With the legacy flag explicitly enabled inside the disposable API only, one
+  synthetic confirmed posting is persisted. After API restart, its replay
+  returns409 in open/in_progress/completed states, without invoking a verifier.
+  A fresh payment against that published project and a foreign project return400.
+  One receipt and one posting remain. The ordinary default-disabled check still
+  passes; no real transaction was sent or verified.
+
+Red/diagnostic evidence is retained, not overwritten:
+`hnQ1xN` reproduced the actual missing-function400 on login before the repair;
+`yaLUFY` reached login200 but failed the test's incorrect `/api/auth/me` route.
+The harness now uses the existing `/api/auth/profile`. Node subtest failures do
+not reject `await t.test`, so the companion `publication-acceptance.json` now
+reports `RUN_FINISHED`, not unconditional PASS; the runner's exit-code-bearing
+`result.json` is the verdict. Assertions and the nonzero failure exit are retained.
+
+The browser suite's explicit API pin was updated to the exact new hash, leaving
+web pins unchanged. `igsJY4` correctly rejected the old pin before app startup;
+it is not an application regression or a passed test. Final browser revalidation
+`postgres-baseline-X3EAmR` passed1/1 with all five workflow checkpoints on the
+new API hash and unchanged web `b1cda59b`. API responses are real, the grant is a
+SQL fixture. No blocked external requests, page errors or failed requests;
+expected denied HTTP403/404 remain in the console log. Edge/API/UI ports
+60854/60847/60845 closed, Edge exit0, cleanupErrors[], PG port49946 stopped0.
+Parent guard suite6/6, syntax/diff exit0; parent
+backend full offline Jest13 suites292/292, exit0 (108.192s). These parent checks
+are separate from independent review and do not authorize release.
+
+Independent read-only reviewer `01a0edd5-92a1-7b42-ac8f-88094d6f5637`
+returned `AI_REVIEW_GATE=PASS` for the accumulated backend delta relative to
+`eb760ed0`, plus these QA repairs. It independently ran33/33 focused payment
+tests, checked the PG result and verified the new manifest; full292/292 and
+browser/PG acceptance remain parent evidence. It did not rerun the final browser
+journey. Backend source is preserved in local commit
+`c46bd1b45c40bf60bb683027c219b680e91c85f9` with unchanged SHA above. QA source
+hashes reviewed: publication test
+`70d112cb8a8bf5e88dd5e68c34e4bb962e5a0ff9aaf521669ec6246b36c14697`,
+browser test `7565764536fda272646ef9a4603a908642b179e0ec7137fb366d1fe7abf4cb47`.
+Provider, real-wallet, baseline hardening and receiving-tree acceptance are not
+closed by this bounded source review. No merge, network publication or deploy.
+
 ## 2026-09-30: actual Edge -> React/ApiClient -> API -> PostgreSQL
 
 The opt-in `--project-browser` journey passed against the final frozen web
