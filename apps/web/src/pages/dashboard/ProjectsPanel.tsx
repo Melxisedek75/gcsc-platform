@@ -347,14 +347,17 @@ function AccountProjectsPanel({ user, onOpenChat }: ProjectsPanelProps) {
       if (!detailGate.isCurrent(requestId)) return;
       if (!response.project || response.project.id !== projectId) throw new Error('Project unavailable. Please try again.');
       const project: GcscProject = response.project;
-      const legacyContract = legacyEscrowWorkflowEnabled && !!project.escrow_id;
-      setSelectedProject(isHomeowner || legacyContract ? project : {
+      // The server's existing accepted-contractor read is independent of escrow actions.
+      // Public previews never carry an escrow_id; this does not grant paid-lead access.
+      const acceptedProject = user.role === 'contractor'
+        && Number.isSafeInteger(project.escrow_id) && Number(project.escrow_id) > 0;
+      setSelectedProject(isHomeowner || acceptedProject ? project : {
         id: project.id, title: project.title, category: project.category,
         budget_min: project.budget_min, budget_max: project.budget_max,
         timeline_days: project.timeline_days, status: project.status, published_at: project.published_at,
       });
-      if (isHomeowner || legacyContract) setSelectedBids(response.bids || []);
-      if (user.role === 'contractor' && project.status === 'open' && !legacyContract) {
+      if (isHomeowner || acceptedProject) setSelectedBids(response.bids || []);
+      if (user.role === 'contractor' && project.status === 'open' && !acceptedProject) {
         const details = await api.getProjectDetails(projectId);
         if (!detailGate.isCurrent(requestId)) return;
         setPaidBrief({ project: details.project, requestId });
@@ -571,7 +574,7 @@ function AccountProjectsPanel({ user, onOpenChat }: ProjectsPanelProps) {
               {!isHomeowner && (
                 <button type="button" onClick={() => void loadDetails(selectedProject.id)}
                   className="inline-flex min-h-11 items-center gap-2 rounded-md border border-[#CBD5E1] px-3 py-2 text-sm font-semibold text-[#334155]">
-                  <RefreshCw size={16} /> {paidBrief ? 'Refresh details' : 'Check access'}
+                  <RefreshCw size={16} /> {paidBrief || selectedProject.escrow_id ? 'Refresh details' : 'Check access'}
                 </button>
               )}
               {isHomeowner && selectedProject.published !== true && selectedProject.status === 'open' && (
@@ -675,6 +678,8 @@ function AccountProjectsPanel({ user, onOpenChat }: ProjectsPanelProps) {
                     );
                   })}
                 </div>
+              ) : selectedProject.escrow_id ? (
+                <p className="text-sm text-[#475569]" role="status">You are assigned to this project.</p>
               ) : !paidBrief ? (
                 <p className="text-sm text-[#475569]" role="status">
                   Purchasing lead access is not available yet. No payment is requested here.

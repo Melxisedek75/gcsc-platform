@@ -231,6 +231,25 @@ async function main() {
       assert.equal(await page.getByRole('button', { name: 'Publish project', exact: true }).count(), 1);
       assert.equal(s.calls.filter(call => call.path.endsWith('/details')).length, 0);
     });
+    for (const status of ['in_progress', 'completed']) await test(`accepted ${status} brief stays readable without escrow actions`, async (page, s) => {
+      s.setHandler(async (route, call) => {
+        const project = { ...brief(11), status, escrow_id: 81, homeowner_id: 31 };
+        if (call.path === '/api/projects/my/projects') { await s.json(route, { projects: [project] }); return true; }
+        if (call.path === '/api/projects/11') { await s.json(route, { project, bids: [] }); return true; }
+        return false;
+      });
+      await go(page); await view(page, 11); await shown(page, 11);
+      await page.getByText('You are assigned to this project.', { exact: true }).waitFor();
+      assert.equal(await page.getByRole('button', { name: /Prepare Bid|Send Bid|Accept and Create Escrow/ }).count(), 0);
+      assert.equal(s.calls.filter(call => call.path.endsWith('/details') || call.path.startsWith('/api/escrow')).length, 0);
+      await page.getByRole('button', { name: 'Refresh details', exact: true }).click(); await shown(page, 11);
+      s.setHandler(async (route, call) => {
+        if (call.path !== '/api/projects/11') return false;
+        await s.json(route, deny, 404); return true;
+      });
+      await page.getByRole('button', { name: 'Refresh details', exact: true }).click();
+      await page.getByText('Select a project', { exact: true }).waitFor(); await noPrivate(page);
+    });
     const files = ['src/pages/dashboard/ProjectsPanel.tsx', 'src/services/api.ts', 'scripts/verify-paid-project-browser.cjs'];
     const report = { source: files.map(file => ({ file, sha256: hash(fs.readFileSync(path.join(root, file))) })),
       bundleSha256: hash(code), browser: browser.version(),

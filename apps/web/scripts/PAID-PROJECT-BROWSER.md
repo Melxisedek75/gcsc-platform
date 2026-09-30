@@ -27,6 +27,7 @@ no-store; desktop/mobile proposal POST; HTTP denial and network failure; malform
 or mismatched response; unexpected fields and HTML-like text; forged preview
 metadata; revocation on reread and bid submission; uncertain submission without
 automatic retry; out-of-order selection; account/role changes; late bid failure;
-owner draft regression. The server remains the authorization authority on every
+owner draft and accepted in-progress/completed project regressions with escrow
+actions disabled (including loss of read permission). The server remains the authorization authority on every
 read and write. Previously disclosed information cannot be recalled by a client;
 revocation is detected on the next server read/write, not pushed in real time.
