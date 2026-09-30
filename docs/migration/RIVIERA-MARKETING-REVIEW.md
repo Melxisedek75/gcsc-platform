@@ -186,7 +186,7 @@ Cwd: `C:\gcsc-platform\.worktrees\marketing-october`. Среда: Node `25.9.0`,
 Дополнительные независимые проверки в памяти завершились exit 0: повтор семи прежних mutations, разбор CSS/расчёт контраста и проверка порядка robots-правил.
 
 **Новая Находка**
-**Low: robots-проверка может пропустить более конкретный запрет.**  
+**Low: robots-проверка может пропустить более конкретный запрет.**
 [validate_static.py:111](C:/gcsc-platform/.worktrees/marketing-october/apps/marketing/validate_static.py:111)
 
 Воспроизведение: для `User-agent: *`, при сохранённом правильном Sitemap:
@@ -236,4 +236,3 @@ Marketing чистый до/после, HEAD соответствует указ
 Прежние **High privacy disclosure** и **Medium owner CTA** остаются **OPEN** против publication target. Закрытие Low не означает одобрения общей интеграции.
 
 **AI_REVIEW_GATE=CHANGES_REQUIRED**
-
