@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { motion } from 'framer-motion';
 import { ShieldCheck, CheckCircle2, Building2, Home, Loader2 } from 'lucide-react';
 import { api, type GcscUser } from '../../services/api';
@@ -9,8 +9,11 @@ import type { AccountRole } from './types';
 export function AccountAccess({ initialRole, onAuthenticated }: { initialRole: AccountRole; onAuthenticated: (user: GcscUser) => void }) {
   const [mode, setMode] = useState<'register' | 'login'>('register');
   const [role, setRole] = useState<AccountRole>(initialRole);
+  const previousRoleHint = useRef(initialRole);
   const [form, setForm] = useState({ fullName: '', email: '', password: '', phone: '' });
   const [verificationPending, setVerificationPending] = useState<{
+    fullName: string;
+    password: string;
     email: string;
     phone: string;
     role: AccountRole;
@@ -22,8 +25,11 @@ export function AccountAccess({ initialRole, onAuthenticated }: { initialRole: A
   const registrationChannel = role === 'homeowner' ? 'sms' : 'email';
 
   useEffect(() => {
-    setRole(initialRole);
-  }, [initialRole]);
+    const changed = previousRoleHint.current !== initialRole;
+    previousRoleHint.current = initialRole;
+    // A link can prefill an idle form, not replace an active registration.
+    if (changed && !submitting && !verificationPending) setRole(initialRole);
+  }, [initialRole, submitting, verificationPending]);
 
   const switchMode = (nextMode: 'register' | 'login') => {
     setMode(nextMode);
@@ -42,6 +48,8 @@ export function AccountAccess({ initialRole, onAuthenticated }: { initialRole: A
         : await api.login({ email: form.email, password: form.password });
       if (mode === 'register' && response.verification_required) {
         setVerificationPending({
+          fullName: form.fullName,
+          password: form.password,
           email: form.email,
           phone: form.phone,
           role,
@@ -96,17 +104,25 @@ export function AccountAccess({ initialRole, onAuthenticated }: { initialRole: A
   };
 
   const resendCode = async () => {
+    if (!verificationPending || submitting) return;
+    const pending = verificationPending;
     setStatus('');
     setSubmitting(true);
     try {
-      const response = await api.register({ ...form, role, verificationMode: 'preferred' });
+      const response = await api.register({
+        fullName: pending.fullName,
+        password: pending.password,
+        email: pending.email,
+        phone: pending.phone,
+        role: pending.role,
+        verificationMode: 'preferred',
+      });
       if (response.verification_required) {
         setVerificationPending({
-          email: form.email,
-          phone: form.phone,
-          role,
-          channel: response.verification_channel || registrationChannel,
+          ...pending,
+          channel: response.verification_channel || pending.channel,
         });
+        setVerificationCode('');
         setStatus('Verification code sent again.');
       } else {
         setStatus('Verification provider is not configured yet, so this account can open without a code.');
@@ -203,6 +219,7 @@ export function AccountAccess({ initialRole, onAuthenticated }: { initialRole: A
                 className={fieldClass}
                 inputMode="numeric"
                 placeholder="6-digit code"
+                disabled={submitting}
                 value={verificationCode}
                 onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 required
@@ -227,6 +244,8 @@ export function AccountAccess({ initialRole, onAuthenticated }: { initialRole: A
                     key={item}
                     type="button"
                     onClick={() => setRole(item)}
+                    disabled={submitting}
+                    aria-pressed={role === item}
                     className="flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all"
                     style={{
                       borderColor: role === item ? '#7B2FF7' : '#E2E8F0',
@@ -248,6 +267,7 @@ export function AccountAccess({ initialRole, onAuthenticated }: { initialRole: A
             <input
               className={fieldClass}
               placeholder="Full name"
+              disabled={submitting}
               value={form.fullName}
               onChange={(e) => setForm((current) => ({ ...current, fullName: e.target.value }))}
               required
@@ -259,6 +279,7 @@ export function AccountAccess({ initialRole, onAuthenticated }: { initialRole: A
                 className={fieldClass}
                 type="email"
                 placeholder="Email"
+                disabled={submitting}
                 value={form.email}
                 onChange={(e) => setForm((current) => ({ ...current, email: e.target.value }))}
                 required
@@ -267,6 +288,7 @@ export function AccountAccess({ initialRole, onAuthenticated }: { initialRole: A
                 className={fieldClass}
                 type="password"
                 placeholder="Password, minimum 8 characters"
+                disabled={submitting}
                 value={form.password}
                 onChange={(e) => setForm((current) => ({ ...current, password: e.target.value }))}
                 minLength={8}
@@ -278,6 +300,7 @@ export function AccountAccess({ initialRole, onAuthenticated }: { initialRole: A
             <input
               className={fieldClass}
               placeholder="Phone"
+              disabled={submitting}
               value={form.phone}
               onChange={(e) => setForm((current) => ({ ...current, phone: e.target.value }))}
               required={registrationChannel === 'sms'}
