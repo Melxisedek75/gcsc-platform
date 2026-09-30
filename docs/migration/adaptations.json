@@ -10,7 +10,7 @@
     "path": "apps/web/src/pages/dashboard/shared.tsx",
     "sourceBlob": "6bf5d6f7bdd18c820adb75521ed2920618e0e3bc",
     "sha256": "38aaebfcd38c067e4e50505ecbaee679343bec9e5a84943e4bbee20bdcf05092",
-    "reason": "Add the shared project timeline field for the owner and paid-brief consumer; no payment or identity bypass.",
+    "reason": "Add the shared Draft status presentation for owner projects; no payment or identity bypass.",
     "test": "npm --prefix apps/web run build; paid-project browser regressions"
   },
   {
@@ -353,7 +353,7 @@
     "path": "apps/web/src/pages/Dashboard.tsx",
     "sourceBlob": "ba747aeac2490dd44470a4816daa546962701fb4",
     "sha256": "0e434b8abace1a98d89e115e8f25a7cfccc2fb76a28bbf230d2caaa8b6b50a4f",
-    "reason": "Add the participant chat destination and route bid/project chat actions into it without changing authentication, payment or project ownership behavior. Accept only owner/homeowner/contractor role hints for registration while preserving logged-in identity.",
+    "reason": "Add the participant chat destination and route bid/project chat actions into it without changing authentication, payment or project ownership behavior. Accept homeowner/contractor registration role hints; absent or unsupported hints, including owner, default to contractor. Preserve logged-in identity.",
     "test": "node scripts/check-chat-ui.mjs --playwright-dir <installed node_modules>; npm run build:web; account-role and paid-project browser regressions; actual receiving-tree API/PostgreSQL journey"
   },
   {

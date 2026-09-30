@@ -88,6 +88,7 @@ rerun `postgres-baseline-ihRpjb` passes 16/16 with test/PG exits 0/0.
 
 No real wallet, signature, payment, provider checkout/webhook, phone, live DB,
 production or deployment was exercised. SQL grants are isolated fixtures, not
-evidence that lead checkout works. Web consumer/marketing integration is a
-subsequent dependency; do not call the current receiving UI a working paid-lead
-journey. Whole-MVP L01/L08/L09/L22/L23 and launch approval remain open.
+evidence that lead checkout works. Subsequent receiving web merge874153d9 has
+its own independent PASS and actual API/UI/PG five-checkpoint acceptance in
+PAID-PROJECT-DETAILS-REVIEW.md. Marketing and real paid checkout remain separate
+dependencies. Whole-MVP L01/L08/L09/L22/L23 and launch approval remain open.

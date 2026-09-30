@@ -367,8 +367,9 @@ hashes and disposable snapshot support. Source/read guards12/12 pass. Earlier
 QA run `9hbuOD` used receiving API plus the separate October-web, not the combined
 UI checkout. No claim of combined UI acceptance is based on that run alone.
 
-Incoming October-web `b1cda59b` merged without content conflicts, pending final
-combined review. Its five changed runtime files remain byte-identical to that
+Incoming October-web `b1cda59b` merged without content conflicts in `874153d9`,
+preserving independently approved tree `8595725851d7740138b06b49734469cce3d39c40`.
+Its five changed runtime files remain byte-identical to that
 independently reviewed candidate. Updated adaptation entries retain original
 source blobs; root npm commands expose PG guards/schema/local suites and include
 the validator/root/schema regressions in default tests. No dependencies changed.
@@ -376,9 +377,45 @@ the validator/root/schema regressions in default tests. No dependencies changed.
 Parent receiving checks so far: `npm run check` exit0 (31 root,12 mobile guards,
 11 wallet restore, static/syntax); `npm --prefix apps/web run build` exit0;
 lint exit0 with the existing DecryptText warning; auth validator exit0;
-web states4/4; real-React synthetic registration browser10/10. Paid browser22
-and real receiving API/UI/PostgreSQL journey are running/pending; no PASS yet.
-The registration fixture does not contact an actual email/SMS provider.
+web states4/4; real-React synthetic registration browser10/10; paid-brief browser
+22/22, all exit0. The registration fixture does not contact an email/SMS provider.
+
+Actual receiving API/UI/PostgreSQL journey `postgres-baseline-FuE0Vg` passes1/1
+and five checkpoints: owner publication, unpaid denial, synthetic entitlement
+and persisted proposal, owner read, then revoked access with no second proposal.
+Both `--api-root` and `--web-root` point to this integration checkout; the API
+hash above and all ten web-input hashes are recorded. Test/PG/Edge exit0;
+API/UI/Edge ports closed, blockedRequests/pageErrors/requestFailures/cleanupErrors
+are empty. Expected403/404 console messages represent denial tests. No provider
+payment occurred: the paid entitlement was a synthetic isolated SQL fixture.
+
+### Independent receiving-web review
+
+RIVIERA `01a0f0fd-0955-72e0-aa60-0caf8a412362` returned
+`AI_REVIEW_GATE=PASS` for tree85957258 against HEAD034f6225 and publication656a6469.
+Verified index/source stability; all `apps/web/src` equals b1cda59b, QA harness
+equals2e6fc4fa, API hash equalsf24fdd7d. No new Critical/High/Medium findings.
+One Low documentation finding: adaptation reasons incorrectly described a
+timeline field and owner-role alias. Follow-up changes only those descriptions
+to Draft status and supported homeowner/contractor hints; hashes are unchanged.
+
+Independent commands, all exit0, from integration root unless noted:
+- `node --test tests/migration.test.mjs tests/source-provenance.test.mjs tests/legacy-preservation.test.mjs tests/web-validator-root.test.mjs tests/postgres-schema.test.mjs`:31/31.
+- `node --test tests/web-jobs-bids-states.test.mjs tests/latest-request.test.mjs`:4/4.
+- `node --test --test-name-pattern='^PostgreSQL runner|^browser suite|^project source options|^invalid receiving root' tests/postgres-runner.test.mjs`:6/6 selected.
+- `node --test tests/local-test-database.test.mjs`:2/2.
+- `node scripts/check-api-contracts.mjs`:58 routes,7/7 structural entrypoints.
+- `node --check` for runner, source guard, both PG harnesses and pure-server.js:0.
+- `git --no-optional-locks diff --check 656a6469f374092a8c0c09ebfe58e45acb91bab5 8595725851d7740138b06b49734469cce3d39c40`:0.
+- In `apps/web`: auth-channel, auth-registration and dashboard-live validators;
+  TypeScript `--noEmit --incremental false`; focused ESLint `--no-cache` for
+  Dashboard, AccountAccess, ProjectsPanel, shared and ApiClient: all0.
+
+Reviewer independently validated the saved FuE0Vg source manifest, five API
+snapshot hashes, ten web-input hashes and clean shutdown. Browser/build/PG and
+four file-writing fixture checks were not independently rerun due to read-only
+scope. This is receiving-web source integration approval, not marketing, full
+backend re-audit, main/publication cutover, real payment/wallet or release approval.
 
 Whole-MVP L01/L08/L09/L22/L23, provider checkout/webhook, disclosure policy,
 voice/AI, marketing/video and production approval remain open. This candidate
