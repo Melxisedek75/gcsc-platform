@@ -11,7 +11,11 @@ jest.spyOn(fs, 'writeFileSync').mockImplementation((file, ...args) => {
   if (path.basename(String(file)) !== 'gcsc.db') return write(file, ...args);
 });
 
+const originalLegacyPosting = process.env.ENABLE_LEGACY_XPR_JOB_POSTING;
+process.env.ENABLE_LEGACY_XPR_JOB_POSTING = 'true';
 const server = require('../pure-server');
+if (originalLegacyPosting === undefined) delete process.env.ENABLE_LEGACY_XPR_JOB_POSTING;
+else process.env.ENABLE_LEGACY_XPR_JOB_POSTING = originalLegacyPosting;
 const { db, _hooks, jwtSign } = server;
 const originalTransfer = _hooks.verifyHyperionTransfer;
 let port;
@@ -167,6 +171,7 @@ describe('bid readiness ownership boundary', () => {
 
   test('homeowner cannot accept a bid from metadata-only contractor', async () => {
     completeContractorProfile();
+    db.projects[0].published = true;
     db.users[0].wallet.verified = false;
     const contractor = { ...db.users[0], id: 18 };
     db.users.push(contractor);

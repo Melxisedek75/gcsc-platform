@@ -1,5 +1,19 @@
 [
   {
+    "path": "services/api/v3/.env.example",
+    "sourceBlob": "b31347781edc94d63aa66aa7431ef55b0c1e5849",
+    "sha256": "06fe7f19b395b826781d29551df403436bf67be38162d4b007d9d4f6b863fd9a",
+    "reason": "Document the disabled-by-default legacy XPR job-posting charge; October publication is free and enabling legacy billing needs a separate reviewed product decision.",
+    "test": "npm run test:api; node --test tests/migration.test.mjs"
+  },
+  {
+    "path": "apps/web/scripts/validate-webauth-integration.mjs",
+    "sourceBlob": "2883951b3a7e433d54fac0d6e10e78e7e12b0ef6",
+    "sha256": "408051aba74dc488e810715742c8b1fe94ba78e34aec0700942c3e0557115916",
+    "reason": "Resolve the WebAuth static validator app root from its own module, preserving identical checks when invoked from the monorepo or via npm --prefix apps/web. Repair the receiving-tree cwd-dependent root change.",
+    "test": "node --test tests/web-validator-root.test.mjs; npm --prefix apps/web run check:webauth; npm run check"
+  },
+  {
     "path": "services/api/v3/package.json",
     "sourceBlob": "b9cfb0115f8397470f152032fb954155d53064f8",
     "sha256": "07dd90c5b0d8530d2695d8fda45209da8f473e1bfd8000e3d1034dd94c614e2b",
@@ -9,29 +23,29 @@
   {
     "path": "services/api/v3/pure-server.js",
     "sourceBlob": "952128e9316fe78bef42dba8ddc7b04eb09e29e5",
-    "sha256": "a86d430b72a607b7007d4f2444aea1b07e517d1ebf788fb59357d05ce978069e",
-    "reason": "Require verified wallet ownership before payment challenges and bid readiness; invalidate changed identity proof; enforce single-key authority threshold and remove the ownership-check environment bypass. Add wallet-first canonical transaction proof, durable single-use challenge storage, strict XPR Testnet endpoint identity, direct-peer rate limiting and production JWT-secret fail-closed validation. Use one shared transactional schema source, including wallet challenges, profile documents, projects, chat and payment state. Preserve fresh admin ACL, revision-bound document review and PostgreSQL-only participant chat controls.",
-    "test": "npm run check; npm run test:api; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage; npm --prefix apps/web run build; browser document review smoke"
+    "sha256": "f24fdd7d20a658b8d8e60d14b5fe5db8b1b56260269f8c7aa2a3577b5f68ff77",
+    "reason": "Require verified wallet ownership before payment challenges and bid readiness; preserve wallet-first login plus authenticated sign-only binding, single-use challenges and strict XPR Testnet authority checks. Fail closed on JWT configuration, isolate test storage and bind auth limits to the direct peer. Preserve fresh admin ACL, revision-bound document review and PostgreSQL participant chat. Merge October private drafts, free publication, redacted previews, project-specific paid details and transactional bid/accept checks through the canonical shared schema including paid entitlements. Keep legacy posting opt-in and replay-safe without publishing pending receipts.",
+    "test": "npm run check; npm run test:api; npm run check:integration-contracts; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage; npm --prefix services/api/v3 run test:pg-workflow; isolated project-publication and project-browser PostgreSQL acceptance"
   },
   {
     "path": "services/api/v3/tests/payments-402.test.js",
     "sourceBlob": "db703f6925ddf23794991f56baca83daae18cb86",
-    "sha256": "9cb828d8ecd676e59f3e30bf9bcab8b2f4ce549a6e9653e79c089e613422f23a",
+    "sha256": "90853c0890fe20d24c457f60bee94787f8c21bebe7ee4734f2ac3c9d9a8c4333",
     "reason": "Positive payment fixtures explicitly represent verified bindings; boot with the legacy false flag to prove ownership checks remain mandatory, including failed lookup and unchanged wallet assertions; isolate JSON database IO.",
     "test": "npm run test:api"
   },
   {
     "path": "services/api/v3/tests/escrow-milestones.test.js",
     "sourceBlob": "21f10e3556473b1ee6f99c552c7973dd1b74b1aa",
-    "sha256": "5f1c97366ba63b34eb83d0ba37a52ef738c9b019116b0a21bdcf3880aee32fa6",
+    "sha256": "4b53a77137bea904b64f412d8099531dfc216ddc47cf5dc5206bc1b116404eef",
     "reason": "Positive escrow lifecycle fixtures explicitly model already server-verified wallet bindings; forged metadata rejection is covered separately. Isolate JSON fixture IO from the checkout to prevent shared-file EBUSY and accidental data modification.",
     "test": "npm run check; npm run test:api; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage"
   },
   {
     "path": "services/api/v3/tests/postgres-storage-smoke.js",
     "sourceBlob": "2cea20855229da14e3dfbad3de9c2a5e69e5023a",
-    "sha256": "0bbeebb69f750c2cd45076a4b4ceac030005f1223dadb9813601e19631947d55",
-    "reason": "Replace ownership bypass with explicit fixture-key RPC; sanitize child environment, use argv for preload, keep fixtures in the worktree, wait for child exit and clean only generated files without recursive deletion. Teach the fake pool the transaction/client interface; real DDL, locking and rollback are covered by the isolated PostgreSQL suite. P3.1: model document upsert identity and revisions in fake storage and send the mandatory expectedRevision review precondition. Use the actually bootstrapped and logged-in admin instead of a token for nonexistent user999.",
+    "sha256": "162a2ad0486ae5d38951b97894c1183e2acfee3b3e38e6bc8d4e220a9a903a43",
+    "reason": "Replace ownership bypass with explicit fixture-key and Testnet chain-identity RPC; sanitize child environment, use argv for preload, retain worktree isolation and wait for child exit. Model canonical expiry cleanup, verified wallet lookup, transaction/client interface and revision-bound document review. Real DDL/locking/rollback remain covered by PostgreSQL acceptance. Use the actual bootstrapped admin and count its login toward the peer limit; forged Bearer and forwarded IP must not reset that limit.",
     "test": "npm run check; npm run test:api; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage; npm --prefix apps/web run build; browser document review smoke"
   },
   {
@@ -121,7 +135,7 @@
   {
     "path": "services/api/v3/tests/payment-receipts-postgres.test.js",
     "sourceBlob": "4db2cfe70a631bdf79f12b5dde24d478cecfcd45",
-    "sha256": "dfe95fecf03ee369633b6db93313f7e03ef8115409b4e650da85231bd2a4a687",
+    "sha256": "83b009c8e4b429436bcf4567d86076a3e1213b299200aee591ce116c46ef384a",
     "reason": "Reject non-loopback and non-test PostgreSQL cleanup targets before storage initialization.",
     "test": "node --test tests/local-test-database.test.mjs"
   },
@@ -156,16 +170,16 @@
   {
     "path": "services/api/v3/tests/payment-reconciler.test.js",
     "sourceBlob": "a645aa4772a5f3d601fb5db886729881b190d8c3",
-    "sha256": "54072d6d8a12c41a4a78db87e64359375c177cafcea7763d9d028e7038d7422b",
+    "sha256": "7b75c12f1df535c5f51685d18f73719daab9958215e81ed700856f671d6e9daa",
     "reason": "Isolate fixture JSON database IO; preserve all payment/reconciliation assertions.",
     "test": "npm run check; npm run test:api; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage"
   },
   {
     "path": "services/api/v3/tests/postgres-workflow-smoke.js",
     "sourceBlob": "81ddb88e3f3fa65957478f7191a10d5e9b8720f4",
-    "sha256": "ad7b27ce2dfaaf2190144ee5785e4d02c82eaba606e4cf12b43171b2480cb5d7",
-    "reason": "Add transaction/client interface and isolate API/schema copies and JSON data in retained local scratch with sanitized child environment. Preserve the existing wallet_missing acceptance failure; no ownership bypass.",
-    "test": "npm run test:pg-workflow: still fails at unchanged wallet_missing guard; reproduced against pre-change 57b8ff21 API. No migration regression or false pass."
+    "sha256": "637c93ce60d18d6fb5d670c0b696b6ed24b8e4c7f9af1f62fc89cfc78933f9bf",
+    "reason": "Model transactional rollback and project-specific paid grants; isolate API, wallet modules, canonical schema and JSON data in retained scratch with sanitized child environment. Model canonical challenge expiry cleanup. Keep unpaid/unverified acceptance denial and use an explicit previously verified fixture only for the later workflow; no runtime ownership bypass or real settlement.",
+    "test": "node services/api/v3/tests/postgres-workflow-smoke.js; npm run test:api; isolated PostgreSQL project acceptance; node --test tests/migration.test.mjs"
   },
   {
     "path": "apps/web/src/pages/dashboard/AdminDocumentReviewPanel.tsx",

@@ -49,7 +49,7 @@ beforeAll((done) => {
 });
 
 afterAll((done) => {
-  listener.close(done);
+  listener.close(() => { jest.restoreAllMocks(); done(); });
 });
 
 // ---- fixtures ----
@@ -84,6 +84,7 @@ beforeEach(() => {
   db.user_documents.length = 0;
   db.audit_events.length = 0;
   db.milestone_chain_txs.length = 0;
+  db.project_access_entitlements.length = 0;
 
   db.users.push(
     { id: HOMEOWNER_ID, email: 'ho@test.io', role: 'homeowner', is_active: 1, full_name: 'Home Owner', phone: '2065550100', profile: {}, wallet: null },
@@ -150,7 +151,20 @@ async function createProject(overrides = {}) {
       ...overrides,
     },
   });
-  return r.body.project.id;
+  const project = db.projects.find(item => item.id === r.body.project.id);
+  // This suite tests escrow after publication; payment verification is covered separately.
+  project.published = true;
+  project.published_at = new Date().toISOString();
+  for (const contractorId of [CONTRACTOR_ID, UNVERIFIED_CONTRACTOR_ID]) {
+    db.project_access_entitlements.push({
+      project_id: project.id,
+      contractor_id: contractorId,
+      status: 'paid',
+      provider_payment_id: `local-fixture-${project.id}-${contractorId}`,
+      verified_at: new Date().toISOString(),
+    });
+  }
+  return project.id;
 }
 
 async function placeBid(projectId, token = CONTRACTOR_TOKEN, overrides = {}) {
@@ -172,6 +186,29 @@ async function acceptedEscrow() {
 // ==================== POST /api/bids/:id/accept ====================
 
 describe('POST /api/bids/:id/accept', () => {
+  test('revoking project-specific access blocks acceptance of an existing bid', async () => {
+    const projectId = await createProject();
+    const bidId = await placeBid(projectId);
+    const grant = db.project_access_entitlements.find(row => row.project_id === projectId
+      && row.contractor_id === CONTRACTOR_ID);
+    grant.status = 'revoked';
+    const response = await request({ path: `/api/bids/${bidId}/accept`, token: HOMEOWNER_TOKEN });
+    expect(response.status).toBe(409);
+    expect(response.body.code).toBe('project_access_required');
+    expect(db.escrow_contracts).toHaveLength(0);
+  });
+
+  test('a disabled contractor cannot have a prior bid accepted', async () => {
+    const projectId = await createProject();
+    const bidId = await placeBid(projectId);
+    const contractor = db.users.find(row => row.id === CONTRACTOR_ID);
+    contractor.is_active = 0;
+    const response = await request({ path: `/api/bids/${bidId}/accept`, token: HOMEOWNER_TOKEN });
+    expect(response.status).toBe(400);
+    expect(db.bids.find(row => row.id === bidId).status).toBe('pending');
+    expect(db.escrow_contracts).toHaveLength(0);
+  });
+
   test('verified contractor + valid bid -> 200, escrow created', async () => {
     const projectId = await createProject();
     const bidId = await placeBid(projectId);
@@ -232,6 +269,13 @@ describe('POST /api/bids/:id/accept', () => {
       wallet: { accountName: 'contractor3', permission: 'active', verified: true },
     });
     db.user_documents.push(...verifiedContractorDocs(105));
+    db.project_access_entitlements.push({
+      project_id: projectId,
+      contractor_id: 105,
+      status: 'paid',
+      provider_payment_id: `local-fixture-${projectId}-105`,
+      verified_at: new Date().toISOString(),
+    });
     const thirdToken = jwtSign({ userId: 105, email: 'co3@test.io', role: 'contractor' });
     const bidB = await placeBid(projectId, thirdToken, { amount: 5500 });
 

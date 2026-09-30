@@ -23,6 +23,9 @@ fs.mkdirSync(appDirectory);
 const source = fs.readFileSync(path.join(apiRoot, 'pure-server.js'));
 const appFile = path.join(appDirectory, 'pure-server.cjs');
 fs.writeFileSync(appFile, source, { flag: 'wx' });
+for (const file of ['wallet-ownership-proof.cjs', 'wallet-challenge-store.cjs']) {
+  fs.copyFileSync(path.join(apiRoot, file), path.join(appDirectory, file), fs.constants.COPYFILE_EXCL);
+}
 fs.mkdirSync(path.join(appDirectory, 'database'));
 for (const file of ['migrate-schema.cjs', 'schema-statements.cjs']) {
   fs.copyFileSync(path.join(apiRoot, 'database', file), path.join(appDirectory, 'database', file), fs.constants.COPYFILE_EXCL);
@@ -131,10 +134,20 @@ test('real PostgreSQL project/bid persistence and access baseline', { timeout: 9
     assert.equal(events.rows[0].actor_id, owner.id);
   });
 
-  await t.test('my projects isolates owners and discovery applies category/location filters', async () => {
+  await t.test('drafts stay private until free publication and discovery never filters on private location', async () => {
     assert.deepEqual((await request('GET', '/api/projects/my/projects', otherOwner)).body.projects, []);
     assert.equal((await request('GET', '/api/projects/my/projects', owner)).body.projects[0].id, project.id);
-    assert.equal((await request('GET', '/api/projects?category=roofing&location=seattle')).body.projects.length, 1);
+    assert.deepEqual((await request('GET', '/api/projects?category=roofing')).body.projects, []);
+    assert.equal((await request('GET', `/api/projects/${project.id}`)).status, 404);
+    assert.equal((await request('POST', `/api/projects/${project.id}/publish`, otherOwner)).status, 404);
+    assert.equal((await request('POST', `/api/projects/${project.id}/publish`, owner)).status, 200);
+    assert.equal((await pool.query('SELECT published FROM projects WHERE id=$1', [project.id])).rows[0].published, true);
+    const preview = (await request('GET', '/api/projects?category=roofing')).body.projects;
+    assert.equal(preview.length, 1);
+    assert.equal(preview[0].id, project.id);
+    assert.equal(preview[0].description, undefined);
+    assert.equal(preview[0].location, undefined);
+    assert.equal((await request('GET', '/api/projects?category=roofing&location=seattle')).status, 400);
     assert.deepEqual((await request('GET', '/api/projects?category=plumbing')).body.projects, []);
   });
 
@@ -146,7 +159,11 @@ test('real PostgreSQL project/bid persistence and access baseline', { timeout: 9
     assert.equal((await pool.query('SELECT COUNT(*)::int AS count FROM bids')).rows[0].count, 0);
   });
 
-  await t.test('contractor bid, audit and my-bids persist without accepting a financial contract', async () => {
+  await t.test('contractor bid requires a project-specific fixture grant before persistence', async () => {
+    assert.equal((await request('POST', '/api/bids', contractor, { project_id: project.id, amount: 1800 })).status, 403);
+    // Isolated SQL evidence only, not a provider payment or checkout acceptance.
+    await pool.query(`INSERT INTO project_access_entitlements(project_id,contractor_id,status,provider_payment_id,verified_at)
+      VALUES ($1,$2,'paid','isolated-baseline-fixture',NOW())`, [project.id, contractor.id]);
     const result = await request('POST', '/api/bids', contractor, {
       project_id: project.id, amount: 1800, proposed_timeline_days: 5,
       message: 'Local fixture quote', contractor_id: otherContractor.id,
@@ -288,7 +305,8 @@ test('real PostgreSQL project/bid persistence and access baseline', { timeout: 9
   await chatAcceptance(t, { pool, request, fixtureUser, startApi, stopApi });
 
   fs.writeFileSync(path.join(runDirectory, 'api-source.sha256'), createHash('sha256').update(source).digest('hex') + '\n');
-  const hashes = Object.fromEntries(['pure-server.cjs', 'database/migrate-schema.cjs', 'database/schema-statements.cjs']
+  const hashes = Object.fromEntries(['pure-server.cjs', 'wallet-ownership-proof.cjs', 'wallet-challenge-store.cjs',
+    'database/migrate-schema.cjs', 'database/schema-statements.cjs']
     .map(file => [file, createHash('sha256').update(fs.readFileSync(path.join(appDirectory, file))).digest('hex')]));
   fs.writeFileSync(path.join(runDirectory, 'api-files.sha256.json'), JSON.stringify(hashes, null, 2) + '\n');
 });

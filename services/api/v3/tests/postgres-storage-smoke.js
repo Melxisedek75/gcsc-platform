@@ -74,6 +74,10 @@ class Pool {
       return { rows: [], rowCount: 0 };
     }
 
+    if (sql === 'delete from wallet_challenges where expires_at <= now()') {
+      return { rows: [], rowCount: 0 };
+    }
+
     if (sql.includes('select 1')) {
       return { rows: [{ ok: 1 }], rowCount: 1 };
     }
@@ -92,6 +96,15 @@ class Pool {
       const id = Number(params[0]);
       const user = users.find((row) => row.id === id);
       return { rows: user ? [user] : [], rowCount: user ? 1 : 0 };
+    }
+
+    if (sql.includes("select * from users where is_active = true and wallet->>'accountname' = $1")) {
+      const rows = users.filter(row => {
+        const wallet = typeof row.wallet === 'string' ? JSON.parse(row.wallet) : row.wallet;
+        return row.is_active && wallet?.accountName === params[0]
+          && (wallet.permission || 'active') === params[1] && wallet.verified === true;
+      }).sort((a, b) => a.id - b.id).slice(0, sql.endsWith('limit 2') ? 2 : 1);
+      return { rows, rowCount: rows.length };
     }
 
     if (sql.startsWith('insert into users')) {
@@ -265,6 +278,12 @@ Module._load = function patchedLoad(request, parent, isMain) {
 };
 // Fixture-only RPC: never call a real node and never authorize an arbitrary key.
 global.fetch = async (url, options = {}) => {
+  if (url === 'http://127.0.0.1:9/v1/chain/get_info' && options.method === 'POST'
+      && options.body === '{}') {
+    return { ok: true, json: async () => ({
+      chain_id: '71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd',
+    }) };
+  }
   if (url !== 'http://127.0.0.1:9/v1/chain/get_account' || options.method !== 'POST'
       || JSON.parse(options.body || '{}').account_name !== 'gcscacct111') {
     throw new Error('Unexpected RPC request in fake-PG fixture');
@@ -405,9 +424,10 @@ async function waitForServer(child) {
     const rateLimitedLogin = await request('POST', '/api/auth/login', {
       email: 'missing@gcsc.store',
       password: 'WrongPass123',
-    });
+    }, 'untrusted-smoke-token', { 'X-Forwarded-For': '203.0.113.11' });
     assert.strictEqual(firstBadLogin.status, 401);
-    assert.strictEqual(secondBadLogin.status, 401);
+    // The successful admin login and first failure consumed this peer's two slots.
+    assert.strictEqual(secondBadLogin.status, 429);
     assert.strictEqual(rateLimitedLogin.status, 429);
     assert.match(rateLimitedLogin.data.error, /too many/i);
 
@@ -566,7 +586,7 @@ async function waitForServer(child) {
       publicKey: walletKeypair.pub,
       signature: walletSignature,
     }, token);
-    assert.strictEqual(wallet.status, 200);
+    assert.strictEqual(wallet.status, 200, JSON.stringify(wallet.data));
     assert.strictEqual(wallet.data.wallet.accountName, 'gcscacct111');
     assert.strictEqual(wallet.data.wallet.verified, true);
 

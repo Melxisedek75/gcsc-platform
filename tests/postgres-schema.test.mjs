@@ -44,6 +44,18 @@ test('SQL export is exactly the runtime transaction including preflight and lock
   assert.ok(migrationStatements.some(sql => sql.includes('idx_wallet_challenges_expiry')));
 });
 
+test('paid project access is included in both migration entrypoints after its referenced tables', () => {
+  const position = migrationStatements.findIndex(sql => sql.startsWith('CREATE TABLE IF NOT EXISTS project_access_entitlements'));
+  assert.ok(position > migrationStatements.findIndex(sql => sql.startsWith('CREATE TABLE IF NOT EXISTS projects')));
+  assert.ok(position > migrationStatements.findIndex(sql => sql.startsWith('CREATE TABLE IF NOT EXISTS users')));
+  const sql = migrationStatements[position];
+  assert.match(sql, /PRIMARY KEY \(project_id, contractor_id\)/);
+  assert.match(sql, /REFERENCES projects\(id\) ON DELETE RESTRICT/);
+  assert.match(sql, /REFERENCES users\(id\) ON DELETE RESTRICT/);
+  assert.match(sql, /CHECK \(status <> 'paid' OR \(provider_payment_id <> '' AND verified_at IS NOT NULL\)\)/);
+  assert.ok(renderSchemaSql().includes(sql));
+});
+
 test('failed DDL rolls back, never commits and releases the failed connection', async () => {
   const pool = fakePool(migrationStatements[5]);
   await assert.rejects(migrateSchema(pool), error => error === pool.failure);

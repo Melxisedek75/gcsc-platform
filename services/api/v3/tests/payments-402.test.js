@@ -25,10 +25,14 @@ jest.spyOn(fs, 'writeFileSync').mockImplementation((file, ...args) => {
 
 // Regression: legacy configuration must never disable ownership verification.
 const originalEnforcement = process.env.WALLET_ONCHAIN_KEY_ENFORCED;
+const originalLegacyPosting = process.env.ENABLE_LEGACY_XPR_JOB_POSTING;
 process.env.WALLET_ONCHAIN_KEY_ENFORCED = 'false';
+process.env.ENABLE_LEGACY_XPR_JOB_POSTING = 'true';
 const mod = require('../pure-server');
 if (originalEnforcement === undefined) delete process.env.WALLET_ONCHAIN_KEY_ENFORCED;
 else process.env.WALLET_ONCHAIN_KEY_ENFORCED = originalEnforcement;
+if (originalLegacyPosting === undefined) delete process.env.ENABLE_LEGACY_XPR_JOB_POSTING;
+else process.env.ENABLE_LEGACY_XPR_JOB_POSTING = originalLegacyPosting;
 
 const server = mod;
 const { db, _hooks, jwtSign, verifyWalletSignature, walletChallengeMessage } = mod;
@@ -305,6 +309,67 @@ describe('POST /api/payment/job-posting', () => {
     const project = db.projects.find(p => p.id === 100);
     expect(project.published).toBe(true);
     expect(project.published_at).toBeTruthy();
+  });
+
+  test.each(['open', 'in_progress', 'completed'])('confirmed job-posting replay is 409 when project is %s', async (status) => {
+    _hooks.verifyHyperionTransfer = jest.fn(async () => ({ ok: true, from: 'homeowner1', block_num: 99 }));
+    const payment = {
+      path: '/api/payment/job-posting',
+      headers: { Authorization: `Bearer ${HOMEOWNER_TOKEN}`, 'X-Payment-Tx': FAKE_TX.toUpperCase() },
+      body: { project_id: 100 },
+    };
+    expect((await request(payment)).status).toBe(200);
+    db.projects[0].status = status;
+    if (status !== 'open') db.projects[0].escrow_id = 500;
+
+    const replay = await request({ ...payment, headers: { ...payment.headers, 'X-Payment-Tx': FAKE_TX } });
+    expect(replay.status).toBe(409);
+    expect(replay.body.error).toBe('Payment already processed');
+    expect(_hooks.verifyHyperionTransfer).toHaveBeenCalledTimes(1);
+    expect(db.payment_receipts).toHaveLength(1);
+    expect(db.job_posting_payments).toHaveLength(1);
+    expect(db.projects[0].status).toBe(status);
+  });
+
+  test.each(['open', 'in_progress', 'completed'])('new job-posting payment cannot republish a %s published project', async (status) => {
+    Object.assign(db.projects[0], { status, published: true });
+    _hooks.verifyHyperionTransfer = jest.fn();
+    const result = await request({
+      path: '/api/payment/job-posting',
+      headers: { Authorization: `Bearer ${HOMEOWNER_TOKEN}`, 'X-Payment-Tx': FAKE_TX },
+      body: { project_id: 100 },
+    });
+    expect(result.status).toBe(400);
+    expect(_hooks.verifyHyperionTransfer).not.toHaveBeenCalled();
+    expect(db.payment_receipts).toHaveLength(0);
+  });
+
+  test('job-posting replay lookup cannot disclose receipts through a foreign project', async () => {
+    db.projects[0].homeowner_id = 999;
+    db.payment_receipts.push({ tx_hash: FAKE_TX });
+    _hooks.verifyHyperionTransfer = jest.fn();
+    const result = await request({
+      path: '/api/payment/job-posting',
+      headers: { Authorization: `Bearer ${HOMEOWNER_TOKEN}`, 'X-Payment-Tx': FAKE_TX },
+      body: { project_id: 100 },
+    });
+    expect(result.status).toBe(400);
+    expect(result.body).not.toHaveProperty('tx_hash');
+    expect(_hooks.verifyHyperionTransfer).not.toHaveBeenCalled();
+    expect(db.job_posting_payments).toHaveLength(0);
+  });
+
+  test('unverified pending transfer does not publish the project', async () => {
+    _hooks.verifyHyperionTransfer = async () => ({ ok: false, pending: true, error: 'no_authoritative_node' });
+    const r = await request({
+      path: '/api/payment/job-posting',
+      headers: { Authorization: `Bearer ${HOMEOWNER_TOKEN}`, 'X-Payment-Tx': FAKE_TX },
+      body: { project_id: 100 },
+    });
+    expect(r.status).toBe(200);
+    expect(r.body.pending).toBe(true);
+    expect(db.payment_receipts[0].verification_status).toBe('pending');
+    expect(db.projects[0].published).not.toBe(true);
   });
 
   test('requires a connected homeowner wallet before verification', async () => {

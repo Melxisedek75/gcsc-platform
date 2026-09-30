@@ -12,6 +12,9 @@ const tempRoot = fs.mkdtempSync(path.join(tempParent, 'gcsc-fake-pg-workflow-'))
 const appRoot = path.join(tempRoot, 'api');
 fs.mkdirSync(path.join(appRoot, 'database'), { recursive: true });
 fs.copyFileSync(path.join(v3Root, 'pure-server.js'), path.join(appRoot, 'pure-server.js'), fs.constants.COPYFILE_EXCL);
+for (const file of ['wallet-ownership-proof.cjs', 'wallet-challenge-store.cjs']) {
+  fs.copyFileSync(path.join(v3Root, file), path.join(appRoot, file), fs.constants.COPYFILE_EXCL);
+}
 for (const file of ['migrate-schema.cjs', 'schema-statements.cjs']) {
   fs.copyFileSync(path.join(v3Root, 'database', file), path.join(appRoot, 'database', file), fs.constants.COPYFILE_EXCL);
 }
@@ -43,6 +46,7 @@ fs.writeFileSync(statePath, JSON.stringify({
   milestone_chain_txs: [],
   user_documents: [],
   audit_events: [],
+  project_access_entitlements: [],
 }, null, 2));
 
 fs.writeFileSync(fakePgPath, `
@@ -72,7 +76,24 @@ function byNewest(rows) {
 }
 
 class Pool {
-  async connect() { return { query: this.query.bind(this), release() {} }; }
+  async connect() {
+    let snapshot = null;
+    return {
+      query: async (text, params = []) => {
+        const sql = normalize(text);
+        if (sql === 'begin') { snapshot = load(); return { rows: [], rowCount: 0 }; }
+        if (sql === 'commit') { snapshot = null; return { rows: [], rowCount: 0 }; }
+        if (sql === 'rollback') {
+          if (snapshot) save(snapshot);
+          snapshot = null;
+          return { rows: [], rowCount: 0 };
+        }
+        return this.query(text, params);
+      },
+      release() {},
+    };
+  }
+
   async query(text, params = []) {
     const sql = normalize(text);
     const state = load();
@@ -104,6 +125,16 @@ class Pool {
       return { rows: [], rowCount: 0 };
     }
 
+    if (sql.startsWith('select 1 from project_access_entitlements')) {
+      const [projectId, contractorId] = params;
+      const found = state.project_access_entitlements.find(row =>
+        row.project_id === Number(projectId) && row.contractor_id === Number(contractorId)
+        && row.status === 'paid' && row.provider_payment_id && row.verified_at);
+      return { rows: found ? [{ ok: 1 }] : [], rowCount: found ? 1 : 0 };
+    }
+    if (sql === 'delete from wallet_challenges where expires_at <= now()') {
+      return { rows: [], rowCount: 0 };
+    }
     if (sql.includes('select 1')) return { rows: [{ ok: 1 }], rowCount: 1 };
 
     if (sql.includes('select count(*)::int as count from users')) {
@@ -265,7 +296,8 @@ class Pool {
       const [projectId, acceptedBidId] = params;
       let count = 0;
       for (const bid of state.bids) {
-        if (bid.project_id === Number(projectId) && bid.id !== Number(acceptedBidId)) {
+        if (bid.project_id === Number(projectId) && bid.id !== Number(acceptedBidId)
+          && bid.status === 'pending') {
           bid.status = 'rejected';
           bid.updated_at = new Date().toISOString();
           count++;
@@ -276,9 +308,13 @@ class Pool {
     }
 
     if (sql.startsWith('update bids set status')) {
-      const [status, id] = params;
+      const accepted = sql.startsWith("update bids set status = 'accepted'");
+      const [status, id] = accepted ? ['accepted', params[0]] : params;
       const bid = state.bids.find((row) => row.id === Number(id));
       if (!bid) return { rows: [], rowCount: 0 };
+      if (accepted && (bid.project_id !== Number(params[1]) || bid.contractor_id !== Number(params[2]))) {
+        return { rows: [], rowCount: 0 };
+      }
       if (sql.includes("and status = 'pending'") && bid.status !== 'pending') {
         return { rows: [], rowCount: 0 };
       }
@@ -307,7 +343,8 @@ class Pool {
 
     if (sql.startsWith("update projects set status = 'in_progress'") && sql.includes("status = 'open'")) {
       const project = state.projects.find((row) => row.id === Number(params[0]));
-      if (!project || project.status !== 'open') return { rows: [], rowCount: 0 };
+      if (!project || project.status !== 'open' || project.homeowner_id !== Number(params[1])
+        || project.published !== true || project.escrow_id) return { rows: [], rowCount: 0 };
       project.status = 'in_progress';
       project.updated_at = new Date().toISOString();
       save(state);
@@ -591,8 +628,15 @@ function startFakeHyperion() {
 
     const txId = url.searchParams.get('id');
     if (txId !== verifiedReleaseTxId) {
-      res.writeHead(404, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'transaction not found' }));
+      // A bare 404 cannot prove absence when Hyperion may be behind the chain.
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        id: txId,
+        executed: false,
+        actions: [],
+        last_indexed_block: 500000,
+        lib: 499999,
+      }));
       return;
     }
 
@@ -687,6 +731,20 @@ async function waitForServer(child) {
     }, owner.data.token);
     assert.strictEqual(project.status, 201);
 
+    // The workflow below exercises bidding after publication, not the payment route.
+    const publishedState = JSON.parse(fs.readFileSync(statePath, 'utf8'));
+    const publishedProject = publishedState.projects.find(row => row.id === project.data.project.id);
+    publishedProject.published = true;
+    publishedProject.published_at = new Date().toISOString();
+    publishedState.project_access_entitlements.push({
+      project_id: project.data.project.id,
+      contractor_id: contractor.data.user.id,
+      status: 'paid',
+      provider_payment_id: `local-fixture-${stamp}`,
+      verified_at: new Date().toISOString(),
+    });
+    fs.writeFileSync(statePath, JSON.stringify(publishedState, null, 2));
+
     const bid = await request('POST', '/api/bids', {
       project_id: project.data.project.id,
       amount: 2500,
@@ -723,6 +781,8 @@ async function waitForServer(child) {
       accountName: 'builder11111',
       permission: 'active',
       walletType: 'webauth',
+      // This fixture models a previously verified binding; it does not test a wallet signature.
+      verified: true,
       connectedAt: new Date().toISOString(),
     };
     for (const documentType of ['contractor_license', 'insurance_certificate', 'business_ein']) {
@@ -755,6 +815,17 @@ async function waitForServer(child) {
     assert.strictEqual(reAccept.status, 400);
     const escrowCountAfterReAccept = JSON.parse(fs.readFileSync(statePath, 'utf8')).escrow_contracts.length;
     assert.strictEqual(escrowCountAfterReAccept, 1);
+
+    // Admin authorization now checks the persisted role, not only the JWT claim.
+    const stateWithAdmin = JSON.parse(fs.readFileSync(statePath, 'utf8'));
+    stateWithAdmin.users.push({
+      id: 999,
+      email: 'admin@gcsc.store',
+      role: 'admin',
+      full_name: 'Workflow Admin',
+      is_active: true,
+    });
+    fs.writeFileSync(statePath, JSON.stringify(stateWithAdmin, null, 2));
 
     const adminToken = (() => {
       const crypto = require('crypto');
@@ -954,7 +1025,7 @@ async function waitForServer(child) {
     const failedChainTx = await request('POST', `/api/milestones/${milestone.data.milestone.id}/chain-txs/${missingTxId}/verify`, null, login.data.token);
     assert.strictEqual(failedChainTx.status, 200);
     assert.strictEqual(failedChainTx.data.chain_tx.status, 'failed');
-    assert.match(failedChainTx.data.chain_tx.verification_error, /transaction not found/i);
+    assert.strictEqual(failedChainTx.data.chain_tx.verification_error, 'tx_not_found');
 
     const failedChainAudit = await request('GET', '/api/admin/audit-events?action=escrow.chain_tx.failed', null, adminToken);
     assert.strictEqual(failedChainAudit.status, 200);

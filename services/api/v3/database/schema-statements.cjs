@@ -189,6 +189,17 @@ const statements = Object.freeze([
     status TEXT NOT NULL DEFAULT 'active',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
+  `CREATE TABLE IF NOT EXISTS project_access_entitlements (
+    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE RESTRICT,
+    contractor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    status TEXT NOT NULL CHECK (status IN ('pending', 'paid', 'failed', 'expired', 'refunded', 'revoked')),
+    provider_payment_id TEXT NOT NULL,
+    verified_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (project_id, contractor_id),
+    CHECK (status <> 'paid' OR (provider_payment_id <> '' AND verified_at IS NOT NULL))
+  )`,
   `CREATE TABLE IF NOT EXISTS job_posting_payments (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,

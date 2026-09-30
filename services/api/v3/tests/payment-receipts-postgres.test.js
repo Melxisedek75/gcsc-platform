@@ -7,7 +7,11 @@ const databaseUrl = validateLocalTestDatabase(process.env.TEST_DATABASE_URL);
 process.env.DATABASE_URL = databaseUrl;
 process.env.PGSSL = 'false';
 
+const originalLegacyPosting = process.env.ENABLE_LEGACY_XPR_JOB_POSTING;
+process.env.ENABLE_LEGACY_XPR_JOB_POSTING = 'true';
 const mod = require('../pure-server');
+if (originalLegacyPosting === undefined) delete process.env.ENABLE_LEGACY_XPR_JOB_POSTING;
+else process.env.ENABLE_LEGACY_XPR_JOB_POSTING = originalLegacyPosting;
 const { db, _hooks, jwtSign } = mod;
 
 const CONTRACTOR_TOKEN = jwtSign({ userId: 2, email: 'contractor@gcsc.store', role: 'contractor' });
