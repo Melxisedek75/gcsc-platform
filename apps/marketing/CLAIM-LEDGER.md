@@ -1,6 +1,6 @@
 # GCSC marketing claim ledger
 
-Status: local October candidate, 2026-09-29. This ledger is a publication gate,
+Status: local October candidate, 2026-09-30. This ledger is a publication gate,
 not permission to deploy. Recheck against the exact release SHA and live domains.
 
 ## Inventory
@@ -21,7 +21,7 @@ not permission to deploy. Recheck against the exact release SHA and live domains
 | --- | --- | --- |
 | GCSC is building SmartContractor | In development. The monorepo contains web and API candidates; no October release acceptance yet. | "Building" or "pilot in development", never "available now". |
 | A homeowner can describe a project and review a draft | Backend create and local owner-only publish tests pass; web candidate builds. Editing, AI and real-DB/browser acceptance are open. | Describe as intended pilot journey, not a completed customer service. |
-| Contractors see a privacy-safe opportunity preview | Redacted API candidate passes local Jest; client candidate does not render private address. Separate branches have not been integrated or tested on real PostgreSQL. | Say "designed to show a preview" until integrated acceptance. |
+| Contractors see a privacy-safe opportunity preview | Redacted API and client work exists in separate branches. RIVIERA reproduced full project disclosure in publication `5166e59f`; that target is not a privacy-safe preview. | Say "designed to show a preview" and explicitly state that this flow is still being developed and tested. Do not release this journey until reviewed API and web dependencies pass combined acceptance. |
 | A contractor can buy lead access and submit a proposal | Project-specific entitlement, Checkout webhook and client journey are not implemented. Existing generic XPR lead token is not a substitute. | Future/pilot plan only. No purchase button or price claim. |
 | AI and voice help prepare editable drafts | Provider, consent, privacy review and E2E are open. | Planned; no demonstration as a live feature. |
 | GCSC will offer escrow, loans, token returns or automated settlements | Legal/provider/security gates are open. | Future research only; no financial offer, guaranteed result or live-use claim. |
@@ -31,16 +31,35 @@ not permission to deploy. Recheck against the exact release SHA and live domains
 ## Required release review
 
 Local regression check: `node apps/marketing/validate-static.mjs` from the
-monorepo root (or `node validate-static.mjs` here). It checks local references,
-anchors, account-link shapes, draft `noindex` and the homepage-only sitemap;
-it does not test a deployed domain or browser behavior.
+monorepo root (or `node validate-static.mjs` here). Requires an existing Python
+3.9+ executable (`python` on Windows, `python3` elsewhere), using only standard
+HTML/XML/URL parsers. It installs nothing and makes no network requests.
+`node apps/marketing/validate-static.mjs --test` runs the negative/positive
+fixtures in memory. Checks cover local references/anchors, unsafe URL schemes,
+duplicate IDs, real account-link elements (not comments), canonical/social
+metadata, crawlability, draft `noindex` and the homepage-only sitemap. These
+focused checks are not a full HTML5 validator, CI result or receiving-app test.
+
+Optional local browser regression: `node apps/marketing/verify-browser.cjs`.
+It requires an already installed Playwright and browser; it never downloads
+either. Set process-local `NODE_PATH` to an existing Playwright package directory
+if it is outside the checkout. `GCSC_BROWSER_CHANNEL=msedge` selects installed
+Edge instead of bundled Chromium. It opens only local files, blocks HTTP(S),
+disables page JavaScript, and saves screenshots/results in `.tmp/marketing-browser`.
+The matrix covers 320/360/390/768/844/1440/1920 px, simulated 200% text scaling,
+hero bounds, horizontal overflow, image loading, mobile navigation and two focus
+states plus dark hover contrast. Text scaling is not browser zoom or screen-reader
+acceptance. A successful run is not full WCAG, performance or live-domain approval.
 
 1. Check every CTA against an accepted owner/contractor route on the final
    `gcsc.store` preview. The `/#/dashboard` target follows the current web
    candidate's `HashRouter`, `Dashboard` route and unauthenticated
-   `AccountAccess` rendering. The role links only preselect the registration
-   form; they do not prove role eligibility or working registration. Code
-   inspection is not live-domain or browser acceptance. The footer root link
+   `AccountAccess` rendering. Role preselection exists in the separate October-web
+   candidate `2409c780`; it is absent from publication `5166e59f`, where an owner
+   link still defaults to contractor registration. This remains a blocking
+   integration dependency, not a completed role journey. Once integrated, a role
+   hint must only preselect a form, never grant eligibility or authorization.
+   Code inspection is not live-domain or browser acceptance. The footer root link
    alone is not proof of the journey.
 2. Have product, legal and an independent reviewer classify every headline,
    frame, caption and on-screen transaction as `available`, `pilot` or `planned`.
