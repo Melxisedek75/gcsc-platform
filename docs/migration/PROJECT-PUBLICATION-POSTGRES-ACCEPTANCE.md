@@ -41,6 +41,18 @@ The same directory holds `test-output.log`, `publication-acceptance.json` and
 64524 was not listening and `cluster/postmaster.pid` was absent. Guards passed
 5/5; syntax and diff checks exited 0.
 
+The first run on the same source is
+`C:\gcsc-platform\.worktrees\qa\services\api\v3\.tmp\postgres-baseline-mLH9zL\result.json`:
+it also passed 14/14 with `testExitCode=0` and `postgresExitCode=0` (port
+63077). Its TAP contains `[ERROR] fixture escrow insert failure` because the
+atomicity test deliberately installs a trigger that rejects an escrow insert;
+the API returns 500 and the test verifies transaction rollback. This was an
+expected negative case, not a first-run failure, and required no backend repair.
+Only the QA evidence-check list was updated before the final `UDoa3d` rerun.
+The parent reports a separate narrow independent source review of the new
++66-line endpoint as PASS with no findings; this QA run did not repeat that
+review or perform integration.
+
 Paid entitlements in this test are synthetic SQL fixtures, not proof of a real
 payment or provider callback. No wallet, live database, network provider,
 browser/mobile client, production deployment or independent review was tested.
