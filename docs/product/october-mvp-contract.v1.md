@@ -144,6 +144,56 @@ websites. Stored synthetic grants in tests
 do not establish checkout/webhook or real payment readiness. The live decisions
 below still apply.
 
+## Local Checkout foundation, 2026-09-30
+
+`services/api/v3/database/lead-checkout.cjs` is an internal, test-mode-only
+reservation/session adapter. It is not imported by HTTP routes and never calls
+Stripe or issues an entitlement. The additive `project_access_purchases` table
+and isolated PostgreSQL tests are the first L11 slice, not completion of L11/L12.
+
+- The future HTTP adapter must derive the contractor from a freshly authorized
+  JWT and the return origin/price policy from server configuration. Internal
+  function arguments are not authenticated user input or transport DTOs. Never
+  forward a browser-supplied buyer, amount, mode, origin or provider response.
+- A reservation binds a UUID to one project, buyer, request key and immutable
+  server-owned price version/amount in USD integer cents. The fixture's 2500
+  cents is synthetic, not an approved commercial price. The stable provider
+  idempotency key and fixed one-hour expiry survive process/connection retries.
+- The project and fresh buyer/owner identities are locked and checked before
+  reservation and session attachment. A simultaneous retry cannot create a
+  second active purchase. An existing entitlement blocks another purchase until
+  explicit refund/repurchase rules are implemented. Documents/verification and
+  maximum buyer count remain L10 policy decisions, not implied by active role.
+- The request builder uses hosted card Checkout with no free-form project text,
+  contact, email or documents in provider metadata. Opaque internal IDs and price
+  version are required; they are still data sent to a provider when enabled.
+  Provider approval/data-transfer authorization remains necessary.
+- Only a matching unpaid/open `cs_test_` session can be attached. Amount,
+  currency, project, buyer, purpose, quote version, expiry, client reference,
+  `livemode=false` and the hosted Stripe origin are checked against the stored
+  record. This is response-shape/binding validation, not cryptographic proof of
+  payment. Only a trusted future SDK adapter may call this function.
+- Pending records never grant access. Redirect URLs, untrusted JSON, an expired
+  local clock or a repeated create request cannot mark a purchase `paid`.
+  Completed/expired responses need separate reconciliation; they are not
+  silently replaced with another session or charge.
+- Buyer-scoped reads hide Checkout URLs when the project/owner is unavailable,
+  the purchase is no longer pending/unexpired, or a grant already exists. An
+  inactive buyer cannot read the purchase. Hiding a URL does **not** expire a
+  provider session someone already copied. Remote session cancellation,
+  withdrawal/refund handling and late-paid reconciliation are still open L12
+  requirements before any actual Checkout is exposed.
+
+Next required layers: authenticated/rate-limited HTTP DTOs; explicit test-provider
+configuration; raw-body signature verification, durable event deduplication and
+atomic grant transaction; out-of-order/refund/revocation reconciliation; web
+consumer and exact-source independent acceptance. No live key, session request,
+webhook delivery or payment has been used for this foundation.
+
+Reference interfaces: https://docs.stripe.com/api/checkout/sessions/create,
+https://docs.stripe.com/api/idempotent_requests and
+https://docs.stripe.com/webhooks. Local installed SDK remains unchanged.
+
 ## Founder decisions before live payments
 
 1. Exact fixed USD access price and tax/receipt presentation.

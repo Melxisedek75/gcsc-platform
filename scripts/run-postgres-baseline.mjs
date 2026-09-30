@@ -29,7 +29,7 @@ export function testEnvironment(ambient, databaseUrl, runDirectory) {
 }
 
 export function parseRunnerArgs(args) {
-  const usage = () => { throw new Error('Usage: npm run test:postgres:local -- --postgres-bin <absolute bin directory> [--project-publication [--api-root <worktree/services/api/v3>] | --project-browser --playwright-dir <absolute installed node_modules> [--api-root <worktree/services/api/v3>] [--web-root <worktree/apps/web>]]'); };
+  const usage = () => { throw new Error('Usage: npm run test:postgres:local -- --postgres-bin <absolute bin directory> [--project-publication [--api-root <worktree/services/api/v3>] | --project-browser --playwright-dir <absolute installed node_modules> [--api-root <worktree/services/api/v3>] [--web-root <worktree/apps/web>] | --lead-checkout --api-root <worktree/services/api/v3>]'); };
   if (args[0] !== '--postgres-bin' || !args[1] || !path.isAbsolute(args[1])) usage();
   const result = { binaryDir: args[1], suite: 'baseline' };
   const seen = new Set();
@@ -38,7 +38,7 @@ export function parseRunnerArgs(args) {
     const flag = args[index];
     if (seen.has(flag)) usage();
     seen.add(flag);
-    if (['--project-publication', '--project-browser'].includes(flag)) {
+    if (['--project-publication', '--project-browser', '--lead-checkout'].includes(flag)) {
       if (result.suite !== 'baseline') usage();
       result.suite = flag.slice(2);
     } else {
@@ -51,7 +51,8 @@ export function parseRunnerArgs(args) {
   }
   if ((result.suite === 'baseline' && seen.size)
     || (result.suite !== 'project-browser' && (result.webRoot || result.playwrightDir))
-    || (result.suite === 'project-browser' && !result.playwrightDir)) usage();
+    || (result.suite === 'project-browser' && !result.playwrightDir)
+    || (result.suite === 'lead-checkout' && !result.apiRoot)) usage();
   return result;
 }
 
@@ -172,7 +173,8 @@ export async function main(args = process.argv.slice(2)) {
     const result = await new Promise((resolve, reject) => {
       const testFile = { baseline: 'tests/postgres-projects.integration.cjs',
         'project-publication': 'tests/postgres-project-publication.integration.cjs',
-        'project-browser': 'tests/postgres-project-browser.integration.cjs' }[options.suite];
+        'project-browser': 'tests/postgres-project-browser.integration.cjs',
+        'lead-checkout': 'tests/postgres-lead-checkout.integration.cjs' }[options.suite];
       const child = spawn(process.execPath, ['--test', testFile], {
         cwd: root, env, windowsHide: true,
         stdio: options.suite !== 'baseline' ? ['ignore', 'pipe', 'pipe'] : 'inherit',

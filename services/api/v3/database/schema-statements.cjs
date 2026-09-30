@@ -200,6 +200,30 @@ const statements = Object.freeze([
     PRIMARY KEY (project_id, contractor_id),
     CHECK (status <> 'paid' OR (provider_payment_id <> '' AND verified_at IS NOT NULL))
   )`,
+  `CREATE TABLE IF NOT EXISTS project_access_purchases (
+    id UUID PRIMARY KEY,
+    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE RESTRICT,
+    contractor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    request_key UUID NOT NULL,
+    price_version TEXT NOT NULL CHECK (price_version ~ '^[a-zA-Z0-9_-]{1,64}$'),
+    amount_cents INTEGER NOT NULL CHECK (amount_cents > 0 AND amount_cents <= 100000000),
+    currency TEXT NOT NULL CHECK (currency = 'usd'),
+    provider_mode TEXT NOT NULL CHECK (provider_mode = 'test'),
+    provider_request_key TEXT UNIQUE NOT NULL,
+    provider_checkout_id TEXT UNIQUE,
+    checkout_url TEXT,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','paid','failed','expired','refunded','revoked','review_required')),
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (contractor_id, request_key),
+    CHECK (expires_at > created_at),
+    CHECK ((provider_checkout_id IS NULL) = (checkout_url IS NULL)),
+    CHECK (provider_checkout_id IS NULL OR provider_checkout_id ~ '^cs_test_[a-zA-Z0-9]+$'),
+    CHECK (provider_request_key = 'gcsc_lead_' || id::text)
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_project_access_active_purchase
+    ON project_access_purchases (project_id, contractor_id) WHERE status IN ('pending','paid','review_required')`,
   `CREATE TABLE IF NOT EXISTS job_posting_payments (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
