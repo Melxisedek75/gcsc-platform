@@ -262,6 +262,9 @@ const statements = Object.freeze([
   )`,
   `CREATE INDEX IF NOT EXISTS idx_project_access_event_purchase
     ON project_access_checkout_events (purchase_id, provider_checkout_id)`,
+  `ALTER TABLE project_access_checkout_events ADD COLUMN IF NOT EXISTS purchase_snapshot JSONB`,
+  `ALTER TABLE project_access_checkout_events ADD COLUMN IF NOT EXISTS outcome TEXT`,
+  `ALTER TABLE project_access_checkout_events ADD COLUMN IF NOT EXISTS processed_at TIMESTAMPTZ`,
   `CREATE TABLE IF NOT EXISTS job_posting_payments (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,

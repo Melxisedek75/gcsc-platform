@@ -5,7 +5,7 @@
   "description": "GCSC three-repository migration candidate; not a production release",
   "scripts": {
     "test": "node --test tests/migration.test.mjs tests/source-provenance.test.mjs tests/legacy-preservation.test.mjs tests/web-validator-root.test.mjs tests/postgres-schema.test.mjs tests/lead-checkout.test.cjs",
-    "test:lead-checkout": "node --test tests/lead-checkout.test.cjs tests/lead-checkout-events.test.cjs tests/postgres-runner.test.mjs",
+    "test:lead-checkout": "node --test tests/lead-checkout.test.cjs tests/lead-checkout-events.test.cjs tests/lead-checkout-fulfillment.test.cjs tests/postgres-runner.test.mjs",
     "test:legacy-preservation": "node --test tests/legacy-preservation.test.mjs",
     "test:wallet-sdk": "node --test tests/wallet-sdk-identity.test.mjs",
     "test:wallet-payload": "node --test tests/wallet-challenge-payload.test.mjs",

@@ -65,6 +65,24 @@ function signEvent(event, pretty = false) {
 function receive(input, selectedPool = pool) {
   return receiveLeadCheckoutEvent(selectedPool, input.raw, input.signature, webhookConfig);
 }
+function fulfill(eventId, selectedPool = pool) {
+  return require(path.join(snapshot, 'database/lead-checkout-fulfillment.cjs')).fulfillLeadCheckoutEvent(selectedPool, eventId);
+}
+async function paidFixture() {
+  const f = await fixture();
+  const row = await reserveLeadPurchase(pool, f.request, policy);
+  const input = signedEvent(row);
+  await receive(input);
+  return { ...f, row, input };
+}
+async function fulfillmentState(f) {
+  return {
+    purchase: (await pool.query('SELECT * FROM project_access_purchases WHERE id=$1', [f.row.id])).rows[0],
+    event: (await pool.query('SELECT * FROM project_access_checkout_events WHERE event_id=$1', [f.input.event.id])).rows[0],
+    grants: (await pool.query('SELECT * FROM project_access_entitlements WHERE project_id=$1 AND contractor_id=$2', [f.project.id, f.buyer.id])).rows,
+    audits: (await pool.query("SELECT * FROM audit_events WHERE metadata->>'purchase_id'=$1", [f.row.id])).rows,
+  };
+}
 async function blocked(blocker) {
   const pid = (await blocker.query('SELECT pg_backend_pid() AS id')).rows[0].id;
   const deadline = Date.now() + 5000;
@@ -82,7 +100,7 @@ test.after(async () => {
   await pool.end();
   fs.writeFileSync(path.join(runDirectory, 'lead-checkout-acceptance.json'), JSON.stringify({
     status: 'RUN_FINISHED_CHECK_RUNNER_EXIT_CODES', sourceFiles: sources.api.files,
-    boundary: 'Disposable PostgreSQL, synthetic policy/sessions and locally SDK-signed events; no provider request, external webhook delivery or entitlement issuance',
+    boundary: 'Disposable PostgreSQL, synthetic policy/sessions and locally SDK-signed events/grants; no provider request, real payment, external delivery or HTTP activation',
   }, null, 2));
 });
 
@@ -415,4 +433,233 @@ test('binding migration refuses conflicting stored associations without overwrit
     await pool.query('UPDATE project_access_purchases SET provider_checkout_id=$2,checkout_url=$3 WHERE id=$1', [row.id, response.id, response.url]);
   }
   await migrateSchema(pool);
+});
+
+test('stored signed paid event atomically grants only its buyer/project and survives reconnect', async () => {
+  const f = await paidFixture();
+  const result = await fulfill(f.input.event.id);
+  assert.deepEqual(result, { eventId: f.input.event.id, purchaseId: f.row.id, status: 'processed', outcome: 'paid_granted', duplicate: false });
+  const state = await fulfillmentState(f);
+  assert.equal(state.purchase.status, 'paid'); assert.equal(state.event.status, 'processed');
+  assert.equal(state.event.outcome, 'paid_granted'); assert.ok(state.event.processed_at);
+  assert.equal(state.grants.length, 1); assert.equal(state.grants[0].status, 'paid');
+  assert.equal(state.grants[0].provider_payment_id, f.input.event.data.object.payment_intent);
+  assert.ok(state.grants[0].verified_at); assert.equal(state.audits.length, 1);
+  assert.equal(state.audits[0].action, 'lead_checkout.paid_granted');
+  assert.equal(state.audits[0].actor_id, null); assert.equal(state.audits[0].target_user_id, f.buyer.id);
+  assert.equal(state.audits[0].entity_id, f.project.id);
+  assert.equal(JSON.stringify(state.audits).includes('never-store@example.invalid'), false);
+  assert.equal((await pool.query('SELECT 1 FROM project_access_entitlements WHERE contractor_id=$1', [f.other.id])).rowCount, 0);
+  const another = new Pool({ connectionString: databaseUrl });
+  try { assert.deepEqual(await fulfill(f.input.event.id, another), { ...result, duplicate: true }); }
+  finally { await another.end(); }
+  await migrateSchema(pool);
+  assert.equal((await fulfillmentState(f)).audits.length, 1);
+});
+
+test('concurrent fulfillment and distinct duplicate paid events create one grant', async () => {
+  const f = await paidFixture();
+  const results = await Promise.all(Array.from({ length: 6 }, () => fulfill(f.input.event.id)));
+  assert.equal(results.filter(result => !result.duplicate).length, 1);
+  const second = structuredClone(f.input.event); second.id = `evt_${randomUUID().replaceAll('-', '')}`;
+  await receive(signEvent(second));
+  assert.equal((await fulfill(second.id)).outcome, 'already_paid');
+  const state = await fulfillmentState(f);
+  assert.equal(state.grants.length, 1); assert.equal(state.audits.length, 2);
+  assert.equal(state.audits.filter(row => row.action === 'lead_checkout.paid_granted').length, 1);
+});
+
+test('unverified IDs and browser-shaped input never grant access', async () => {
+  const f = await paidFixture();
+  for (const value of [null, {}, f.input.event, { eventId: f.input.event.id, paid: true }, '', 'evt_bad;SELECT']) {
+    await assert.rejects(fulfill(value), { code: 'lead_fulfillment_request_invalid' });
+  }
+  await assert.rejects(fulfill(`evt_${randomUUID().replaceAll('-', '')}`), { code: 'lead_fulfillment_event_missing' });
+  const state = await fulfillmentState(f);
+  assert.equal(state.purchase.status, 'pending'); assert.equal(state.event.status, 'received');
+  assert.equal(state.grants.length, 0); assert.equal(state.audits.length, 0);
+});
+
+test('closed or withdrawn project and inactive or changed roles reconcile without a grant', async () => {
+  for (const target of ['closed', 'withdrawn', 'buyer-inactive', 'buyer-role', 'owner-inactive', 'owner-role']) {
+    const f = await paidFixture();
+    if (target === 'closed') await pool.query("UPDATE projects SET status='completed' WHERE id=$1", [f.project.id]);
+    else if (target === 'withdrawn') await pool.query('UPDATE projects SET published=FALSE WHERE id=$1', [f.project.id]);
+    else if (target.endsWith('inactive')) await pool.query('UPDATE users SET is_active=FALSE WHERE id=$1', [target.startsWith('buyer') ? f.buyer.id : f.owner.id]);
+    else await pool.query("UPDATE users SET role='admin' WHERE id=$1", [target.startsWith('buyer') ? f.buyer.id : f.owner.id]);
+    const result = await fulfill(f.input.event.id);
+    assert.equal(result.status, 'review_required', target);
+    assert.equal(result.outcome, ['closed', 'withdrawn'].includes(target) ? 'project_unavailable' : 'identity_unavailable');
+    const state = await fulfillmentState(f);
+    assert.equal(state.purchase.status, 'review_required'); assert.equal(state.grants.length, 0);
+    assert.equal(state.audits.length, 1);
+    assert.equal((await fulfill(f.input.event.id)).duplicate, true);
+  }
+});
+
+test('current committed project/identity state is rechecked after observed lock waits', async () => {
+  for (const target of ['project', 'owner', 'buyer']) {
+    const f = await paidFixture(); const blocker = await pool.connect(); let pending;
+    try {
+      await blocker.query('BEGIN');
+      if (target === 'project') await blocker.query('UPDATE projects SET published=FALSE WHERE id=$1', [f.project.id]);
+      else await blocker.query('UPDATE users SET is_active=FALSE WHERE id=$1', [target === 'owner' ? f.owner.id : f.buyer.id]);
+      pending = fulfill(f.input.event.id).then(value => ({ value }), error => ({ error }));
+      await blocked(blocker); await blocker.query('COMMIT');
+      const result = await pending; assert.ifError(result.error);
+      assert.equal(result.value.status, 'review_required');
+      assert.equal((await fulfillmentState(f)).grants.length, 0);
+    } finally { await blocker.query('ROLLBACK'); blocker.release(); if (pending) await pending; }
+  }
+});
+
+test('verified quote changes and pre-upgrade inbox rows fail closed without backfill', async () => {
+  for (const target of ['quote', 'legacy']) {
+    const f = await paidFixture();
+    if (target === 'quote') await pool.query('UPDATE project_access_purchases SET amount_cents=amount_cents+1 WHERE id=$1', [f.row.id]);
+    else await pool.query('UPDATE project_access_checkout_events SET purchase_snapshot=NULL WHERE event_id=$1', [f.input.event.id]);
+    await migrateSchema(pool);
+    const result = await fulfill(f.input.event.id);
+    assert.equal(result.outcome, target === 'quote' ? 'quote_mismatch' : 'legacy_event');
+    assert.equal(result.status, 'review_required'); assert.equal((await fulfillmentState(f)).grants.length, 0);
+  }
+});
+
+test('changed stored PaymentIntent cannot authorize a grant', async () => {
+  const f = await paidFixture();
+  await pool.query("UPDATE project_access_checkout_events SET payment_intent_id='pi_substituted' WHERE event_id=$1", [f.input.event.id]);
+  assert.equal((await fulfill(f.input.event.id)).outcome, 'binding_mismatch');
+  assert.equal((await fulfillmentState(f)).grants.length, 0);
+});
+
+test('late and impossible pre-purchase paid events require reconciliation', async () => {
+  for (const target of ['late', 'before-purchase']) {
+    const f = await fixture(); let row = await reserveLeadPurchase(pool, f.request, policy);
+    if (target === 'late') row = (await pool.query(`UPDATE project_access_purchases SET created_at=NOW()-INTERVAL '2 hours',
+      expires_at=date_trunc('second',NOW())-INTERVAL '1 hour' WHERE id=$1 RETURNING *`, [row.id])).rows[0];
+    const input = signedEvent(row, target === 'before-purchase' ? { created: Math.floor(new Date(row.created_at).getTime() / 1000) - 1 } : {});
+    await receive(input);
+    const result = await fulfill(input.event.id);
+    assert.equal(result.status, 'review_required');
+    assert.equal(result.outcome, target === 'late' ? 'late_payment' : 'invalid_event_time');
+    assert.equal((await fulfillmentState({ ...f, row, input })).grants.length, 0);
+  }
+});
+
+test('completed unpaid event remains blocked, not paid or automatically refunded', async () => {
+  const f = await fixture(); const row = await reserveLeadPurchase(pool, f.request, policy);
+  const input = signedEvent(row); input.event.data.object.payment_status = 'unpaid';
+  input.event.data.object.payment_intent = null;
+  await receive(signEvent(input.event));
+  assert.equal((await fulfill(input.event.id)).outcome, 'payment_unpaid');
+  const state = await fulfillmentState({ ...f, row, input });
+  assert.equal(state.purchase.status, 'review_required'); assert.equal(state.grants.length, 0);
+});
+
+test('expired session releases pending reservation but later paid event cannot revive it or displace a new purchase', async () => {
+  const f = await fixture(); const row = await reserveLeadPurchase(pool, f.request, policy);
+  const paid = signedEvent(row); const expired = structuredClone(paid.event);
+  expired.id = `evt_${randomUUID().replaceAll('-', '')}`; expired.type = 'checkout.session.expired';
+  expired.data.object.status = 'expired'; expired.data.object.payment_status = 'unpaid'; expired.data.object.payment_intent = null;
+  await receive(signEvent(expired)); assert.equal((await fulfill(expired.id)).outcome, 'expired');
+  const next = await reserveLeadPurchase(pool, { ...f.request, requestKey: randomUUID() }, policy);
+  await receive(paid); const result = await fulfill(paid.event.id);
+  assert.equal(result.status, 'review_required'); assert.equal(result.outcome, 'purchase_not_pending');
+  assert.equal((await fulfillmentState({ ...f, row, input: paid })).purchase.status, 'expired');
+  assert.equal((await getLeadPurchase(pool, f.buyer.id, next.id)).status, 'pending');
+  assert.equal((await fulfillmentState({ ...f, row, input: paid })).grants.length, 0);
+});
+
+test('stale expired notification after paid cannot revoke an existing grant', async () => {
+  const f = await paidFixture(); await fulfill(f.input.event.id);
+  const expired = structuredClone(f.input.event);
+  expired.id = `evt_${randomUUID().replaceAll('-', '')}`; expired.type = 'checkout.session.expired';
+  expired.data.object.status = 'expired'; expired.data.object.payment_status = 'unpaid'; expired.data.object.payment_intent = null;
+  await receive(signEvent(expired)); assert.equal((await fulfill(expired.id)).outcome, 'ignored_after_paid');
+  const state = await fulfillmentState(f);
+  assert.equal(state.purchase.status, 'paid'); assert.equal(state.grants[0].status, 'paid');
+});
+
+test('conflicting paid and expired facts already in the inbox reconcile in either processing order', async () => {
+  for (const first of ['paid', 'expired']) {
+    const f = await paidFixture(); const expired = structuredClone(f.input.event);
+    expired.id = `evt_${randomUUID().replaceAll('-', '')}`; expired.type = 'checkout.session.expired';
+    expired.data.object.status = 'expired'; expired.data.object.payment_status = 'unpaid'; expired.data.object.payment_intent = null;
+    await receive(signEvent(expired));
+    const ids = first === 'paid' ? [f.input.event.id, expired.id] : [expired.id, f.input.event.id];
+    assert.equal((await fulfill(ids[0])).outcome, 'conflicting_events');
+    assert.equal((await fulfill(ids[1])).status, 'review_required');
+    const state = await fulfillmentState(f);
+    assert.equal(state.purchase.status, 'review_required'); assert.equal(state.grants.length, 0);
+  }
+});
+
+test('existing or revoked entitlements are never overwritten by a new event', async () => {
+  for (const status of ['paid', 'refunded', 'revoked']) {
+    const f = await paidFixture();
+    await pool.query(`INSERT INTO project_access_entitlements(project_id,contractor_id,status,provider_payment_id,verified_at)
+      VALUES ($1,$2,$3,'legacy-fixture',NOW())`, [f.project.id, f.buyer.id, status]);
+    assert.equal((await fulfill(f.input.event.id)).outcome, 'entitlement_conflict');
+    const state = await fulfillmentState(f);
+    assert.equal(state.grants[0].status, status); assert.equal(state.grants[0].provider_payment_id, 'legacy-fixture');
+  }
+  const f = await paidFixture(); await fulfill(f.input.event.id);
+  await pool.query("UPDATE project_access_entitlements SET status='revoked' WHERE project_id=$1", [f.project.id]);
+  assert.equal((await fulfill(f.input.event.id)).duplicate, true);
+  const next = structuredClone(f.input.event); next.id = `evt_${randomUUID().replaceAll('-', '')}`;
+  await receive(signEvent(next)); assert.equal((await fulfill(next.id)).status, 'review_required');
+  assert.equal((await fulfillmentState(f)).grants[0].status, 'revoked');
+});
+
+test('grant, purchase, event outcome and audit failures roll back all fulfillment writes', async () => {
+  for (const table of ['project_access_entitlements', 'project_access_purchases', 'project_access_checkout_events', 'audit_events']) {
+    const f = await paidFixture();
+    await pool.query(`CREATE FUNCTION fail_fulfillment() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN RAISE EXCEPTION 'synthetic fulfillment failure'; END $$`);
+    await pool.query(`CREATE TRIGGER fail_fulfillment BEFORE INSERT OR UPDATE ON ${table} FOR EACH ROW EXECUTE FUNCTION fail_fulfillment()`);
+    try { await assert.rejects(fulfill(f.input.event.id), /synthetic fulfillment failure/); }
+    finally { await pool.query(`DROP TRIGGER fail_fulfillment ON ${table}`); await pool.query('DROP FUNCTION fail_fulfillment()'); }
+    const state = await fulfillmentState(f);
+    assert.equal(state.grants.length, 0, table); assert.equal(state.audits.length, 0, table);
+    assert.equal(state.purchase.status, 'pending', table); assert.equal(state.event.status, 'received', table);
+    assert.equal((await fulfill(f.input.event.id)).outcome, 'paid_granted');
+  }
+});
+
+test('terminated DB connection before COMMIT leaves no partial grant and can retry', async () => {
+  const f = await paidFixture();
+  const crashPool = { connect: async () => {
+    const client = await pool.connect(); client.on('error', () => {});
+    const pid = (await client.query('SELECT pg_backend_pid() AS id')).rows[0].id;
+    return { release: error => client.release(error), query: async (...args) => {
+      if (args[0] === 'COMMIT') {
+        const killed = await pool.query('SELECT pg_terminate_backend($1) AS killed', [pid]);
+        assert.equal(killed.rows[0].killed, true);
+      }
+      return client.query(...args);
+    } };
+  } };
+  await assert.rejects(fulfill(f.input.event.id, crashPool));
+  const state = await fulfillmentState(f);
+  assert.equal(state.grants.length, 0); assert.equal(state.audits.length, 0);
+  assert.equal(state.purchase.status, 'pending'); assert.equal(state.event.status, 'received');
+  assert.equal((await fulfill(f.input.event.id)).outcome, 'paid_granted');
+});
+
+test('lost COMMIT acknowledgement is replay-safe across a new DB connection', async () => {
+  const f = await paidFixture();
+  const lostAckPool = { connect: async () => {
+    const client = await pool.connect();
+    return { release: error => client.release(error), query: async (...args) => {
+      const result = await client.query(...args);
+      if (args[0] === 'COMMIT') throw new Error('synthetic lost COMMIT acknowledgement');
+      return result;
+    } };
+  } };
+  await assert.rejects(fulfill(f.input.event.id, lostAckPool), /synthetic lost COMMIT acknowledgement/);
+  const another = new Pool({ connectionString: databaseUrl });
+  try { assert.equal((await fulfill(f.input.event.id, another)).duplicate, true); }
+  finally { await another.end(); }
+  const state = await fulfillmentState(f);
+  assert.equal(state.purchase.status, 'paid'); assert.equal(state.grants.length, 1); assert.equal(state.audits.length, 1);
 });

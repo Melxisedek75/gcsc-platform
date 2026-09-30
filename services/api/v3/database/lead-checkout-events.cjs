@@ -98,10 +98,13 @@ async function receiveLeadCheckoutEvent(pool, rawBody, signature, config) {
       fail('lead_webhook_purchase_mismatch');
     await bindCheckoutSession(client, row.id, event.providerCheckoutId, event.paymentIntentId, 'lead_webhook_purchase_mismatch');
     const inserted = await client.query(`INSERT INTO project_access_checkout_events
-      (event_id,purchase_id,provider_checkout_id,event_type,api_version,provider_created,payload_sha256,payment_status,payment_intent_id)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT (event_id) DO NOTHING RETURNING event_id,status`,
+      (event_id,purchase_id,provider_checkout_id,event_type,api_version,provider_created,payload_sha256,payment_status,payment_intent_id,purchase_snapshot)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT (event_id) DO NOTHING RETURNING event_id,status`,
     [event.eventId, event.purchaseId, event.providerCheckoutId, event.eventType, event.apiVersion,
-      event.providerCreated, event.payloadSha256, event.paymentStatus, event.paymentIntentId]);
+      event.providerCreated, event.payloadSha256, event.paymentStatus, event.paymentIntentId,
+      JSON.stringify({ project_id: event.projectId, contractor_id: event.contractorId,
+        amount_cents: event.amountCents, currency: event.currency, price_version: event.priceVersion,
+        expires_at: event.expiresAt, created_at: new Date(row.created_at).toISOString() })]);
     let result = inserted.rows[0];
     if (!result) {
       const existing = (await client.query('SELECT * FROM project_access_checkout_events WHERE event_id=$1', [event.eventId])).rows[0];
