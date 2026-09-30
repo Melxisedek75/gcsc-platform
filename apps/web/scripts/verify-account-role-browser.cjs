@@ -8,7 +8,9 @@ const { chromium } = require('playwright');
 
 const root = path.resolve(__dirname, '..');
 const repo = path.resolve(root, '../..');
-const sourceRef = process.argv[2];
+const marketingMode = process.argv.includes('--marketing');
+const sourceRef = process.argv.slice(2).find(arg => arg !== '--marketing');
+assert(!(marketingMode && sourceRef), 'Marketing CTA acceptance requires the current receiving tree');
 const git = (...args) => execFileSync('git', ['--no-optional-locks', ...args], { cwd: repo, encoding: 'utf8', windowsHide: true });
 const source = git('rev-parse', '--verify', `${sourceRef || 'HEAD'}^{commit}`).trim();
 const output = path.join(repo, '.tmp', 'account-role-browser', source.slice(0, 8));
@@ -18,6 +20,11 @@ const fixture = path.join(__dirname, 'fixtures/account-role-api.ts');
 const apiPattern = /(?:^|\/)services\/(?:api|walletLogin)$/;
 const panelPattern = /^\.\/dashboard\/(?:\w+Panel|TokenRedirect)$/;
 const digest = contents => createHash('sha256').update(contents).digest('hex');
+const marketingRoot = path.join(repo, 'apps/marketing');
+const marketingHtml = marketingMode ? fs.readFileSync(path.join(marketingRoot, 'index.html'), 'utf8') : null;
+const marketingInputs = marketingMode ? ['index.html', 'site.css', 'assets/renovation-hero-v1.png'].map(file => ({
+  file, sha256: digest(fs.readFileSync(path.join(marketingRoot, file))),
+})) : [];
 const componentInputs = ['src/pages/Dashboard.tsx', 'src/pages/dashboard/AccountAccess.tsx'].map(file => ({
   file, sha256: digest(sourceRef ? git('show', `${source}:apps/web/${file}`) : fs.readFileSync(path.join(root, file))),
 }));
@@ -61,6 +68,11 @@ async function main() {
         }, seed);
         await context.route('**/*', route => {
           const url = new URL(route.request().url());
+          if (marketingMode && url.origin === origin) {
+            if (url.pathname === '/marketing/') return route.fulfill({ contentType: 'text/html', body: marketingHtml });
+            if (url.pathname === '/marketing/site.css') return route.fulfill({ contentType: 'text/css', path: path.join(marketingRoot, 'site.css') });
+            if (url.pathname === '/marketing/assets/renovation-hero-v1.png') return route.fulfill({ contentType: 'image/png', path: path.join(marketingRoot, 'assets/renovation-hero-v1.png') });
+          }
           if (url.origin === origin && url.pathname === '/') return route.fulfill({ contentType: 'text/html', body:
             '<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="data:,"></head><body><div id="root"></div><script src="/fixture.js"></script></body></html>' });
           if (url.origin === origin && url.pathname === '/fixture.js') return route.fulfill({ contentType: 'text/javascript', body: code });
@@ -95,6 +107,19 @@ async function main() {
       await page.getByPlaceholder('6-digit code').waitFor();
     };
     const calls = page => page.evaluate(() => window.__roleTest.calls);
+    if (marketingMode) for (const role of ['homeowner', 'contractor']) await test(`marketing ${role} link`, async page => {
+      await page.goto(`${origin}/marketing/`);
+      const link = page.locator('.pathway a').filter({ hasText: role === 'homeowner' ? 'Explore owner account' : 'Explore contractor account' });
+      assert.equal(await link.count(), 1);
+      const href = await link.getAttribute('href');
+      assert.equal(href, `https://gcsc.store/#/dashboard?role=${role}`);
+      const target = new URL(href);
+      // Only the origin is mapped to the fixture; route and role remain from the real CTA.
+      await link.evaluate((element, destination) => { element.href = destination; }, `${origin}${target.pathname}${target.search}${target.hash}`);
+      await link.click();
+      await select(page, role); await fill(page); await send(page);
+      assert.equal((await calls(page))[0].input.role, role);
+    });
     for (const [name, query, role] of [
       ['owner CTA', '?role=homeowner', 'homeowner'], ['contractor CTA', '?role=contractor', 'contractor'],
       ['default', '', 'contractor'], ['invalid role', '?role=admin', 'contractor'],
@@ -160,7 +185,7 @@ async function main() {
       assert.deepEqual(await calls(page), []);
     }, 'contractor');
     const report = { source, sourceMode: sourceRef ? 'pinned two-component source' : 'working tree',
-      componentInputs, bundleSha256: digest(code), browser: browser.version(),
+      componentInputs, marketingInputs, marketingOriginRemapped: marketingMode, bundleSha256: digest(code), browser: browser.version(),
       boundary: 'Real React/HashRouter/Dashboard/AccountAccess, synthetic API and authenticated panels; no actual server or external requests', results };
     fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify(report, null, 2));
     console.log(JSON.stringify(report, null, 2));

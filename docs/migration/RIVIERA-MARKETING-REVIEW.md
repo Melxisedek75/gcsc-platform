@@ -1,8 +1,55 @@
 # RIVIERA marketing review and repair checkpoint
 
-Date: 2026-09-30 UTC. No merge, push or deployment was performed.
+Date: 2026-09-30 UTC. Local receiving integration only; no push or deployment.
 
-## Current checkpoint
+## Receiving marketing integration
+
+Local worktree `C:/gcsc-platform/.worktrees/legacy-preservation`, branch
+`codex/october-integration-20260930`. Base `8165a19f` includes independently
+reviewed backend445a54b4, QA034f6225 and web874153d9. Incoming marketing733e5fda
+has no merge conflicts; integration review is pending before the merge commit.
+Publication/main and deployed websites are unchanged.
+
+The receiving API hash is f24fdd7d20a658b8d8e60d14b5fe5db8b1b56260269f8c7aa2a3577b5f68ff77.
+Actual receiving API/UI/PostgreSQL acceptance `FuE0Vg` proves five project-flow
+checkpoints including unpaid/revoked denial; isolated SQL paid grants are not
+checkout/payment evidence. See PAID-PROJECT-DETAILS-REVIEW.md for exact sources,
+commands, independent scope and clean shutdown. The entire application runtime
+is unchanged by the marketing merge. Historical findings below refer to5166e59f,
+not the receiving runtime; their closure for this integration awaits review.
+
+Parent commands from the receiving root, all completed exit0:
+- `node apps/marketing/validate-static.mjs --test`:18/18.
+- `node apps/marketing/validate-static.mjs`:2 pages,7 account CTAs.
+- `node --test tests/migration.test.mjs tests/source-provenance.test.mjs`:22/22.
+- `node apps/marketing/verify-browser.cjs`:Edge154,8 viewport/text cases;
+  no overflow/missing image/reported page errors, tested hover/focus contrast.
+  Parent inspected desktop/mobile screenshots in `.tmp/marketing-browser`.
+- `node apps/web/scripts/verify-account-role-browser.cjs --marketing`:12/12,
+  including two actual marketing anchor clicks and their registration roles.
+  Evidence: `.tmp/account-role-browser/8165a19f/result.json`.
+- `git diff --check`:0.
+
+Browser commands use only process-local `NODE_PATH` pointing to the installed
+Codex runtime dependencies and `GCSC_BROWSER_CHANNEL=msedge`. Both browsers
+closed and commands exited. No installed package, server, live domain, external
+request, real registration/code delivery, payment or wallet was used. CTA tests
+verify the exact gcsc.store href, then remap only its origin to a loopback fixture;
+the route/role and actual React components remain unchanged. This is not DNS,
+cross-origin deployment, CSS registration or complete MVP acceptance.
+
+Parent added the two CTA cases and their docs. Updated CLAIM-LEDGER to distinguish
+implemented local entitlement/proposal work from unimplemented checkout, and
+added explicit marketing index/whitepaper provenance adaptations. The original
+source blobs remain unchanged; the first migration check correctly rejected the
+unrecorded landing adaptation before these entries were added. No assertion was
+removed. Marketing HTML/CSS/image equal incoming733e5fda.
+
+Open release gates: project-specific provider checkout/webhook, commercial and
+contact policy, full registration/provider tests, AI/voice, video/media rights,
+full accessibility/performance/legal review and explicit production authorization.
+
+## Historical source checkpoint
 
 - Reviewer: independent read-only Codex context RIVIERA,
   `01a0f0fd-0955-72e0-aa60-0caf8a412362`.

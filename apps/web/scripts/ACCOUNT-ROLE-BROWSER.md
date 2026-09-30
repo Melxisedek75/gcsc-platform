@@ -31,6 +31,19 @@ authenticated role unaffected by the query. The server, authorization rules,
 code delivery and downstream project/payment panels are NOT verified here.
 Styles are not bundled: this is DOM/interaction testing, not visual acceptance.
 
+For the combined receiving tree, add `--marketing` (without a Git revision).
+Two extra cases load the actual marketing HTML/CSS/image through a closed
+loopback route, verify the exact owner/contractor CTA href, then remap only its
+origin to the fixture and click the link into the real registration components.
+The path and role query are unchanged. The synthetic registration payload must
+match the link's role. All12 cases must pass; marketing file hashes and explicit
+origin-remapping status are recorded. This is not live-domain, DNS, actual code
+delivery or real account-registration acceptance. No external request is sent.
+
+```powershell
+node scripts/verify-account-role-browser.cjs --marketing
+```
+
 Results are written under the repository's ignored
 `.tmp/account-role-browser/<source-prefix>/result.json`; reruns replace that file.
 The report includes the source mode, exact component hashes and fixture bundle

@@ -1,5 +1,19 @@
 [
   {
+    "path": "apps/marketing/index.html",
+    "sourceBlob": "cb8564ebb98cd04d1930993c7af9a0cd54cdce3e",
+    "sha256": "99c21c2c6e6cc22a9cdfb0076aca5c01710a500ef1eda3e106752942081641e6",
+    "reason": "Replace the historical landing with the reviewed October pilot presentation and homeowner/contractor account CTAs; financial services remain planned, not live.",
+    "test": "node apps/marketing/validate-static.mjs --test; node apps/marketing/validate-static.mjs; node apps/marketing/verify-browser.cjs; node apps/web/scripts/verify-account-role-browser.cjs --marketing"
+  },
+  {
+    "path": "apps/marketing/whitepaper.html",
+    "sourceBlob": "83087a646e67eccb812a9c32ba2e84f71609d510",
+    "sha256": "0128b2d83207f2c3b0012eceffff73fd9f0bfda287436d9ee28dbd9926b05a71",
+    "reason": "Label the retained historical v1.3 draft, add noindex and align metadata/links with the October candidate; do not publish or substitute internal whitepaper v1.4.",
+    "test": "node apps/marketing/validate-static.mjs --test; node apps/marketing/validate-static.mjs"
+  },
+  {
     "path": "apps/web/scripts/validate-auth-channel-verification-ui.mjs",
     "sourceBlob": "fe926fcfa75b86fbbad619adccf900ba12c9e309",
     "sha256": "392f4dfec2c24328f2d4e11277b5295c1b080c4ddc33b9bc7a983d248e0ab4f0",
