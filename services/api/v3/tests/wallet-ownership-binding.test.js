@@ -134,3 +134,33 @@ test('a challenge is bound to the application session that requested it', async 
   expect(db.users[0].wallet.verified).toBe(true);
   expect(db.users[1].wallet).toBeNull();
 });
+
+test('legacy signed wallet route rejects a wallet already linked to another user', async () => {
+  db.users[0].wallet = {
+    accountName: 'fixture11111', permission: 'active', verified: true,
+    publicKey: 'first-user-key',
+  };
+  db.users.push({
+    id: 42, email: 'other@example.invalid', password_hash: 'unused', role: 'contractor',
+    full_name: 'Other User', is_active: 1, profile: {}, wallet: null,
+  });
+  const token = jwtSign({ userId: 42, email: 'other@example.invalid', role: 'contractor' });
+  const key = privateKey();
+  const challenge = await request('/api/wallet/challenge', token, { accountName: 'fixture11111' });
+  expect(challenge.status).toBe(200);
+
+  const originalVerifyAccountKey = _hooks.verifyAccountKey;
+  _hooks.verifyAccountKey = jest.fn(async () => ({ ok: true }));
+  try {
+    const result = await request('/api/wallet/connect', token, {
+      accountName: 'fixture11111', permission: 'active',
+      publicKey: key.getPublicKey().toString(),
+      signature: key.sign(challenge.body.message).toString(),
+    });
+    expect(result.status).toBe(409);
+    expect(result.body.code).toBe('wallet_already_linked');
+    expect(db.users[1].wallet).toBeNull();
+  } finally {
+    _hooks.verifyAccountKey = originalVerifyAccountKey;
+  }
+});

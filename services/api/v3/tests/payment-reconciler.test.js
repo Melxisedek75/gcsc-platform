@@ -8,6 +8,17 @@
  * changes upstream, these tests are what catches it.
  */
 
+const fs = require('fs');
+const path = require('path');
+
+const exists = fs.existsSync;
+const write = fs.writeFileSync;
+jest.spyOn(fs, 'existsSync').mockImplementation(file =>
+  path.basename(String(file)) === 'gcsc.db' ? false : exists(file));
+jest.spyOn(fs, 'writeFileSync').mockImplementation((file, ...args) => {
+  if (path.basename(String(file)) !== 'gcsc.db') return write(file, ...args);
+});
+
 const mod = require('../pure-server');
 const {
   db,
@@ -71,7 +82,12 @@ afterEach(() => {
   _hooks.verifyHyperionTransfer = originalVerifier;
   db.payment_receipts.length = 0;
   db.lead_tokens.length = 0;
+  db.projects.length = 0;
+  const seededOwner = db.users.findIndex(user => user.id === 7);
+  if (seededOwner !== -1) db.users.splice(seededOwner, 1);
 });
+
+afterAll(() => jest.restoreAllMocks());
 
 // ---- staleness discriminator ----
 
@@ -148,6 +164,51 @@ function seedPendingLead() {
   });
   db.lead_tokens.push({ id: 'lead_x', user_id: 7, tx_hash: TX, status: 'pending_verification' });
 }
+
+function seedPendingJob() {
+  db.users.push({ id: 7, role: 'homeowner', is_active: true });
+  db.projects.push({ id: 100, homeowner_id: 7, status: 'open', escrow_id: null,
+    published: false, published_at: null });
+  db.payment_receipts.push({
+    id: 1, tx_hash: TX, kind: 'job-posting', user_id: 7, project_id: 100,
+    from_account: 'ownerstest15', amount: '25.0000 XPR', block_num: null,
+    verification_status: 'pending', verify_error: '', verified_at: null,
+    created_at: new Date().toISOString(),
+  });
+}
+
+test('reconciler publishes a pending job only after a verified transfer', async () => {
+  seedPendingJob();
+  _hooks.verifyHyperionTransfer = async () => ({ ok: true, from: 'ownerstest15', block_num: 395481564 });
+
+  await reconcilePendingPayments();
+
+  expect(db.payment_receipts[0].verification_status).toBe('confirmed');
+  expect(db.projects[0].published).toBe(true);
+  expect(db.projects[0].published_at).toBeTruthy();
+});
+
+test('reconciler records a confirmed old payment without publishing for a disabled owner', async () => {
+  seedPendingJob();
+  db.users.find(user => user.id === 7).is_active = false;
+  _hooks.verifyHyperionTransfer = async () => ({ ok: true, from: 'ownerstest15' });
+
+  await reconcilePendingPayments();
+
+  expect(db.payment_receipts[0].verification_status).toBe('confirmed');
+  expect(db.payment_receipts[0].verify_error).toBe('publication_blocked_owner_or_project_ineligible');
+  expect(db.projects[0].published).toBe(false);
+});
+
+test('reconciler keeps a project unpublished after a bad transfer', async () => {
+  seedPendingJob();
+  _hooks.verifyHyperionTransfer = async () => ({ ok: false, error: 'bad_amount' });
+
+  await reconcilePendingPayments();
+
+  expect(db.payment_receipts[0].verification_status).toBe('rejected');
+  expect(db.projects[0].published).toBe(false);
+});
 
 test('reconciler activates the withheld lead once the transfer verifies', async () => {
   seedPendingLead();
