@@ -231,12 +231,54 @@ credential lookup. Unit/integration signing secrets are synthetic fixtures.
   economic outcome: every new event is `received`, purchases remain `pending`,
   no entitlement is issued and no refund is executed.
 
-Open L12 work is now the transactional fulfillment/reconciliation worker,
-refund/revocation/async-failure coverage, crash recovery beyond inbox persistence,
-bounded raw-body HTTP parsing and provider test-mode delivery. The helper body
+This intake slice leaves transactional fulfillment/reconciliation to the worker
+described below. Refund/revocation/async-failure coverage, bounded raw-body HTTP
+parsing and provider test-mode delivery remain open. The helper body
 limit does not yet constrain HTTP request buffering because it is not wired to
 a route. The old escrow webhook is separate and has not gained these guarantees.
 No live Checkout may be enabled before those layers and independent acceptance.
+
+## Local atomic fulfillment and consumer boundary, 2026-09-30
+
+Independently reviewed local publication candidate `d7709d02` adds internal
+`fulfillLeadCheckoutEvent(pool, eventId)`. It is not an HTTP endpoint and must
+never be exposed as a browser command to mark a purchase paid. It consumes only
+an inbox fact previously authenticated by the signed-event intake. Stored quote,
+mode, session/intent binding, current project and buyer/owner roles are rechecked
+under locks. Grant, purchase, event outcome and audit commit together.
+Evidence and remaining limits: `../migration/LEAD-FULFILLMENT-REVIEW.md`.
+
+The following is the consumer/state contract for the next HTTP/UI slice, not a
+claim that a purchase endpoint, background scheduler or provider adapter exists:
+
+| Stored state or result | Consumer meaning | Forbidden shortcut |
+| --- | --- | --- |
+| Purchase `pending` | Awaiting confirmed processing; a currently eligible buyer may receive its server-approved hosted URL | Never unlock a project from a return URL, local timer or client `paid` flag |
+| Purchase `paid` | Payment processing succeeded; request current permission from the private details/access API | Never cache permanent access from a historical payment receipt |
+| Purchase/event `review_required` | The platform must reconcile the payment; hide checkout and do not offer a second payment for the same unresolved purchase | Do not claim a decline/refund, issue a new charge, or grant details |
+| Purchase `expired` | This verified unpaid session ended; a new reservation must recheck current eligibility | Never revive the old purchase on a late callback |
+| Entitlement `refunded` or `revoked` | Current private-detail/new-proposal access is absent | A duplicate paid event must not restore access |
+| Processed event replay | Return the durable processing receipt without another grant or audit | Receipt outcome `paid_granted` is historical, not a current permission decision |
+
+An event can require reconciliation while its purchase remains terminal or paid.
+For example, a late paid event for an expired purchase must not displace a newer
+pending purchase; an inconsistent fact must not automatically revoke an already
+granted entitlement. Operations must inspect unresolved events as well as
+purchase status. The current worker records the hold but does not resolve it.
+
+Processing after the quote's expiry is conservatively held, even for a timely
+provider timestamp. Both paid and expired facts already queued before a decision
+also produce a hold regardless of processing order. Older inbox rows without a
+verified quote snapshot are not backfilled or auto-granted. No held row may be
+resolved by manually setting `paid` outside the forthcoming audited reconciliation
+transaction. Future resolution needs provider evidence plus current eligibility;
+refund eligibility and automatic actions still need the decisions below.
+
+Future buyer DTOs must allowlist display fields and derive the buyer from current
+authentication; do not serialize database rows. Inbox IDs, raw digests, binding
+snapshots, audit internals, provider credentials and arbitrary metadata are not
+browser inputs or proof of payment. Every purchase/detail response is private
+and non-cacheable. The old escrow endpoint remains separate from lead purchase.
 
 ## Founder decisions before live payments
 

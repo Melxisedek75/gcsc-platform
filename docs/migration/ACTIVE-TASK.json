@@ -1,6 +1,6 @@
 {
   "task": "october-launch-mvp-and-marketing",
-  "status": "IN_PROGRESS_CHECKOUT_FOUNDATION_AND_INTAKE_INTEGRATED",
+  "status": "IN_PROGRESS_ATOMIC_LEAD_FULFILLMENT_INTEGRATED",
   "owner": "019e7c87-8410-79f1-b86a-eedf78a1aa27",
   "worktree": "C:/gcsc-platform/.worktrees/publication",
   "branch": "codex/monorepo-publication",
@@ -13,10 +13,22 @@
   ],
   "leaseUntil": null,
   "baseCommit": "a0834ac7917c3de57ebc02fb542814561469bca2",
-  "candidateCommit": "09123295464f7a888fda31500865da466ad92daf",
-  "review": "Independent reviewer01a0edd5-92a1-7b42-ac8f-88094d6f5637 approved exact dormant foundation0d839c99 and signed intake09123295 for local integration only; final independent root37+12+11/static, focused25/25 and PG29/29 sKFxyH, all exits0. Reviewer closed. Prior backend/web/marketing receiving reviews remain recorded. No complete L11/L12/MVP, provider, wallet or production approval.",
-  "result": "Local publication09123295 contains reviewed project-bound purchase reservation, immutable server quote, hosted test-session validation, signed raw-byte event verification, durable digest/idempotency inbox and unique Checkout/PaymentIntent binding. Parent focused25/25, real PG29/29, baseline39/39, API301/301; independent repeats passed. No HTTP routes/provider calls enabled; events received, purchases pending, no entitlement/refund issued. Prior integrated October UI/marketing unchanged. No external service, live DB, actual signature/payment, push or deployment.",
-  "next": "Continue L12 atomic fulfillment/reconciliation from reviewed09123295 plus this checkpoint. Reuse the free parent checkout from canonical publication under a new codex branch, one writer. First negative/crash/replay tests: stored verified event and immutable quote/session/intent, current locked owner/buyer/project eligibility, purchase+entitlement+event outcome+audit in one transaction; closed/withdrawn/late cases fail closed into reconciliation, no automatic refunds. Then refund/revocation/async-failure contracts and bounded authenticated HTTP/test SDK wiring. Do not redispatch completed foundation/intake reviews. No Stripe network/key/account or live enablement; existing escrow PaymentIntent separate; L10 decisions open.",
+  "candidateCommit": "d7709d0298b8b459f9e10c5212cd697e930445f3",
+  "review": "Independent reviewer01a0edd5-92a1-7b42-ac8f-88094d6f5637 PASS exact71243960..d7709d02 for dormant local atomic fulfillment; independently focused29/29, PG45/45 w26j8W test/PG0, root37+12+11/static0 and diff0. Parent verified source hashes and closed reviewer. Prior foundation/intake/backend/web/marketing reviews preserved. No complete L11/L12/MVP/provider/wallet/production approval.",
+  "result": "Local publicationd7709d02 includes atomic stored-signed-event fulfillment: immutable verified quote snapshot, current locked project/identities, one transaction for grant/purchase/event outcome/audit. Concurrent replay, actual local DB-worker termination precommit and lost postcommit acknowledgement passed. Closed/late/unpaid/conflicting events held for reconciliation; revoked grants not restored. Parent focused29/29, PG45/45, baseline39/39, API301/301, root37+12+11/static0; independent repeats passed; receiving focused29/29. No HTTP/provider activation, actual payment, automatic refund, push or deployment.",
+  "next": "Continue L12 from reviewed d7709d02 plus checkpoint: define and test conservative provider-evidence-driven refund/revocation/dispute/async-failure transitions and a bounded reconciliation path for review_required events; never set paid from an admin/browser flag or invent refund economics. Use existing free parent checkout from canonical publication under a new codex branch, one writer. Then bounded raw-body HTTP/auth/rate limits/private purchase DTO and test SDK adapter with creation-timeout recovery, still no provider calls without authorization. Reuse completed evidence; do not redispatch unchanged reviews. Product consumer-state contract is in docs/product/october-mvp-contract.v1.md. L10 price/eligibility/contact/refund/provider gates open; legacy escrow separate.",
+  "leadFulfillmentInProgress": {
+    "worktree": "C:/gcsc-platform/.worktrees/legacy-preservation",
+    "branch": "codex/lead-fulfillment-20260930",
+    "baseCommit": "71243960",
+    "owner": "Parent sole author; no active writer/reviewer/test process",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "candidateCommit": "d7709d0298b8b459f9e10c5212cd697e930445f3",
+    "checks": "Focused29/29, actual PG45/45 bKnvyF and baseline39/39 7rWGpV, test/PG0; API301/301; root37+12+11/static0. Own DB worker terminated precommit and lost postcommit acknowledgement exercised; no provider/HTTP.",
+    "reviewer": "01a0edd5-92a1-7b42-ac8f-88094d6f5637 PASS exact71243960..d7709d02, independent29/29, PG45/45 w26j8W test/PG0, root37+12+11/static0; closed",
+    "integration": "Publication fast-forward71243960->d7709d02 after independent PASS; exact runtime hashes verified; receiving focused29/29. No payment activation.",
+    "scope": "L12 dormant atomic stored-event fulfillment: current locked project and identities, immutable verified quote snapshot, grant/purchase/event/audit commit, replay/crash and reconciliation tests. No HTTP/provider IO, refund or external action."
+  },
   "leadCheckoutInProgress": {
     "worktree": "C:/gcsc-platform/.worktrees/legacy-preservation",
     "branch": "codex/lead-checkout-20260930",
@@ -60,7 +72,7 @@
   },
   "integrationBlocker": {
     "type": "remaining-product-and-external-release-gates",
-    "evidence": "Local publication09123295 includes independently reviewed dormant L11 foundation and L12 signed-event inbox. No reviewer pending. Checkout HTTP/SDK, transactional fulfillment/reconciliation/refunds and full provider delivery acceptance remain unimplemented; synthetic SQL grants are not purchases. Provider/terms/contact, email/SMS acceptance, AI/voice, video, remaining security and deployment gates remain.",
+    "evidence": "Local publicationd7709d02 includes reviewed dormant L11 foundation, L12 signed inbox and atomic fulfillment/hold outcomes. No reviewer pending. HTTP/SDK, held-event resolution, refund/dispute/revocation/async-failure handling and actual provider delivery acceptance remain open. SDK-signed synthetic events and grants are not real purchases. Provider/terms/contact, email/SMS, AI/voice, video, remaining security and deployment gates remain.",
     "resumeCondition": "Continue safe local L11-L12 tests/implementation immediately on the next execution; do not wait for phone/reviewer/provider. Only external activation and real payments need owner decisions/credentials."
   },
   "nativeProbe": {
@@ -141,7 +153,7 @@
     "review": "APPROVED: Beauvoir, independent Sol/high agent01a09e82-0111-7803-ba04-dac9514c52a5, reviewed a0834ac7..e9f954fbb105ba4f6e05ff54c860ecaffec6ff28. Independently ran guards4/4 and real PostgreSQL18.4 tests9/9, exits0; source SHA matches, canonical gcsc.db unchanged and PostgreSQL stopped. Root43/43/API159 remain parent evidence. No main integration or production approval.",
     "result": "Added native PostgreSQL runner without Docker or downloads. Real PostgreSQL18.4:9/9 including parent; runtime schema idempotency, project/bid creation, role isolation, audit, FK/UNIQUE and API module/connection restart pass. Root43/43 plus syntax/static and API159/159 pass. services/api/v3/.tmp/postgres-baseline-ZUU0yU/result.json: testExitCode0, postgresExitCode0. Missing pg_isready diagnosed and replaced by pg driver probe. No mobile, WebAuth or financial runtime edits."
   },
-  "updatedAt": "2026-09-30T11:36:43Z",
+  "updatedAt": "2026-09-30T12:02:18Z",
   "latestFollowup": "Two scoped candidates completed and independently reviewed in this run: foundation0d839c99 and signed-event intake09123295, both included locally. Final parent25/25, PG29/29, baseline39/39, API301/301; independent25/25, PG29/29, root37+12+11/static, all exits0. No reviewer/process left running. Next safe task is atomic fulfillment/reconciliation, not a repeated gate check. No HTTP/payment/production activation; automation settings unchanged.",
   "previousMigrationTask": {
     "task": "canonical-postgres-migrations",

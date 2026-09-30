@@ -287,6 +287,21 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   entitlement не выдаётся, HTTP/provider не подключён. L12 НЕ закрыт;
   следующий шаг - атомарная выдача/отзыв и reconciliation.
   Evidence: `LEAD-CHECKOUT-EVENT-REVIEW.md`.
+  Следующий срез 30 сентября `d7709d02` атомарно записывает paid-доступ,
+  покупку, результат события и audit только из сохранённого проверенного
+  тестового события. Перепроверяются quote, session/intent, текущие роли и
+  проект. Повторы не выдают доступ снова; закрытые, поздние и противоречивые
+  случаи переходят на сверку без автоматического возврата. Parent: focused29/29,
+  реальная изолированная PG45/45 (`bKnvyF`), baseline39/39 (`7rWGpV`),
+  API301/301, root37+12+11/static PASS. Разрыв соединения БД до COMMIT и
+  потерянное подтверждение успешного COMMIT проверены отдельно.
+  Независимый reviewer exact `71243960..d7709d02`: PASS только для локального
+  неактивного среза, повторены 29/29 и PG45/45 (`w26j8W`, test/PG0),
+  root/static. SHA сохранён fast-forward в publication, receiving29/29;
+  reviewer завершён. Нет HTTP/provider активации, реальной покупки или
+  возврата. Решение удержанных событий, refund/revoke/dispute/async-failure,
+  HTTP и provider E2E остаются открытыми. L12 НЕ закрыт.
+  Evidence: `LEAD-FULFILLMENT-REVIEW.md`; consumer/state contract обновлён.
 - [ ] **L13 / web + QA.** Чёткая цена, состояние оплаты, ожидание подтверждения,
   квитанция, отмена, ошибка, повтор без второго списания и обращение в
   поддержку. Сначала Stripe test mode end-to-end; live только после L10-L12,
