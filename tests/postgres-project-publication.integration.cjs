@@ -3,9 +3,9 @@ const assert = require('node:assert/strict');
 const { once } = require('node:events');
 const fs = require('node:fs');
 const path = require('node:path');
-const { createHash } = require('node:crypto');
 const { createRequire } = require('node:module');
 const { validateLocalTestDatabase } = require('../scripts/local-test-database.cjs');
+const { readProjectManifest, copyApiSnapshot } = require('./postgres-project-sources.cjs');
 
 const apiRoot = path.resolve(__dirname, '../services/api/v3');
 const runDirectory = fs.realpathSync(process.env.GCSC_TEST_RUN_DIRECTORY);
@@ -14,28 +14,14 @@ assert.match(path.relative(fs.realpathSync(path.join(apiRoot, '.tmp')), runDirec
 const databaseUrl = validateLocalTestDatabase(process.env.TEST_DATABASE_URL);
 assert.equal(process.env.DATABASE_URL, databaseUrl);
 assert.equal(process.env.NODE_ENV, 'test');
-const sourcePath = fs.realpathSync(process.env.GCSC_API_SOURCE);
-assert.equal(path.basename(sourcePath), 'pure-server.js');
-const source = fs.readFileSync(sourcePath);
-const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
-const sourceSha256 = sha256(source);
-assert.equal(sourceSha256, process.env.GCSC_API_SOURCE_SHA256, 'Candidate source changed after runner snapshot');
+const selectedSources = readProjectManifest(runDirectory);
+const sourceSha256 = selectedSources.api.files['pure-server.js'];
 
 const apiRequire = createRequire(path.join(apiRoot, 'package.json'));
 const { Pool } = apiRequire('pg');
 const { Key, Numeric, digestFromSerializedData } = apiRequire('@proton/js');
 const pool = new Pool({ connectionString: databaseUrl, connectionTimeoutMillis: 3000 });
-const appDirectory = path.join(runDirectory, 'api');
-fs.mkdirSync(appDirectory);
-const appFile = path.join(appDirectory, 'pure-server.cjs');
-fs.writeFileSync(appFile, source, { flag: 'wx' });
-const copiedFiles = { 'pure-server.cjs': sourceSha256 };
-for (const name of ['wallet-ownership-proof.cjs', 'wallet-challenge-store.cjs']) {
-  fs.copyFileSync(path.join(path.dirname(sourcePath), name), path.join(appDirectory, name), fs.constants.COPYFILE_EXCL);
-  copiedFiles[name] = sha256(fs.readFileSync(path.join(appDirectory, name)));
-}
-fs.writeFileSync(path.join(runDirectory, 'api-files.sha256.json'), JSON.stringify(copiedFiles, null, 2) + '\n');
-fs.writeFileSync(path.join(runDirectory, 'api-source.sha256'), sourceSha256 + '\n');
+const appFile = copyApiSnapshot(selectedSources, runDirectory);
 
 let api;
 let base;
@@ -661,7 +647,7 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
 
   fs.writeFileSync(path.join(runDirectory, 'publication-acceptance.json'), JSON.stringify({
     status: 'RUN_FINISHED', verdictSource: 'result.json testExitCode and postgresExitCode',
-    apiSourceSha256: sourceSha256, database: 'fresh loopback PostgreSQL',
+    apiSourceSha256: sourceSha256, projectSources: selectedSources, database: 'fresh loopback PostgreSQL',
     projectId: project.id, checks: ['private draft', 'owner draft details and cache headers', 'owner authority',
       'legacy posting disabled', 'exact public preview', 'paid nine-field details and uniform denials',
       'project-specific paid bid access', 'concurrent close access revoke and contractor disable',

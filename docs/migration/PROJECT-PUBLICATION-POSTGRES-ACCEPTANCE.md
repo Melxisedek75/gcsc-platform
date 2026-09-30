@@ -2,6 +2,115 @@
 
 Date: 2026-09-29. Scope: local QA branch `codex/wallet-proof-20260914`; no backend changes or integration.
 
+## 2026-09-30: receiving-tree source selection and real-PG verification
+
+QA resumed clean at `1bceb8f58dac6840eae614788d72da8b06af0a66` with exclusive
+ownership of the QA worktree. Changes are limited to the guarded runner,
+project-publication/browser setup, shared test-only source helper, focused
+guard tests and this report. No `CHECKLIST.md`, production API/web or receiving
+worktree edits. Parent supplied frozen staged tree
+`8b995544a32f3857675da0c192e3daf2276fdb47`, not a merge commit, and subsequently
+authorized these two real-PG runs after the offline guards passed.
+
+New options take **component directories**, not repository roots or executable
+filenames: `--api-root <worktree/services/api/v3>` for either project suite,
+and `--web-root <worktree/apps/web>` only for the browser suite. Defaults remain
+the sibling backend and October-web; the baseline and default browser SHA pins
+are unchanged. Explicit selections are bound to their own captured hashes,
+not silently attributed to the old default candidate.
+
+Before native PostgreSQL execution or cluster creation, source roots must match
+standard component paths of Git-registered sibling worktrees beneath the QA
+worktree's canonical local workspace boundary. Remote/UNC/device/URL paths,
+outside and prefix-collision paths, unregistered trees, noncanonical directory
+junctions and source links are refused. Unknown, duplicate, missing and
+wrong-suite CLI options fail closed. Existing PID/data-directory, ambient-env
+and disposable-DB guards remain intact. This constrains source entrypoints;
+it is not a sandbox or independent approval of the selected application's code.
+
+`project-sources.json` records canonical roots, explicit/default selection and
+SHA-256 for the API, both wallet helpers, available flat `database/*.cjs`
+modules and the two web entry sources. Its digest is passed only through the
+runner's sanitized child environment. Tests reject manifest/source drift before
+copy/execution. Both project suites share the snapshot helper: canonical
+migration modules retain their relative `database/` imports and every copied
+file is hashed. SQL documents are not copied or executed by the snapshotter.
+
+Selected source hashes, checked against the frozen input and copied evidence:
+
+| Source | SHA-256 |
+| --- | --- |
+| Receiving `pure-server.js` | `f24fdd7d20a658b8d8e60d14b5fe5db8b1b56260269f8c7aa2a3577b5f68ff77` |
+| Receiving `database/migrate-schema.cjs` | `600a68627af137bdf3f6fbee8d045cee2a33b35592eb27a78b5ca6ed861a0dd9` |
+| Receiving `database/schema-statements.cjs` | `cf9797a075d4b146076cdd97cfd6ade3b7faa9bd2a66200a880cb5f0f4401992` |
+| October-web `ProjectsPanel.tsx` | `316b708a56eada68e0b1f18df23d197e4a5b2e5ba6f3e91bace2de50633ba044` |
+| October-web `api.ts` | `a51b71f7d0cbdf22850b6285c243471e28e905c8031d613303da3b23cc1649fd` |
+
+Exact commands, from `C:\gcsc-platform\.worktrees\qa`:
+
+```powershell
+npm run test:postgres:guards
+node --check scripts/run-postgres-baseline.mjs
+node --check tests/postgres-project-sources.cjs
+node --check tests/postgres-project-publication.integration.cjs
+node --check tests/postgres-project-browser.integration.cjs
+node --check tests/postgres-runner.test.mjs
+git diff --check
+npm run test:postgres:local -- --postgres-bin C:\gcsc\.tmp\embedded-pg-runner\node_modules\@embedded-postgres\windows-x64\native\bin --project-publication --api-root C:\gcsc-platform\.worktrees\legacy-preservation\services\api\v3
+npm run test:postgres:local -- --postgres-bin C:\gcsc\.tmp\embedded-pg-runner\node_modules\@embedded-postgres\windows-x64\native\bin --project-browser --playwright-dir C:\Users\rivne\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules --api-root C:\gcsc-platform\.worktrees\legacy-preservation\services\api\v3 --web-root C:\gcsc-platform\.worktrees\october-web\apps\web
+```
+
+Offline guards **12/12 PASS**, syntax/diff exit 0. The first CLI regression test
+correctly failed against the old parser (6 passed, 1 failed: unsupported
+`--api-root`); after implementation all 12 passed. New filesystem tests use
+only tiny generated QA-local fixtures, including a constant-returning migration
+module, and do not connect to a DB. They cover registered-path boundaries,
+junction rejection, module-copy/import integrity, optional schema modules,
+no-overwrite behavior, manifest/source drift and rejection before native startup.
+Fixtures are retained; no installation, network or destructive cleanup.
+
+Actual runs on fresh PostgreSQL 18.4, each run once after the guards:
+
+| Suite | Local evidence directory suffix | Result | test/PG/Edge exits |
+| --- | --- | --- | --- |
+| project-publication | `postgres-baseline-PI5emL` | 16/16 PASS | 0/0/not launched |
+| project-browser | `postgres-baseline-9hbuOD` | 1/1 PASS, all five checkpoints | 0/0/0 |
+
+Full evidence prefix:
+`C:\gcsc-platform\.worktrees\qa\services\api\v3\.tmp\`.
+Each directory retains `result.json`, `project-sources.json`,
+`api-files.sha256.json`, copied modules, PostgreSQL/TAP logs and its companion
+acceptance report. Browser evidence additionally retains the real bundle and
+screenshots. Both snapshots include the two migration-module hashes above.
+`publication-acceptance.json` intentionally says `RUN_FINISHED`; its verdict is
+the runner's exit-bearing `result.json`, not an unconditional companion PASS.
+
+Publication preserves owner/privacy, receipt replay, concurrent authorization
+and atomic rollback checks. Its expected `fixture escrow insert failure` log
+is the deliberately rejected insert used to verify rollback. Browser verifies
+owner draft/publish, unpaid redaction, matching synthetic paid brief, real bid
+POST persisted/read by the owner, and revocation rejecting stale submission
+and clearing private UI. It has no page exceptions, failed network requests,
+blocked external attempts or cleanup errors. HTTP 404/403 denials and the
+existing Node `DEP0169` warning remain visible in evidence.
+
+Shutdown: publication PG **50477** and browser PG **54485** exited 0 and both
+`cluster/postmaster.pid` files are absent. Browser UI **61321**, API **61323**
+and Edge control **57952** are recorded closed; Edge exited 0. A post-run
+`Get-NetTCPConnection -State Listen` check found zero listeners across all five
+ports. The publication child also exited normally after its API/pool teardown.
+No owned server or browser remains running.
+
+Scope limits: receiving API plus the existing reviewed October-web at
+`b1cda59be1d9e37cf2d282a5570444424e163798`, **not receiving-tree UI**. The parent's
+separate `FvSGRH` baseline 39/39 is not our run and was not repeated. Synthetic
+SQL grants/receipts and locally generated K1 login proofs remain in the existing
+publication suite; it would be inaccurate to claim that no local cryptographic
+signing occurred. No real wallet, payment signing/broadcast, provider call,
+live DB, credential, production, installation or external network was used.
+This is scoped harness engineering and local acceptance evidence, not
+independent review, merge authorization or whole-MVP/payment approval.
+
 ## 2026-09-30 follow-up: PostgreSQL login and legacy receipt repair
 
 Parent resumed the released QA worktree from `f345b2fd` for regression coverage.

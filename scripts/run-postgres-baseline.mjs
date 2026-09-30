@@ -6,14 +6,19 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateLocalTestDatabase } from './local-test-database.cjs';
+import { localAbsolute, captureProjectSources } from '../tests/postgres-project-sources.cjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const apiRoot = path.join(root, 'services', 'api', 'v3');
 
+function hostEnvironment(ambient) {
+  return Object.fromEntries(Object.entries(ambient).filter(([key]) =>
+    /^(path|systemroot|windir|comspec|temp|tmp|home|userprofile)$/i.test(key)));
+}
+
 export function testEnvironment(ambient, databaseUrl, runDirectory) {
   validateLocalTestDatabase(databaseUrl);
-  const env = Object.fromEntries(Object.entries(ambient).filter(([key]) =>
-    /^(path|systemroot|windir|comspec|temp|tmp|home|userprofile)$/i.test(key)));
+  const env = hostEnvironment(ambient);
   return Object.assign(env, {
     NODE_ENV: 'test', CI: 'true', PGSSL: 'false',
     JWT_SECRET: 'local-postgres-baseline-fixture-not-a-production-key',
@@ -24,15 +29,30 @@ export function testEnvironment(ambient, databaseUrl, runDirectory) {
 }
 
 export function parseRunnerArgs(args) {
-  const browser = args.length === 5 && args[2] === '--project-browser'
-    && args[3] === '--playwright-dir' && path.isAbsolute(args[4]);
-  const publication = args.length === 3 && args[2] === '--project-publication';
-  if (args[0] !== '--postgres-bin' || !args[1] || !path.isAbsolute(args[1])
-    || !(args.length === 2 || publication || browser)) {
-    throw new Error('Usage: npm run test:postgres:local -- --postgres-bin <absolute PostgreSQL bin directory> [--project-publication | --project-browser --playwright-dir <absolute installed node_modules>]');
+  const usage = () => { throw new Error('Usage: npm run test:postgres:local -- --postgres-bin <absolute bin directory> [--project-publication [--api-root <worktree/services/api/v3>] | --project-browser --playwright-dir <absolute installed node_modules> [--api-root <worktree/services/api/v3>] [--web-root <worktree/apps/web>]]'); };
+  if (args[0] !== '--postgres-bin' || !args[1] || !path.isAbsolute(args[1])) usage();
+  const result = { binaryDir: args[1], suite: 'baseline' };
+  const seen = new Set();
+  const values = { '--api-root': 'apiRoot', '--web-root': 'webRoot', '--playwright-dir': 'playwrightDir' };
+  for (let index = 2; index < args.length; index++) {
+    const flag = args[index];
+    if (seen.has(flag)) usage();
+    seen.add(flag);
+    if (['--project-publication', '--project-browser'].includes(flag)) {
+      if (result.suite !== 'baseline') usage();
+      result.suite = flag.slice(2);
+    } else {
+      if (!Object.hasOwn(values, flag)) usage();
+      const value = args[++index];
+      if (!value || !path.isAbsolute(value)) usage();
+      if (flag !== '--playwright-dir') localAbsolute(value);
+      result[values[flag]] = value;
+    }
   }
-  return { binaryDir: args[1], suite: browser ? 'project-browser' : publication ? 'project-publication' : 'baseline',
-    ...(browser ? { playwrightDir: args[4] } : {}) };
+  if ((result.suite === 'baseline' && seen.size)
+    || (result.suite !== 'project-browser' && (result.webRoot || result.playwrightDir))
+    || (result.suite === 'project-browser' && !result.playwrightDir)) usage();
+  return result;
 }
 
 function command(binary, args, env, options = {}) {
@@ -59,6 +79,19 @@ async function unusedPort() {
 
 export async function main(args = process.argv.slice(2)) {
   const options = parseRunnerArgs(args);
+  let projectSources;
+  if (options.suite !== 'baseline') {
+    const registered = command('git', ['worktree', 'list', '--porcelain', '-z'], hostEnvironment(process.env), { timeout: 10000 })
+      .split('\0').filter(field => field.startsWith('worktree ')).map(field => field.slice(9));
+    projectSources = captureProjectSources({
+      apiRoot: options.apiRoot || path.join(root, '..', 'backend', 'services', 'api', 'v3'),
+      apiExplicit: !!options.apiRoot,
+      ...(options.suite === 'project-browser' ? {
+        webRoot: options.webRoot || path.join(root, '..', 'October-web', 'apps', 'web'),
+        webExplicit: !!options.webRoot,
+      } : {}),
+    }, path.dirname(path.resolve(root)), registered);
+  }
   const binaryDir = await realpath(options.binaryDir);
   const binary = name => path.join(binaryDir, name + (process.platform === 'win32' ? '.exe' : ''));
   const temporaryRoot = path.join(apiRoot, '.tmp');
@@ -72,16 +105,21 @@ export async function main(args = process.argv.slice(2)) {
   const password = randomBytes(24).toString('hex');
   const databaseUrl = `postgres://gcsc_test:${password}@127.0.0.1:${port}/gcsc_test_baseline`;
   const env = testEnvironment(process.env, databaseUrl, runDirectory);
-  if (options.suite !== 'baseline') {
-    const source = await realpath(path.join(root, '..', 'backend', 'services', 'api', 'v3', 'pure-server.js'));
-    env.GCSC_API_SOURCE = source;
-    env.GCSC_API_SOURCE_SHA256 = createHash('sha256').update(await readFile(source)).digest('hex');
+  if (projectSources) {
+    const manifest = JSON.stringify(projectSources, null, 2) + '\n';
+    await writeFile(path.join(runDirectory, 'project-sources.json'), manifest, { flag: 'wx' });
+    env.GCSC_PROJECT_MANIFEST_SHA256 = createHash('sha256').update(manifest).digest('hex');
+    env.GCSC_API_ROOT = projectSources.api.root;
+    env.GCSC_API_SOURCE = path.join(projectSources.api.root, 'pure-server.js');
+    env.GCSC_API_SOURCE_SHA256 = projectSources.api.files['pure-server.js'];
+    if (projectSources.web) env.GCSC_WEB_ROOT = projectSources.web.root;
   }
   if (options.playwrightDir) env.GCSC_PLAYWRIGHT_DIR = await realpath(options.playwrightDir);
   const { Client } = createRequire(path.join(apiRoot, 'package.json'))('pg');
   const passwordFile = path.join(runDirectory, 'init-password');
   const report = { startedAt: new Date().toISOString(), runDirectory, port, suite: options.suite,
     ...(env.GCSC_API_SOURCE ? { apiSource: env.GCSC_API_SOURCE, apiSourceSha256: env.GCSC_API_SOURCE_SHA256 } : {}),
+    ...(projectSources ? { projectSources, projectManifestSha256: env.GCSC_PROJECT_MANIFEST_SHA256 } : {}),
     status: 'STARTING' };
   let postgres;
   let stopped;

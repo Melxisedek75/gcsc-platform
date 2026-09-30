@@ -8,11 +8,11 @@ const { once } = require('node:events');
 const { createHash } = require('node:crypto');
 const { createRequire } = require('node:module');
 const { validateLocalTestDatabase } = require('../scripts/local-test-database.cjs');
+const { readProjectManifest, copyApiSnapshot } = require('./postgres-project-sources.cjs');
 
 const root = path.resolve(__dirname, '..');
 const apiRoot = path.join(root, 'services/api/v3');
-const webRoot = path.resolve(root, '../October-web/apps/web');
-const expected = {
+const defaultPins = {
   api: '01613262aaac5529cd11abfe298f9a399c2bd93fe52d22a45becda4973a3dd9a',
   panel: '316b708a56eada68e0b1f18df23d197e4a5b2e5ba6f3e91bace2de50633ba044',
   client: 'a51b71f7d0cbdf22850b6285c243471e28e905c8031d613303da3b23cc1649fd',
@@ -37,6 +37,18 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
   assert.equal(process.env.DATABASE_URL, databaseUrl);
   assert.equal(process.env.NODE_ENV, 'test');
   assert.ok(path.isAbsolute(process.env.GCSC_PLAYWRIGHT_DIR));
+  const selectedSources = readProjectManifest(runDirectory);
+  assert.ok(selectedSources.web, 'Browser suite requires selected web sources');
+  const webRoot = selectedSources.web.root;
+  const expected = {
+    api: selectedSources.api.files['pure-server.js'],
+    panel: selectedSources.web.files['src/pages/dashboard/ProjectsPanel.tsx'],
+    client: selectedSources.web.files['src/services/api.ts'],
+  };
+  if (!selectedSources.api.explicit) assert.equal(expected.api, defaultPins.api, 'Default API pin changed');
+  if (!selectedSources.web.explicit) {
+    for (const name of ['panel', 'client']) assert.equal(expected[name], defaultPins[name], `Default ${name} pin changed`);
+  }
   const sourcePaths = { api: fs.realpathSync(process.env.GCSC_API_SOURCE),
     panel: path.join(webRoot, 'src/pages/dashboard/ProjectsPanel.tsx'),
     client: path.join(webRoot, 'src/services/api.ts') };
@@ -45,21 +57,11 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
   for (const name of Object.keys(expected)) assert.equal(sources[name].sha256, expected[name], `${name} source changed`);
   assert.equal(sources.api.sha256, process.env.GCSC_API_SOURCE_SHA256);
 
-  const report = { status: 'FAIL', sources, steps: [], apiRequests: [], blockedRequests: [],
+  const report = { status: 'FAIL', sources, projectSources: selectedSources, steps: [], apiRequests: [], blockedRequests: [],
     pageErrors: [], requestFailures: [], consoleErrors: [] };
   let pool, api, uiServer, browser, browserServer, esbuild;
   try {
-    const appDirectory = path.join(runDirectory, 'api');
-    fs.mkdirSync(appDirectory);
-    const appFile = path.join(appDirectory, 'pure-server.cjs');
-    fs.copyFileSync(sourcePaths.api, appFile, fs.constants.COPYFILE_EXCL);
-    const apiFiles = { 'pure-server.cjs': hash(fs.readFileSync(appFile)) };
-    assert.equal(apiFiles['pure-server.cjs'], expected.api);
-    for (const name of ['wallet-ownership-proof.cjs', 'wallet-challenge-store.cjs']) {
-      fs.copyFileSync(path.join(path.dirname(sourcePaths.api), name), path.join(appDirectory, name), fs.constants.COPYFILE_EXCL);
-      apiFiles[name] = hash(fs.readFileSync(path.join(appDirectory, name)));
-    }
-    fs.writeFileSync(path.join(runDirectory, 'api-files.sha256.json'), JSON.stringify(apiFiles, null, 2));
+    const appFile = copyApiSnapshot(selectedSources, runDirectory);
     const { Pool } = createRequire(path.join(apiRoot, 'package.json'))('pg');
     pool = new Pool({ connectionString: databaseUrl, connectionTimeoutMillis: 3000, query_timeout: 5000 });
     const data = await pool.query('SHOW data_directory');
