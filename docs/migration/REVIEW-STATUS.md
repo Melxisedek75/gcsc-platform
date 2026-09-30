@@ -24,7 +24,27 @@ independent source/local JSON PASS for its 66-line delta only. Reviewer ran31/31
 parent full Jest285/285 passed. This does not review the entire pre-existing
 dirty backend candidate. Separate QA `011f30c9` confirmed real PostgreSQL18.4:
 14/14 on the same source, test and shutdown exit0; no live payment. Evidence:
-`PAID-PROJECT-DETAILS-REVIEW.md`; checkout/webhook/consumer/production remain open.
+`PAID-PROJECT-DETAILS-REVIEW.md`; checkout/webhook/production remain open.
+
+October-web initial `1f68f2e9` had a confirmed Medium accepted-project read
+regression. Repair `b1cda59b` independently passes RIVIERA source/DOM review,
+including22/22 synthetic HTTP cases and types/lint/static/diff0. Parent final
+build passes. QA `f345b2fd` also proves the scoped actual Edge/ApiClient/API/PG
+journey in `wZruXv`: five checkpoints, synthetic paid grant, real proposal
+persistence/owner read and revoked403/404, clean shutdown. Test-mode loopback
+permission/CORS were explicit; no provider or production acceptance is implied.
+Whole dirty backend review on6e7396be found one Medium legacy posting replay
+regression, not double credit; independent full285/285 passed. Parent added7
+regressions and repaired it, and fixed baseline PostgreSQL wallet-login's missing
+normalizer. Frozen API01613262aaac5529cd11abfe298f9a399c2bd93fe52d22a45becda4973a3dd9a
+passes parent292/292, realPG16/16 (`GkZJSQ`) and final actualbrowser/API/PG1/1,
+five checkpoints (`X3EAmR`), all exit0 and stopped0. Local proof and authority
+fixtures are not actualwallet evidence. Independent final review returned PASS
+for the accumulated backend delta: focused33/33 and exact manifest verified,
+baseline hardening limits retained. Local commits backend`c46bd1b4`, QA`1bceb8f5`
+preserve these hashes. Reviewer context closed. Receiving-tree dry-run identified
+five conflicts, including API code; this is the next integration task, not an
+approval of the combined tree. No merge or release occurred.
 
 The historical import-only status below is preserved as a dated record, not the
 current consolidation decision. Local consolidation/private publication approval

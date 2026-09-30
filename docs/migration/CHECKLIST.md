@@ -123,6 +123,22 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   PostgreSQL 18.4 10/10 (`postgres-baseline-rTfuJV/result.json`, оба exit 0);
   backend Jest 253/253, fake-PG и syntax/diff PASS. Новое независимое
   ревью этого точного diff запущено; paid full details и checkout не готовы.
+  Актуализация 30 сентября: full-delta reviewer на `6e7396be` нашёл одну
+  Medium-регрессию replay legacy posting: 400 вместо 409 после публикации,
+  без второго receipt. Исправлены порядок проверки и прежний вызов
+  отсутствующей `normalizeUser` в PostgreSQL wallet login. Точный новый
+  SHA-256 `01613262aaac5529cd11abfe298f9a399c2bd93fe52d22a45becda4973a3dd9a`:
+  Jest 292/292; PostgreSQL 16/16 (`GkZJSQ`), включая одноразовый тестовый
+  proof, пять отказов wallet login и legacy replay после рестарта; browser/API/PG
+  1/1 с пятью этапами (`X3EAmR`). Все exit 0, тестовые службы завершены.
+  Web `b1cda59b` независимо одобрен после исправления Medium-регрессии чтения
+  принятого проекта. Независимое итоговое ревью накопленного backend:
+  `AI_REVIEW_GATE=PASS`, отдельно повторены 33/33 payment-тестов, manifest
+  совпадает. Код сохранён в `c46bd1b4`, QA в `1bceb8f5`, оба дерева чистые.
+  Проверка совмещения с publication нашла пять конфликтов, включая API;
+  следующий шаг - сохранить обе стороны исправлений, повторить проверку
+  совмещённого кандидата. Integration, checkout/webhook и реальный кошелёк
+  остаются отдельными gates; L01 открыт. См. `INTEGRATION-ORDER-2026-09-22.md`.
 - [ ] **L02 / backend + QA.** Завершить локальный security-кандидат:
   JWT/dev routes/admin role/wallet binding/payment pending, проверить
   повторное списание, привязку одного wallet к двум пользователям и хранение
@@ -192,12 +208,27 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   project+contractor и проверка перед раскрытием/предложением. Приёмка:
   чужой чек, иной проект, двойной callback и повторная покупка не дают доступ.
   Read-path предыдущего пункта не создаёт paid entitlement. Checkout,
-  подписанный webhook и web-consumer остаются открытыми; синтетический grant
-  из теста не является доказательством реального платежа.
+  подписанный webhook остаются открытыми; синтетический grant
+  из теста не является доказательством реального платежа. Web-кандидат
+  `1f68f2e9` читает nine-key paid brief без выдуманного `access_status`,
+  сбрасывает приватные данные при смене account/role/project и отказе,
+  игнорирует запоздалые ответы. Parent: Edge synthetic HTTP 20/20,
+  TypeScript/lint/build/static PASS. Независимое ревью и совместный
+  браузер/API/PostgreSQL прогон завершены на исправлении `b1cda59b`:
+  RIVIERA закрыл Medium-регрессию accepted-project read, независимые
+  browser22/22 + types/lint/static PASS. QA `f345b2fd`, `wZruXv`: реальный
+  Edge/API/PG путь из пяти этапов PASS и чистое завершение процессов.
+  Доступ выдан SQL-фикстурой, не платежом; checkout/webhook и L08 открыты.
 - [ ] **L09 / backend + web.** Подрядчик после доступа отправляет редактируемое
   предложение с ценой/сроком/описанием; владелец видит его в аккаунте.
   Приёмка: предложение сохраняется, связано с project и contractor;
   посторонний не читает и не отправляет, владелец не видит чужие заявки.
+  `1f68f2e9`: локальный UI отправляет предложение после protected read,
+  обрабатывает отказ в доступе и не повторяет неопределённый POST.
+  QA `f345b2fd` подтвердил реальный UI POST201, точную запись предложения
+  в PostgreSQL и чтение владельцем. После отзыва: POST403/details404,
+  приватный brief очищен, второй bid не создан. Whole-backend review и
+  интеграция ещё нужны; см. `PAID-PROJECT-DETAILS-REVIEW.md`.
 
 ### P1 - настоящая оплата лида, 1-10 октября
 
