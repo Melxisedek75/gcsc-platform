@@ -276,6 +276,17 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   события, восстановление после падения, сверка с провайдером. Не выдавать
   lead только по redirect/success URL. Приёмка: ни один неоплаченный/чужой
   запрос не раскрывает заявку, один платёж не создаёт два права доступа.
+  Локальный срез 30 сентября `09123295`: проверка исходных байтов/подписи
+  установленным SDK и PostgreSQL inbox, привязка сессии/PaymentIntent только
+  к одной покупке, replay/digest и rollback. Parent: focused25/25, PG29/29,
+  baseline39/39, API301/301, root37+12+11/static PASS. Независимое ревью exact
+  `09123295`: PASS только для локального неактивного intake; reviewer повторил
+  focused25/25, PG29/29 (`sKFxyH`, test/PG0), root37+12+11/static. Рецензент
+  завершён. Exact-коммит включён fast-forward в локальную publication,
+  без push/deploy. События пока только `received`, покупки остаются `pending`:
+  entitlement не выдаётся, HTTP/provider не подключён. L12 НЕ закрыт;
+  следующий шаг - атомарная выдача/отзыв и reconciliation.
+  Evidence: `LEAD-CHECKOUT-EVENT-REVIEW.md`.
 - [ ] **L13 / web + QA.** Чёткая цена, состояние оплаты, ожидание подтверждения,
   квитанция, отмена, ошибка, повтор без второго списания и обращение в
   поддержку. Сначала Stripe test mode end-to-end; live только после L10-L12,

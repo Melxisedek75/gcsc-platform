@@ -1,6 +1,6 @@
 {
   "task": "october-launch-mvp-and-marketing",
-  "status": "IN_PROGRESS_LEAD_CHECKOUT_FOUNDATION_INTEGRATED",
+  "status": "IN_PROGRESS_CHECKOUT_FOUNDATION_AND_INTAKE_INTEGRATED",
   "owner": "019e7c87-8410-79f1-b86a-eedf78a1aa27",
   "worktree": "C:/gcsc-platform/.worktrees/publication",
   "branch": "codex/monorepo-publication",
@@ -13,10 +13,10 @@
   ],
   "leaseUntil": null,
   "baseCommit": "a0834ac7917c3de57ebc02fb542814561469bca2",
-  "candidateCommit": "0d839c99cfca16fb41cc710098c6a2cbe434cb69",
-  "review": "Backend445a54b4 independently PASS on receiving tree2c6e986a; QA034f6225 reviewed independently of its author. Web874153d9 preserves RIVIERA PASS tree85957258. Marketingd613c440 preserves RIVIERA PASS tree9d89cb68: previous High privacy and Medium owner-CTA closed for this local combined target. Local publication fast-forwarded from656a6469; all reviewers closed. No whole-MVP, provider, wallet or production approval.",
-  "result": "Local publication now contains reviewed backend, QA, October web and marketing in one candidate d613c440. Receiving API f24fdd7d preserves migrations/profile/docs/chat; parent and independent301/301 Jest, parent PG39/39 and project16/16. Actual receiving API/UI/PG FuE0Vg1/1 five checkpoints PASS with synthetic SQL entitlement only, all exits/ports cleanup0. Webbuild/lint/check0, paidbrief22/22; marketing parser18/18, static2pages7CTA, actual anchor+role fixtures12/12, viewport/text8/8. No external service, paid provider, live DB, real signing, checkout payment, push or deployment.",
-  "next": "Continue L12 signed raw-body webhook verification, durable replay/digest checks and atomic entitlement tests from reviewed0d839c99. Reuse free parent checkout from the new canonical checkpoint, one writer; do not redispatch completed foundation review. No Stripe network/key/account or live enablement. Existing escrow PaymentIntent remains separate; L10 business/provider decisions remain open.",
+  "candidateCommit": "09123295464f7a888fda31500865da466ad92daf",
+  "review": "Independent reviewer01a0edd5-92a1-7b42-ac8f-88094d6f5637 approved exact dormant foundation0d839c99 and signed intake09123295 for local integration only; final independent root37+12+11/static, focused25/25 and PG29/29 sKFxyH, all exits0. Reviewer closed. Prior backend/web/marketing receiving reviews remain recorded. No complete L11/L12/MVP, provider, wallet or production approval.",
+  "result": "Local publication09123295 contains reviewed project-bound purchase reservation, immutable server quote, hosted test-session validation, signed raw-byte event verification, durable digest/idempotency inbox and unique Checkout/PaymentIntent binding. Parent focused25/25, real PG29/29, baseline39/39, API301/301; independent repeats passed. No HTTP routes/provider calls enabled; events received, purchases pending, no entitlement/refund issued. Prior integrated October UI/marketing unchanged. No external service, live DB, actual signature/payment, push or deployment.",
+  "next": "Continue L12 atomic fulfillment/reconciliation from reviewed09123295 plus this checkpoint. Reuse the free parent checkout from canonical publication under a new codex branch, one writer. First negative/crash/replay tests: stored verified event and immutable quote/session/intent, current locked owner/buyer/project eligibility, purchase+entitlement+event outcome+audit in one transaction; closed/withdrawn/late cases fail closed into reconciliation, no automatic refunds. Then refund/revocation/async-failure contracts and bounded authenticated HTTP/test SDK wiring. Do not redispatch completed foundation/intake reviews. No Stripe network/key/account or live enablement; existing escrow PaymentIntent separate; L10 decisions open.",
   "leadCheckoutInProgress": {
     "worktree": "C:/gcsc-platform/.worktrees/legacy-preservation",
     "branch": "codex/lead-checkout-20260930",
@@ -30,6 +30,19 @@
     "checks": "Parent focused17/17; actual PG14/14 twice cOhDGt/tdpaGT and baseline39/39 brIsKh, test/PG exits0. API301/301, root36+12+11/static0, later additional unit passed focused17. No provider or grant issuance.",
     "integration": "Publication fast-forward c46f449f to0d839c99 after independent PASS; no source changes or payment activation",
     "next": "L12 signed raw-body event/dedup/atomic entitlement fixtures, plus simultaneous attach acceptance gap; no real payment or live activation."
+  },
+  "leadWebhookInProgress": {
+    "worktree": "C:/gcsc-platform/.worktrees/legacy-preservation",
+    "branch": "codex/lead-webhook-20260930",
+    "baseCommit": "e810e244",
+    "owner": "Parent sole writer",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "candidateCommit": "09123295464f7a888fda31500865da466ad92daf",
+    "scope": "L12 signed raw-body test-event validation and durable deduplicating inbox with shared unique session/intent binding; no provider requests, HTTP activation or paid entitlement",
+    "reviewer": "01a0edd5-92a1-7b42-ac8f-88094d6f5637 PASS exacte810e244..09123295; independent25/25, PG29/29 sKFxyH test/PG0, root37+12+11/static; closed",
+    "checks": "Parent focused25/25; real PG29/29 2GYErK, baseline39/39 O0Haiu, test/PG0; API301/301; root37+12+11/static0. Prior red24/26 crosspurchase provider-ID duplicates and7/8 BOM case fixed.",
+    "integration": "Publication fast-forwarde810e244->09123295 after independent narrow PASS; exact runtime preserved; no active reviewer/test process or delegated writer",
+    "next": "Atomic entitlement/event/purchase/audit transaction and negative/crash/replay tests; refund/revocation/provider/HTTP remain open. New SDK unit suite requires explicit npm run test:lead-checkout, not only npm run check."
   },
   "consumerInProgress": {
     "candidateCommit": "b1cda59be1d9e37cf2d282a5570444424e163798",
@@ -47,7 +60,7 @@
   },
   "integrationBlocker": {
     "type": "remaining-product-and-external-release-gates",
-    "evidence": "Local publication0d839c99 adds independently reviewed dormant L11 reservation/session foundation to prior integrated d613c440. No reviewer is pending. Checkout HTTP/SDK and signed durable webhook/atomic grant remain unimplemented; synthetic SQL grants are not purchases. Provider/terms/contact, email/SMS acceptance, AI/voice, video, remaining security and deployment gates remain.",
+    "evidence": "Local publication09123295 includes independently reviewed dormant L11 foundation and L12 signed-event inbox. No reviewer pending. Checkout HTTP/SDK, transactional fulfillment/reconciliation/refunds and full provider delivery acceptance remain unimplemented; synthetic SQL grants are not purchases. Provider/terms/contact, email/SMS acceptance, AI/voice, video, remaining security and deployment gates remain.",
     "resumeCondition": "Continue safe local L11-L12 tests/implementation immediately on the next execution; do not wait for phone/reviewer/provider. Only external activation and real payments need owner decisions/credentials."
   },
   "nativeProbe": {
@@ -128,8 +141,8 @@
     "review": "APPROVED: Beauvoir, independent Sol/high agent01a09e82-0111-7803-ba04-dac9514c52a5, reviewed a0834ac7..e9f954fbb105ba4f6e05ff54c860ecaffec6ff28. Independently ran guards4/4 and real PostgreSQL18.4 tests9/9, exits0; source SHA matches, canonical gcsc.db unchanged and PostgreSQL stopped. Root43/43/API159 remain parent evidence. No main integration or production approval.",
     "result": "Added native PostgreSQL runner without Docker or downloads. Real PostgreSQL18.4:9/9 including parent; runtime schema idempotency, project/bid creation, role isolation, audit, FK/UNIQUE and API module/connection restart pass. Root43/43 plus syntax/static and API159/159 pass. services/api/v3/.tmp/postgres-baseline-ZUU0yU/result.json: testExitCode0, postgresExitCode0. Missing pg_isready diagnosed and replaced by pg driver probe. No mobile, WebAuth or financial runtime edits."
   },
-  "updatedAt": "2026-09-30T11:09:50Z",
-  "latestFollowup": "Reviewed dormant L11 foundation0d839c99 fast-forwarded into local publication. Parent17/17, PG14/14 twice, baseline39/39, API301/301. Independent exact-source PASS with root37+12+11/static,17/17 and actual PG14/14, all exits0. No HTTP activation, provider request, paid grant, wallet signature, push or deploy. L11/L12 remain open; next signed-event persistence acceptance.",
+  "updatedAt": "2026-09-30T11:36:43Z",
+  "latestFollowup": "Two scoped candidates completed and independently reviewed in this run: foundation0d839c99 and signed-event intake09123295, both included locally. Final parent25/25, PG29/29, baseline39/39, API301/301; independent25/25, PG29/29, root37+12+11/static, all exits0. No reviewer/process left running. Next safe task is atomic fulfillment/reconciliation, not a repeated gate check. No HTTP/payment/production activation; automation settings unchanged.",
   "previousMigrationTask": {
     "task": "canonical-postgres-migrations",
     "status": "P2_6_MIGRATION_REVIEWED_REMAINING_GATES_OPEN",
