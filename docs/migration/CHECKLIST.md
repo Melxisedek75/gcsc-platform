@@ -285,6 +285,11 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
 - [ ] **L18c / marketing / 3 октября.** Создать дизайн-систему: типографика,
   нейтральные и акцентные цвета, grid, изображение реальной стройки, motion rules,
   контраст, reduced-motion. Проверка: desktop/mobile снимки и контрастность.
+  Частично @ `028b0ff8` (30 сентября): устранены Low contrast из RIVIERA
+  и воспроизведённое обрезание hero при увеличении текста. Локальный Edge
+  154: 8 viewport/text-сценариев PASS, изображение загружено, снимки просмотрены;
+  hover 8,31:1, focus на белом 6,70:1. Это не полный WCAG/дизайн-acceptance;
+  точные команды и ограничения: `RIVIERA-MARKETING-REVIEW.md`.
 - [ ] **L18d / marketing / 5 октября.** Построить презентационный маршрут:
   GCSC как первый экран, до/после в процессе заказа ремонта, заявка владельца,
   доступ подрядчика, AI-помощник, будущая инфраструктура с явным roadmap,
@@ -301,6 +306,10 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   `?role=contractor`, локальная проверка ссылок PASS. Подсказка роли не
   предоставляет доступ. Проверка браузером, объединенного кандидата и
   опубликованного домена открыта.
+  RIVIERA подтвердил: publication `5166e59f` ещё игнорирует `role=homeowner`
+  и регистрирует contractor. Это Medium integration blocker, не закрытый
+  наличием `2409c780` в отдельной ветке. High privacy API target также открыт;
+  текст `028b0ff8` теперь явно описывает приватный preview как разработку.
 - [ ] **L18e / marketing / 10 октября.** Семантика, SEO/social previews,
   sitemap, аналитика без лишнего сбора PII, privacy/terms/support links,
   загрузка без сторонних CDN как обязательного условия. Проверка: локальный
@@ -309,6 +318,15 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   metadata, homepage-only sitemap и совместимый robots.txt @ `1ef15051`.
   Локальные XML/metadata/asset проверки PASS. Аналитика, legal/support links,
   браузер без JS/видео, реальный домен и внешняя проверка открыты.
+  Дополнение @ `028b0ff8`: стандартный HTML/XML parser вместо regex,
+  16 регрессионных тестов PASS, в том числе 7 ранее пропущенных дефектных
+  mutations. Главная проверена в локальном браузере без JavaScript и сети;
+  это не принимающее приложение, не полный HTML5 validator и не CI.
+  Требуется существующий Python 3.9+, пакеты не устанавливались.
+  Финальный follow-up @ `733e5fda`: RIVIERA независимо подтвердил 18/18 и
+  устранение дополнительного Low в robots-проверке; оба порядка перекрывающихся
+  правил больше не дают ложный PASS. Low contrast также закрыт. Общий
+  integration gate остаётся CHANGES_REQUIRED из-за High API и Medium owner CTA.
 - [x] **L19a / creative / 29 сентября.** Написать две версии сценария hero loop
   (без звука) и 45-90-секундного объясняющего ролика: реальная проблема,
   работающий MVP, один понятный следующий шаг. Отделить уже доступное от
@@ -337,6 +355,9 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
 - [ ] **L20b / QA / 13 октября.** Проверить клавиатуру, screen reader, 200%
   zoom, 360/390/768/1440 px, ошибки/пустые/ожидающие состояния, слабую сеть,
   отказ микрофона и отключённый AI. Проверка: протокол с артефактами для двух сайтов.
+  Локальная marketing-проверка `028b0ff8` охватывает 320-1920 px, mobile menu,
+  два keyboard-focus состояния и имитацию 200% размера шрифта. Настоящий zoom,
+  screen reader, устройства и второй сайт ещё не приняты; L20b открыт.
 - [ ] **L21a / product + legal / 10 октября.** Завершить тексты privacy,
   terms, consent на аудио/AI, возвраты, поддержку и точность бренда/юрлица.
   Проверка: владелец подтверждает перед публичной регистрацией и оплатой.

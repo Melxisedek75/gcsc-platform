@@ -2,6 +2,14 @@
 
 ## Current review records
 
+Marketing candidate `89e7607f` and repair `028b0ff8` have independent RIVIERA
+evidence in `RIVIERA-MARKETING-REVIEW.md` (2026-09-30). Whole integration remains
+CHANGES_REQUIRED against publication code `5166e59f`: inherited privacy disclosure
+and owner-role CTA mismatch remain. Contrast and original validator gaps were
+independently closed; follow-up `733e5fda` independently closed the additional
+Low robots gap (18/18 tests, static/diff exit 0; no new findings in that diff).
+This is not whole-MVP approval, a merge or a deployment.
+
 The historical import-only status below is preserved as a dated record, not the
 current consolidation decision. Local consolidation/private publication approval
 is in CONSOLIDATION-REVIEW.md. The 2026-09-13 archive/diagnostic successor e8188048
