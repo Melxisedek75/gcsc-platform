@@ -224,6 +224,44 @@ const statements = Object.freeze([
   )`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_project_access_active_purchase
     ON project_access_purchases (project_id, contractor_id) WHERE status IN ('pending','paid','review_required')`,
+  `CREATE TABLE IF NOT EXISTS project_access_checkout_bindings (
+    provider_checkout_id TEXT PRIMARY KEY CHECK (provider_checkout_id ~ '^cs_test_[a-zA-Z0-9]{1,247}$'),
+    purchase_id UUID NOT NULL UNIQUE REFERENCES project_access_purchases(id) ON DELETE RESTRICT,
+    payment_intent_id TEXT UNIQUE CHECK (payment_intent_id ~ '^pi_[a-zA-Z0-9]{1,252}$'),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (provider_checkout_id,purchase_id)
+  )`,
+  `INSERT INTO project_access_checkout_bindings (provider_checkout_id,purchase_id)
+    SELECT provider_checkout_id,id FROM project_access_purchases WHERE provider_checkout_id IS NOT NULL
+    ON CONFLICT DO NOTHING`,
+  `DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM project_access_purchases p
+      WHERE p.provider_checkout_id IS NOT NULL AND NOT EXISTS
+        (SELECT 1 FROM project_access_checkout_bindings b
+          WHERE b.provider_checkout_id=p.provider_checkout_id AND b.purchase_id=p.id)) THEN
+      RAISE EXCEPTION 'Conflicting stored Checkout bindings; migration stopped';
+    END IF;
+  END $$`,
+  `CREATE TABLE IF NOT EXISTS project_access_checkout_events (
+    event_id TEXT PRIMARY KEY CHECK (event_id ~ '^evt_[a-zA-Z0-9]{1,251}$'),
+    purchase_id UUID NOT NULL REFERENCES project_access_purchases(id) ON DELETE RESTRICT,
+    provider_mode TEXT NOT NULL DEFAULT 'test' CHECK (provider_mode='test'),
+    provider_checkout_id TEXT NOT NULL CHECK (provider_checkout_id ~ '^cs_test_[a-zA-Z0-9]{1,247}$'),
+    event_type TEXT NOT NULL CHECK (event_type IN ('checkout.session.completed','checkout.session.expired')),
+    api_version TEXT NOT NULL,
+    provider_created BIGINT NOT NULL CHECK (provider_created > 0),
+    payload_sha256 TEXT NOT NULL CHECK (payload_sha256 ~ '^[a-f0-9]{64}$'),
+    payment_status TEXT NOT NULL CHECK (payment_status IN ('paid','unpaid')),
+    payment_intent_id TEXT CHECK (payment_intent_id ~ '^pi_[a-zA-Z0-9]{1,252}$'),
+    status TEXT NOT NULL DEFAULT 'received' CHECK (status IN ('received','processed','review_required')),
+    received_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (provider_checkout_id,purchase_id)
+      REFERENCES project_access_checkout_bindings (provider_checkout_id,purchase_id) ON DELETE RESTRICT,
+    CHECK (payment_status <> 'paid' OR payment_intent_id IS NOT NULL),
+    CHECK (event_type <> 'checkout.session.expired' OR payment_status='unpaid')
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_project_access_event_purchase
+    ON project_access_checkout_events (purchase_id, provider_checkout_id)`,
   `CREATE TABLE IF NOT EXISTS job_posting_payments (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,

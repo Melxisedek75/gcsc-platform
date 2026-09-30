@@ -1,4 +1,5 @@
 const { randomUUID } = require('node:crypto');
+const { bindCheckoutSession } = require('./lead-checkout-binding.cjs');
 
 const uuid = value => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 const id = value => Number.isInteger(value) && value > 0 && value <= 2147483647;
@@ -62,7 +63,7 @@ function validateSession(row, session) {
   let url;
   try { url = new URL(session?.url); } catch { fail('lead_checkout_session_mismatch'); }
   if (!session || session.object !== 'checkout.session' || session.livemode !== false
-    || typeof session.id !== 'string' || !/^cs_test_[a-zA-Z0-9]+$/.test(session.id)
+    || typeof session.id !== 'string' || session.id.length > 255 || !/^cs_test_[a-zA-Z0-9]+$/.test(session.id)
     || session.mode !== 'payment' || session.status !== 'open' || session.payment_status !== 'unpaid'
     || session.currency !== row.currency || session.amount_total !== row.amount_cents
     || session.amount_subtotal !== row.amount_cents || session.client_reference_id !== row.id
@@ -155,6 +156,7 @@ async function attachCheckoutSession(pool, purchaseId, session) {
     if (!row || row.project_id !== binding.project_id || row.contractor_id !== binding.contractor_id)
       fail('lead_checkout_purchase_invalid');
     validateSession(row, session);
+    await bindCheckoutSession(client, purchaseId, session.id);
     if (row.provider_checkout_id) {
       if (row.provider_checkout_id !== session.id || row.checkout_url !== session.url)
         fail('lead_checkout_session_conflict');

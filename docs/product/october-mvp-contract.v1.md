@@ -194,6 +194,50 @@ Reference interfaces: https://docs.stripe.com/api/checkout/sessions/create,
 https://docs.stripe.com/api/idempotent_requests and
 https://docs.stripe.com/webhooks. Local installed SDK remains unchanged.
 
+## Local signed-event intake, 2026-09-30
+
+`database/lead-checkout-events.cjs` implements a dormant L12 intake boundary,
+not payment fulfillment. It calls the installed Stripe SDK's local webhook
+signature helper, not a remote API, and accepts an explicit server-owned test
+configuration and original raw Buffer only. There is no HTTP route or ambient
+credential lookup. Unit/integration signing secrets are synthetic fixtures.
+
+- Body is limited to 64 KiB and strict UTF-8 without BOM. Signature headers are
+  bounded, require one unambiguous timestamp and valid v1 signatures, and must
+  be within 300 seconds in both directions. SDK signature failures are sanitized
+  so payload/header do not escape via its error object.
+- Both event and session must be test-mode. Connected-account/context events,
+  wrong configured API version, unsupported types, malformed IDs, wrong purpose,
+  zero/noninteger amounts, currency changes and inconsistent session states fail
+  closed. This slice supports `checkout.session.completed` and
+  `checkout.session.expired` only; refund/dispute/async-failure handling is not
+  implied. Destination event selection/version must be explicit before activation.
+- A verified envelope must still match the stored purchase, buyer, project,
+  immutable amount/version/currency and expiry. A signature alone cannot select
+  a different quote. Future HTTP code must never accept event JSON as a trusted
+  alternative to verifying the original bytes.
+- The shared binding table enforces one Checkout session and one PaymentIntent
+  per purchase, and prevents either provider identifier being used by a second
+  purchase. Intake and attachment use the same transaction-scoped binding helper;
+  valid pre-existing attachments are backfilled by the canonical migration.
+- The inbox stores allowlisted references/status, an exact-body SHA-256 and
+  timestamps, not raw webhook payload, customer email, signature or secret.
+  Duplicate event IDs with the same digest are idempotent across reconnects and
+  concurrency. A changed body with the same event ID, including formatting,
+  conflicts and requires diagnosis rather than silently replacing evidence.
+- Binding and event insertion roll back together. Expired/unavailable project
+  events can be retained for reconciliation, and differently ordered supported
+  events are retained as separate facts. Intake does not decide their final
+  economic outcome: every new event is `received`, purchases remain `pending`,
+  no entitlement is issued and no refund is executed.
+
+Open L12 work is now the transactional fulfillment/reconciliation worker,
+refund/revocation/async-failure coverage, crash recovery beyond inbox persistence,
+bounded raw-body HTTP parsing and provider test-mode delivery. The helper body
+limit does not yet constrain HTTP request buffering because it is not wired to
+a route. The old escrow webhook is separate and has not gained these guarantees.
+No live Checkout may be enabled before those layers and independent acceptance.
+
 ## Founder decisions before live payments
 
 1. Exact fixed USD access price and tax/receipt presentation.
