@@ -30,6 +30,11 @@ not permission to deploy. Recheck against the exact release SHA and live domains
 
 ## Required release review
 
+Local regression check: `node apps/marketing/validate-static.mjs` from the
+monorepo root (or `node validate-static.mjs` here). It checks local references,
+anchors, account-link shapes, draft `noindex` and the homepage-only sitemap;
+it does not test a deployed domain or browser behavior.
+
 1. Check every CTA against an accepted owner/contractor route on the final
    `gcsc.store` preview. The `/#/dashboard` target follows the current web
    candidate's `HashRouter`, `Dashboard` route and unauthenticated
