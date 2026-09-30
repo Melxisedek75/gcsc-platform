@@ -107,6 +107,39 @@ tests before L03 can be closed.
   PostgreSQL instance, then independent security review of the exact SHA.
   JSON/mocked-PG tests are useful but cannot close the release gate.
 
+## Local paid-brief implementation, 2026-09-30
+
+The backend candidate now implements the proposed
+`GET /api/projects/:id/details` path. This is a read-only local capability,
+not a checkout or a mechanism for creating a `paid` grant. Exact source,
+tests, independent review and limitations are recorded in
+`../migration/PAID-PROJECT-DETAILS-REVIEW.md`. The earlier capability table is
+the original gap inventory; a local implementation does not close its release
+gates or mean this code is in publication.
+
+- An active owning homeowner reads the stored project, including its own draft.
+- A contractor must have a current active contractor role matching the JWT and
+  a `paid` grant for the exact buyer/project with provider reference and verified
+  timestamp. Only published, open projects with no escrow qualify for this path.
+- A contractor response is `{ project }`, with exactly `id`, `title`,
+  `description`, `category`, `budget_min`, `budget_max`, `timeline_days`, `status`
+  and `published_at`. It does not include structured address/contact, attachments,
+  owner identity, proposals, payment metadata or arbitrary future columns.
+- `title` and `description` are private owner-supplied brief text, not a PII
+  scrubber's output. If an owner types an address/phone there, this endpoint does
+  not remove it. Clear pre-publication disclosure/consent and the contact policy
+  remain launch gates; do not claim all contact information is automatically hidden.
+- No valid JWT returns 401. An authenticated request with no current permission,
+  an invalid ID, an unavailable project or no matching grant returns the same
+  404 `project_details_unavailable` without private data. Responses use
+  `Cache-Control: private, no-store` and vary by Authorization and Origin.
+- Public preview endpoints do not expand their fields because a grant exists.
+  The existing accepted-contract legacy routes are not replaced by this endpoint.
+
+The UI consumer and combined API/browser journey remain unimplemented. Stored
+synthetic grants in tests do not establish checkout/webhook or real payment
+readiness. The live decisions below still apply.
+
 ## Founder decisions before live payments
 
 1. Exact fixed USD access price and tax/receipt presentation.

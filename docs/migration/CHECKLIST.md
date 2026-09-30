@@ -176,10 +176,24 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   закрыть контакты, адрес и чувствительные детали в обоих GET маршрутах,
   вложениях, логах и кеше до оплаченного доступа. Приёмка: анонимный и
   неоплативший подрядчик не получают закрытые поля даже прямым API-запросом.
+  Локальное продолжение 30 сентября: новый `GET /api/projects/:id/details`
+  в backend SHA-256 `6e7396beedee0d9d6604b3818eff8ae0b0600f75d6ffd59fe409dc4b5c314653`
+  проверяет текущую роль и grant конкретного покупателя/проекта, возвращает
+  allowlist описания и задаёт private/no-store. Открытый preview не расширяется.
+  31/31 focused и полный Jest 285/285 PASS; независимое узкое source/JSON
+  ревью PASS. Это не PII-scrubber текста владельца, не разрешение на live
+  раскрытие контактов и не интеграция в publication. QA `3bdc36d1`/`011f30c9`:
+  настоящая PostgreSQL 18.4, 14/14 на том же SHA, оба exit 0, кластер остановлен;
+  проверены и отложенные owner/publish/receipt races. Старый ENOSPC-блокер
+  снят после нового замера свободного места. Это не whole-MVP acceptance;
+  evidence: `PAID-PROJECT-DETAILS-REVIEW.md`.
 - [ ] **L08 / backend + web.** Доступ к одному project ID: право покупателя,
   серверные состояния `unpaid/pending/paid/refunded/revoked`, уникальность
   project+contractor и проверка перед раскрытием/предложением. Приёмка:
   чужой чек, иной проект, двойной callback и повторная покупка не дают доступ.
+  Read-path предыдущего пункта не создаёт paid entitlement. Checkout,
+  подписанный webhook и web-consumer остаются открытыми; синтетический grant
+  из теста не является доказательством реального платежа.
 - [ ] **L09 / backend + web.** Подрядчик после доступа отправляет редактируемое
   предложение с ценой/сроком/описанием; владелец видит его в аккаунте.
   Приёмка: предложение сохраняется, связано с project и contractor;

@@ -18,6 +18,14 @@ approved the exact source repair: both findings closed, probes13/13 and
 TypeScript/auth/diff exit 0. Evidence: `ACCOUNT-ROLE-REVIEW.md`; the receiving
 publication role/privacy blockers remain open until reviewed integration.
 
+Paid-project brief endpoint on backend source SHA-256
+`6e7396beedee0d9d6604b3818eff8ae0b0600f75d6ffd59fe409dc4b5c314653` has
+independent source/local JSON PASS for its 66-line delta only. Reviewer ran31/31;
+parent full Jest285/285 passed. This does not review the entire pre-existing
+dirty backend candidate. Separate QA `011f30c9` confirmed real PostgreSQL18.4:
+14/14 on the same source, test and shutdown exit0; no live payment. Evidence:
+`PAID-PROJECT-DETAILS-REVIEW.md`; checkout/webhook/consumer/production remain open.
+
 The historical import-only status below is preserved as a dated record, not the
 current consolidation decision. Local consolidation/private publication approval
 is in CONSOLIDATION-REVIEW.md. The 2026-09-13 archive/diagnostic successor e8188048
