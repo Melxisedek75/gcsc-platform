@@ -1,5 +1,16 @@
 # GCSC: контрольный список завершения проекта
 
+30 сентября: отдельный opt-in `--project-browser` проверяет настоящий Edge ->
+ProjectsPanel/ApiClient -> API -> свежую PostgreSQL 18.4. Финальный web commit
+`b1cda59be1d9e37cf2d282a5570444424e163798`, API SHA `6e7396be...c314653`:
+1/1 сценарий, пять этапов, guards 6/6, syntax/diff PASS. Финальный evidence
+`postgres-baseline-wZruXv`: exits test/PG/Edge 0/0/0, все четыре порта закрыты.
+Проверены draft/publish, unpaid-редакция, synthetic paid grant, реальная заявка
+в SQL и UI владельца, отзыв доступа. Ошибки harness и loopback-диагностика
+сохранены; это не приёмка оплаты, полного приложения или MVP. Только QA commit,
+без интеграции. Точные хэши, команды и ограничения:
+[PROJECT-PUBLICATION-POSTGRES-ACCEPTANCE.md](PROJECT-PUBLICATION-POSTGRES-ACCEPTANCE.md).
+
 30 сентября: QA-тест paid-details расширен для точного SHA-256 API
 `6e7396beedee0d9d6604b3818eff8ae0b0600f75d6ffd59fe409dc4b5c314653`.
 Свежая локальная PostgreSQL 18.4: полный project-publication suite 14/14,

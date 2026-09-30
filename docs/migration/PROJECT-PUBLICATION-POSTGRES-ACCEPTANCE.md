@@ -2,6 +2,131 @@
 
 Date: 2026-09-29. Scope: local QA branch `codex/wallet-proof-20260914`; no backend changes or integration.
 
+## 2026-09-30: actual Edge -> React/ApiClient -> API -> PostgreSQL
+
+The opt-in `--project-browser` journey passed against the final frozen web
+commit `b1cda59be1d9e37cf2d282a5570444424e163798`, not the superseded
+`1f68f2e949ea666b6761814bed40234d796b6c0c` candidate. Only QA tests, runner
+and documentation changed, starting from QA commit
+`011f30c9df929efe317a4ddd06f771ddd677e3aa`. Backend and web sources were read-only.
+
+Exact SHA-256 pins, checked before/after bundling and again after the final run:
+
+| Source | SHA-256 |
+| --- | --- |
+| Backend `services/api/v3/pure-server.js` | `6e7396beedee0d9d6604b3818eff8ae0b0600f75d6ffd59fe409dc4b5c314653` |
+| October-web `apps/web/src/pages/dashboard/ProjectsPanel.tsx` | `316b708a56eada68e0b1f18df23d197e4a5b2e5ba6f3e91bace2de50633ba044` |
+| October-web `apps/web/src/services/api.ts` | `a51b71f7d0cbdf22850b6285c243471e28e905c8031d613303da3b23cc1649fd` |
+
+From `C:\gcsc-platform\.worktrees\qa`:
+
+```powershell
+node --check scripts/run-postgres-baseline.mjs
+node --check tests/postgres-runner.test.mjs
+node --check tests/postgres-project-browser.integration.cjs
+npm run test:postgres:guards
+npm run test:postgres:local -- --postgres-bin C:\gcsc\.tmp\embedded-pg-runner\node_modules\@embedded-postgres\windows-x64\native\bin --project-browser --playwright-dir C:\Users\rivne\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules
+git diff --check
+```
+
+Final checks: syntax/diff exit 0; guards **6/6**; browser journey **1/1** with
+**five sequential acceptance checkpoints**, exit 0. The existing baseline and
+14/14 project-publication suites were not changed or rerun for this task.
+Installed tools only: Node 25.9.0, esbuild 0.27.2 from October-web's existing
+node_modules, Playwright 1.62.1, Edge 154.0.4258.37 and PostgreSQL 18.4.
+No install or provider request was used.
+
+The test mounts the actual `ProjectsPanel` and actual `ApiClient` in two
+isolated browser contexts, using synthetic SQL users and locally signed fixture
+JWTs. Only HTML and the esbuild bundle are fulfilled by browser routing. API
+requests continue to the real loopback server; other traffic is aborted.
+The fresh UI-origin reservation, API listener and Edge control listener use
+port 0. Only that disposable UI origin is added to the test process's CORS
+configuration and granted browser `local-network-access`. No API security
+header, authentication check, response or storage method is mocked. This is
+not evidence of a production CORS configuration or its browser permission UX.
+
+The existing runner still strips ambient DB/provider/Node configuration and
+checks PostgreSQL PID and canonical data directory before creating its database.
+The test additionally requires that exact disposable directory and an empty
+public schema. Bound: one 90-second test, 120-second runner child deadline,
+two role contexts, five checkpoints, fewer than 100 API requests, bounded UI/SQL
+waits and `finally` shutdown. No existing/live database or destructive cleanup.
+
+Verified checkpoints:
+
+1. Owner UI saves a private draft and publishes it; SQL confirms ownership,
+   `published=false`/null timestamp then `published=true`/publication timestamp.
+   The contractor cannot discover the draft.
+2. Unpaid contractor views only the preview; real protected GET returns 404.
+   Private title, description and address are absent, no proposal controls and
+   no SQL bid exists.
+3. A matching synthetic SQL `paid` grant permits the exact nine-key brief.
+   Structured address stays hidden. Actual UI `POST /api/bids` returns 201;
+   PostgreSQL stores the exact project, contractor, amount, days and message.
+4. Owner UI reads that persisted proposal through the real project API.
+5. SQL revocation while the composer is open makes the real POST return 403.
+   The brief/composer clears, revalidation returns 404, and SQL still has only
+   the original bid, zero payment receipts and zero escrow contracts.
+
+Final evidence directory:
+`C:\gcsc-platform\.worktrees\qa\services\api\v3\.tmp\postgres-baseline-wZruXv`.
+It contains `result.json`, `browser-acceptance.json`, `test-output.log`,
+`postgres.log`, copied API hashes, the bundle and three screenshots.
+`status=PASS`, `testExitCode=0`, `postgresExitCode=0`, `edgeExitCode=0`;
+20 actual API requests, all five checkpoints completed, no blocked external
+attempt, request failure, page exception or cleanup error. Console records
+only the expected HTTP 404/403/404 negative cases. Node's `DEP0169` warning is
+retained, not suppressed. The copied API hash matches the pin; the source-input
+manifest hashes real files and records esbuild virtual inputs separately.
+
+The final ports were PG **63496**, UI **63501**, API **63503**, Edge **63504**.
+`browser-acceptance.json` confirms all three non-PG ports closed; PG log ends
+with `database system is shut down`. Independent post-run PowerShell check:
+
+```powershell
+$run = 'C:\gcsc-platform\.worktrees\qa\services\api\v3\.tmp\postgres-baseline-wZruXv'
+$ports = @(63496,63501,63503,63504)
+@(Get-NetTCPConnection -State Listen | Where-Object { $_.LocalPort -in $ports }).Count
+Test-Path -LiteralPath "$run\cluster\postmaster.pid"
+```
+
+Results: **0 listeners**, **False** PID-file existence. Earlier successful
+runs `TDbqtI` and `HYy2ZO` each passed the same five checkpoints with exits
+0/0/0; their PG/UI/API/Edge ports were respectively
+51891/59713/59715/64621 and 56591/56596/56598/56599, all checked stopped.
+The final run additionally includes failure-only visible-form/validation
+diagnostics. All evidence remains local and Git-ignored.
+
+### Preserved harness failures and exact repairs
+
+All run names below are under the same `services/api/v3/.tmp/postgres-baseline-`
+prefix and retain `result.json` plus `browser-acceptance.json`. Each failed test
+exited 1, each PG exited 0; every launched Edge exited 0. All listed ports were
+checked non-listening and all cluster PID files absent. None required app edits.
+
+| Run | Evidence and repair |
+| --- | --- |
+| `sDd6yD` | Old panel SHA `1800579b...`: manifest tried to read `<define:import.meta.env>` as a file. No Edge or API journey ran. Initial repair excluded angle-bracket virtual inputs; not old-candidate acceptance. |
+| `uLn8Q9` | Final panel SHA: same manifest mistake for `(disabled):crypto`; zero steps/API requests. Enumerated actual esbuild inputs, then explicitly excluded both `<...>` and `(disabled):...` namespaces (including stdin), while still requiring the pinned panel/client in the real-file hash manifest. These two results are harness failures, not API red results. |
+| `86eLnr` | Edge reached GET 200, then owner POST 403. The random same-origin UI address was not in the API's import-time CORS allowlist. Response text was not captured, so the precise rejection body is not claimed. Added a separately reserved port-0 UI origin to the test-only CORS environment before importing the API; browser request headers were not rewritten. |
+| `8aQshP` | First-owner-POST timeout with no API requests. This run lacked console/request-failure/visible-form evidence, so its exact browser error was not recorded. Added those diagnostics and an origin-scoped loopback permission; `TDbqtI`/`HYy2ZO` passed. |
+| `ZoOJgc` | Controlled repeat of the intercepted-HTML setup with only loopback permission temporarily removed, after the two green runs. Both fetches failed `net::ERR_FAILED`; console explicitly says `Permission was denied for this request to access the loopback address space`; visible form says `Failed to fetch`, native `validation=[]`, API requests remain empty. This confirms the permission cause for this harness configuration, not all plain localhost pages. Restored the scoped permission; final `wZruXv` passed. |
+
+The test now captures console errors, request failures and, on failure, visible
+text plus native validation messages for at most two pages. The diagnostic
+permission removal is not in the committed test.
+
+Limitations: actual component/ApiClient/API/SQL acceptance, not full-app routing,
+login/registration, CSS/layout/mobile acceptance or a production build. The
+component harness intentionally omits application CSS. Paid grants are direct
+synthetic SQL fixtures, not provider/payment acceptance. No checkout, wallet,
+network provider, settlement, bid acceptance, escrow/milestone workflow,
+deployment, merge or whole-MVP approval is claimed. The parent's 22/22
+synthetic-HTTP browser results and accepted-project read review are separate
+evidence, not additional real-PG cases here. Earlier blocked/red history below
+is unchanged.
+
 ## 2026-09-30: paid-details acceptance on the current source
 
 The previously recorded `initdb` ENOSPC condition changed. The QA-only suite

@@ -24,11 +24,15 @@ export function testEnvironment(ambient, databaseUrl, runDirectory) {
 }
 
 export function parseRunnerArgs(args) {
-  if ((args.length !== 2 && args.length !== 3) || args[0] !== '--postgres-bin'
-    || !path.isAbsolute(args[1]) || (args.length === 3 && args[2] !== '--project-publication')) {
-    throw new Error('Usage: npm run test:postgres:local -- --postgres-bin <absolute PostgreSQL bin directory> [--project-publication]');
+  const browser = args.length === 5 && args[2] === '--project-browser'
+    && args[3] === '--playwright-dir' && path.isAbsolute(args[4]);
+  const publication = args.length === 3 && args[2] === '--project-publication';
+  if (args[0] !== '--postgres-bin' || !args[1] || !path.isAbsolute(args[1])
+    || !(args.length === 2 || publication || browser)) {
+    throw new Error('Usage: npm run test:postgres:local -- --postgres-bin <absolute PostgreSQL bin directory> [--project-publication | --project-browser --playwright-dir <absolute installed node_modules>]');
   }
-  return { binaryDir: args[1], suite: args.length === 3 ? 'project-publication' : 'baseline' };
+  return { binaryDir: args[1], suite: browser ? 'project-browser' : publication ? 'project-publication' : 'baseline',
+    ...(browser ? { playwrightDir: args[4] } : {}) };
 }
 
 function command(binary, args, env, options = {}) {
@@ -68,11 +72,12 @@ export async function main(args = process.argv.slice(2)) {
   const password = randomBytes(24).toString('hex');
   const databaseUrl = `postgres://gcsc_test:${password}@127.0.0.1:${port}/gcsc_test_baseline`;
   const env = testEnvironment(process.env, databaseUrl, runDirectory);
-  if (options.suite === 'project-publication') {
+  if (options.suite !== 'baseline') {
     const source = await realpath(path.join(root, '..', 'backend', 'services', 'api', 'v3', 'pure-server.js'));
     env.GCSC_API_SOURCE = source;
     env.GCSC_API_SOURCE_SHA256 = createHash('sha256').update(await readFile(source)).digest('hex');
   }
+  if (options.playwrightDir) env.GCSC_PLAYWRIGHT_DIR = await realpath(options.playwrightDir);
   const { Client } = createRequire(path.join(apiRoot, 'package.json'))('pg');
   const passwordFile = path.join(runDirectory, 'init-password');
   const report = { startedAt: new Date().toISOString(), runDirectory, port, suite: options.suite,
@@ -127,14 +132,15 @@ export async function main(args = process.argv.slice(2)) {
     if (!ready) throw new Error('Fresh PostgreSQL cluster did not become ready');
     console.log(`Fresh loopback database ready; running ${options.suite} checks.`);
     const result = await new Promise((resolve, reject) => {
-      const testFile = options.suite === 'project-publication'
-        ? 'tests/postgres-project-publication.integration.cjs' : 'tests/postgres-projects.integration.cjs';
+      const testFile = { baseline: 'tests/postgres-projects.integration.cjs',
+        'project-publication': 'tests/postgres-project-publication.integration.cjs',
+        'project-browser': 'tests/postgres-project-browser.integration.cjs' }[options.suite];
       const child = spawn(process.execPath, ['--test', testFile], {
         cwd: root, env, windowsHide: true,
-        stdio: options.suite === 'project-publication' ? ['ignore', 'pipe', 'pipe'] : 'inherit',
+        stdio: options.suite !== 'baseline' ? ['ignore', 'pipe', 'pipe'] : 'inherit',
         timeout: 120000,
       });
-      if (options.suite === 'project-publication') {
+      if (options.suite !== 'baseline') {
         for (const [stream, output] of [[child.stdout, process.stdout], [child.stderr, process.stderr]]) {
           stream.on('data', chunk => {
             testOutput = (testOutput + chunk.toString()).slice(-1_000_000);
@@ -169,7 +175,7 @@ export async function main(args = process.argv.slice(2)) {
     report.finishedAt = new Date().toISOString();
     await writeFile(path.join(runDirectory, 'result.json'), JSON.stringify(report, null, 2) + '\n');
     await writeFile(path.join(runDirectory, 'postgres.log'), serverLog.replaceAll(password, '[fixture password]'));
-    if (options.suite === 'project-publication') {
+    if (options.suite !== 'baseline') {
       await writeFile(path.join(runDirectory, 'test-output.log'), testOutput.replaceAll(password, '[fixture password]'));
     }
     console.log(`Evidence: ${path.join(runDirectory, 'result.json')}`);
