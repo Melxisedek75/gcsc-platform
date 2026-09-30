@@ -260,6 +260,17 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   `(projectId, contractorId, priceVersion)`; цену брать только с сервера,
   связывать checkout с одной заявкой и применять idempotency key.
   Нынешний Stripe test escrow PaymentIntent не считать покупкой лида.
+  Локальный первый срез 30 сентября: `0d839c99` на отдельной ветке
+  `codex/lead-checkout-20260930` сохраняет покупку/цену/версию, связывает
+  подрядчика с проектом, защищает повторы и проверяет тестовую hosted-session.
+  Parent: focused17/17, изолированная PostgreSQL14/14 дважды, baseline39/39,
+  API301/301. Независимое ревью exact `0d839c99`: PASS только для локальной
+  неактивной основы; reviewer повторил root37+12+11/static, focused17/17 и
+  PG14/14 (`xxy08j`, test/PG exits0). Исполнитель ревью завершён.
+  Проверенный коммит fast-forward включён в локальную publication без
+  изменений исходников; GitHub/main/deploy не выполнялись.
+  HTTP/SDK-запрос, webhook и выдача paid-доступа отсутствуют. Это основа,
+  не завершение L11 и не реальная покупка; `LEAD-CHECKOUT-REVIEW.md`.
 - [ ] **L12 / backend + QA.** Проверенный webhook и атомарный entitlement в
   PostgreSQL: подпись, paid/failed/expired/refunded, out-of-order и повторные
   события, восстановление после падения, сверка с провайдером. Не выдавать
