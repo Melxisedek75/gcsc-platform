@@ -1,5 +1,14 @@
 # GCSC: контрольный список завершения проекта
 
+30 сентября: QA-тест paid-details расширен для точного SHA-256 API
+`6e7396beedee0d9d6604b3818eff8ae0b0600f75d6ffd59fe409dc4b5c314653`.
+Свежая локальная PostgreSQL 18.4: полный project-publication suite 14/14,
+guards 5/5, syntax/diff PASS, PostgreSQL завершилась с exit 0. Проверены
+владелец черновика, девятипольный paid brief, единые приватные отказы и cache
+headers; оплата подтверждена только синтетической SQL-fixture, не провайдером.
+Evidence и сохранённая история ENOSPC/red:
+[PROJECT-PUBLICATION-POSTGRES-ACCEPTANCE.md](PROJECT-PUBLICATION-POSTGRES-ACCEPTANCE.md).
+
 29 сентября: локальный QA-кандидат draft/publish/privacy проверен на свежей PostgreSQL
 18.4 для SHA-256 API `a38589e559a32d8023bdd176c7f54a4b38703e9b19fb9355d9198e631197f365`:
 5/5, прежний PG baseline 39/39, guards 5/5; оба PG-процесса завершены.

@@ -2,7 +2,53 @@
 
 Date: 2026-09-29. Scope: local QA branch `codex/wallet-proof-20260914`; no backend changes or integration.
 
-## Follow-up: publication review findings, not yet PostgreSQL-accepted
+## 2026-09-30: paid-details acceptance on the current source
+
+The previously recorded `initdb` ENOSPC condition changed. The QA-only suite
+was extended without changing the runner guards or the backend candidate.
+Current `pure-server.js` SHA-256:
+`6e7396beedee0d9d6604b3818eff8ae0b0600f75d6ffd59fe409dc4b5c314653`.
+
+From `C:\gcsc-platform\.worktrees\qa`:
+
+```powershell
+node --check tests/postgres-project-publication.integration.cjs
+npm run test:postgres:guards
+npm run test:postgres:local -- --postgres-bin C:\gcsc\.tmp\embedded-pg-runner\node_modules\@embedded-postgres\windows-x64\native\bin --project-publication
+git diff --check
+```
+
+The final opt-in run on fresh local PostgreSQL 18.4 passed **14/14**; the
+previous owner publication, legacy receipt and bid/escrow concurrency checks
+remained in the same full suite. The new tests verify an active owner can read
+their own private draft, while anonymous callers receive 401 and other owners,
+contractors, inactive owners and stale-role owners receive the same private 404.
+For an open published offer, only a matching, currently active contractor with
+a verified `paid` entitlement receives exactly the nine-key brief:
+`id`, `title`, `description`, `category`, `budget_min`, `budget_max`,
+`timeline_days`, `status`, `published_at`. It contains no structured location,
+contact, attachment, homeowner, bid or payment fields. A grant for another
+project, no grant, `pending`, `failed`, `expired`, `refunded`, `revoked`, stale
+contractor role, inactive contractor, unpublished draft and closed offer all
+return the same 404 body. The 200, 401 and 404 details responses have
+`Cache-Control: private, no-store` and `Vary: Authorization`. Direct SQL checks
+confirm details reads create no bids or payment records.
+
+Final report: `C:\gcsc-platform\.worktrees\qa\services\api\v3\.tmp\postgres-baseline-UDoa3d\result.json`.
+The same directory holds `test-output.log`, `publication-acceptance.json` and
+`api-files.sha256.json`; the copied `pure-server.cjs` SHA matches the candidate.
+`status=PASS`, `testExitCode=0`, `postgresExitCode=0`. After shutdown, port
+64524 was not listening and `cluster/postmaster.pid` was absent. Guards passed
+5/5; syntax and diff checks exited 0.
+
+Paid entitlements in this test are synthetic SQL fixtures, not proof of a real
+payment or provider callback. No wallet, live database, network provider,
+browser/mobile client, production deployment or independent review was tested.
+The nine-key projection does not redact contact information a user might type
+into the free-form `description`. This result does not approve the whole MVP or
+erase the earlier blocked and red results below.
+
+## Historical follow-up: publication review findings before disk recovery
 
 An independent read-only review of the previous backend SHA
 `78331e5226b3a4e3236256375e2c8a125624f379a73b253c7103252a6b74f584`

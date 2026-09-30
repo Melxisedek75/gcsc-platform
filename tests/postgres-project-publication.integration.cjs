@@ -61,7 +61,20 @@ async function request(method, route, user, body) {
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     signal: AbortSignal.timeout(10000),
   });
-  return { status: response.status, body: await response.json() };
+  return { status: response.status, headers: response.headers, body: await response.json() };
+}
+
+function assertPrivateDetailsHeaders(response) {
+  assert.equal(response.headers.get('cache-control'), 'private, no-store');
+  assert.ok((response.headers.get('vary') || '').split(',').map(value => value.trim().toLowerCase())
+    .includes('authorization'), 'Details responses must vary by Authorization');
+}
+
+function assertDetailsDenied(response) {
+  assert.equal(response.status, 404);
+  assertPrivateDetailsHeaders(response);
+  assert.deepEqual(response.body,
+    { error: 'Project details unavailable', code: 'project_details_unavailable' });
 }
 
 async function fixtureUser(role, label) {
@@ -132,6 +145,32 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     assert.equal((await request('POST', '/api/bids', contractor,
       { project_id: project.id, amount: 1800 })).status, 404);
     assert.equal((await pool.query('SELECT COUNT(*)::int AS count FROM bids')).rows[0].count, 0);
+  });
+
+  await t.test('active owner sees own persisted draft details; other identities get uniform private denial', async () => {
+    const route = `/api/projects/${project.id}/details`;
+    const ownerDetails = await request('GET', route, owner);
+    assert.equal(ownerDetails.status, 200);
+    assertPrivateDetailsHeaders(ownerDetails);
+    assert.deepEqual(Object.keys(ownerDetails.body), ['project']);
+    assert.equal(ownerDetails.body.project.id, project.id);
+    assert.equal(ownerDetails.body.project.homeowner_id, owner.id);
+    assert.equal(ownerDetails.body.project.title, 'PRIVATE_TITLE_DO_NOT_EXPOSE');
+    assert.equal(ownerDetails.body.project.location, 'PRIVATE_ADDRESS_DO_NOT_EXPOSE');
+    assert.equal(ownerDetails.body.project.published, false);
+    assert.equal(ownerDetails.body.project.published_at, null);
+
+    const anonymous = await request('GET', route);
+    assert.equal(anonymous.status, 401);
+    assertPrivateDetailsHeaders(anonymous);
+    assert.deepEqual(anonymous.body, { error: 'Unauthorized' });
+    assertDetailsDenied(await request('GET', route, stranger));
+    assertDetailsDenied(await request('GET', route, contractor));
+    await pool.query('UPDATE users SET is_active=FALSE WHERE id=$1', [owner.id]);
+    assertDetailsDenied(await request('GET', route, owner));
+    await pool.query("UPDATE users SET is_active=TRUE, role='contractor' WHERE id=$1", [owner.id]);
+    assertDetailsDenied(await request('GET', route, owner));
+    await pool.query("UPDATE users SET role='homeowner' WHERE id=$1", [owner.id]);
   });
 
   await t.test('only the current active owner can publish', async () => {
@@ -254,6 +293,83 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     }
     assert.equal((await request('GET', `/api/projects/${project.id}`, owner)).body.project.title,
       'PRIVATE_TITLE_DO_NOT_EXPOSE');
+  });
+
+  await t.test('paid project details expose only the nine-field brief to a current matching contractor', async () => {
+    const route = `/api/projects/${project.id}/details`;
+    const paidContractor = await fixtureUser('contractor', 'details-paid-contractor');
+    const noGrantContractor = await fixtureUser('contractor', 'details-no-grant');
+    const admin = await fixtureUser('admin', 'details-admin');
+    const other = await request('POST', '/api/projects', owner,
+      { title: 'Other offer', description: 'Separate grant', category: 'plumbing' });
+    assert.equal(other.status, 201);
+    const otherId = other.body.project.id;
+    assert.equal((await request('POST', `/api/projects/${otherId}/publish`, owner)).status, 200);
+    const draft = await request('POST', '/api/projects', owner,
+      { title: 'Unpublished paid fixture', description: 'Must stay private' });
+    assert.equal(draft.status, 201);
+    const countsBefore = (await pool.query(`SELECT
+      (SELECT COUNT(*)::int FROM bids) AS bids,
+      (SELECT COUNT(*)::int FROM payment_receipts) AS receipts,
+      (SELECT COUNT(*)::int FROM job_posting_payments) AS posting_payments`)).rows[0];
+
+    for (const viewer of [stranger, admin, noGrantContractor, paidContractor]) {
+      assertDetailsDenied(await request('GET', route, viewer));
+    }
+    assertDetailsDenied(await request('GET', '/api/projects/0/details', paidContractor));
+    await pool.query(`INSERT INTO project_access_entitlements
+      (project_id, contractor_id, status, provider_payment_id, verified_at)
+      VALUES ($1, $2, 'paid', 'fixture-other-details', NOW())`, [otherId, paidContractor.id]);
+    assertDetailsDenied(await request('GET', route, paidContractor));
+    await pool.query(`INSERT INTO project_access_entitlements
+      (project_id, contractor_id, status, provider_payment_id)
+      VALUES ($1, $2, 'pending', 'fixture-target-details')`, [project.id, paidContractor.id]);
+    assertDetailsDenied(await request('GET', route, paidContractor));
+
+    await pool.query(`UPDATE project_access_entitlements SET status='paid', verified_at=NOW()
+      WHERE project_id=$1 AND contractor_id=$2`, [project.id, paidContractor.id]);
+    const stored = (await pool.query(`SELECT id,title,description,category,budget_min,budget_max,
+      timeline_days,status,published_at,location,homeowner_id FROM projects WHERE id=$1`, [project.id])).rows[0];
+    const allowed = {
+      id: stored.id, title: stored.title, description: stored.description,
+      category: stored.category, budget_min: stored.budget_min, budget_max: stored.budget_max,
+      timeline_days: stored.timeline_days, status: stored.status,
+      published_at: stored.published_at.toISOString(),
+    };
+    assert.equal(stored.location, 'PRIVATE_ADDRESS_DO_NOT_EXPOSE');
+    assert.equal(stored.homeowner_id, owner.id);
+    const paid = await request('GET', route, paidContractor);
+    assert.equal(paid.status, 200);
+    assertPrivateDetailsHeaders(paid);
+    assert.deepEqual(Object.keys(paid.body), ['project']);
+    assert.deepEqual(Object.keys(paid.body.project).sort(), Object.keys(allowed).sort());
+    assert.deepEqual(paid.body.project, allowed);
+    assert.ok(!JSON.stringify(paid.body).includes('PRIVATE_ADDRESS_DO_NOT_EXPOSE'));
+
+    for (const status of ['failed', 'expired', 'refunded', 'revoked']) {
+      await pool.query('UPDATE project_access_entitlements SET status=$3 WHERE project_id=$1 AND contractor_id=$2',
+        [project.id, paidContractor.id, status]);
+      assertDetailsDenied(await request('GET', route, paidContractor));
+    }
+    await pool.query("UPDATE project_access_entitlements SET status='paid' WHERE project_id=$1 AND contractor_id=$2",
+      [project.id, paidContractor.id]);
+    await pool.query('UPDATE users SET is_active=FALSE WHERE id=$1', [paidContractor.id]);
+    assertDetailsDenied(await request('GET', route, paidContractor));
+    await pool.query("UPDATE users SET is_active=TRUE, role='homeowner' WHERE id=$1", [paidContractor.id]);
+    assertDetailsDenied(await request('GET', route, paidContractor));
+    await pool.query("UPDATE users SET role='contractor' WHERE id=$1", [paidContractor.id]);
+
+    await pool.query(`INSERT INTO project_access_entitlements
+      (project_id, contractor_id, status, provider_payment_id, verified_at)
+      VALUES ($1, $2, 'paid', 'fixture-draft-details', NOW())`, [draft.body.project.id, paidContractor.id]);
+    assertDetailsDenied(await request('GET', `/api/projects/${draft.body.project.id}/details`, paidContractor));
+    await pool.query("UPDATE projects SET status='cancelled' WHERE id=$1", [otherId]);
+    assertDetailsDenied(await request('GET', `/api/projects/${otherId}/details`, paidContractor));
+    const countsAfter = (await pool.query(`SELECT
+      (SELECT COUNT(*)::int FROM bids) AS bids,
+      (SELECT COUNT(*)::int FROM payment_receipts) AS receipts,
+      (SELECT COUNT(*)::int FROM job_posting_payments) AS posting_payments`)).rows[0];
+    assert.deepEqual(countsAfter, countsBefore, 'Details reads must not create bids or payment records');
   });
 
   await t.test('only a current paid entitlement for this project allows a bid', async () => {
@@ -426,7 +542,8 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
 
   fs.writeFileSync(path.join(runDirectory, 'publication-acceptance.json'), JSON.stringify({
     status: 'PASS', apiSourceSha256: sourceSha256, database: 'fresh loopback PostgreSQL',
-    projectId: project.id, checks: ['private draft', 'owner authority', 'legacy posting disabled', 'exact public preview',
+    projectId: project.id, checks: ['private draft', 'owner draft details and cache headers', 'owner authority',
+      'legacy posting disabled', 'exact public preview', 'paid nine-field details and uniform denials',
       'project-specific paid bid access', 'concurrent close access revoke and contractor disable',
       'atomic bid acceptance', 'concurrent owner and contractor eligibility', 'legacy bid blocked'],
   }, null, 2) + '\n');
