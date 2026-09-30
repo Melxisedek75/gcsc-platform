@@ -2,7 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { readDashboardSource } from './lib/dashboard-source.mjs';
 
-const root = process.cwd();
+// The validator lives under apps/web but is commonly invoked from the monorepo
+// root. Resolve sources from the app root so both invocation styles work.
+const root = path.resolve(process.cwd(), 'apps/web');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 const packageJson = JSON.parse(read('package.json'));
