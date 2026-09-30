@@ -153,6 +153,17 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   включая существующий аккаунт. Wallet - необязательный второй способ.
   Приёмка: два новых и один старый аккаунт проходят web/API/DB сценарий;
   чужая роль и просроченная сессия отклоняются.
+  Частично 30 сентября: независимый RIVIERA нашёл две Medium-ошибки
+  согласованности регистрации в web `2409c780`: смена URL-роли при ожидании
+  кода и редактирование полей во время запроса меняли повторную отправку.
+  Исправление `74e5618d` фиксирует данные попытки и блокирует поля на время
+  запроса. Реальные React/HashRouter компоненты с синтетическим API:
+  до исправления 8/10, после 10/10 PASS; TypeScript, focused ESLint и два
+  auth validator exit 0. Это не доставка SMS/email и не web/API/DB E2E.
+  RIVIERA независимо одобрил точный repair SHA: 13/13 in-memory probes,
+  TypeScript/auth validators/diff exit 0, обе Medium-находки закрыты.
+  Это source-only одобрение; evidence: `ACCOUNT-ROLE-REVIEW.md`.
+  L05 остаётся открытым до сквозной проверки API/DB/провайдера.
 - [ ] **L05a / backend + web.** Быстрая загрузка документов подрядчика:
   тип, размер и формат файла, приватное хранение, антивирус/сканирование,
   повторная загрузка, удаление и статус рассмотрения без ложного бейджа
@@ -310,6 +321,13 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   и регистрирует contractor. Это Medium integration blocker, не закрытый
   наличием `2409c780` в отдельной ветке. High privacy API target также открыт;
   текст `028b0ff8` теперь явно описывает приватный preview как разработку.
+  Продолжение 30 сентября: browser fixture на точном `74e5618d` проверяет
+  обе CTA-роли, ошибочные/повторные query, ручной выбор, сохранение исходной
+  попытки при resend и запрет изменения authenticated role: 10/10 PASS.
+  API и следующие панели заменены синтетическими; это не объединённый
+  кандидат и не проверка опубликованного домена. Независимое repair-ревью:
+  APPROVED_SOURCE_ONLY; прежние target blockers сохраняются до интеграции.
+  `ACCOUNT-ROLE-REVIEW.md`.
 - [ ] **L18e / marketing / 10 октября.** Семантика, SEO/social previews,
   sitemap, аналитика без лишнего сбора PII, privacy/terms/support links,
   загрузка без сторонних CDN как обязательного условия. Проверка: локальный

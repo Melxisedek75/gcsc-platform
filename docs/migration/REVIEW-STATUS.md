@@ -10,6 +10,14 @@ independently closed; follow-up `733e5fda` independently closed the additional
 Low robots gap (18/18 tests, static/diff exit 0; no new findings in that diff).
 This is not whole-MVP approval, a merge or a deployment.
 
+October-web role candidate `2409c780` received independent RIVIERA
+CHANGES_REQUIRED for two Medium registration identity findings (one new,
+one inherited). Repair `74e5618d` has parent browser10/10 on real components
+with a synthetic API, plus TypeScript/lint/validators exit 0. RIVIERA independently
+approved the exact source repair: both findings closed, probes13/13 and
+TypeScript/auth/diff exit 0. Evidence: `ACCOUNT-ROLE-REVIEW.md`; the receiving
+publication role/privacy blockers remain open until reviewed integration.
+
 The historical import-only status below is preserved as a dated record, not the
 current consolidation decision. Local consolidation/private publication approval
 is in CONSOLIDATION-REVIEW.md. The 2026-09-13 archive/diagnostic successor e8188048
