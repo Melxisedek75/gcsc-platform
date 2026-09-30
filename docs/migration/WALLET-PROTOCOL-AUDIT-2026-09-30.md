@@ -18,29 +18,35 @@ invalid signatures, and (when enabled) keys that are not authorized for the
 requested account permission. The source is
 `services/api/v3/pure-server.js`.
 
-## Missing wallet-first routes
+## Wallet-first routes
 
-The migration requirement file still lists these as required for a separate
-wallet-first sign-in flow:
+The migration requirement file lists these as required for a separate
+wallet-first sign-in flow, and the publication candidate declares both:
 
 - `POST /api/auth/wallet/challenge`
 - `POST /api/auth/wallet/verify`
 
-They are not declared in the server route table. This is a genuine contract
-gap, not a reason to add placeholder handlers. Existing email/session login and
-authenticated wallet binding must remain separate until the wallet-first
-request/response schema is reviewed with all consumers.
+- `POST /api/auth/wallet/challenge` creates a login-purpose challenge bound to
+  audience, testnet chain ID, account, permission, and a session binding.
+- `POST /api/auth/wallet/verify` validates the signed proof, checks the verified
+  wallet against an application account, and issues the normal app JWT.
+
+The route inventory reports `54 declared API routes; 7/7 required entrypoints
+present`. This is route-presence evidence only, not proof of device SDK or
+physical-wallet compatibility.
 
 ## Consumer evidence
 
-- Mobile currently routes through authenticated profile binding and the wallet
-  connection flow; it does not call the missing wallet-first endpoints.
-- Web consumers must be checked against the same route table before any server
-  change. A route inventory is necessary but does not prove SDK, deep-link, or
+- Mobile calls the wallet-first challenge/sign/verify client and saves the
+  returned JWT; the separate authenticated profile binding remains available
+  for connecting a wallet after email login.
+- Web exposes matching challenge/verify methods and its wallet login consumer;
+  the separate `wallet/connect` method is for authenticated binding.
+- A route inventory is necessary but does not prove SDK, deep-link, or
   physical-wallet compatibility.
 
 ## Acceptance boundary
 
-P2.1 remains open until a reviewed wallet-first schema exists or the requirement
-is explicitly removed. No production, live wallet, real signature, or device
-test was used for this audit.
+P2.1 static contract mapping is complete for the current candidate. Behavioral
+and device acceptance remain open: no production, live wallet, real signature,
+or device test was used for this audit.
