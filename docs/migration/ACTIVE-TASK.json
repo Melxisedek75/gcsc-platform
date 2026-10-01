@@ -1,6 +1,6 @@
 {
   "task": "october-launch-mvp-and-marketing",
-  "status": "LOCAL_LEAD_REFUNDS_REVIEWED_REMAINING_MVP_OPEN",
+  "status": "LOCAL_LEAD_DISPUTES_REVIEWED_REMAINING_MVP_OPEN",
   "owner": "019e7c87-8410-79f1-b86a-eedf78a1aa27",
   "worktree": "C:/gcsc-platform/.worktrees/publication",
   "branch": "codex/monorepo-publication",
@@ -13,10 +13,22 @@
   ],
   "leaseUntil": null,
   "baseCommit": "a0834ac7917c3de57ebc02fb542814561469bca2",
-  "candidateCommit": "980225e3023e742045ddb2a717faf93468ccd840",
-  "review": "Independent reviewer01a0edd5-92a1-7b42-ac8f-88094d6f5637 APPROVED exact6eefeb02..980225e3 for dormant local refund observations. Initial clock-skew P2 on5074617a reproduced on real PG and fixed in980225e3. Final independent focused32/32, PG61/61 A1UX2C test/PG0, root37+12+11/static0 and diff0. Source hashes matched; reviewer closed. Prior foundation/intake/fulfillment/backend/web/marketing reviews preserved. No complete L11/L12/MVP/provider/wallet/production approval.",
-  "result": "Local publication980225e3 observes signed succeeded test refunds: full refund revokes exact original access atomically, partial refund suspends access for review, older refunds cannot affect replacement grants and paid replay cannot restore access. Fixed not-yet-due event handling to roll back and remain retryable. Parent focused32/32, PG61/61 twice, API301/301, root37+12+11/static0; unchanged schema baseline39/39. Independent final32/32 and PG61/61 passed; receiving focused32/32 and PG61/61 HaAWpm test/PG0. Actual local API details/new-bid denial tested. No HTTP/provider activation, real payment/refund, push or deployment.",
-  "next": "Continue L12 from reviewed980225e3 plus checkpoint, without repeating completed refund tests unless inputs change: define/test remaining asynchronous payment and dispute transitions and bounded evidence-driven reconciliation of held or unknown-PI events. Current future event code lead_fulfillment_event_not_due requires bounded worker retry; no scheduler exists yet. Do not infer full refunds by summing partial events or grant from browser/admin flags. Existing parent checkout is free; base a new scoped codex branch on canonical publication and verify ownership before writes. Then raw-body HTTP/auth/rate limits/private purchase DTO, SDK creation-timeout recovery and authorized provider acceptance. Product consumer contract and LEAD-REFUND-REVIEW.md preserve limits. L10 price/contact/eligibility/refund/provider gates open; legacy escrow separate.",
+  "candidateCommit": "a9479e9631b3e762b90819113ced7188b9452753",
+  "review": "Independent reviewer01a0edd5-92a1-7b42-ac8f-88094d6f5637 APPROVED exact194e4775..a9479e96 six-file dormant dispute slice, no confirmed findings. Independent focused35/35, PG74/74 cOHJe4 test/PG0, root37+12+11/static0 and diff0. Parent checked all evidence/source hashes; reviewer closed. Prior refund/foundation/intake/fulfillment/backend/web/marketing approvals preserved. No complete L11/L12/MVP/provider/wallet/production approval.",
+  "result": "Local publicationa9479e96 holds only exact original access for signed test dispute facts, including won/closed pending separate reconciliation. Preserves full-refund state and replacement grants; queued disputes prevent initial grants, paid replay never restores revoked access. Actual local API denies private details/new bids after hold. Parent focused35/35, PG74/74 repeated, baseline39/39, API301/301, root37+12+11/static0. Independent PG74/74 and receiving35/35 plus PG74/74 NJ5pQW, test/PG0, identical source hashes. One pre-test CREATE DATABASE timeout f1jytS retained as failure; two subsequent sequential runs passed without changes. No provider/HTTP activation, real dispute/payment/refund, push or deploy.",
+  "next": "Continue L12 from revieweda9479e96 plus checkpoint without rerunning unchanged completed tests: design/test durable privacy-allowlisted negative observations whose PI is not bound yet, plus bounded retry/reconciliation of held events. Current unknown-PI facts reject before persistence; future-event code lead_fulfillment_event_not_due needs bounded worker retry. Do not restore won/closed dispute access automatically or infer full refunds by summing partial events. Pending/failed/canceled/later-failed refunds remain open; Checkout stays card-only, no asynchronous method expansion by implication. Parent checkout is free; base a new scoped codex branch on publication after ownership check. Then raw-body HTTP/auth/rate limits/private purchase DTO, SDK timeout recovery and separately authorized provider/browser acceptance. LEAD-DISPUTE-REVIEW.md and consumer contract preserve boundaries. L10 price/contact/eligibility/refund/provider decisions and legacy escrow remain separate.",
+  "leadDisputeInProgress": {
+    "worktree": "C:/gcsc-platform/.worktrees/legacy-preservation",
+    "branch": "codex/lead-disputes-20261001",
+    "baseCommit": "194e477590e85a9bfeaadf1be1570208e4486890",
+    "owner": "Parent sole author; no active writer/reviewer/test process",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "candidateCommit": "a9479e9631b3e762b90819113ced7188b9452753",
+    "checks": "RED60/74 PG DT1p7w before implementation. Focused35/35; root37+12+11/static0; API15suites301/301; baseline39/39 8tRqZ4. PG74/74 TrRdVt,1E265c,i20eS5. One pre-test CREATE DATABASE timeout f1jytS, PG stopped0; two sequential identical runs then74/74 without timeout changes. All completed commands exit0 except documented RED/setup failure.",
+    "reviewer": "Independent01a0edd5-92a1-7b42-ac8f-88094d6f5637 APPROVED exact194e4775..a9479e96 six-file dormant local scope, no confirmed findings. Own35/35, root37+12+11/static0, PG74/74 cOHJe4 test/PG0, source hashes matched by parent. Reviewer closed; no release/provider/full-L12 approval.",
+    "integration": "Publication fast-forward194e4775->a9479e96 after independent approval, no source edits. Receiving35/35 and PG74/74 NJ5pQW, runner/test/PG0, every API/database source hash matches independent evidence. Local dormant integration only; no push/main/deploy.",
+    "scope": "Dormant signed test dispute observations bound to an existing exact PI/quote. Conservative access hold, including won/closed events until separate reconciliation; never automatic regrant or money movement. Preserve refunded state and replacement grants. No HTTP/provider activation. Card-only checkout policy unchanged; async payment methods remain outside this slice."
+  },
   "leadRefundInProgress": {
     "worktree": "C:/gcsc-platform/.worktrees/legacy-preservation",
     "branch": "codex/lead-refunds-20260930",
@@ -166,7 +178,7 @@
     "result": "Added native PostgreSQL runner without Docker or downloads. Real PostgreSQL18.4:9/9 including parent; runtime schema idempotency, project/bid creation, role isolation, audit, FK/UNIQUE and API module/connection restart pass. Root43/43 plus syntax/static and API159/159 pass. services/api/v3/.tmp/postgres-baseline-ZUU0yU/result.json: testExitCode0, postgresExitCode0. Missing pg_isready diagnosed and replaced by pg driver probe. No mobile, WebAuth or financial runtime edits."
   },
   "updatedAt": "2026-10-01T04:31:45Z",
-  "latestFollowup": "Owner-requested unfinished refund tests completed. Initial independent clock-skew P2 was reproduced59/61, fixed in980225e3, then parent PG61/61 twice and independent61/61 passed. Final API301/301, focused32/32, root/static0; local receiving32/32 plus PG61/61 HaAWpm. Exact candidate integrated after independent approval; report LEAD-REFUND-REVIEW.md. No worker/process remains, no live provider/payment/deploy, automation settings unchanged. Remaining L12 lifecycle/reconciliation work is separate, not a completed payment product.",
+  "latestFollowup": "After completing the unfinished refund tests, continued directly to signed dispute observations a9479e96. Tests first PG60/74 then74/74, focused35/35, baseline39/39, API301/301. Independent review approved exact six-file diff; receiving35/35 and PG74/74 NJ5pQW test/PG0 passed after local fast-forward. Report LEAD-DISPUTE-REVIEW.md records the isolated pre-test DB creation timeout and subsequent unchanged successful runs. No active reviewer/test process or provider activation; automation unchanged. L11/L12 reconciliation and HTTP/provider acceptance remain incomplete.",
   "previousMigrationTask": {
     "task": "canonical-postgres-migrations",
     "status": "P2_6_MIGRATION_REVIEWED_REMAINING_GATES_OPEN",

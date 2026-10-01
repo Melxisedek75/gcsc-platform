@@ -232,8 +232,8 @@ credential lookup. Unit/integration signing secrets are synthetic fixtures.
   no entitlement is issued and no refund is executed.
 
 This intake slice leaves transactional fulfillment/reconciliation to the worker
-described below. The successful-refund extension is documented separately below;
-other refund/dispute/async-failure handling, bounded raw-body HTTP parsing and
+described below. Successful-refund and dispute extensions are documented below;
+other lifecycle/reconciliation handling, bounded raw-body HTTP parsing and
 provider test-mode delivery remain open. The helper body
 limit does not yet constrain HTTP request buffering because it is not wired to
 a route. The old escrow webhook is separate and has not gained these guarantees.
@@ -311,10 +311,43 @@ data cannot be recalled from a buyer's device. The new consumer must discard
 cached private details on loss of authorization, not trust its old receipt.
 
 Pending/failed/canceled refunds, later failure after a succeeded observation,
-disputes, asynchronous payment outcomes and held-event resolution are separate
-open gates. No automatic regrant, refund request or inference of the future
+asynchronous payment outcomes and held-event resolution are separate open gates.
+The next section narrows dispute handling to exact bound observations only.
+No automatic regrant, refund request or inference of the future
 50/50 auction economics. This slice does not enable real payments or prove
 provider/browser end-to-end delivery. L11/L12 and the decisions below stay open.
+
+## Local dispute observations, 2026-10-01 UTC
+
+Independently approved candidate `a9479e96` is locally integrated, still dormant.
+Evidence: `../migration/LEAD-DISPUTE-REVIEW.md`. It adds only dormant signed
+test-mode `charge.dispute.created`/`updated`/`closed` observations; it cannot
+create a dispute, submit evidence, contact a provider or move money. Existing
+card-only Checkout policy is unchanged.
+
+| Verified observation | Persisted result | Consumer boundary |
+| --- | --- | --- |
+| Bound dispute with any supported status | Exact entitlement becomes `revoked`; active purchase/event require review; audit is atomic | Hide private details and refuse new proposals; do not charge again while unresolved |
+| `won`, `lost` or `warning_closed`, including an older snapshot | Same conservative hold, never an automatic regrant | Do not claim settlement or restored access based on status alone |
+| Dispute queued before initial paid fulfillment | No initial grant in either worker order | Await processing/reconciliation, not browser-return success |
+| Superseded purchase or different entitlement | Hold event for reconciliation, leave replacement access untouched | Never revoke another purchase's entitlement |
+| Already fully refunded | Full-refund state preserved, event retained for review | Never downgrade a refund to a pending or paid state |
+| Future event | Existing retryable `lead_fulfillment_event_not_due`, original received fact unchanged | Retry only when due with future bounded worker; no automatic finalization |
+
+Metadata cannot select the purchase. Existing unique PI/quote binding and an
+immutable dispute tuple must agree. Only USD amounts up to the quote and the
+seven statuses in installed Stripe 17.7.0 are accepted. The internal inbox
+`payment_status='unpaid'` is a non-grant marker on negative observations, not a
+customer-facing assertion that the original payment failed or was never made.
+
+Unknown intents, null/expanded references, amount/currency differences,
+unsupported statuses (including `prevented`) and `funds_withdrawn` or
+`funds_reinstated` events remain unhandled before activation. Even a valid known
+won/closed event cannot resolve a previous hold; the evidence-driven resolution
+path is separate work. This local restriction is not an approved live dispute
+policy. The actual API fixture proves details/new-bid denial after the hold,
+not provider delivery, browser cache invalidation or live payment acceptance.
+L11/L12, HTTP/provider activation and founder decisions remain open.
 
 ## Founder decisions before live payments
 

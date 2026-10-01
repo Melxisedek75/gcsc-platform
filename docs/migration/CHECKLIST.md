@@ -322,6 +322,23 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   платежей/возвратов, HTTP/provider активации и deploy не было. Unknown-PI
   delivery, прочие refund/dispute/async события и reconciliation открыты;
   L11/L12 НЕ закрыты. Evidence: `LEAD-REFUND-REVIEW.md`.
+  Следующий срез 1 октября UTC `a9479e96`: подписанные тестовые dispute-события
+  атомарно приостанавливают только исходный доступ, не восстанавливают его
+  даже при `won/closed` без отдельной сверки, сохраняют полный возврат и
+  новую покупку. Уже полученный dispute блокирует первичную выдачу paid.
+  Tests first: PG60/74, затем 74/74; focused35/35, baseline39/39, API301/301,
+  root37+12+11/static0. Один запуск остановился до тестов на CREATE DATABASE
+  timeout (`f1jytS`, PG0); два последовательных повтора без изменений лимитов
+  прошли 74/74 (`1E265c`, `i20eS5`). Сбой не засчитан как PASS.
+  Независимый reviewer exact `194e4775..a9479e96`: APPROVED, новых находок нет;
+  повторены35/35, PG74/74 (`cOHJe4`, test/PG0) и root/static. Reviewer закрыт.
+  После одобрения выполнен local fast-forward; receiving35/35 и PG74/74
+  (`NJ5pQW`, test/PG0), все хеши API/database совпадают. Actual local API
+  закрывает детали (404) и новое предложение (403) после dispute, сохраняя
+  прежнее предложение. Это не доставка Stripe и не реальный спор/платёж.
+  Unknown-PI delivery, неподдержанные lifecycle-события, bounded retry,
+  reconciliation и HTTP/provider acceptance остаются открытыми. Card-only
+  checkout не расширялся. L11/L12 НЕ закрыты; `LEAD-DISPUTE-REVIEW.md`.
 - [ ] **L13 / web + QA.** Чёткая цена, состояние оплаты, ожидание подтверждения,
   квитанция, отмена, ошибка, повтор без второго списания и обращение в
   поддержку. Сначала Stripe test mode end-to-end; live только после L10-L12,
