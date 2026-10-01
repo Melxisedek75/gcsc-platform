@@ -46,9 +46,12 @@ function session(row, sessionId = `cs_test_${randomUUID().replaceAll('-', '')}`)
     client_reference_id: row.id, currency: 'usd', amount_total: row.amount_cents, amount_subtotal: row.amount_cents,
     expires_at: request.params.expires_at, metadata: request.params.metadata };
 }
+// Windows Node/PG clocks can straddle a second. Synthetic post-purchase facts
+// must not predate their known reservation; explicit invalid-time overrides remain.
+const providerTime = row => Math.max(Math.floor(Date.now() / 1000), Math.floor(new Date(row.created_at).getTime() / 1000));
 function signedEvent(row, overrides = {}) {
   const event = { id: `evt_${randomUUID().replaceAll('-', '')}`, object: 'event',
-    api_version: webhookConfig.apiVersion, livemode: false, created: Math.floor(Date.now() / 1000),
+    api_version: webhookConfig.apiVersion, livemode: false, created: providerTime(row),
     type: 'checkout.session.completed', data: { object: {
       object: 'checkout.session', id: row.provider_checkout_id || `cs_test_${randomUUID().replaceAll('-', '')}`,
       livemode: false, mode: 'payment', status: 'complete', payment_status: 'paid',
@@ -92,7 +95,7 @@ async function unboundFixture() {
   return { ...f, row, input: signedEvent(row) };
 }
 function refund(f, overrides = {}) {
-  const created = Math.floor(Date.now() / 1000);
+  const created = providerTime(f.row);
   return signEvent({ id: `evt_${randomUUID().replaceAll('-', '')}`, object: 'event',
     api_version: webhookConfig.apiVersion, livemode: false, created,
     type: 'refund.created', data: { object: { id: `re_${randomUUID().replaceAll('-', '')}`, object: 'refund',
@@ -102,7 +105,7 @@ function refund(f, overrides = {}) {
       instructions_email: 'private@example.invalid', ...overrides } } });
 }
 function dispute(f, overrides = {}, type = 'charge.dispute.created') {
-  const created = Math.floor(Date.now() / 1000);
+  const created = providerTime(f.row);
   return signEvent({ id: `evt_${randomUUID().replaceAll('-', '')}`, object: 'event',
     api_version: webhookConfig.apiVersion, livemode: false, created, type,
     data: { object: { id: `du_${randomUUID().replaceAll('-', '')}`, object: 'dispute',
@@ -874,9 +877,27 @@ test('refund revocation waits for a locked entitlement, then commits only its cu
   } finally { await blocker.query('ROLLBACK'); blocker.release(); if (pending) await pending; }
 });
 
+test('synthetic provider timestamps remain causal when the Node clock trails PostgreSQL at a second boundary', async t => {
+  const f = await unboundFixture();
+  const boundary = Math.floor(new Date(f.row.created_at).getTime() / 1000);
+  const clock = t.mock.method(Date, 'now', () => boundary * 1000 - 1);
+  let paid, returned, disputed;
+  try {
+    paid = signedEvent(f.row); returned = refund(f); disputed = dispute(f);
+  } finally { clock.mock.restore(); }
+  for (const input of [paid, returned, disputed]) {
+    assert.equal(input.event.created, boundary);
+    if (input !== paid) assert.equal(input.event.data.object.created, boundary);
+  }
+  await receive(paid);
+  assert.equal((await fulfill(paid.event.id)).outcome, 'paid_granted');
+});
+
 test('refund grant/purchase/outcome/audit failures roll back together and retry safely', async () => {
   for (const table of ['project_access_entitlements', 'project_access_purchases', 'project_access_checkout_events', 'audit_events']) {
-    const f = await paidFixture(); await fulfill(f.input.event.id); const input = refund(f); await receive(input);
+    const f = await paidFixture();
+    assert.equal((await fulfill(f.input.event.id)).outcome, 'paid_granted');
+    const input = refund(f); await receive(input);
     await pool.query(`CREATE FUNCTION fail_refund() RETURNS trigger LANGUAGE plpgsql AS $$
       BEGIN RAISE EXCEPTION 'synthetic refund failure'; END $$`);
     await pool.query(`CREATE TRIGGER fail_refund BEFORE INSERT OR UPDATE ON ${table} FOR EACH ROW EXECUTE FUNCTION fail_refund()`);
