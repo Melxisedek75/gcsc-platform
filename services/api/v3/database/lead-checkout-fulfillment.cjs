@@ -81,8 +81,11 @@ async function fulfillLeadCheckoutEvent(pool, eventId) {
     if (!event.purchase_snapshot) return await review('legacy_event');
     if (!quoteMatches(event, purchase)) return await review('quote_mismatch');
     const created = Number(event.provider_created);
-    if (!Number.isSafeInteger(created) || created < seconds(purchase.created_at) || created > seconds(now))
+    if (!Number.isSafeInteger(created) || created < seconds(purchase.created_at))
       return await review('invalid_event_time');
+    // Intake permits clock skew. Preserve the received fact for a later retry
+    // instead of permanently holding it while the database clock catches up.
+    if (created > seconds(now)) fail('lead_fulfillment_event_not_due');
 
     if (['refund.created', 'refund.updated'].includes(event.event_type)) {
       const refund = (await client.query('SELECT * FROM project_access_refund_bindings WHERE refund_id=$1 FOR UPDATE', [event.refund_id])).rows[0];

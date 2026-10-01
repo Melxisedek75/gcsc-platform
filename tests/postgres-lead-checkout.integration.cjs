@@ -70,6 +70,15 @@ function receive(input, selectedPool = pool) {
 function fulfill(eventId, selectedPool = pool) {
   return require(path.join(snapshot, 'database/lead-checkout-fulfillment.cjs')).fulfillLeadCheckoutEvent(selectedPool, eventId);
 }
+// Advance only the worker's clock read; locks, rows and all writes use real PG.
+function atDatabaseTime(now) {
+  return { connect: async () => {
+    const client = await pool.connect();
+    return { release: error => client.release(error), query: (sql, ...args) =>
+      sql === 'SELECT clock_timestamp() AS now'
+        ? client.query('SELECT $1::timestamptz AS now', [now]) : client.query(sql, ...args) };
+  } };
+}
 async function paidFixture() {
   const f = await fixture();
   const row = await reserveLeadPurchase(pool, f.request, policy);
@@ -674,6 +683,48 @@ test('lost COMMIT acknowledgement is replay-safe across a new DB connection', as
   finally { await another.end(); }
   const state = await fulfillmentState(f);
   assert.equal(state.purchase.status, 'paid'); assert.equal(state.grants.length, 1); assert.equal(state.audits.length, 1);
+});
+
+test('future signed refunds remain retryable until the database clock catches up', async () => {
+  for (const amount of [2500, 500]) {
+    const f = await paidFixture(); await fulfill(f.input.event.id);
+    const event = refund(f, { amount }).event;
+    event.created = Math.floor(Date.now() / 1000) + 120;
+    event.data.object.created = event.created;
+    const input = signEvent(event); await receive(input);
+    const before = await fulfillmentState({ ...f, input });
+    for (let attempt = 0; attempt < 2; attempt++) {
+      await assert.rejects(fulfill(event.id), { code: 'lead_fulfillment_event_not_due' });
+      assert.deepEqual(await fulfillmentState({ ...f, input }), before);
+    }
+    const advanced = atDatabaseTime(new Date((event.created + 1) * 1000));
+    const results = await Promise.all(Array.from({ length: 3 }, () => fulfill(event.id, advanced)));
+    assert.equal(results.filter(result => !result.duplicate).length, 1);
+    assert.ok(results.every(result => result.outcome === (amount === 2500 ? 'refund_observed' : 'partial_refund_review')));
+    const after = await fulfillmentState({ ...f, input });
+    assert.equal(after.purchase.status, amount === 2500 ? 'refunded' : 'review_required');
+    assert.equal(after.grants[0].status, amount === 2500 ? 'refunded' : 'revoked');
+    assert.equal(after.event.payload_sha256, before.event.payload_sha256);
+    assert.ok(after.event.processed_at);
+    assert.equal(after.audits.length, before.audits.length + 1);
+  }
+});
+
+test('future signed payment stays pending without a grant and can be processed when due', async () => {
+  const f = await fixture(); const row = await reserveLeadPurchase(pool, f.request, policy);
+  const input = signedEvent(row, { created: Math.floor(Date.now() / 1000) + 120 });
+  await receive(input);
+  const before = await fulfillmentState({ ...f, row, input });
+  await assert.rejects(fulfill(input.event.id), { code: 'lead_fulfillment_event_not_due' });
+  assert.deepEqual(await fulfillmentState({ ...f, row, input }), before);
+  assert.equal(before.purchase.status, 'pending'); assert.equal(before.grants.length, 0);
+  const advanced = atDatabaseTime(new Date((input.event.created + 1) * 1000));
+  assert.equal((await fulfill(input.event.id, advanced)).outcome, 'paid_granted');
+  assert.equal((await fulfill(input.event.id, advanced)).duplicate, true);
+  const after = await fulfillmentState({ ...f, row, input });
+  assert.equal(after.purchase.status, 'paid'); assert.equal(after.grants.length, 1);
+  assert.equal(after.event.payload_sha256, before.event.payload_sha256);
+  assert.equal(after.audits.length, 1);
 });
 
 test('successful full refund revokes only the exact purchase and persists with no provider calls', async () => {
