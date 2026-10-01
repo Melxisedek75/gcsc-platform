@@ -4282,7 +4282,11 @@ const routes = {
   },
 
   'GET /api/projects/:id': async (req, res, params) => {
-    const project = await findStoredProjectById(parseInt(params.id));
+    const projectId = Number(params.id);
+    if (!/^[1-9]\d*$/.test(params.id) || !Number.isSafeInteger(projectId) || projectId > 2147483647) {
+      return json(res, 404, { error: 'Project not found' });
+    }
+    const project = await findStoredProjectById(projectId);
     if (!project) return json(res, 404, { error: 'Project not found' });
     const auth = getUser(req);
     const isOwner = Number(auth?.userId) === project.homeowner_id
@@ -4294,7 +4298,7 @@ const routes = {
       }
       return json(res, 200, { project: publicProjectPreview(project) });
     }
-    const storedBids = await listStoredBidsByProject(parseInt(params.id));
+    const storedBids = await listStoredBidsByProject(projectId);
     const bids = await enrichBidsWithContractors(isOwner
       ? storedBids
       : storedBids.filter(bid => Number(bid.contractor_id) === Number(auth.userId)));

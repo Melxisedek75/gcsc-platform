@@ -133,6 +133,21 @@ test('unpublished project is hidden from everyone except its active owner', asyn
   expect(response.body.project.location).toBe(secretLocation);
 });
 
+test('project details and bids require an exact numeric project ID', async () => {
+  const ownerToken = server.jwtSign({ userId: owner.id, role: 'homeowner' });
+  const contractorToken = server.jwtSign({ userId: contractor.id, role: 'contractor' });
+  for (const [path, token] of [
+    [`/api/projects/${draft.id}garbage`, ownerToken],
+    [`/api/projects/${published.id}garbage`, ownerToken],
+    [`/api/projects/${acceptedProject.id}garbage`, contractorToken],
+    [`/api/projects/0${published.id}`, ownerToken],
+  ]) {
+    const response = await request(path, token);
+    expect(response.status).toBe(404);
+    expect(JSON.stringify(response.body)).not.toMatch(/123 Private Street|555-0100|4321|Private contractor proposal/);
+  }
+});
+
 test('published project exposes only preview without bids to non-owner', async () => {
   const contractorToken = server.jwtSign({ userId: contractor.id, role: 'contractor' });
   for (const token of [undefined, contractorToken]) {
