@@ -591,6 +591,10 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
 - [ ] **L21b / QA / 15 октября.** Проверить весь публичный текст и видео на
   статусы `available now`/`pilot`/`planned`; ни одна функция будущего whitepaper
   не описана как уже работающая. Проверка: claim ledger и независимое ревью.
+  Отдельный source-кандидат `b229fd4e` добавляет видимое пояснение, что hero
+  изображение AI-сгенерировано и не является проектом клиента. Локальные
+  static/browser проверки прошли; `MARKETING-CONCEPT-DISCLOSURE-REVIEW.md`.
+  Независимое ревью и receiving integration открыты, L21b не закрыт.
 
 Коммерческое решение L03/L10 пока **не утверждено**: для октябрьского MVP
 заложена фиксированная USD-цена за доступ к конкретной заявке. Ранее описанная

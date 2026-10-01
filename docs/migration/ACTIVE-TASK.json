@@ -22,6 +22,15 @@
     "status": "LOCAL_CONCEPT_ONLY",
     "checks": "JavaScript syntax, existing poster path and concept disclosures PASS. node --test docs/migration/video-animatic.test.cjs checks A/B, scrub, play/pause, loop and explainer end in mocked DOM. Local Edge B/hero screenshots at 390/1440 inspected; verify-video-animatic-browser.cjs checks 12 combinations at 320/390/1440, controls, loaded poster, containment and no page errors. Two new-viewer comprehension test not run; no footage, cleared rights or final video."
   },
+  "marketingConceptDisclosure": {
+    "worktree": "C:/gcsc-platform/.worktrees/marketing-october",
+    "branch": "codex/marketing-concept-disclosure-20261001",
+    "baseCommit": "7d5a8b3d",
+    "candidateCommit": "b229fd4e",
+    "status": "SOURCE_CANDIDATE_REVIEW_REQUIRED_NOT_INTEGRATED",
+    "checks": "Red Edge verifier absent disclosure exit1, green Edge154 eight viewport/text variants exit0, static18/18, two pages/seven CTAs, syntax/diff checks exit0. Mobile/desktop JPEG inspected. No independent review or receiving integration.",
+    "next": "Obtain independent CODEX/CLAUDE review on exact diff, then receiving checks before integration. Rights, full accessibility, live domain and release remain open."
+  },
   "lateNegativeHold": {
     "worktree": "C:/gcsc-platform/.worktrees/legacy-preservation",
     "branch": "codex/lead-late-negative-hold-20261001",
