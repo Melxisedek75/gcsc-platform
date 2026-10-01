@@ -1403,6 +1403,56 @@ test('lost promotion COMMIT acknowledgement replays without another audit or gra
   assert.equal((await fulfillmentState(f)).grants.length, 0);
 });
 
+test('promotion ignores foreign metadata and cannot select another purchase', async () => {
+  const f = await unboundFixture(); const other = await paidFixture();
+  const negative = refund(f, { metadata: { purchase_id: other.row.id, contractor_id: String(other.buyer.id) } });
+  await receive(negative); await receive(f.input);
+  await fulfill(f.input.event.id); await fulfill(other.input.event.id);
+  assert.equal((await reconcile(negative.event.id)).status, 'promoted');
+  const bound = (await pool.query('SELECT purchase_id FROM project_access_checkout_events WHERE event_id=$1',
+    [negative.event.id])).rows[0];
+  assert.equal(bound.purchase_id, f.row.id);
+  assert.equal((await fulfillmentState(other)).grants[0].status, 'paid');
+  assert.equal((await fulfillmentState(f)).grants.length, 0);
+});
+
+test('promotion refuses a changed quote snapshot and an existing grant', async () => {
+  const changed = await unboundFixture(); const changedNegative = refund(changed);
+  await receive(changedNegative); await receive(changed.input);
+  await fulfill(changed.input.event.id);
+  await pool.query('UPDATE project_access_purchases SET amount_cents=amount_cents+1 WHERE id=$1', [changed.row.id]);
+  assert.equal((await reconcile(changedNegative.event.id)).status, 'ineligible');
+  assert.equal((await pool.query('SELECT 1 FROM project_access_unbound_events WHERE event_id=$1', [changedNegative.event.id])).rowCount, 1);
+
+  const granted = await unboundFixture(); const grantedNegative = dispute(granted);
+  await receive(grantedNegative); await receive(granted.input);
+  await fulfill(granted.input.event.id);
+  await pool.query(`INSERT INTO project_access_entitlements
+    (project_id,contractor_id,status,provider_payment_id,verified_at)
+    VALUES ($1,$2,'paid',$3,clock_timestamp())`,
+  [granted.project.id,granted.buyer.id,granted.input.event.data.object.payment_intent]);
+  assert.equal((await reconcile(grantedNegative.event.id)).status, 'ineligible');
+  assert.equal((await fulfillmentState(granted)).grants[0].status, 'paid');
+  assert.equal((await pool.query('SELECT 1 FROM project_access_unbound_events WHERE event_id=$1', [grantedNegative.event.id])).rowCount, 1);
+});
+
+test('promotion refuses a refund ID already bound to another purchase', async () => {
+  const f = await unboundFixture(); const other = await paidFixture();
+  const negative = refund(f);
+  await receive(negative); await receive(f.input);
+  await fulfill(f.input.event.id);
+  await pool.query(`INSERT INTO project_access_refund_bindings
+    (refund_id,purchase_id,payment_intent_id,charge_id,amount_cents,currency,provider_created)
+    VALUES ($1,$2,$3,$4,$5,'usd',$6)`,
+  [negative.event.data.object.id,other.row.id,other.input.event.data.object.payment_intent,
+    'ch_foreignfixture',other.row.amount_cents,providerTime(other.row)]);
+  assert.equal((await reconcile(negative.event.id)).status, 'ineligible');
+  assert.equal((await pool.query('SELECT 1 FROM project_access_unbound_events WHERE event_id=$1', [negative.event.id])).rowCount, 1);
+  assert.equal((await pool.query('SELECT 1 FROM project_access_checkout_events WHERE event_id=$1', [negative.event.id])).rowCount, 0);
+  assert.equal((await pool.query('SELECT purchase_id FROM project_access_refund_bindings WHERE refund_id=$1',
+    [negative.event.data.object.id])).rows[0].purchase_id, other.row.id);
+});
+
 test('bounded sweep processes only selected due inbox facts and never grants from a future fact', async () => {
   const fixtures = await Promise.all(Array.from({ length: 3 }, () => dueFixture()));
   const ids = fixtures.map(f => f.input.event.id);
