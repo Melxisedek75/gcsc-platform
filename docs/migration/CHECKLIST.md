@@ -552,7 +552,9 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   Локальный интерактивный раскадровочный аниматик A/B для hero/explainer:
   `docs/migration/VIDEO-ANIMATIC-A-B.html`. Это концепт с существующим
   иллюстративным poster, не видеосъёмка и не подтверждённый UI продукта.
-  Синтаксис JS, путь poster и явные disclosures проверены; визуальный browser
+  Синтаксис JS, путь poster и явные disclosures проверены; локальный
+  `node --test docs/migration/video-animatic.test.cjs` проверяет переключение,
+  перемотку, play/pause и конец ролика в имитированном DOM. Визуальный browser
   просмотр и тест с двумя новыми зрителями ещё не проведены. L19c открыт.
 - [ ] **L19d / creative + marketing / 11 октября.** Экспортировать финальные
   hero loop и explanation video в desktop/mobile вариантах, poster и VTT

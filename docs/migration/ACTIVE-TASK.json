@@ -20,7 +20,7 @@
   "videoAnimatic": {
     "path": "docs/migration/VIDEO-ANIMATIC-A-B.html",
     "status": "LOCAL_CONCEPT_ONLY",
-    "checks": "JavaScript syntax, existing poster path and concept disclosures PASS. Browser visual review and two new-viewer comprehension test not run; no footage, cleared rights or final video."
+    "checks": "JavaScript syntax, existing poster path and concept disclosures PASS. node --test docs/migration/video-animatic.test.cjs checks A/B, scrub, play/pause, loop and explainer end in mocked DOM. Browser visual review and two new-viewer comprehension test not run; no footage, cleared rights or final video."
   },
   "lateNegativeHold": {
     "worktree": "C:/gcsc-platform/.worktrees/legacy-preservation",
