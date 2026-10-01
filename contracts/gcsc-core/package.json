@@ -16,9 +16,10 @@
     "build:credit": "npx proton-asc gcsccredit11.contract.ts",
     "build:claim": "npx proton-asc gcscclaim111.contract.ts",
     "build:workcap": "npx proton-asc gcscworkcap1.contract.ts",
-    "build": "npm-run-all build:token build:member build:lead build:stake build:treasury build:realty build:insure build:escrow build:stable build:advance build:credit build:claim build:workcap",
+    "build": "npm-run-all build:token build:member build:lead build:stake build:treasury build:realty build:insure build:escrow build:stable build:advance build:credit build:claim build:workcap build:market",
     "test": "node ../../scripts/run-contract-tests.mjs",
-    "playground": "npm run build:token && cross-env LOG_LEVEL=debug ts-node ./playground.ts"
+    "playground": "npm run build:token && cross-env LOG_LEVEL=debug ts-node ./playground.ts",
+    "build:market": "npx proton-asc gcscmarket11.contract.ts"
   },
   "dependencies": {
     "proton-tsc": "latest"
