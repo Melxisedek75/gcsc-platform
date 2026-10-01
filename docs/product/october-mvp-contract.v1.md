@@ -299,10 +299,11 @@ events with Refund status `succeeded` are supported in this slice.
 | Signed event timestamp is ahead of the database clock | Worker returns retryable `lead_fulfillment_event_not_due`; transaction rolls back and the inbox stays `received` | Future worker must retry with bounded backoff after the timestamp becomes due; do not finalize as review, claim refund completion or grant early |
 
 Refund metadata never chooses the purchase. An existing unique test PaymentIntent
-binding, immutable quote, refund-ID binding and timestamps must agree. Unknown
-PaymentIntent, including a refund delivered before its Checkout binding exists,
-is rejected before persistence. Durable unresolved delivery/retry/reconciliation
-is still required; arbitrary provider event ordering is not yet supported.
+binding, immutable quote, refund-ID binding and timestamps must agree. This
+refund slice originally rejected unknown PaymentIntents before persistence.
+The later unbound-observation slice below retains those facts in quarantine,
+without inferring a refund or purchase binding. Retry/reconciliation remains
+required; arbitrary provider event ordering is not yet fully resolved.
 
 The local actual-API fixture covers both full and partial refund: previously
 authorized private details become 404 and a new proposal is denied with
@@ -340,14 +341,48 @@ seven statuses in installed Stripe 17.7.0 are accepted. The internal inbox
 `payment_status='unpaid'` is a non-grant marker on negative observations, not a
 customer-facing assertion that the original payment failed or was never made.
 
-Unknown intents, null/expanded references, amount/currency differences,
-unsupported statuses (including `prevented`) and `funds_withdrawn` or
+Unknown intents now enter the separate quarantine described below, without
+automatic dispute processing. Null/expanded references, bound amount/currency
+differences, unsupported statuses (including `prevented`) and `funds_withdrawn` or
 `funds_reinstated` events remain unhandled before activation. Even a valid known
 won/closed event cannot resolve a previous hold; the evidence-driven resolution
 path is separate work. This local restriction is not an approved live dispute
 policy. The actual API fixture proves details/new-bid denial after the hold,
 not provider delivery, browser cache invalidation or live payment acceptance.
 L11/L12, HTTP/provider activation and founder decisions remain open.
+
+## Local unbound negative observations, 2026-10-01 UTC
+
+Candidate `a4b3da1e` and test-only repair `91e494c9` are independently approved
+and locally integrated, still dormant. Supported signed test refund/dispute
+observations with an unknown PaymentIntent are retained in a separate quarantine
+instead of discarded. Store only authenticated type,
+API version, provider/object time, event/body digest, PI/charge/object identifiers,
+USD amount and dispute status. No raw payload, metadata, evidence or customer
+contact is persisted. No purchase is chosen from metadata.
+
+Global event-ID/digest checks must cover both this quarantine and the existing
+bound inbox, including concurrent cross-table deliveries. Intake of an unknown
+PI serializes with an initial grant decision for that PI; a previously committed
+quarantine blocks that grant, but must not affect another PI. Known-PI validation
+continues to reject wrong quote/time or immutable tuple conflicts. The quarantine
+does not claim that an unmatched account-wide event belongs to a lead purchase.
+
+The shared intake's transaction-scoped event lock protects cross-table replay;
+this is a trusted-writer protocol, not a cross-table SQL UNIQUE constraint.
+Any future promoter or writer must use that event lock before purchase/intent
+locks and recheck both tables. The unbound path never takes a purchase lock while
+holding the intent lock. Current grant processing rechecks quarantine after an
+actual wait, and records `unbound_negative_event` with no grant. Direct database
+writes cannot substitute for a reviewed reconciliation implementation.
+
+Return an internal `unbound` receipt, not `paid`, refund completion or a resolved
+dispute. The receipt does not become a browser DTO or payment proof. A replay
+remains quarantined even when Checkout binding subsequently appears; future
+promotion needs an explicit audited reconciliation transaction. This slice does
+not resolve held purchases, revoke an existing grant by inference, start a retry
+scheduler or contact the provider. L11/L12 stay open.
+Evidence: `../migration/LEAD-UNBOUND-REVIEW.md`.
 
 ## Founder decisions before live payments
 

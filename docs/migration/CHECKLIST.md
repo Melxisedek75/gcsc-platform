@@ -339,6 +339,24 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   Unknown-PI delivery, неподдержанные lifecycle-события, bounded retry,
   reconciliation и HTTP/provider acceptance остаются открытыми. Card-only
   checkout не расширялся. L11/L12 НЕ закрыты; `LEAD-DISPUTE-REVIEW.md`.
+  Срез 1 октября UTC `a4b3da1e`: поддержанные подписанные test refund/dispute
+  с неизвестным PaymentIntent сохраняются в минимальном отдельном quarantine.
+  Event-ID/digest защищён между обоими inbox; такой факт блокирует первичную
+  выдачу доступа для того же PI без выбора покупки по metadata. Повтор не
+  переносит факт автоматически в bound inbox. Нет raw payload/контактов,
+  автоматического отзыва, возврата или обращения к провайдеру.
+  Tests first PG74/82, затем83/83 дважды; независимое ревью exact four-file
+  `ab00b5ed..a4b3da1e` APPROVED, own83/83 (`9ouNLY`), focused35/35/root0.
+  Receiving82/83 (`6Nw04u`) обнаружил несогласованное время в фикстуре:
+  Node-событие предшествовало PG-покупке на границе секунды. Детерминированный
+  RED83/84 (`9QhtLa`), test-only repair `91e494c9`, затем84/84 дважды
+  (`y6WTCf`, `PjXd0q`), focused35/35/root0. Продуктовые time guards не менялись;
+  baseline39/39 и API301/301 относятся к тем же неизменённым runtime-файлам.
+  Независимый reviewer отдельно одобрил repair, повторил84/84 (`tnuAun`),
+  35/35/root0 и закрыт. После exact fast-forward receiving84/84 (`wqqY2s`),
+  test/PG0, runtime/test hashes совпали. Оба сбоя сохранены, не засчитаны PASS.
+  Bounded retry, перенос/сверка quarantine, оставшийся lifecycle и HTTP/provider
+  E2E открыты. L11/L12 НЕ закрыты; `LEAD-UNBOUND-REVIEW.md`. Live/deploy не было.
 - [ ] **L13 / web + QA.** Чёткая цена, состояние оплаты, ожидание подтверждения,
   квитанция, отмена, ошибка, повтор без второго списания и обращение в
   поддержку. Сначала Stripe test mode end-to-end; live только после L10-L12,
