@@ -59,6 +59,7 @@ h1, h2, h3 { line-height: 1.12; }
 .text-link-light:hover { color: #ffad8b; }
 .hero-status { margin: 25px 0 0; color: #d9e8e2; font-size: 13px; }
 .hero-status::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 9px; border-radius: 50%; background: var(--coral); vertical-align: 2px; }
+.hero-media-note { margin: 6px 0 0; color: #d9e8e2; font-size: 12px; line-height: 1.4; }
 
 .section-band { padding-block: 92px; }
 .intro { background: var(--white); }

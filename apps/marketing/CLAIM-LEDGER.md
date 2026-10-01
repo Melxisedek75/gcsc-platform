@@ -9,9 +9,9 @@ not permission to deploy. Recheck against the exact release SHA and live domains
 | --- | --- | --- |
 | `index.html` and `site.css` | Pilot landing page; primary CTAs target candidate account access `https://gcsc.store/#/dashboard`, role links add `?role=homeowner` or `?role=contractor`, and the footer links to platform home | Verify both role journeys on an approved preview, then visual, keyboard, mobile and claim review |
 | `whitepaper.html` and `whitepaper.css` | Historical v1.3 strategy draft, marked `noindex` | Owner and legal approval; v1.4 internal draft is not substituted. `noindex` is not access control |
-| `assets/renovation-hero-v1.png` | Generated concept photograph, not a customer case study | Verify image rights and disclose illustrative use where needed |
+| `assets/renovation-hero-v1.png` | Generated concept photograph, not a customer case study; the local hero now visibly says it is an AI-generated concept image, not a customer project | Verify image rights before release; recheck the disclosure in the exact approved build and live domain |
 | `VIDEO-PRODUCTION.md` | Scripts and acceptance criteria only | Film assets, rights, captions and user comprehension tests |
-| `VIDEO-SCRIPTS-A-B.md` | Two local creative directions for a hero loop and explainer | Founder selection, animatic, fact-check and rights review; no video exists |
+| `VIDEO-SCRIPTS-A-B.md` | Two local creative directions for a hero loop and explainer; `docs/migration/VIDEO-ANIMATIC-A-B.html` is an interactive concept storyboard | Founder selection, two-viewer comprehension, fact-check and rights review; no video exists |
 | `CNAME` | Intended `xprnet.org` domain | DNS and publication authorization, without changing the live site |
 | `sitemap.xml` and `robots.txt` | Local homepage-only discovery candidate | Verify final domain, hosting root and indexability before deploy; the historical draft stays out of the sitemap but remains crawlable so its `noindex` can be read |
 

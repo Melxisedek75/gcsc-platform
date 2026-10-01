@@ -5,7 +5,7 @@ const { pathToFileURL } = require('node:url');
 const { chromium } = require('playwright');
 
 const root = __dirname;
-const output = path.resolve(__dirname, '../../.tmp/marketing-browser');
+const output = path.resolve(process.env.GCSC_BROWSER_OUTPUT || path.resolve(__dirname, '../../.tmp/marketing-browser'));
 fs.mkdirSync(output, { recursive: true });
 const errors = [];
 const cases = [];
@@ -47,11 +47,16 @@ function contrast(foreground, background) {
           return { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right };
         };
         const image = document.querySelector('.hero-image');
+        const mediaNote = document.querySelector('.hero-media-note');
         return {
           width: innerWidth, scrollWidth: document.documentElement.scrollWidth,
           hero: bounds('.hero'), content: bounds('.hero-content'),
           title: bounds('.hero h1'), actions: bounds('.hero-actions'), status: bounds('.hero-status'),
           image: { width: image.naturalWidth, height: image.naturalHeight },
+          mediaNote: mediaNote && {
+            text: mediaNote.textContent.trim(),
+            rect: mediaNote.getBoundingClientRect().toJSON(),
+          },
         };
       });
       cases.push({ name, ...metrics });
@@ -59,7 +64,12 @@ function contrast(foreground, background) {
       check(metrics.content.top >= metrics.hero.top - 1 && metrics.content.bottom <= metrics.hero.bottom + 1,
         `${name}: hero clips its content`);
       check(metrics.image.width > 0 && metrics.image.height > 0, `${name}: hero image missing`);
-      await page.screenshot({ path: path.join(output, `${name}.png`), fullPage: true });
+      check(metrics.mediaNote && metrics.mediaNote.text === 'AI-generated concept image, not a customer project.',
+        `${name}: generated hero image disclosure missing`);
+      check(metrics.mediaNote && metrics.mediaNote.rect.bottom <= metrics.hero.bottom + 1,
+        `${name}: generated hero image disclosure clipped`);
+      if (!process.env.GCSC_BROWSER_NO_SCREENSHOTS)
+        await page.screenshot({ path: path.join(output, `${name}.png`), fullPage: true });
       if (name === 'mobile') {
         await page.locator('.mobile-menu summary').click();
         check(await page.locator('.mobile-menu').getAttribute('open') !== null, 'Mobile menu did not open');
