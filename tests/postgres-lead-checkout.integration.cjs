@@ -76,6 +76,9 @@ function fulfill(eventId, selectedPool = pool) {
 function sweep(options = {}, selectedPool = pool) {
   return require(path.join(snapshot, 'database/lead-checkout-retry.cjs')).sweepDueLeadCheckoutEvents(selectedPool, options);
 }
+function reconcile(eventId, selectedPool = pool) {
+  return require(path.join(snapshot, 'database/lead-checkout-reconciliation.cjs')).reconcileUnboundLeadEvent(selectedPool, eventId);
+}
 // Advance only the worker's clock read; locks, rows and all writes use real PG.
 function atDatabaseTime(now) {
   return { connect: async () => {
@@ -1297,6 +1300,107 @@ test('quarantine never assumes an unknown observation fits the later quote or be
     assert.equal((await pool.query('SELECT provider_payment_id FROM project_access_entitlements WHERE project_id=$1 AND contractor_id=$2',
       [f.project.id, f.buyer.id])).rows[0].provider_payment_id, paid.event.data.object.payment_intent);
   }
+});
+
+test('explicit reconciliation moves an exact negative fact but never grants access', async () => {
+  for (const make of [refund, dispute]) {
+    const f = await unboundFixture();
+    const negative = make(f);
+    assert.equal((await receive(negative)).status, 'unbound');
+    await receive(f.input);
+    assert.equal((await fulfill(f.input.event.id)).outcome, 'unbound_negative_event');
+    assert.equal((await reconcile(negative.event.id)).status, 'promoted');
+    assert.equal((await fulfillmentState(f)).grants.length, 0);
+    assert.equal((await pool.query('SELECT 1 FROM project_access_unbound_events WHERE event_id=$1', [negative.event.id])).rowCount, 0);
+    const inbox = (await pool.query('SELECT * FROM project_access_checkout_events WHERE event_id=$1', [negative.event.id])).rows[0];
+    assert.equal(inbox.status, 'received');
+    assert.equal(inbox.payment_intent_id, f.input.event.data.object.payment_intent);
+    assert.equal((await receive(negative)).duplicate, true);
+    assert.equal((await reconcile(negative.event.id)).status, 'already_promoted');
+    const outcome = (await fulfill(negative.event.id)).outcome;
+    assert.equal(outcome, make === refund ? 'refund_observed' : 'dispute_observed');
+    assert.equal((await fulfillmentState(f)).grants[0].status, make === refund ? 'refunded' : 'revoked');
+  }
+});
+
+test('reconciliation requires a held signed paid event and leaves mismatched facts quarantined', async () => {
+  for (const make of [refund, dispute]) {
+    const f = await unboundFixture();
+    const negative = make(f, { amount: f.row.amount_cents + 1 });
+    await receive(negative); await receive(f.input);
+    assert.equal((await reconcile(negative.event.id)).status, 'ineligible');
+    assert.equal((await pool.query('SELECT 1 FROM project_access_unbound_events WHERE event_id=$1', [negative.event.id])).rowCount, 1);
+    assert.equal((await pool.query('SELECT 1 FROM project_access_checkout_events WHERE event_id=$1', [negative.event.id])).rowCount, 0);
+    assert.equal((await fulfillmentState(f)).grants.length, 0);
+
+    const fresh = await unboundFixture();
+    const valid = make(fresh);
+    await receive(valid); await receive(fresh.input);
+    assert.equal((await reconcile(valid.event.id)).status, 'ineligible');
+    assert.equal((await pool.query('SELECT 1 FROM project_access_unbound_events WHERE event_id=$1', [valid.event.id])).rowCount, 1);
+    assert.equal((await fulfill(fresh.input.event.id)).outcome, 'unbound_negative_event');
+    assert.equal((await reconcile(valid.event.id)).status, 'promoted');
+
+    const old = await unboundFixture();
+    const createdBeforePurchase = Math.floor(new Date(old.row.created_at).getTime() / 1000) - 1;
+    const stale = make(old, { created: createdBeforePurchase });
+    await receive(stale); await receive(old.input);
+    assert.equal((await fulfill(old.input.event.id)).outcome, 'unbound_negative_event');
+    assert.equal((await reconcile(stale.event.id)).status, 'ineligible');
+    assert.equal((await pool.query('SELECT 1 FROM project_access_unbound_events WHERE event_id=$1', [stale.event.id])).rowCount, 1);
+  }
+});
+
+test('concurrent reconciliation promotes one fact and records one audit without a grant', async () => {
+  const f = await unboundFixture(); const negative = refund(f);
+  await receive(negative); await receive(f.input);
+  await fulfill(f.input.event.id);
+  const results = await Promise.all(Array.from({ length: 4 }, () => reconcile(negative.event.id)));
+  assert.equal(results.filter(result => result.status === 'promoted').length, 1);
+  assert.equal(results.filter(result => result.status === 'already_promoted').length, 3);
+  assert.equal((await pool.query("SELECT COUNT(*)::int AS n FROM audit_events WHERE action='lead_checkout.quarantine_promoted' AND metadata->>'event_id'=$1",
+    [negative.event.id])).rows[0].n, 1);
+  assert.equal((await fulfillmentState(f)).grants.length, 0);
+});
+
+test('promotion and audit roll back together and an exact retry can succeed', async () => {
+  const f = await unboundFixture(); const negative = refund(f);
+  await receive(negative); await receive(f.input);
+  await fulfill(f.input.event.id);
+  await pool.query(`CREATE FUNCTION fail_lead_promotion() RETURNS trigger LANGUAGE plpgsql AS $$
+    BEGIN IF NEW.action='lead_checkout.quarantine_promoted' THEN
+      RAISE EXCEPTION 'synthetic promotion audit failure' USING ERRCODE='P0001'; END IF;
+      RETURN NEW; END $$`);
+  await pool.query('CREATE TRIGGER fail_lead_promotion BEFORE INSERT ON audit_events FOR EACH ROW EXECUTE FUNCTION fail_lead_promotion()');
+  try {
+    await assert.rejects(reconcile(negative.event.id), { code: 'P0001' });
+    assert.equal((await pool.query('SELECT 1 FROM project_access_unbound_events WHERE event_id=$1', [negative.event.id])).rowCount, 1);
+    assert.equal((await pool.query('SELECT 1 FROM project_access_checkout_events WHERE event_id=$1', [negative.event.id])).rowCount, 0);
+    assert.equal((await pool.query('SELECT 1 FROM project_access_refund_bindings WHERE refund_id=$1', [negative.event.data.object.id])).rowCount, 0);
+  } finally {
+    await pool.query('DROP TRIGGER fail_lead_promotion ON audit_events');
+    await pool.query('DROP FUNCTION fail_lead_promotion()');
+  }
+  assert.equal((await reconcile(negative.event.id)).status, 'promoted');
+});
+
+test('lost promotion COMMIT acknowledgement replays without another audit or grant', async () => {
+  const f = await unboundFixture(); const negative = refund(f);
+  await receive(negative); await receive(f.input);
+  await fulfill(f.input.event.id);
+  const lostAckPool = { connect: async () => {
+    const client = await pool.connect();
+    return { release: error => client.release(error), query: async (sql, ...args) => {
+      const result = await client.query(sql, ...args);
+      if (sql === 'COMMIT') throw new Error('synthetic lost promotion acknowledgement');
+      return result;
+    } };
+  } };
+  await assert.rejects(reconcile(negative.event.id, lostAckPool), /synthetic lost promotion acknowledgement/);
+  assert.equal((await reconcile(negative.event.id)).status, 'already_promoted');
+  assert.equal((await pool.query("SELECT COUNT(*)::int AS n FROM audit_events WHERE action='lead_checkout.quarantine_promoted' AND metadata->>'event_id'=$1",
+    [negative.event.id])).rows[0].n, 1);
+  assert.equal((await fulfillmentState(f)).grants.length, 0);
 });
 
 test('bounded sweep processes only selected due inbox facts and never grants from a future fact', async () => {
