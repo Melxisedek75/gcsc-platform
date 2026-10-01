@@ -51,8 +51,24 @@ function verifyLeadCheckoutEvent(rawBody, signature, config) {
     || event.livemode !== false || event.account != null || event.context != null
     || event.api_version !== config.apiVersion || !seconds(event.created)
     || event.created > Math.floor(now / 1000) + 300
-    || !['checkout.session.completed', 'checkout.session.expired', 'refund.created', 'refund.updated'].includes(event.type))
+    || !['checkout.session.completed', 'checkout.session.expired', 'refund.created', 'refund.updated',
+      'charge.dispute.created', 'charge.dispute.updated', 'charge.dispute.closed'].includes(event.type))
     fail('lead_webhook_event_invalid');
+  if (event.type.startsWith('charge.dispute.')) {
+    const dispute = event.data?.object;
+    if (!dispute || dispute.object !== 'dispute' || !identifier(dispute.id, 'du_') || dispute.livemode !== false
+      || !amount(dispute.amount) || dispute.currency !== 'usd'
+      || !identifier(dispute.payment_intent, 'pi_') || !identifier(dispute.charge, 'ch_')
+      || !seconds(dispute.created) || dispute.created > event.created
+      || !['needs_response', 'under_review', 'won', 'lost', 'warning_needs_response', 'warning_under_review', 'warning_closed'].includes(dispute.status)
+      || (event.type === 'charge.dispute.closed' && !['won', 'lost', 'warning_closed'].includes(dispute.status)))
+      fail('lead_webhook_dispute_invalid');
+    return Object.freeze({ kind: 'dispute', eventId: event.id, eventType: event.type,
+      apiVersion: event.api_version, providerCreated: event.created,
+      payloadSha256: createHash('sha256').update(rawBody).digest('hex'),
+      disputeId: dispute.id, disputeAmountCents: dispute.amount, disputeCreated: dispute.created,
+      disputeStatus: dispute.status, currency: 'usd', paymentIntentId: dispute.payment_intent, chargeId: dispute.charge });
+  }
   if (event.type.startsWith('refund.')) {
     const refund = event.data?.object;
     // Refund has no livemode field in the pinned SDK; the signed Event supplies
@@ -106,29 +122,34 @@ async function receiveLeadCheckoutEvent(pool, rawBody, signature, config) {
     await client.query("SET LOCAL statement_timeout = '15s'");
     // All intake/attach writers serialize on the purchase. A future fulfillment
     // transaction must acquire project/identities first, following the API lock order.
-    const isRefund = event.kind === 'refund';
-    const purchaseId = isRefund ? (await client.query(
+    // SQL identifiers are fixed here, never selected by metadata or raw payload.
+    const fact = event.kind === 'refund'
+      ? { table: 'project_access_refund_bindings', key: 'refund_id', id: event.refundId, amount: event.refundAmountCents, created: event.refundCreated }
+      : event.kind === 'dispute'
+        ? { table: 'project_access_dispute_bindings', key: 'dispute_id', id: event.disputeId, amount: event.disputeAmountCents, created: event.disputeCreated }
+        : null;
+    const purchaseId = fact ? (await client.query(
       'SELECT purchase_id FROM project_access_checkout_bindings WHERE payment_intent_id=$1',
       [event.paymentIntentId])).rows[0]?.purchase_id : event.purchaseId;
     const row = (await client.query('SELECT * FROM project_access_purchases WHERE id=$1 FOR UPDATE', [purchaseId])).rows[0];
     let checkoutId = event.providerCheckoutId;
-    if (isRefund) {
+    if (fact) {
       const binding = (await client.query('SELECT * FROM project_access_checkout_bindings WHERE purchase_id=$1 FOR UPDATE', [purchaseId])).rows[0];
       if (!row || row.provider_mode !== 'test' || !binding || binding.payment_intent_id !== event.paymentIntentId
-        || row.currency !== event.currency || event.refundAmountCents > row.amount_cents
-        || event.refundCreated < Math.floor(new Date(row.created_at).getTime() / 1000)
+        || row.currency !== event.currency || fact.amount > row.amount_cents
+        || fact.created < Math.floor(new Date(row.created_at).getTime() / 1000)
         || (row.provider_checkout_id && row.provider_checkout_id !== binding.provider_checkout_id))
-        fail('lead_webhook_refund_mismatch');
+        fail(`lead_webhook_${event.kind}_mismatch`);
       checkoutId = binding.provider_checkout_id;
-      await client.query(`INSERT INTO project_access_refund_bindings
-        (refund_id,purchase_id,payment_intent_id,charge_id,amount_cents,currency,provider_created)
-        VALUES ($1,$2,$3,$4,$5,'usd',$6) ON CONFLICT (refund_id) DO NOTHING`,
-      [event.refundId, row.id, event.paymentIntentId, event.chargeId, event.refundAmountCents, event.refundCreated]);
-      const stored = (await client.query('SELECT * FROM project_access_refund_bindings WHERE refund_id=$1 FOR UPDATE', [event.refundId])).rows[0];
+      await client.query(`INSERT INTO ${fact.table}
+        (${fact.key},purchase_id,payment_intent_id,charge_id,amount_cents,currency,provider_created)
+        VALUES ($1,$2,$3,$4,$5,'usd',$6) ON CONFLICT (${fact.key}) DO NOTHING`,
+      [fact.id, row.id, event.paymentIntentId, event.chargeId, fact.amount, fact.created]);
+      const stored = (await client.query(`SELECT * FROM ${fact.table} WHERE ${fact.key}=$1 FOR UPDATE`, [fact.id])).rows[0];
       if (!stored || stored.purchase_id !== row.id || stored.payment_intent_id !== event.paymentIntentId
-        || stored.amount_cents !== event.refundAmountCents || stored.currency !== event.currency
-        || stored.charge_id !== event.chargeId || Number(stored.provider_created) !== event.refundCreated)
-        fail('lead_webhook_refund_conflict');
+        || stored.amount_cents !== fact.amount || stored.currency !== event.currency
+        || stored.charge_id !== event.chargeId || Number(stored.provider_created) !== fact.created)
+        fail(`lead_webhook_${event.kind}_conflict`);
     } else if (!row || row.provider_mode !== 'test' || row.project_id !== event.projectId
       || row.contractor_id !== event.contractorId || row.amount_cents !== event.amountCents
       || row.currency !== event.currency || row.price_version !== event.priceVersion
@@ -137,14 +158,15 @@ async function receiveLeadCheckoutEvent(pool, rawBody, signature, config) {
       fail('lead_webhook_purchase_mismatch');
     await bindCheckoutSession(client, row.id, checkoutId, event.paymentIntentId, 'lead_webhook_purchase_mismatch');
     const inserted = await client.query(`INSERT INTO project_access_checkout_events
-      (event_id,purchase_id,provider_checkout_id,event_type,api_version,provider_created,payload_sha256,payment_status,payment_intent_id,purchase_snapshot,refund_id,refund_amount_cents)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) ON CONFLICT (event_id) DO NOTHING RETURNING event_id,status`,
+      (event_id,purchase_id,provider_checkout_id,event_type,api_version,provider_created,payload_sha256,payment_status,payment_intent_id,purchase_snapshot,refund_id,refund_amount_cents,dispute_id,dispute_amount_cents,dispute_status)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) ON CONFLICT (event_id) DO NOTHING RETURNING event_id,status`,
     [event.eventId, row.id, checkoutId, event.eventType, event.apiVersion,
-      event.providerCreated, event.payloadSha256, isRefund ? 'unpaid' : event.paymentStatus, event.paymentIntentId,
+      event.providerCreated, event.payloadSha256, fact ? 'unpaid' : event.paymentStatus, event.paymentIntentId,
       JSON.stringify({ project_id: row.project_id, contractor_id: row.contractor_id,
         amount_cents: row.amount_cents, currency: row.currency, price_version: row.price_version,
         expires_at: Math.floor(new Date(row.expires_at).getTime() / 1000), created_at: new Date(row.created_at).toISOString() }),
-      event.refundId || null, event.refundAmountCents || null]);
+      event.refundId || null, event.refundAmountCents || null,
+      event.disputeId || null, event.disputeAmountCents || null, event.disputeStatus || null]);
     let result = inserted.rows[0];
     if (!result) {
       const existing = (await client.query('SELECT * FROM project_access_checkout_events WHERE event_id=$1', [event.eventId])).rows[0];

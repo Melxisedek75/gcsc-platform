@@ -252,6 +252,16 @@ const statements = Object.freeze([
     provider_created BIGINT NOT NULL CHECK (provider_created > 0),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
+  `CREATE TABLE IF NOT EXISTS project_access_dispute_bindings (
+    dispute_id TEXT PRIMARY KEY CHECK (dispute_id ~ '^du_[a-zA-Z0-9]{1,252}$'),
+    purchase_id UUID NOT NULL REFERENCES project_access_purchases(id) ON DELETE RESTRICT,
+    payment_intent_id TEXT NOT NULL CHECK (payment_intent_id ~ '^pi_[a-zA-Z0-9]{1,252}$'),
+    charge_id TEXT NOT NULL CHECK (charge_id ~ '^ch_[a-zA-Z0-9]{1,252}$'),
+    amount_cents INTEGER NOT NULL CHECK (amount_cents > 0 AND amount_cents <= 100000000),
+    currency TEXT NOT NULL CHECK (currency='usd'),
+    provider_created BIGINT NOT NULL CHECK (provider_created > 0),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
   `CREATE TABLE IF NOT EXISTS project_access_checkout_events (
     event_id TEXT PRIMARY KEY CHECK (event_id ~ '^evt_[a-zA-Z0-9]{1,251}$'),
     purchase_id UUID NOT NULL REFERENCES project_access_purchases(id) ON DELETE RESTRICT,
@@ -279,14 +289,28 @@ const statements = Object.freeze([
     REFERENCES project_access_refund_bindings(refund_id) ON DELETE RESTRICT`,
   `ALTER TABLE project_access_checkout_events ADD COLUMN IF NOT EXISTS refund_amount_cents INTEGER
     CHECK (refund_amount_cents > 0 AND refund_amount_cents <= 100000000)`,
+  `ALTER TABLE project_access_checkout_events ADD COLUMN IF NOT EXISTS dispute_id TEXT
+    REFERENCES project_access_dispute_bindings(dispute_id) ON DELETE RESTRICT`,
+  `ALTER TABLE project_access_checkout_events ADD COLUMN IF NOT EXISTS dispute_amount_cents INTEGER
+    CHECK (dispute_amount_cents > 0 AND dispute_amount_cents <= 100000000)`,
+  `ALTER TABLE project_access_checkout_events ADD COLUMN IF NOT EXISTS dispute_status TEXT
+    CHECK (dispute_status IN ('needs_response','under_review','won','lost','warning_needs_response','warning_under_review','warning_closed'))`,
   `ALTER TABLE project_access_checkout_events DROP CONSTRAINT IF EXISTS project_access_checkout_events_event_type_check`,
   `ALTER TABLE project_access_checkout_events ADD CONSTRAINT project_access_checkout_events_event_type_check
-    CHECK (event_type IN ('checkout.session.completed','checkout.session.expired','refund.created','refund.updated'))`,
+    CHECK (event_type IN ('checkout.session.completed','checkout.session.expired','refund.created','refund.updated',
+      'charge.dispute.created','charge.dispute.updated','charge.dispute.closed'))`,
   `ALTER TABLE project_access_checkout_events DROP CONSTRAINT IF EXISTS project_access_event_refund_shape`,
   `ALTER TABLE project_access_checkout_events ADD CONSTRAINT project_access_event_refund_shape CHECK (
     (event_type IN ('refund.created','refund.updated') AND refund_id IS NOT NULL
       AND refund_amount_cents IS NOT NULL AND payment_intent_id IS NOT NULL AND payment_status='unpaid')
     OR (event_type NOT IN ('refund.created','refund.updated') AND refund_id IS NULL AND refund_amount_cents IS NULL))`,
+  `ALTER TABLE project_access_checkout_events DROP CONSTRAINT IF EXISTS project_access_event_dispute_shape`,
+  `ALTER TABLE project_access_checkout_events ADD CONSTRAINT project_access_event_dispute_shape CHECK (
+    (event_type IN ('charge.dispute.created','charge.dispute.updated','charge.dispute.closed') AND dispute_id IS NOT NULL
+      AND dispute_amount_cents IS NOT NULL AND dispute_status IS NOT NULL AND payment_intent_id IS NOT NULL AND payment_status='unpaid'
+      AND (event_type <> 'charge.dispute.closed' OR dispute_status IN ('won','lost','warning_closed')))
+    OR (event_type NOT IN ('charge.dispute.created','charge.dispute.updated','charge.dispute.closed')
+      AND dispute_id IS NULL AND dispute_amount_cents IS NULL AND dispute_status IS NULL))`,
   `CREATE TABLE IF NOT EXISTS job_posting_payments (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,

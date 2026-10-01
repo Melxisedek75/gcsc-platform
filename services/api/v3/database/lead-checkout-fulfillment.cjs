@@ -64,7 +64,9 @@ async function fulfillLeadCheckoutEvent(pool, eventId) {
         JSON.stringify({ purchase_id: purchase.id, event_id: eventId, provider_mode: 'test',
           provider_checkout_id: event.provider_checkout_id, payment_intent_id: event.payment_intent_id,
           amount_cents: purchase.amount_cents, currency: purchase.currency,
-          refund_id: event.refund_id, refund_amount_cents: event.refund_amount_cents, outcome })]);
+          refund_id: event.refund_id, refund_amount_cents: event.refund_amount_cents,
+          dispute_id: event.dispute_id, dispute_amount_cents: event.dispute_amount_cents,
+          dispute_status: event.dispute_status, outcome })]);
       await client.query('COMMIT');
       return response(stored, false);
     }
@@ -86,6 +88,35 @@ async function fulfillLeadCheckoutEvent(pool, eventId) {
     // Intake permits clock skew. Preserve the received fact for a later retry
     // instead of permanently holding it while the database clock catches up.
     if (created > seconds(now)) fail('lead_fulfillment_event_not_due');
+
+    if (['charge.dispute.created', 'charge.dispute.updated', 'charge.dispute.closed'].includes(event.event_type)) {
+      const dispute = (await client.query('SELECT * FROM project_access_dispute_bindings WHERE dispute_id=$1 FOR UPDATE', [event.dispute_id])).rows[0];
+      if (!dispute || dispute.purchase_id !== purchase.id || dispute.payment_intent_id !== event.payment_intent_id
+        || dispute.amount_cents !== event.dispute_amount_cents || dispute.currency !== purchase.currency
+        || dispute.amount_cents > purchase.amount_cents || Number(dispute.provider_created) < seconds(purchase.created_at)
+        || Number(dispute.provider_created) > created) return await review('dispute_binding_mismatch');
+      if (grant && grant.provider_payment_id !== event.payment_intent_id) return await review('entitlement_conflict');
+      const replacement = await client.query(`SELECT 1 FROM project_access_purchases
+        WHERE project_id=$1 AND contractor_id=$2 AND id<>$3 AND status IN ('pending','paid','review_required') FOR UPDATE`,
+      [purchase.project_id, purchase.contractor_id, purchase.id]);
+      if (replacement.rowCount) return await review('superseded_dispute');
+      if (purchase.status === 'refunded' || grant?.status === 'refunded') return await review('dispute_after_refund');
+
+      // Even won/closed facts require separate reconciliation; never restore
+      // access from a stale lifecycle snapshot or infer bank settlement.
+      if (grant) {
+        await client.query(`UPDATE project_access_entitlements SET status='revoked',updated_at=clock_timestamp()
+          WHERE project_id=$1 AND contractor_id=$2`, [purchase.project_id, purchase.contractor_id]);
+      } else {
+        const inserted = await client.query(`INSERT INTO project_access_entitlements
+          (project_id,contractor_id,status,provider_payment_id,verified_at)
+          VALUES ($1,$2,'revoked',$3,clock_timestamp()) ON CONFLICT (project_id,contractor_id) DO NOTHING`,
+        [purchase.project_id, purchase.contractor_id, event.payment_intent_id]);
+        if (!inserted.rowCount) return await review('entitlement_conflict');
+      }
+      return await finish('review_required', 'dispute_observed',
+        ['pending', 'paid', 'review_required'].includes(purchase.status) ? 'review_required' : null);
+    }
 
     if (['refund.created', 'refund.updated'].includes(event.event_type)) {
       const refund = (await client.query('SELECT * FROM project_access_refund_bindings WHERE refund_id=$1 FOR UPDATE', [event.refund_id])).rows[0];
@@ -126,6 +157,8 @@ async function fulfillLeadCheckoutEvent(pool, eventId) {
     }
     if (purchase.status !== 'pending') return await review('purchase_not_pending');
     if (grant) return await review('entitlement_conflict');
+    const disputePending = await client.query('SELECT 1 FROM project_access_checkout_events WHERE purchase_id=$1 AND dispute_id IS NOT NULL LIMIT 1', [purchase.id]);
+    if (disputePending.rowCount) return await review('dispute_pending');
     const refundPending = await client.query('SELECT 1 FROM project_access_checkout_events WHERE purchase_id=$1 AND refund_id IS NOT NULL LIMIT 1', [purchase.id]);
     if (refundPending.rowCount) return await review('refund_pending');
     // Intake also locks this purchase: facts committed before this decision

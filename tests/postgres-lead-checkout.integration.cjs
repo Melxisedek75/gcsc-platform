@@ -96,6 +96,16 @@ function refund(f, overrides = {}) {
       created, metadata: { private: 'do-not-store' },
       instructions_email: 'private@example.invalid', ...overrides } } });
 }
+function dispute(f, overrides = {}, type = 'charge.dispute.created') {
+  const created = Math.floor(Date.now() / 1000);
+  return signEvent({ id: `evt_${randomUUID().replaceAll('-', '')}`, object: 'event',
+    api_version: webhookConfig.apiVersion, livemode: false, created, type,
+    data: { object: { id: `du_${randomUUID().replaceAll('-', '')}`, object: 'dispute',
+      status: 'needs_response', livemode: false, amount: f.row.amount_cents, currency: 'usd',
+      payment_intent: f.input.event.data.object.payment_intent, charge: 'ch_localfixture', created,
+      metadata: { private: 'do-not-store' }, evidence: { customer_email_address: 'private@example.invalid' },
+      ...overrides } } });
+}
 async function fulfillmentState(f) {
   return {
     purchase: (await pool.query('SELECT * FROM project_access_purchases WHERE id=$1', [f.row.id])).rows[0],
@@ -895,7 +905,181 @@ test('tampered stored refund binding cannot revoke an unrelated entitlement', as
   assert.equal((await fulfillmentState(f)).grants[0].status, 'paid');
 });
 
-test('real local API denies details and new bids after signed full or partial refund processing', { timeout: 20000 }, async () => {
+test('signed dispute intake preserves paid access until its atomic worker hold and survives schema rerun', async () => {
+  const f = await paidFixture(); const g = await paidFixture();
+  await fulfill(f.input.event.id); await fulfill(g.input.event.id);
+  const input = dispute(f, { amount: 500 }); await receive(input);
+  assert.equal((await fulfillmentState(f)).grants[0].status, 'paid');
+  const stored = (await pool.query('SELECT * FROM project_access_checkout_events WHERE event_id=$1', [input.event.id])).rows[0];
+  assert.equal(stored.dispute_id, input.event.data.object.id); assert.equal(stored.dispute_status, 'needs_response');
+  assert.equal(stored.status, 'received'); assert.doesNotMatch(JSON.stringify(stored), /private@example|do-not-store/);
+  await migrateSchema(pool);
+  const another = new Pool({ connectionString: databaseUrl });
+  try { assert.equal((await fulfill(input.event.id, another)).outcome, 'dispute_observed'); }
+  finally { await another.end(); }
+  const after = await fulfillmentState({ ...f, input });
+  assert.equal(after.purchase.status, 'review_required'); assert.equal(after.grants[0].status, 'revoked');
+  assert.equal(after.event.status, 'review_required'); assert.equal(after.audits.length, 2);
+  assert.equal(after.audits.at(-1).metadata.dispute_id, input.event.data.object.id);
+  assert.equal((await fulfillmentState(g)).grants[0].status, 'paid');
+});
+
+test('won and closed disputes never restore access even when delivered before older statuses', async () => {
+  const f = await paidFixture(); await fulfill(f.input.event.id);
+  const original = dispute(f);
+  for (const [type, status] of [['charge.dispute.closed', 'won'], ['charge.dispute.created', 'needs_response'],
+    ['charge.dispute.updated', 'under_review'], ['charge.dispute.closed', 'lost'],
+    ['charge.dispute.updated', 'warning_needs_response'], ['charge.dispute.updated', 'warning_under_review'],
+    ['charge.dispute.closed', 'warning_closed']]) {
+    const event = structuredClone(original.event); event.id = `evt_${randomUUID().replaceAll('-', '')}`;
+    event.type = type; event.data.object.status = status;
+    await receive(signEvent(event)); assert.equal((await fulfill(event.id)).status, 'review_required');
+    assert.equal((await fulfillmentState(f)).grants[0].status, 'revoked');
+  }
+  assert.equal((await fulfill(f.input.event.id)).duplicate, true);
+  const paid = structuredClone(f.input.event); paid.id = `evt_${randomUUID().replaceAll('-', '')}`;
+  await receive(signEvent(paid)); assert.equal((await fulfill(paid.id)).status, 'review_required');
+  assert.equal((await fulfillmentState(f)).grants[0].status, 'revoked');
+});
+
+test('queued dispute prevents initial grant in both worker orders and concurrent processing', async () => {
+  for (const order of ['paid-first', 'dispute-first', 'concurrent']) {
+    const f = await paidFixture(); const input = dispute(f); await receive(input);
+    if (order === 'concurrent') await Promise.all([fulfill(f.input.event.id), fulfill(input.event.id)]);
+    else {
+      const ids = order === 'paid-first' ? [f.input.event.id, input.event.id] : [input.event.id, f.input.event.id];
+      if (order === 'paid-first') assert.equal((await fulfill(ids[0])).outcome, 'dispute_pending');
+      else await fulfill(ids[0]);
+      await fulfill(ids[1]);
+    }
+    const after = await fulfillmentState(f);
+    assert.equal(after.grants[0].status, 'revoked'); assert.equal(after.purchase.status, 'review_required');
+    assert.equal(after.audits.some(row => row.action === 'lead_checkout.paid_granted'), false);
+  }
+});
+
+test('concurrent identical dispute deliveries and fulfillment create one hold and audit', async () => {
+  const f = await paidFixture(); await fulfill(f.input.event.id); const input = dispute(f);
+  const received = await Promise.all(Array.from({ length: 5 }, () => receive(input)));
+  assert.equal(received.filter(row => !row.duplicate).length, 1);
+  const applied = await Promise.all(Array.from({ length: 5 }, () => fulfill(input.event.id)));
+  assert.equal(applied.filter(row => !row.duplicate).length, 1);
+  assert.equal((await fulfillmentState(f)).audits.length, 2);
+});
+
+test('dispute metadata has no authority and wrong PI, amount or creation time cannot bind', async () => {
+  const f = await paidFixture(); const g = await paidFixture();
+  for (const delta of [{ payment_intent: 'pi_unknown' }, { amount: 2501 },
+    { created: Math.floor(new Date(f.row.created_at).getTime() / 1000) - 1 }]) {
+    await assert.rejects(receive(dispute(f, delta)), { code: 'lead_webhook_dispute_mismatch' });
+  }
+  const input = dispute(f, { metadata: { purchase_id: g.row.id, contractor_id: String(g.buyer.id) } });
+  await receive(input);
+  const stored = (await pool.query('SELECT * FROM project_access_dispute_bindings WHERE dispute_id=$1', [input.event.data.object.id])).rows[0];
+  assert.equal(stored.purchase_id, f.row.id); assert.doesNotMatch(JSON.stringify(stored), /metadata|example.invalid/);
+  for (const delta of [{ charge: 'ch_changed' }, { amount: 500 }, { created: input.event.data.object.created + 1 }]) {
+    const event = structuredClone(input.event); event.id = `evt_${randomUUID().replaceAll('-', '')}`;
+    event.created++; Object.assign(event.data.object, delta);
+    await assert.rejects(receive(signEvent(event)), { code: 'lead_webhook_dispute_conflict' });
+  }
+});
+
+test('dispute IDs and global event IDs cannot bind different purchases or collide with refunds', async () => {
+  const f = await paidFixture(); const g = await paidFixture();
+  const a = dispute(f); const b = dispute(g, { id: a.event.data.object.id });
+  const results = await Promise.allSettled([receive(a), receive(b)]);
+  assert.equal(results.filter(row => row.status === 'fulfilled').length, 1);
+  assert.equal(results.find(row => row.status === 'rejected').reason.code, 'lead_webhook_dispute_conflict');
+  const refunded = refund(g); await receive(refunded);
+  const collision = dispute(g); collision.event.id = refunded.event.id;
+  await assert.rejects(receive(signEvent(collision.event)), { code: 'lead_webhook_replay_conflict' });
+  assert.equal((await pool.query('SELECT 1 FROM project_access_dispute_bindings WHERE dispute_id=$1', [collision.event.data.object.id])).rowCount, 0);
+});
+
+test('old dispute never touches a replacement purchase or grant', async () => {
+  for (const hasGrant of [false, true]) {
+    const f = await paidFixture();
+    await pool.query("UPDATE project_access_purchases SET status='expired' WHERE id=$1", [f.row.id]);
+    const next = await reserveLeadPurchase(pool, { ...f.request, requestKey: randomUUID() }, policy);
+    const paid = signedEvent(next); await receive(paid); if (hasGrant) await fulfill(paid.event.id);
+    const input = dispute(f); await receive(input);
+    assert.equal((await fulfill(input.event.id)).status, 'review_required');
+    const after = await fulfillmentState(f); assert.equal(after.purchase.status, 'expired');
+    assert.equal(after.grants.length, hasGrant ? 1 : 0);
+    if (hasGrant) { assert.equal(after.grants[0].status, 'paid'); assert.equal(after.grants[0].provider_payment_id, paid.event.data.object.payment_intent); }
+    assert.equal((await getLeadPurchase(pool, f.buyer.id, next.id)).status, hasGrant ? 'paid' : 'pending');
+  }
+});
+
+test('closed project and inactive identities still permit exact dispute suspension', async () => {
+  const f = await paidFixture(); await fulfill(f.input.event.id);
+  await pool.query("UPDATE projects SET status='completed' WHERE id=$1", [f.project.id]);
+  await pool.query('UPDATE users SET is_active=FALSE WHERE id=ANY($1::int[])', [[f.owner.id, f.buyer.id]]);
+  const input = dispute(f); await receive(input); await fulfill(input.event.id);
+  assert.equal((await fulfillmentState(f)).grants[0].status, 'revoked');
+});
+
+test('dispute worker rechecks entitlement binding after an actual lock wait', async () => {
+  const f = await paidFixture(); await fulfill(f.input.event.id); const input = dispute(f); await receive(input);
+  const blocker = await pool.connect(); let pending;
+  try {
+    await blocker.query('BEGIN');
+    await blocker.query("UPDATE project_access_entitlements SET provider_payment_id='pi_replaced' WHERE project_id=$1", [f.project.id]);
+    pending = fulfill(input.event.id).then(value => ({ value }), error => ({ error }));
+    await blocked(blocker); await blocker.query('COMMIT');
+    const result = await pending; assert.ifError(result.error); assert.equal(result.value.outcome, 'entitlement_conflict');
+    assert.equal((await fulfillmentState(f)).grants[0].status, 'paid');
+  } finally { await blocker.query('ROLLBACK'); blocker.release(); if (pending) await pending; }
+});
+
+test('dispute grant, purchase, event and audit writes roll back together on failure', async () => {
+  for (const table of ['project_access_entitlements', 'project_access_purchases', 'project_access_checkout_events', 'audit_events']) {
+    const f = await paidFixture(); await fulfill(f.input.event.id); const input = dispute(f); await receive(input);
+    const before = await fulfillmentState({ ...f, input });
+    await pool.query(`CREATE FUNCTION fail_dispute() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN RAISE EXCEPTION 'synthetic dispute failure'; END $$`);
+    await pool.query(`CREATE TRIGGER fail_dispute BEFORE INSERT OR UPDATE ON ${table} FOR EACH ROW EXECUTE FUNCTION fail_dispute()`);
+    try { await assert.rejects(fulfill(input.event.id), /synthetic dispute failure/); }
+    finally { await pool.query(`DROP TRIGGER fail_dispute ON ${table}`); await pool.query('DROP FUNCTION fail_dispute()'); }
+    assert.deepEqual(await fulfillmentState({ ...f, input }), before);
+    assert.equal((await fulfill(input.event.id)).outcome, 'dispute_observed');
+  }
+});
+
+test('disputes cannot downgrade a full refund and full refund can follow a dispute hold', async () => {
+  for (const first of ['refund', 'dispute']) {
+    const f = await paidFixture(); await fulfill(f.input.event.id);
+    const refunded = refund(f); const disputed = dispute(f); await receive(refunded); await receive(disputed);
+    const ids = first === 'refund' ? [refunded.event.id, disputed.event.id] : [disputed.event.id, refunded.event.id];
+    await fulfill(ids[0]); await fulfill(ids[1]);
+    const closed = structuredClone(disputed.event); closed.id = `evt_${randomUUID().replaceAll('-', '')}`;
+    closed.type = 'charge.dispute.closed'; closed.data.object.status = 'won';
+    await receive(signEvent(closed)); assert.equal((await fulfill(closed.id)).outcome, 'dispute_after_refund');
+    const after = await fulfillmentState(f);
+    assert.equal(after.purchase.status, 'refunded'); assert.equal(after.grants[0].status, 'refunded');
+  }
+});
+
+test('future dispute remains received until due and concurrent retries apply one hold', async () => {
+  const f = await paidFixture(); await fulfill(f.input.event.id);
+  const event = dispute(f).event; event.created += 120; event.data.object.created = event.created;
+  const input = signEvent(event); await receive(input); const before = await fulfillmentState({ ...f, input });
+  await assert.rejects(fulfill(event.id), { code: 'lead_fulfillment_event_not_due' });
+  assert.deepEqual(await fulfillmentState({ ...f, input }), before);
+  const advanced = atDatabaseTime(new Date((event.created + 1) * 1000));
+  const results = await Promise.all([fulfill(event.id, advanced), fulfill(event.id, advanced)]);
+  assert.equal(results.filter(row => !row.duplicate).length, 1);
+  assert.equal((await fulfillmentState(f)).grants[0].status, 'revoked');
+});
+
+test('tampered dispute binding does not revoke access', async () => {
+  const f = await paidFixture(); await fulfill(f.input.event.id); const input = dispute(f); await receive(input);
+  await pool.query('UPDATE project_access_dispute_bindings SET amount_cents=amount_cents-1 WHERE dispute_id=$1', [input.event.data.object.id]);
+  assert.equal((await fulfill(input.event.id)).outcome, 'dispute_binding_mismatch');
+  assert.equal((await fulfillmentState(f)).grants[0].status, 'paid');
+});
+
+test('real local API denies details and new bids after refund or dispute processing', { timeout: 30000 }, async () => {
   const api = require(path.join(snapshot, 'pure-server.cjs'));
   try {
     await api.initStorage(); api.listen(0, '127.0.0.1'); await once(api, 'listening');
@@ -906,13 +1090,14 @@ test('real local API denies details and new bids after signed full or partial re
         ...(body ? { body: JSON.stringify(body) } : {}) });
       return { status: response.status, body: await response.json() };
     }
-    for (const amount of [2500, 500]) {
+    for (const observation of ['full-refund', 'partial-refund', 'dispute']) {
       const f = await paidFixture();
       assert.equal((await request('GET', `/api/projects/${f.project.id}/details`, f.buyer)).status, 404);
       await fulfill(f.input.event.id);
       assert.equal((await request('GET', `/api/projects/${f.project.id}/details`, f.buyer)).status, 200);
       assert.equal((await request('POST', '/api/bids', f.buyer, { project_id: f.project.id, amount: 500, message: 'Synthetic proposal' })).status, 201);
-      const input = refund(f, { amount }); await receive(input); await fulfill(input.event.id);
+      const input = observation === 'dispute' ? dispute(f) : refund(f, { amount: observation === 'full-refund' ? 2500 : 500 });
+      await receive(input); await fulfill(input.event.id);
       const denied = await request('GET', `/api/projects/${f.project.id}/details`, f.buyer);
       assert.equal(denied.status, 404); assert.equal(denied.body.project, undefined);
       const bid = await request('POST', '/api/bids', f.buyer, { project_id: f.project.id, amount: 600 });
