@@ -92,3 +92,19 @@ Remaining gates:
 
 The source/tests are locally implemented and tested. The product is not yet
 deployed or production-ready, and this is not an independent professional audit.
+
+
+## AI agent integration boundary
+
+Founder requirement and execution plan:
+../ai/GCSC-AI-AGENTS-VOICE-SPEC.md.
+
+The application will offer a built-in assistant for both roles and supported
+external-agent connections, including voice conversation and an optional avatar.
+Matching, draft proposals/estimates and conversation-to-project stay off-chain.
+These capabilities are planned; this contract does not implement them.
+
+No mandatory AI/model/voice field is needed in the market ABI for owner-confirmed
+payments. An agent prepares a payment; the contractor remains the signed actor.
+Autonomous spending requires a separately reviewed delegation/budget design and
+is not enabled by an API/MCP credential. Do not grant a model a user's signing key.

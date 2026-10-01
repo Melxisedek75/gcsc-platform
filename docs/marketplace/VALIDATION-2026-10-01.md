@@ -107,3 +107,19 @@ frozen settlement terms, refunds, ABI/schema migration and settlement-provider s
 Then implement the server/UI consumers using claim:<id> and bid:<id> token-transfer
 memos and verified transaction receipts. Real settlement and deployment require their
 separate evidence-backed gates.
+
+
+## Repository/CI follow-up — 2026-10-01 18:16 UTC
+
+GitHub confirms PR #1 remains open/draft at head
+03b6328956a225d6f994e6908b8df8f90ba514dd. The marketplace file is absent from main
+(fetch returned 404). Source changes are pushed to the feature branch, not merged.
+
+GitHub Actions returned startup_failure for runs 36904554122 and 36904457255
+on that head; the latest run returned no jobs. The cause is not established by
+the available evidence. Combined status returned no statuses, which is not PASS.
+The inspected .github/workflows/ci.yml does not run test:contracts; adding a
+contract-specific CI check is a pending integration task.
+
+The new AI/voice specification is documentation only. It does not change the
+contract source, rerun financial transactions or certify a deployed product.
