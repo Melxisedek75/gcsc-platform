@@ -336,6 +336,21 @@ const statements = Object.freeze([
       AND (event_type <> 'charge.dispute.closed' OR dispute_status IN ('won','lost','warning_closed')))
     OR (event_type NOT IN ('charge.dispute.created','charge.dispute.updated','charge.dispute.closed')
       AND dispute_id IS NULL AND dispute_amount_cents IS NULL AND dispute_status IS NULL))`,
+  `CREATE TABLE IF NOT EXISTS project_access_checkout_retries (
+    event_id TEXT PRIMARY KEY REFERENCES project_access_checkout_events(event_id) ON DELETE RESTRICT,
+    attempts SMALLINT NOT NULL DEFAULT 0 CHECK (attempts BETWEEN 0 AND 5),
+    state TEXT NOT NULL DEFAULT 'ready' CHECK (state IN ('ready','parked')),
+    next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    lease_until TIMESTAMPTZ NOT NULL DEFAULT '-infinity'::timestamptz,
+    lease_token UUID,
+    last_error_kind TEXT CHECK (last_error_kind IN ('temporary','not_due','unexpected')),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
+  `ALTER TABLE project_access_checkout_retries ADD COLUMN IF NOT EXISTS lease_token UUID`,
+  `CREATE INDEX IF NOT EXISTS project_access_checkout_events_due
+    ON project_access_checkout_events(provider_created,event_id) WHERE status='received'`,
+  `CREATE INDEX IF NOT EXISTS project_access_checkout_retries_due
+    ON project_access_checkout_retries(next_attempt_at,lease_until) WHERE state='ready'`,
   `CREATE TABLE IF NOT EXISTS job_posting_payments (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,

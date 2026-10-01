@@ -73,6 +73,9 @@ function receive(input, selectedPool = pool) {
 function fulfill(eventId, selectedPool = pool) {
   return require(path.join(snapshot, 'database/lead-checkout-fulfillment.cjs')).fulfillLeadCheckoutEvent(selectedPool, eventId);
 }
+function sweep(options = {}, selectedPool = pool) {
+  return require(path.join(snapshot, 'database/lead-checkout-retry.cjs')).sweepDueLeadCheckoutEvents(selectedPool, options);
+}
 // Advance only the worker's clock read; locks, rows and all writes use real PG.
 function atDatabaseTime(now) {
   return { connect: async () => {
@@ -93,6 +96,12 @@ async function unboundFixture() {
   const f = await fixture();
   const row = await reserveLeadPurchase(pool, f.request, policy);
   return { ...f, row, input: signedEvent(row) };
+}
+async function dueFixture() {
+  const f = await unboundFixture();
+  const input = signedEvent(f.row, { created: Math.floor(new Date(f.row.created_at).getTime() / 1000) });
+  await receive(input);
+  return { ...f, input };
 }
 function refund(f, overrides = {}) {
   const created = providerTime(f.row);
@@ -1288,6 +1297,168 @@ test('quarantine never assumes an unknown observation fits the later quote or be
     assert.equal((await pool.query('SELECT provider_payment_id FROM project_access_entitlements WHERE project_id=$1 AND contractor_id=$2',
       [f.project.id, f.buyer.id])).rows[0].provider_payment_id, paid.event.data.object.payment_intent);
   }
+});
+
+test('bounded sweep processes only selected due inbox facts and never grants from a future fact', async () => {
+  const fixtures = await Promise.all(Array.from({ length: 3 }, () => dueFixture()));
+  const ids = fixtures.map(f => f.input.event.id);
+  const first = await sweep({ limit: 2, eventIds: ids });
+  assert.deepEqual(first, { considered: 2, processed: 2, reviewRequired: 0, retried: 0, parked: 0, skipped: 0 });
+  const states = await Promise.all(fixtures.map(fulfillmentState));
+  assert.equal(states.filter(state => state.grants.length === 1).length, 2);
+  assert.equal((await pool.query(`SELECT COUNT(*)::int AS count FROM project_access_checkout_events
+    WHERE event_id=ANY($1::text[]) AND status='received'`, [ids])).rows[0].count, 1);
+  assert.equal((await sweep({ limit: 2, eventIds: ids })).processed, 1);
+  assert.equal((await sweep({ limit: 2, eventIds: ids })).considered, 0);
+
+  const f = await unboundFixture();
+  const now = Math.floor(new Date((await pool.query('SELECT clock_timestamp() AS now')).rows[0].now).getTime() / 1000);
+  const input = signedEvent(f.row, { created: now + 2 }); await receive(input);
+  assert.equal((await sweep({ eventIds: [input.event.id] })).considered, 0);
+  assert.equal((await fulfillmentState(f)).grants.length, 0);
+  await pool.query('SELECT pg_sleep(2.1)');
+  assert.equal((await sweep({ eventIds: [input.event.id] })).processed, 1);
+  assert.equal((await fulfillmentState(f)).grants[0].status, 'paid');
+});
+
+test('two concurrent sweeps claim one event and make one paid grant', async () => {
+  const f = await dueFixture();
+  const runs = await Promise.all(Array.from({ length: 2 }, () => sweep({ eventIds: [f.input.event.id] })));
+  assert.equal(runs.reduce((n, row) => n + row.processed, 0), 1);
+  assert.equal((await fulfillmentState(f)).grants.length, 1);
+  assert.equal((await fulfillmentState(f)).audits.length, 1);
+});
+
+test('a future refund already in the inbox prevents an earlier paid sweep from granting', async () => {
+  const f = await dueFixture();
+  const current = Math.floor(new Date((await pool.query('SELECT clock_timestamp() AS now')).rows[0].now).getTime() / 1000);
+  const event = refund(f).event; event.created = current + 2; event.data.object.created = event.created;
+  const negative = signEvent(event); await receive(negative);
+  const paid = await sweep({ eventIds: [f.input.event.id] });
+  assert.equal(paid.reviewRequired, 1);
+  assert.equal((await fulfillmentState(f)).grants.length, 0);
+  assert.equal((await sweep({ eventIds: [negative.event.id] })).considered, 0);
+  await pool.query('SELECT pg_sleep(2.1)');
+  const refunded = await sweep({ eventIds: [negative.event.id] });
+  assert.equal(refunded.processed, 1);
+  assert.equal((await fulfillmentState(f)).grants[0].status, 'refunded');
+  assert.equal((await fulfillmentState(f)).purchase.status, 'refunded');
+});
+
+test('transient worker failure rolls back grant, records backoff and succeeds on a later sweep', async () => {
+  const f = await dueFixture();
+  await pool.query(`CREATE FUNCTION fail_lead_retry() RETURNS trigger LANGUAGE plpgsql AS $$
+    BEGIN RAISE EXCEPTION 'synthetic retryable failure' USING ERRCODE='40001'; END $$`);
+  await pool.query('CREATE TRIGGER fail_lead_retry BEFORE INSERT ON audit_events FOR EACH ROW EXECUTE FUNCTION fail_lead_retry()');
+  try {
+    assert.equal((await sweep({ eventIds: [f.input.event.id] })).retried, 1);
+    const state = await fulfillmentState(f);
+    assert.equal(state.purchase.status, 'pending'); assert.equal(state.grants.length, 0);
+    const retry = (await pool.query('SELECT * FROM project_access_checkout_retries WHERE event_id=$1', [f.input.event.id])).rows[0];
+    assert.equal(retry.attempts, 1); assert.equal(retry.state, 'ready');
+    assert.equal(retry.last_error_kind, 'temporary');
+    assert.doesNotMatch(JSON.stringify(retry), /synthetic retryable failure/);
+    assert.ok(new Date(retry.next_attempt_at).getTime() > Date.now());
+    assert.equal((await sweep({ eventIds: [f.input.event.id] })).considered, 0);
+  } finally {
+    await pool.query('DROP TRIGGER fail_lead_retry ON audit_events');
+    await pool.query('DROP FUNCTION fail_lead_retry()');
+  }
+  await pool.query("UPDATE project_access_checkout_retries SET next_attempt_at=NOW()-INTERVAL '1 second' WHERE event_id=$1", [f.input.event.id]);
+  assert.equal((await sweep({ eventIds: [f.input.event.id] })).processed, 1);
+  assert.equal((await fulfillmentState(f)).grants[0].status, 'paid');
+  assert.equal((await pool.query('SELECT 1 FROM project_access_checkout_retries WHERE event_id=$1', [f.input.event.id])).rowCount, 0);
+});
+
+test('unexpected failure parks without granting and a repeated temporary failure has a finite attempt cap', async () => {
+  for (const code of ['P0001', '40001']) {
+    const f = await dueFixture();
+    await pool.query(`CREATE FUNCTION fail_lead_retry() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN RAISE EXCEPTION 'synthetic worker failure' USING ERRCODE='${code}'; END $$`);
+    await pool.query('CREATE TRIGGER fail_lead_retry BEFORE INSERT ON audit_events FOR EACH ROW EXECUTE FUNCTION fail_lead_retry()');
+    try {
+      const attempts = code === '40001' ? 5 : 1;
+      for (let i = 0; i < attempts; i++) {
+        const result = await sweep({ eventIds: [f.input.event.id] });
+        assert.equal(code === '40001' ? result.retried + result.parked : result.parked, 1);
+        await pool.query("UPDATE project_access_checkout_retries SET next_attempt_at=NOW()-INTERVAL '1 second' WHERE event_id=$1", [f.input.event.id]);
+      }
+      const retry = (await pool.query('SELECT attempts,state,last_error_kind FROM project_access_checkout_retries WHERE event_id=$1',
+        [f.input.event.id])).rows[0];
+      assert.equal(retry.attempts, attempts); assert.equal(retry.state, 'parked');
+      assert.equal(retry.last_error_kind, code === '40001' ? 'temporary' : 'unexpected');
+      assert.equal((await sweep({ eventIds: [f.input.event.id] })).considered, 0);
+      assert.equal((await fulfillmentState(f)).grants.length, 0);
+    } finally {
+      await pool.query('DROP TRIGGER fail_lead_retry ON audit_events');
+      await pool.query('DROP FUNCTION fail_lead_retry()');
+    }
+  }
+});
+
+test('an abandoned lease survives reconnect and becomes claimable only after expiry', async () => {
+  const f = await dueFixture();
+  await pool.query(`INSERT INTO project_access_checkout_retries (event_id,lease_until)
+    VALUES ($1,clock_timestamp()+INTERVAL '1 minute')`, [f.input.event.id]);
+  const reopened = new Pool({ connectionString: databaseUrl });
+  try {
+    assert.equal((await sweep({ eventIds: [f.input.event.id] }, reopened)).considered, 0);
+    await pool.query("UPDATE project_access_checkout_retries SET lease_until=NOW()-INTERVAL '1 second' WHERE event_id=$1", [f.input.event.id]);
+    assert.equal((await sweep({ eventIds: [f.input.event.id] }, reopened)).processed, 1);
+  } finally { await reopened.end(); }
+  assert.equal((await fulfillmentState(f)).grants[0].status, 'paid');
+});
+
+test('an expired worker cannot record failure against a newer lease', async () => {
+  const f = await dueFixture();
+  let enteredFirst, enteredSecond, releaseFirst, releaseSecond;
+  const firstEntered = new Promise(resolve => { enteredFirst = resolve; });
+  const secondEntered = new Promise(resolve => { enteredSecond = resolve; });
+  const firstHold = new Promise(resolve => { releaseFirst = resolve; });
+  const secondHold = new Promise(resolve => { releaseSecond = resolve; });
+  const firstPool = { query: (...args) => pool.query(...args), connect: async () => {
+    enteredFirst(); await firstHold;
+    throw Object.assign(new Error('synthetic stale worker'), { code: '40001' });
+  } };
+  const secondPool = { query: (...args) => pool.query(...args), connect: async () => {
+    enteredSecond(); await secondHold;
+    return pool.connect();
+  } };
+  let first, second;
+  try {
+    first = sweep({ eventIds: [f.input.event.id] }, firstPool);
+    await firstEntered;
+    await pool.query("UPDATE project_access_checkout_retries SET lease_until=NOW()-INTERVAL '1 second' WHERE event_id=$1", [f.input.event.id]);
+    second = sweep({ eventIds: [f.input.event.id] }, secondPool);
+    await secondEntered;
+    releaseFirst();
+    assert.equal((await first).skipped, 1);
+    const claimed = (await pool.query('SELECT attempts,state FROM project_access_checkout_retries WHERE event_id=$1', [f.input.event.id])).rows[0];
+    assert.equal(claimed.attempts, 0); assert.equal(claimed.state, 'ready');
+  } finally {
+    releaseFirst(); releaseSecond();
+    if (first) await first;
+    if (second) await second;
+  }
+  assert.equal((await fulfillmentState(f)).grants[0].status, 'paid');
+});
+
+test('lost fulfillment COMMIT acknowledgement does not count as a failed retry', async () => {
+  const f = await dueFixture();
+  const lostAckPool = { query: (...args) => pool.query(...args), connect: async () => {
+    const client = await pool.connect();
+    return { release: error => client.release(error), query: async (sql, ...args) => {
+      const result = await client.query(sql, ...args);
+      if (sql === 'COMMIT') throw new Error('synthetic lost fulfillment acknowledgement');
+      return result;
+    } };
+  } };
+  assert.equal((await sweep({ eventIds: [f.input.event.id] }, lostAckPool)).skipped, 1);
+  const state = await fulfillmentState(f);
+  assert.equal(state.purchase.status, 'paid'); assert.equal(state.grants.length, 1);
+  assert.equal(state.audits.length, 1);
+  assert.equal((await pool.query('SELECT 1 FROM project_access_checkout_retries WHERE event_id=$1', [f.input.event.id])).rowCount, 0);
+  assert.equal((await sweep({ eventIds: [f.input.event.id] })).considered, 0);
 });
 
 test('real local API denies details and new bids after refund or dispute processing', { timeout: 30000 }, async () => {
