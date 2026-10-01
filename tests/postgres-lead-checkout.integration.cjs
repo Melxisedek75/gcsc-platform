@@ -1453,6 +1453,64 @@ test('promotion refuses a refund ID already bound to another purchase', async ()
     [negative.event.data.object.id])).rows[0].purchase_id, other.row.id);
 });
 
+test('a late quarantined negative fact atomically holds only its already-paid entitlement', async () => {
+  for (const make of [refund, dispute]) {
+    const f = await paidFixture(); const unrelated = await paidFixture();
+    await fulfill(f.input.event.id); await fulfill(unrelated.input.event.id);
+    const negative = make(f);
+    const staleLookup = { connect: async () => {
+      const client = await pool.connect();
+      return { release: error => client.release(error), query: (sql, ...args) =>
+        sql.includes('SELECT purchase_id FROM project_access_checkout_bindings WHERE payment_intent_id=$1')
+          ? { rows: [], rowCount: 0 } : client.query(sql, ...args) };
+    } };
+    assert.equal((await receive(negative, staleLookup)).status, 'unbound');
+    assert.equal((await fulfillmentState(f)).grants[0].status, 'paid');
+    assert.equal((await reconcile(negative.event.id)).status, 'promoted_held');
+    assert.equal((await fulfillmentState(f)).grants[0].status, 'revoked');
+    assert.equal((await fulfillmentState(f)).purchase.status, 'review_required');
+    assert.equal((await fulfillmentState(unrelated)).grants[0].status, 'paid');
+    assert.equal((await pool.query('SELECT 1 FROM project_access_unbound_events WHERE event_id=$1', [negative.event.id])).rowCount, 0);
+    assert.equal((await pool.query('SELECT status FROM project_access_checkout_events WHERE event_id=$1', [negative.event.id])).rows[0].status, 'received');
+    assert.equal((await fulfill(negative.event.id)).outcome, make === refund ? 'refund_observed' : 'dispute_observed');
+    assert.equal((await fulfillmentState(f)).grants[0].status, make === refund ? 'refunded' : 'revoked');
+  }
+});
+
+test('late negative hold rolls back with audit failure and can be retried once', async () => {
+  const f = await paidFixture(); await fulfill(f.input.event.id);
+  const negative = refund(f);
+  const staleLookup = { connect: async () => {
+    const client = await pool.connect();
+    return { release: error => client.release(error), query: (sql, ...args) =>
+      sql.includes('SELECT purchase_id FROM project_access_checkout_bindings WHERE payment_intent_id=$1')
+        ? { rows: [], rowCount: 0 } : client.query(sql, ...args) };
+  } };
+  await receive(negative, staleLookup);
+  await pool.query(`CREATE FUNCTION fail_late_lead_hold() RETURNS trigger LANGUAGE plpgsql AS $$
+    BEGIN IF NEW.action='lead_checkout.quarantine_promoted' THEN
+      RAISE EXCEPTION 'synthetic hold audit failure' USING ERRCODE='P0001'; END IF;
+      RETURN NEW; END $$`);
+  await pool.query('CREATE TRIGGER fail_late_lead_hold BEFORE INSERT ON audit_events FOR EACH ROW EXECUTE FUNCTION fail_late_lead_hold()');
+  try {
+    await assert.rejects(reconcile(negative.event.id), { code: 'P0001' });
+    assert.equal((await fulfillmentState(f)).purchase.status, 'paid');
+    assert.equal((await fulfillmentState(f)).grants[0].status, 'paid');
+    assert.equal((await pool.query('SELECT 1 FROM project_access_unbound_events WHERE event_id=$1', [negative.event.id])).rowCount, 1);
+    assert.equal((await pool.query('SELECT 1 FROM project_access_checkout_events WHERE event_id=$1', [negative.event.id])).rowCount, 0);
+  } finally {
+    await pool.query('DROP TRIGGER fail_late_lead_hold ON audit_events');
+    await pool.query('DROP FUNCTION fail_late_lead_hold()');
+  }
+  const results = await Promise.all(Array.from({ length: 4 }, () => reconcile(negative.event.id)));
+  assert.equal(results.filter(result => result.status === 'promoted_held').length, 1);
+  assert.equal(results.filter(result => result.status === 'already_promoted').length, 3);
+  assert.equal((await fulfillmentState(f)).purchase.status, 'review_required');
+  assert.equal((await fulfillmentState(f)).grants[0].status, 'revoked');
+  assert.equal((await pool.query("SELECT COUNT(*)::int AS n FROM audit_events WHERE action='lead_checkout.quarantine_promoted' AND metadata->>'event_id'=$1",
+    [negative.event.id])).rows[0].n, 1);
+});
+
 test('bounded sweep processes only selected due inbox facts and never grants from a future fact', async () => {
   const fixtures = await Promise.all(Array.from({ length: 3 }, () => dueFixture()));
   const ids = fixtures.map(f => f.input.event.id);
@@ -1642,14 +1700,26 @@ test('real local API denies details and new bids after refund or dispute process
         ...(body ? { body: JSON.stringify(body) } : {}) });
       return { status: response.status, body: await response.json() };
     }
-    for (const observation of ['full-refund', 'partial-refund', 'dispute']) {
+    for (const observation of ['full-refund', 'partial-refund', 'dispute', 'late-unbound-hold']) {
       const f = await paidFixture();
       assert.equal((await request('GET', `/api/projects/${f.project.id}/details`, f.buyer)).status, 404);
       await fulfill(f.input.event.id);
       assert.equal((await request('GET', `/api/projects/${f.project.id}/details`, f.buyer)).status, 200);
       assert.equal((await request('POST', '/api/bids', f.buyer, { project_id: f.project.id, amount: 500, message: 'Synthetic proposal' })).status, 201);
-      const input = observation === 'dispute' ? dispute(f) : refund(f, { amount: observation === 'full-refund' ? 2500 : 500 });
-      await receive(input); await fulfill(input.event.id);
+      const input = observation === 'dispute' ? dispute(f)
+        : refund(f, { amount: ['full-refund', 'late-unbound-hold'].includes(observation) ? 2500 : 500 });
+      if (observation === 'late-unbound-hold') {
+        const staleLookup = { connect: async () => {
+          const client = await pool.connect();
+          return { release: error => client.release(error), query: (sql, ...args) =>
+            sql.includes('SELECT purchase_id FROM project_access_checkout_bindings WHERE payment_intent_id=$1')
+              ? { rows: [], rowCount: 0 } : client.query(sql, ...args) };
+        } };
+        assert.equal((await receive(input, staleLookup)).status, 'unbound');
+        assert.equal((await reconcile(input.event.id)).status, 'promoted_held');
+      } else {
+        await receive(input); await fulfill(input.event.id);
+      }
       const denied = await request('GET', `/api/projects/${f.project.id}/details`, f.buyer);
       assert.equal(denied.status, 404); assert.equal(denied.body.project, undefined);
       const bid = await request('POST', '/api/bids', f.buyer, { project_id: f.project.id, amount: 600 });
