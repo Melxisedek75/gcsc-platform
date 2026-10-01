@@ -368,6 +368,19 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   baseline39/39. Все test/PG exits0; хеши source между review/receiving совпали.
   Это не разрешение на live-обработку. Quarantine promotion, held-purchase
   reconciliation и оставшиеся L11/L12 gates открыты; `LEAD-RETRY-REVIEW.md`.
+  Срез 1 октября UTC `1bcd894f` + test-only `af6c9409`: явная локальная
+  транзакция переносит подписанный test refund/dispute из quarantine только
+  когда точная PI-привязка указывает на уже удержанную покупку и её signed
+  paid event подтверждает quote/время. Audit и перенос атомарны; metadata
+  другой покупки не имеет силы. Ни grant, ни provider/HTTP/scheduler вызова.
+  После исходного RED missing module (`PIuoNL`) и проверки ID сессии
+  (`DxQOe8`) parent PG98/98 (`XvoMjl`), reviewer98/98 (`mE0jkg`) APPROVED.
+  Четыре отмеченных reviewer пробела закрыты test-only `af6c9409`:
+  parent101/101 (`yJjWQC`), reviewer101/101 (`eZUj8X`) APPROVED, receiving
+  101/101 (`g5NIGA`), focused39/39. Baseline39/39, API301/301 и root/static0;
+  все test/PG exits0, исходные хеши совпали. Активный grant, несоответствие
+  quote/времени и не удержанные покупки остаются в quarantine для отдельной
+  сверки. L11/L12 НЕ закрыты; `LEAD-RECONCILIATION-REVIEW.md`.
 - [ ] **L13 / web + QA.** Чёткая цена, состояние оплаты, ожидание подтверждения,
   квитанция, отмена, ошибка, повтор без второго списания и обращение в
   поддержку. Сначала Stripe test mode end-to-end; live только после L10-L12,

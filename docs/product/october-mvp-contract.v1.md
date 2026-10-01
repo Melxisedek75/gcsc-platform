@@ -402,6 +402,19 @@ facts need an audited manual decision; no automatic replay of quarantined facts
 or access restoration is implied. L11/L12 and live gates remain open. Evidence:
 `../migration/LEAD-RETRY-REVIEW.md`.
 
+## Local held-purchase reconciliation, 2026-10-01 UTC
+
+Independently reviewed `1bcd894f` plus test-only `af6c9409` allow an explicit,
+audited local transfer of a signed test refund/dispute fact from quarantine to
+the bound inbox, but only after the exact PI binding and an already held paid
+event prove the same purchase, quote and causal time. The move is atomic with
+the object binding and audit, preserves the signed digest and original receive
+time, and never chooses a purchase from metadata. It does not grant, revoke or
+restore access itself; the existing fulfillment worker must process the fact
+separately. Mismatches and an existing grant remain quarantined for manual
+resolution. The function is dormant, with no HTTP, scheduler or provider IO.
+Evidence: `../migration/LEAD-RECONCILIATION-REVIEW.md`.
+
 ## Founder decisions before live payments
 
 1. Exact fixed USD access price and tax/receipt presentation.

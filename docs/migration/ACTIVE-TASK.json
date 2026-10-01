@@ -1,6 +1,6 @@
 {
   "task": "october-launch-mvp-and-marketing",
-  "status": "L12_BOUND_RETRY_REVIEWED_REMAINING_GATES_OPEN",
+  "status": "L12_HELD_RECONCILIATION_REVIEWED_REMAINING_GATES_OPEN",
   "owner": "019e7c87-8410-79f1-b86a-eedf78a1aa27",
   "worktree": "C:/gcsc-platform/.worktrees/publication",
   "branch": "codex/monorepo-publication",
@@ -13,10 +13,20 @@
   ],
   "leaseUntil": null,
   "baseCommit": "a0834ac7917c3de57ebc02fb542814561469bca2",
-  "candidateCommit": "e98c08391cbd109d62add6d8abd8efd24a9b4110",
-  "review": "Independent reviewer 01a0edd5-92a1-7b42-ac8f-88094d6f5637 APPROVED exact a10f9144..e98c0839 dormant bound-inbox retry after P2 connection-reset repair. Own focused37/37, root37+12+11/static0, PostgreSQL93/93 Lp1VBU test/PG0. No confirmed unresolved P1-P3; reviewer closed. No full L11/L12/MVP/provider/production approval.",
-  "result": "Local publication e98c0839 adds only an explicitly invoked bounded sweep of due bound received signed-test inbox events, with durable lease, UUID fencing, capped backoff and manual parked state. It delegates all grant/refund/dispute changes to the existing atomic worker; no scheduler/HTTP/provider IO. Parent PG93/93 KZkCQx, independent93/93 Lp1VBU, receiving93/93 DZdIOa; focused37/37, root/static0, baseline39/39, API301/301. Ten API/database source hashes agree between reviewer and receiving. Earlier RED lease and recovered-connection failures and a preliminary WebAuth test timeout were retained, not counted PASS. No real payment, push or deploy.",
-  "next": "Continue dependency-ready local L12 from reviewed e98c0839: evidence-driven unknown-PI quarantine promotion and held-purchase reconciliation. Quarantine replay remains unbound even after binding; do not choose a purchase by metadata, infer revocation, or automatically regrant won/closed disputes. All future inbox writers must share event-ID lock/check both tables and preserve purchase/PI lock order. No summing partial refunds or card-only expansion. Remaining refund lifecycle, authenticated bounded HTTP/private purchase DTO, SDK timeout recovery and separately authorized test-provider/browser acceptance follow. Parent checkout is free; check ownership and base a new scoped codex branch on publication. L10 commercial/contact/provider decisions, live activation and legacy escrow remain separate gates.",
+  "candidateCommit": "af6c9409b8ce035120c56911e384f76ccdf343dc",
+  "review": "Independent reviewer 01a0edd5-92a1-7b42-ac8f-88094d6f5637 APPROVED exact 45156d25..1bcd894f dormant held-purchase reconciliation (own focused39/39, root/static0, PG98/98 mE0jkg) and separately APPROVED test-only 1bcd894f..af6c9409 (own focused39/39, PG101/101 eZUj8X). No confirmed P1-P3. No full L11/L12/provider/production approval.",
+  "result": "Local publication af6c9409 contains an explicit audited transaction moving a signed test negative observation from quarantine to bound inbox only for an exact later PI binding and already held signed paid fact with matching quote/time and no current grant. It does not itself fulfill, grant, revoke or restore access; no scheduler/HTTP/provider IO. Parent PG98/98 XvoMjl then101/101 yJjWQC; independent98/98 mE0jkg then101/101 eZUj8X; receiving98/98 bqX52D then101/101 g5NIGA, all test/PG0. Focused39/39, root/static0, baseline39/39, API301/301. Eleven API/database hashes and final test hash agree between reviewer and receiving. No real payment, push or deploy.",
+  "next": "Continue local L12: design and test separate resolution for negative facts arriving after an existing grant, plus mismatched/superseded purchases and multi-event lifecycle. Do not infer current provider settlement, choose a purchase from metadata, automatically restore won/closed disputes, sum partial refunds or activate payment endpoints. Explicit held-purchase promotion remains dormant and does not invoke fulfillment. Private authenticated HTTP purchase DTO, provider timeout recovery and separately authorized test-provider/browser acceptance follow. Parent source checkout is free after ownership check. L10 commercial/contact/provider decisions, live activation and legacy escrow remain separate gates.",
+  "leadReconciliation": {
+    "worktree": "C:/gcsc-platform/.worktrees/legacy-preservation",
+    "branch": "codex/lead-quarantine-reconcile-20261001",
+    "baseCommit": "45156d25838b92fb11ab89e8efb27e6992bea9f8",
+    "candidateCommit": "af6c9409b8ce035120c56911e384f76ccdf343dc",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "review": "Independent reviewer 01a0edd5-92a1-7b42-ac8f-88094d6f5637 APPROVED exact source1bcd894f and test-only af6c9409. Reviewer PG98/98 mE0jkg then101/101 eZUj8X; no confirmed findings.",
+    "checks": "Initial RED missing module PIuoNL and fixture mismatch DxQOe8; final parent PG98/98 XvoMjl then101/101 yJjWQC. Focused39/39, root/static0, baseline39/39 WIkjCO, API301/301. Receiving PG98/98 bqX52D then101/101 g5NIGA; eleven source hashes and final test hash match reviewer.",
+    "next": "Active-grant and mismatch lifecycle remain manual, no auto grant/revocation, HTTP/provider IO or release approval; see LEAD-RECONCILIATION-REVIEW.md."
+  },
   "leadRetry": {
     "worktree": "C:/gcsc-platform/.worktrees/legacy-preservation",
     "branch": "codex/lead-retry-20261001",
