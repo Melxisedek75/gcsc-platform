@@ -262,6 +262,31 @@ const statements = Object.freeze([
     provider_created BIGINT NOT NULL CHECK (provider_created > 0),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
+  `CREATE TABLE IF NOT EXISTS project_access_unbound_events (
+    event_id TEXT PRIMARY KEY CHECK (event_id ~ '^evt_[a-zA-Z0-9]{1,251}$'),
+    event_type TEXT NOT NULL CHECK (event_type IN ('refund.created','refund.updated',
+      'charge.dispute.created','charge.dispute.updated','charge.dispute.closed')),
+    provider_mode TEXT NOT NULL DEFAULT 'test' CHECK (provider_mode='test'),
+    api_version TEXT NOT NULL,
+    provider_created BIGINT NOT NULL CHECK (provider_created > 0),
+    payload_sha256 TEXT NOT NULL CHECK (payload_sha256 ~ '^[a-f0-9]{64}$'),
+    payment_intent_id TEXT NOT NULL CHECK (payment_intent_id ~ '^pi_[a-zA-Z0-9]{1,252}$'),
+    object_id TEXT NOT NULL,
+    charge_id TEXT NOT NULL CHECK (charge_id ~ '^ch_[a-zA-Z0-9]{1,252}$'),
+    amount_cents INTEGER NOT NULL CHECK (amount_cents > 0 AND amount_cents <= 100000000),
+    currency TEXT NOT NULL CHECK (currency='usd'),
+    object_created BIGINT NOT NULL CHECK (object_created > 0 AND object_created <= provider_created),
+    dispute_status TEXT,
+    received_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CHECK ((event_type IN ('refund.created','refund.updated')
+        AND object_id ~ '^re_[a-zA-Z0-9]{1,252}$' AND dispute_status IS NULL)
+      OR (event_type IN ('charge.dispute.created','charge.dispute.updated','charge.dispute.closed')
+        AND object_id ~ '^du_[a-zA-Z0-9]{1,252}$' AND dispute_status IS NOT NULL
+        AND dispute_status IN ('needs_response','under_review','won','lost','warning_needs_response','warning_under_review','warning_closed')
+        AND (event_type <> 'charge.dispute.closed' OR dispute_status IN ('won','lost','warning_closed'))))
+  )`,
+  `CREATE INDEX IF NOT EXISTS project_access_unbound_events_intent
+    ON project_access_unbound_events(payment_intent_id)`,
   `CREATE TABLE IF NOT EXISTS project_access_checkout_events (
     event_id TEXT PRIMARY KEY CHECK (event_id ~ '^evt_[a-zA-Z0-9]{1,251}$'),
     purchase_id UUID NOT NULL REFERENCES project_access_purchases(id) ON DELETE RESTRICT,

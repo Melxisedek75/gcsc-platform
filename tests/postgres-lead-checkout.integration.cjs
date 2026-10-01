@@ -86,6 +86,11 @@ async function paidFixture() {
   await receive(input);
   return { ...f, row, input };
 }
+async function unboundFixture() {
+  const f = await fixture();
+  const row = await reserveLeadPurchase(pool, f.request, policy);
+  return { ...f, row, input: signedEvent(row) };
+}
 function refund(f, overrides = {}) {
   const created = Math.floor(Date.now() / 1000);
   return signEvent({ id: `evt_${randomUUID().replaceAll('-', '')}`, object: 'event',
@@ -803,10 +808,10 @@ test('concurrent identical refund deliveries and different event IDs for the sam
   await assert.rejects(receive(signEvent(changed)), { code: 'lead_webhook_refund_conflict' });
 });
 
-test('refund cannot select purchase using metadata, unknown PI, wrong quote or pre-purchase timestamp', async () => {
+test('known-PI refund cannot select purchase using metadata, wrong quote or pre-purchase timestamp', async () => {
   const f = await paidFixture(); await fulfill(f.input.event.id);
   const g = await paidFixture(); await fulfill(g.input.event.id);
-  for (const delta of [{ payment_intent: 'pi_unknown' }, { amount: 2501 },
+  for (const delta of [{ amount: 2501 },
     { created: Math.floor(new Date(f.row.created_at).getTime() / 1000) - 1 }]) {
     await assert.rejects(receive(refund(f, delta)), { code: 'lead_webhook_refund_mismatch' });
   }
@@ -967,9 +972,9 @@ test('concurrent identical dispute deliveries and fulfillment create one hold an
   assert.equal((await fulfillmentState(f)).audits.length, 2);
 });
 
-test('dispute metadata has no authority and wrong PI, amount or creation time cannot bind', async () => {
+test('known-PI dispute metadata has no authority and wrong amount or creation time cannot bind', async () => {
   const f = await paidFixture(); const g = await paidFixture();
-  for (const delta of [{ payment_intent: 'pi_unknown' }, { amount: 2501 },
+  for (const delta of [{ amount: 2501 },
     { created: Math.floor(new Date(f.row.created_at).getTime() / 1000) - 1 }]) {
     await assert.rejects(receive(dispute(f, delta)), { code: 'lead_webhook_dispute_mismatch' });
   }
@@ -1077,6 +1082,191 @@ test('tampered dispute binding does not revoke access', async () => {
   await pool.query('UPDATE project_access_dispute_bindings SET amount_cents=amount_cents-1 WHERE dispute_id=$1', [input.event.data.object.id]);
   assert.equal((await fulfill(input.event.id)).outcome, 'dispute_binding_mismatch');
   assert.equal((await fulfillmentState(f)).grants[0].status, 'paid');
+});
+
+test('unknown-PI negative observations persist only allowlisted facts and survive reconnect and migration', async () => {
+  for (const make of [refund, dispute]) {
+    const f = await unboundFixture(); const input = make(f);
+    const before = await fulfillmentState(f);
+    assert.deepEqual(await receive(input), { eventId: input.event.id, status: 'unbound', duplicate: false });
+    assert.deepEqual(await fulfillmentState(f), before);
+    assert.equal((await pool.query('SELECT 1 FROM project_access_checkout_bindings WHERE purchase_id=$1', [f.row.id])).rowCount, 0);
+    assert.equal((await pool.query('SELECT 1 FROM project_access_checkout_events WHERE event_id=$1', [input.event.id])).rowCount, 0);
+    const stored = (await pool.query('SELECT * FROM project_access_unbound_events WHERE event_id=$1', [input.event.id])).rows[0];
+    assert.deepEqual(Object.keys(stored).sort(), ['event_id', 'event_type', 'provider_mode', 'api_version', 'provider_created',
+      'payload_sha256', 'payment_intent_id', 'object_id', 'charge_id', 'amount_cents', 'currency', 'object_created',
+      'dispute_status', 'received_at'].sort());
+    assert.equal(stored.payment_intent_id, input.event.data.object.payment_intent);
+    assert.equal(stored.object_id, input.event.data.object.id);
+    assert.equal(stored.provider_mode, 'test'); assert.equal(stored.amount_cents, 2500);
+    assert.doesNotMatch(JSON.stringify(stored), /do-not-store|private@example|instructions_email|evidence|metadata|purchase_id/);
+    await assert.rejects(fulfill(input.event.id), { code: 'lead_fulfillment_event_missing' });
+    const reopened = new Pool({ connectionString: databaseUrl });
+    try {
+      await migrateSchema(reopened);
+      assert.deepEqual((await reopened.query('SELECT * FROM project_access_unbound_events WHERE event_id=$1', [input.event.id])).rows[0], stored);
+      assert.deepEqual(await receive(input, reopened), { eventId: input.event.id, status: 'unbound', duplicate: true });
+    } finally { await reopened.end(); }
+  }
+});
+
+test('six concurrent unbound deliveries persist once and changed raw bytes conflict', async () => {
+  for (const make of [refund, dispute]) {
+    const f = await unboundFixture(); const input = make(f);
+    const receipts = await Promise.all(Array.from({ length: 6 }, () => receive(input)));
+    assert.equal(receipts.filter(row => !row.duplicate).length, 1);
+    assert.equal(receipts.every(row => row.status === 'unbound'), true);
+    assert.equal((await pool.query('SELECT 1 FROM project_access_unbound_events WHERE event_id=$1', [input.event.id])).rowCount, 1);
+    for (const changed of [signEvent(input.event, true), signEvent({ ...input.event, data: { object: {
+      ...input.event.data.object, payment_intent: 'pi_otherunbound', amount: 1200 } } })]) {
+      await assert.rejects(receive(changed), { code: 'lead_webhook_replay_conflict' });
+    }
+  }
+});
+
+test('unbound delivery ignores purchase metadata and blocks only its later-bound PI without automatic promotion', async () => {
+  for (const make of [refund, dispute]) {
+    const f = await unboundFixture(); const g = await paidFixture();
+    const negative = make(f, { metadata: { purchase_id: g.row.id, contractor_id: String(g.buyer.id), purpose: 'project_access_v1' } });
+    await receive(negative); await receive(f.input);
+    assert.equal((await fulfill(g.input.event.id)).outcome, 'paid_granted');
+    const beforeReplay = (await pool.query('SELECT * FROM project_access_unbound_events WHERE event_id=$1', [negative.event.id])).rows[0];
+    assert.deepEqual(await receive(negative), { eventId: negative.event.id, status: 'unbound', duplicate: true });
+    assert.deepEqual((await pool.query('SELECT * FROM project_access_unbound_events WHERE event_id=$1', [negative.event.id])).rows[0], beforeReplay);
+    assert.equal((await fulfill(f.input.event.id)).outcome, 'unbound_negative_event');
+    assert.equal((await fulfillmentState(f)).purchase.status, 'review_required');
+    assert.equal((await fulfillmentState(f)).grants.length, 0);
+    assert.equal((await fulfillmentState(g)).grants[0].status, 'paid');
+    assert.equal((await pool.query('SELECT 1 FROM project_access_checkout_events WHERE event_id=$1', [negative.event.id])).rowCount, 0);
+  }
+});
+
+test('global event-ID collisions between quarantine and inbox reject in both orders and concurrently', async () => {
+  for (const order of ['unbound-first', 'bound-first', 'concurrent']) {
+    const f = await unboundFixture(); const g = await unboundFixture();
+    const negative = refund(f); const paid = signEvent({ ...g.input.event, id: negative.event.id });
+    if (order === 'unbound-first') {
+      await receive(negative);
+      await assert.rejects(receive(paid), { code: 'lead_webhook_replay_conflict' });
+    } else if (order === 'bound-first') {
+      await receive(paid);
+      await assert.rejects(receive(negative), { code: 'lead_webhook_replay_conflict' });
+    } else {
+      const outcomes = await Promise.allSettled([receive(negative), receive(paid)]);
+      assert.equal(outcomes.filter(row => row.status === 'fulfilled').length, 1);
+      assert.equal(outcomes.find(row => row.status === 'rejected').reason.code, 'lead_webhook_replay_conflict');
+    }
+    const quarantine = (await pool.query('SELECT 1 FROM project_access_unbound_events WHERE event_id=$1', [negative.event.id])).rowCount;
+    const inbox = (await pool.query('SELECT 1 FROM project_access_checkout_events WHERE event_id=$1', [negative.event.id])).rowCount;
+    assert.equal(quarantine + inbox, 1);
+    assert.equal((await pool.query('SELECT 1 FROM project_access_checkout_bindings WHERE purchase_id=$1', [g.row.id])).rowCount, inbox);
+    assert.equal((await fulfillmentState(f)).grants.length, 0);
+  }
+});
+
+test('unbound refund/dispute collisions are global and malformed or unsigned facts never persist', async () => {
+  const f = await unboundFixture(); const a = refund(f); const b = dispute(f);
+  b.event.id = a.event.id;
+  const outcomes = await Promise.allSettled([receive(a), receive(signEvent(b.event))]);
+  assert.equal(outcomes.filter(row => row.status === 'fulfilled').length, 1);
+  assert.equal(outcomes.find(row => row.status === 'rejected').reason.code, 'lead_webhook_replay_conflict');
+  for (const delta of [{ livemode: true }, { account: 'acct_other' }, { api_version: '2020-08-27' }]) {
+    const input = refund(f); Object.assign(input.event, delta);
+    await assert.rejects(receive(signEvent(input.event)), { code: 'lead_webhook_event_invalid' });
+    assert.equal((await pool.query('SELECT 1 FROM project_access_unbound_events WHERE event_id=$1', [input.event.id])).rowCount, 0);
+  }
+  const bad = dispute(f); bad.signature = 'bad';
+  await assert.rejects(receive(bad), { code: 'lead_webhook_signature_invalid' });
+  assert.equal((await pool.query('SELECT 1 FROM project_access_unbound_events WHERE event_id=$1', [bad.event.id])).rowCount, 0);
+});
+
+test('initial grant waits for uncommitted unknown-PI quarantine then sees its committed fact', { timeout: 30000 }, async () => {
+  for (const make of [refund, dispute]) {
+    const f = await unboundFixture(); const input = make(f);
+    let enter; let release; let client;
+    const entered = new Promise(resolve => { enter = resolve; });
+    const gate = new Promise(resolve => { release = resolve; });
+    const wrapped = { connect: async () => {
+      client = await pool.connect();
+      return { release: error => client.release(error), query: async (sql, ...args) => {
+        const result = await client.query(sql, ...args);
+        if (sql.includes('INSERT INTO project_access_unbound_events')) { enter(); await gate; }
+        return result;
+      } };
+    } };
+    const receiving = receive(input, wrapped);
+    let processing;
+    try {
+      await Promise.race([entered, receiving.then(() => { throw new Error('Expected quarantine insert pause'); })]);
+      await receive(f.input);
+      processing = fulfill(f.input.event.id);
+      await blocked(client);
+      release(); await receiving;
+      assert.equal((await processing).outcome, 'unbound_negative_event');
+      assert.equal((await fulfillmentState(f)).grants.length, 0);
+    } finally {
+      release(); await Promise.allSettled([receiving, processing].filter(Boolean));
+    }
+  }
+});
+
+test('failed quarantine insert rolls back and releases locks so the exact signed retry can persist', async () => {
+  for (const make of [refund, dispute]) {
+    const f = await unboundFixture(); const input = make(f);
+    const wrapped = { connect: async () => {
+      const client = await pool.connect();
+      return { release: error => client.release(error), query: (sql, ...args) => {
+        if (sql.includes('INSERT INTO project_access_unbound_events')) throw new Error('fixture quarantine failure');
+        return client.query(sql, ...args);
+      } };
+    } };
+    await assert.rejects(receive(input, wrapped), /fixture quarantine failure/);
+    assert.equal((await pool.query('SELECT 1 FROM project_access_unbound_events WHERE event_id=$1', [input.event.id])).rowCount, 0);
+    assert.equal((await pool.query('SELECT 1 FROM project_access_checkout_events WHERE event_id=$1', [input.event.id])).rowCount, 0);
+    assert.equal((await receive(input)).duplicate, false);
+  }
+});
+
+test('lost quarantine COMMIT acknowledgement is replay-safe across a new connection', async () => {
+  for (const make of [refund, dispute]) {
+    const f = await unboundFixture(); const input = make(f);
+    const wrapped = { connect: async () => {
+      const client = await pool.connect();
+      return { release: error => client.release(error), query: async (sql, ...args) => {
+        const result = await client.query(sql, ...args);
+        if (sql === 'COMMIT') throw new Error('fixture lost quarantine acknowledgement');
+        return result;
+      } };
+    } };
+    await assert.rejects(receive(input, wrapped), /fixture lost quarantine acknowledgement/);
+    const stored = (await pool.query('SELECT * FROM project_access_unbound_events WHERE event_id=$1', [input.event.id])).rows[0];
+    assert.ok(stored);
+    const reopened = new Pool({ connectionString: databaseUrl });
+    try {
+      assert.deepEqual(await receive(input, reopened), { eventId: input.event.id, status: 'unbound', duplicate: true });
+      assert.deepEqual((await reopened.query('SELECT * FROM project_access_unbound_events WHERE event_id=$1', [input.event.id])).rows, [stored]);
+      assert.equal((await fulfillmentState(f)).grants.length, 0);
+    } finally { await reopened.end(); }
+  }
+});
+
+test('quarantine never assumes an unknown observation fits the later quote or belongs to a newer purchase', async () => {
+  for (const make of [refund, dispute]) {
+    const f = await unboundFixture();
+    const negative = make(f, { amount: f.row.amount_cents + 1 });
+    await receive(negative); await receive(f.input);
+    assert.equal((await fulfill(f.input.event.id)).outcome, 'unbound_negative_event');
+    assert.equal((await fulfillmentState(f)).grants.length, 0);
+    const stored = (await pool.query('SELECT * FROM project_access_unbound_events WHERE event_id=$1', [negative.event.id])).rows[0];
+    assert.equal(stored.amount_cents, 2501);
+    assert.equal((await receive(negative)).status, 'unbound');
+    await pool.query("UPDATE project_access_purchases SET status='expired' WHERE id=$1", [f.row.id]);
+    const replacement = await reserveLeadPurchase(pool, { ...f.request, requestKey: randomUUID() }, policy);
+    const paid = signedEvent(replacement); await receive(paid);
+    assert.equal((await fulfill(paid.event.id)).outcome, 'paid_granted');
+    assert.equal((await pool.query('SELECT provider_payment_id FROM project_access_entitlements WHERE project_id=$1 AND contractor_id=$2',
+      [f.project.id, f.buyer.id])).rows[0].provider_payment_id, paid.event.data.object.payment_intent);
+  }
 });
 
 test('real local API denies details and new bids after refund or dispute processing', { timeout: 30000 }, async () => {

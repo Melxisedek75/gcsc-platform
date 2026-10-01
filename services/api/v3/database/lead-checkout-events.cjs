@@ -120,6 +120,16 @@ async function receiveLeadCheckoutEvent(pool, rawBody, signature, config) {
     await client.query('BEGIN');
     await client.query("SET LOCAL lock_timeout = '10s'");
     await client.query("SET LOCAL statement_timeout = '15s'");
+    // Serialize every intake path across both inboxes. A future promoter must
+    // use this same event lock before purchase/intent locks and recheck both.
+    await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))', [`lead:event:${event.eventId}`]);
+    const unbound = (await client.query('SELECT * FROM project_access_unbound_events WHERE event_id=$1', [event.eventId])).rows[0];
+    if (unbound) {
+      if (unbound.payload_sha256 !== event.payloadSha256 || unbound.event_type !== event.eventType)
+        fail('lead_webhook_replay_conflict');
+      await client.query('COMMIT');
+      return { eventId: event.eventId, status: 'unbound', duplicate: true };
+    }
     // All intake/attach writers serialize on the purchase. A future fulfillment
     // transaction must acquire project/identities first, following the API lock order.
     // SQL identifiers are fixed here, never selected by metadata or raw payload.
@@ -131,6 +141,21 @@ async function receiveLeadCheckoutEvent(pool, rawBody, signature, config) {
     const purchaseId = fact ? (await client.query(
       'SELECT purchase_id FROM project_access_checkout_bindings WHERE payment_intent_id=$1',
       [event.paymentIntentId])).rows[0]?.purchase_id : event.purchaseId;
+    if (fact && !purchaseId) {
+      // Once classified unbound, do not acquire a purchase lock while holding
+      // the intent lock. Initial fulfillment uses this lock for its final guard.
+      await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))', [`lead:unbound:${event.paymentIntentId}`]);
+      if ((await client.query('SELECT 1 FROM project_access_checkout_events WHERE event_id=$1', [event.eventId])).rowCount)
+        fail('lead_webhook_replay_conflict');
+      await client.query(`INSERT INTO project_access_unbound_events
+        (event_id,event_type,api_version,provider_created,payload_sha256,payment_intent_id,
+          object_id,charge_id,amount_cents,currency,object_created,dispute_status)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+      [event.eventId, event.eventType, event.apiVersion, event.providerCreated, event.payloadSha256,
+        event.paymentIntentId, fact.id, event.chargeId, fact.amount, event.currency, fact.created, event.disputeStatus || null]);
+      await client.query('COMMIT');
+      return { eventId: event.eventId, status: 'unbound', duplicate: false };
+    }
     const row = (await client.query('SELECT * FROM project_access_purchases WHERE id=$1 FOR UPDATE', [purchaseId])).rows[0];
     let checkoutId = event.providerCheckoutId;
     if (fact) {

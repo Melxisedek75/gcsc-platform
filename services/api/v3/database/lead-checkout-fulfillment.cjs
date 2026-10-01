@@ -157,6 +157,13 @@ async function fulfillLeadCheckoutEvent(pool, eventId) {
     }
     if (purchase.status !== 'pending') return await review('purchase_not_pending');
     if (grant) return await review('entitlement_conflict');
+    if (binding.payment_intent_id) {
+      // Unknown-PI intake never takes purchase locks under this intent lock.
+      // Recheck after waiting so an accepted quarantine cannot race past a grant.
+      await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))', [`lead:unbound:${binding.payment_intent_id}`]);
+      const unbound = await client.query('SELECT 1 FROM project_access_unbound_events WHERE payment_intent_id=$1 LIMIT 1', [binding.payment_intent_id]);
+      if (unbound.rowCount) return await review('unbound_negative_event');
+    }
     const disputePending = await client.query('SELECT 1 FROM project_access_checkout_events WHERE purchase_id=$1 AND dispute_id IS NOT NULL LIMIT 1', [purchase.id]);
     if (disputePending.rowCount) return await review('dispute_pending');
     const refundPending = await client.query('SELECT 1 FROM project_access_checkout_events WHERE purchase_id=$1 AND refund_id IS NOT NULL LIMIT 1', [purchase.id]);
