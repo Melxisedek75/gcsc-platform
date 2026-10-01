@@ -1370,6 +1370,22 @@ test('transient worker failure rolls back grant, records backoff and succeeds on
   assert.equal((await pool.query('SELECT 1 FROM project_access_checkout_retries WHERE event_id=$1', [f.input.event.id])).rowCount, 0);
 });
 
+test('recovered database connection failure retries a bound event without parking it', async () => {
+  const f = await dueFixture();
+  const disconnected = { query: (...args) => pool.query(...args), connect: async () => {
+    throw Object.assign(new Error('synthetic connection reset'), { code: 'ECONNRESET' });
+  } };
+  assert.equal((await sweep({ eventIds: [f.input.event.id] }, disconnected)).retried, 1);
+  const retry = (await pool.query('SELECT attempts,state,last_error_kind FROM project_access_checkout_retries WHERE event_id=$1',
+    [f.input.event.id])).rows[0];
+  assert.equal(retry.attempts, 1); assert.equal(retry.state, 'ready');
+  assert.equal(retry.last_error_kind, 'temporary');
+  assert.equal((await fulfillmentState(f)).grants.length, 0);
+  await pool.query("UPDATE project_access_checkout_retries SET next_attempt_at=NOW()-INTERVAL '1 second' WHERE event_id=$1", [f.input.event.id]);
+  assert.equal((await sweep({ eventIds: [f.input.event.id] })).processed, 1);
+  assert.equal((await fulfillmentState(f)).grants[0].status, 'paid');
+});
+
 test('unexpected failure parks without granting and a repeated temporary failure has a finite attempt cap', async () => {
   for (const code of ['P0001', '40001']) {
     const f = await dueFixture();

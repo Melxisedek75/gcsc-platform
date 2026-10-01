@@ -3,7 +3,12 @@ const { randomUUID } = require('node:crypto');
 
 function fail() { throw Object.assign(new Error('lead_retry_request_invalid'), { code: 'lead_retry_request_invalid' }); }
 const eventId = value => typeof value === 'string' && /^evt_[a-zA-Z0-9]{1,251}$/.test(value);
-const transientCodes = new Set(['40001', '40P01', '55P03', '57014']);
+const transientCodes = new Set([
+  '40001', '40P01', '55P03', '57014', '57P01', '57P02', '57P03', '53300',
+  'ECONNRESET', 'ECONNREFUSED', 'EPIPE', 'ETIMEDOUT', 'ENETUNREACH', 'EHOSTUNREACH',
+]);
+const transientError = code => typeof code === 'string'
+  && (transientCodes.has(code) || /^08[0-9A-Z]{3}$/.test(code));
 
 // Dormant, explicitly invoked sweep. The inbox is durable; the lease covers
 // process loss between selecting a due event and recording its outcome.
@@ -58,7 +63,7 @@ async function sweepDueLeadCheckoutEvents(pool, options = {}) {
         continue;
       }
       const kind = error?.code === 'lead_fulfillment_event_not_due' ? 'not_due'
-        : transientCodes.has(error?.code) ? 'temporary' : 'unexpected';
+        : transientError(error?.code) ? 'temporary' : 'unexpected';
       const retry = await pool.query(`UPDATE project_access_checkout_retries SET
         attempts=attempts+1,
         state=CASE WHEN attempts+1>=5 OR $2='unexpected' THEN 'parked' ELSE 'ready' END,
