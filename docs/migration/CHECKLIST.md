@@ -563,8 +563,13 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   иллюстративным poster, не видеосъёмка и не подтверждённый UI продукта.
   Синтаксис JS, путь poster и явные disclosures проверены; локальный
   `node --test docs/migration/video-animatic.test.cjs` проверяет переключение,
-  перемотку, play/pause и конец ролика в имитированном DOM. Визуальный browser
-  просмотр и тест с двумя новыми зрителями ещё не проведены. L19c открыт.
+  перемотку, play/pause и конец ролика в имитированном DOM. Локальный Edge
+  проверил 12 сочетаний A/B, hero/explainer и 320/390/1440 px без обрезания,
+  горизонтального overflow, ошибок страницы или незагруженного poster;
+  воспроизведение: `verify-video-animatic-browser.cjs` с `NODE_PATH` bundled
+  Playwright и `GCSC_BROWSER_CHANNEL=msedge`. Скриншоты B/hero на 390/1440 px
+  просмотрены в `.tmp/animatic-*.jpg`. Это не реальные видео и не полноценная
+  accessibility-проверка; тест с двумя новыми зрителями открыт. L19c открыт.
 - [ ] **L19d / creative + marketing / 11 октября.** Экспортировать финальные
   hero loop и explanation video в desktop/mobile вариантах, poster и VTT
   субтитры; измерить размер, повтор, время загрузки, права использования.
