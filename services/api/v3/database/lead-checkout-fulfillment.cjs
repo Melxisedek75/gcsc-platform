@@ -63,7 +63,8 @@ async function fulfillLeadCheckoutEvent(pool, eventId) {
         VALUES (NULL,$1,$2,'project',$3,$4)`, [purchase.contractor_id, `lead_checkout.${outcome}`, purchase.project_id,
         JSON.stringify({ purchase_id: purchase.id, event_id: eventId, provider_mode: 'test',
           provider_checkout_id: event.provider_checkout_id, payment_intent_id: event.payment_intent_id,
-          amount_cents: purchase.amount_cents, currency: purchase.currency, outcome })]);
+          amount_cents: purchase.amount_cents, currency: purchase.currency,
+          refund_id: event.refund_id, refund_amount_cents: event.refund_amount_cents, outcome })]);
       await client.query('COMMIT');
       return response(stored, false);
     }
@@ -83,6 +84,38 @@ async function fulfillLeadCheckoutEvent(pool, eventId) {
     if (!Number.isSafeInteger(created) || created < seconds(purchase.created_at) || created > seconds(now))
       return await review('invalid_event_time');
 
+    if (['refund.created', 'refund.updated'].includes(event.event_type)) {
+      const refund = (await client.query('SELECT * FROM project_access_refund_bindings WHERE refund_id=$1 FOR UPDATE', [event.refund_id])).rows[0];
+      if (!refund || refund.purchase_id !== purchase.id || refund.payment_intent_id !== event.payment_intent_id
+        || refund.amount_cents !== event.refund_amount_cents || refund.currency !== purchase.currency
+        || refund.amount_cents > purchase.amount_cents || Number(refund.provider_created) < seconds(purchase.created_at)
+        || Number(refund.provider_created) > created) return await review('refund_binding_mismatch');
+      if (grant && grant.provider_payment_id !== event.payment_intent_id) return await review('entitlement_conflict');
+      const replacement = await client.query(`SELECT 1 FROM project_access_purchases
+        WHERE project_id=$1 AND contractor_id=$2 AND id<>$3 AND status IN ('pending','paid','review_required') FOR UPDATE`,
+      [purchase.project_id, purchase.contractor_id, purchase.id]);
+      if (replacement.rowCount) return await review('superseded_refund');
+      if (purchase.status === 'refunded' && grant?.status === 'refunded')
+        return await finish('processed', 'already_refunded');
+
+      // Observe a provider-confirmed refund; never initiate money movement. A
+      // partial refund suspends access pending policy/evidence, not a 50/50 rule.
+      const full = refund.amount_cents === purchase.amount_cents;
+      const grantStatus = full ? 'refunded' : 'revoked';
+      if (grant) {
+        await client.query(`UPDATE project_access_entitlements SET status=$3,updated_at=clock_timestamp()
+          WHERE project_id=$1 AND contractor_id=$2`, [purchase.project_id, purchase.contractor_id, grantStatus]);
+      } else {
+        const inserted = await client.query(`INSERT INTO project_access_entitlements
+          (project_id,contractor_id,status,provider_payment_id,verified_at)
+          VALUES ($1,$2,$3,$4,clock_timestamp()) ON CONFLICT (project_id,contractor_id) DO NOTHING`,
+        [purchase.project_id, purchase.contractor_id, grantStatus, event.payment_intent_id]);
+        if (!inserted.rowCount) return await review('entitlement_conflict');
+      }
+      return await finish(full ? 'processed' : 'review_required', full ? 'refund_observed' : 'partial_refund_review',
+        full ? 'refunded' : ['pending', 'paid', 'review_required'].includes(purchase.status) ? 'review_required' : null);
+    }
+
     if (purchase.status === 'paid') {
       if (!grant || grant.status !== 'paid' || !grant.verified_at || !binding.payment_intent_id
         || grant.provider_payment_id !== binding.payment_intent_id) return await review('entitlement_conflict');
@@ -90,6 +123,8 @@ async function fulfillLeadCheckoutEvent(pool, eventId) {
     }
     if (purchase.status !== 'pending') return await review('purchase_not_pending');
     if (grant) return await review('entitlement_conflict');
+    const refundPending = await client.query('SELECT 1 FROM project_access_checkout_events WHERE purchase_id=$1 AND refund_id IS NOT NULL LIMIT 1', [purchase.id]);
+    if (refundPending.rowCount) return await review('refund_pending');
     // Intake also locks this purchase: facts committed before this decision
     // cannot race past us. Contradictory queued facts need reconciliation.
     const conflicting = await client.query(`SELECT 1 FROM project_access_checkout_events

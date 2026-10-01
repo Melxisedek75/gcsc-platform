@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { once } = require('node:events');
 const { randomUUID } = require('node:crypto');
 const { createRequire } = require('node:module');
 const { validateLocalTestDatabase } = require('../scripts/local-test-database.cjs');
@@ -23,6 +24,7 @@ const Stripe = createRequire(path.join(apiRoot, 'package.json'))('stripe');
 const pool = new Pool({ connectionString: databaseUrl, connectionTimeoutMillis: 3000 });
 const policy = { mode: 'test', currency: 'usd', version: 'fixture-v1', amountCents: 2500 };
 const webhookConfig = { mode: 'test', apiVersion: '2025-02-24.acacia', webhookSecret: 'whsec_synthetic_local_fixture_only_2026' };
+const loopbackFetch = global.fetch;
 global.fetch = async () => { throw new Error('Provider/network calls forbidden in this fixture'); };
 
 async function fixture() {
@@ -74,6 +76,16 @@ async function paidFixture() {
   const input = signedEvent(row);
   await receive(input);
   return { ...f, row, input };
+}
+function refund(f, overrides = {}) {
+  const created = Math.floor(Date.now() / 1000);
+  return signEvent({ id: `evt_${randomUUID().replaceAll('-', '')}`, object: 'event',
+    api_version: webhookConfig.apiVersion, livemode: false, created,
+    type: 'refund.created', data: { object: { id: `re_${randomUUID().replaceAll('-', '')}`, object: 'refund',
+      status: 'succeeded', amount: f.row.amount_cents, currency: 'usd',
+      payment_intent: f.input.event.data.object.payment_intent, charge: 'ch_localfixture',
+      created, metadata: { private: 'do-not-store' },
+      instructions_email: 'private@example.invalid', ...overrides } } });
 }
 async function fulfillmentState(f) {
   return {
@@ -662,4 +674,202 @@ test('lost COMMIT acknowledgement is replay-safe across a new DB connection', as
   finally { await another.end(); }
   const state = await fulfillmentState(f);
   assert.equal(state.purchase.status, 'paid'); assert.equal(state.grants.length, 1); assert.equal(state.audits.length, 1);
+});
+
+test('successful full refund revokes only the exact purchase and persists with no provider calls', async () => {
+  const f = await paidFixture(); const g = await paidFixture();
+  await fulfill(f.input.event.id); await fulfill(g.input.event.id);
+  const input = refund(f); await receive(input);
+  assert.equal((await fulfill(input.event.id)).outcome, 'refund_observed');
+  const state = await fulfillmentState(f); const other = await fulfillmentState(g);
+  assert.equal(state.purchase.status, 'refunded'); assert.equal(state.grants[0].status, 'refunded');
+  assert.equal(other.purchase.status, 'paid'); assert.equal(other.grants[0].status, 'paid');
+  const event = (await pool.query('SELECT * FROM project_access_checkout_events WHERE event_id=$1', [input.event.id])).rows[0];
+  assert.equal(event.refund_id, input.event.data.object.id); assert.equal(event.refund_amount_cents, 2500);
+  assert.equal(event.payment_status, 'unpaid'); assert.equal(event.status, 'processed');
+  assert.equal(JSON.stringify(event).includes('private@example.invalid'), false);
+  assert.equal(JSON.stringify(state.audits).includes('do-not-store'), false);
+  assert.equal(state.audits.at(-1).metadata.refund_id, input.event.data.object.id);
+  await migrateSchema(pool);
+  const another = new Pool({ connectionString: databaseUrl });
+  try { assert.equal((await fulfill(input.event.id, another)).duplicate, true); }
+  finally { await another.end(); }
+  assert.equal((await fulfillmentState(f)).audits.length, 2);
+});
+
+test('refund stored before payment processing prevents access in either worker order', async () => {
+  for (const order of ['paid-first', 'refund-first']) {
+    const f = await paidFixture(); const input = refund(f); await receive(input);
+    if (order === 'paid-first') {
+      assert.equal((await fulfill(f.input.event.id)).outcome, 'refund_pending');
+      assert.equal((await fulfillmentState(f)).grants.length, 0);
+    }
+    assert.equal((await fulfill(input.event.id)).outcome, 'refund_observed');
+    if (order === 'refund-first') assert.equal((await fulfill(f.input.event.id)).status, 'review_required');
+    const state = await fulfillmentState(f);
+    assert.equal(state.purchase.status, 'refunded'); assert.equal(state.grants[0].status, 'refunded');
+  }
+});
+
+test('partial succeeded refund suspends access for review without claiming full refund or summing events', async () => {
+  const f = await paidFixture(); await fulfill(f.input.event.id);
+  for (let i = 0; i < 2; i++) {
+    const input = refund(f, { amount: 1250 }); await receive(input);
+    assert.equal((await fulfill(input.event.id)).outcome, 'partial_refund_review');
+    const state = await fulfillmentState(f);
+    assert.equal(state.purchase.status, 'review_required'); assert.equal(state.grants[0].status, 'revoked');
+  }
+  const replay = structuredClone(f.input.event); replay.id = `evt_${randomUUID().replaceAll('-', '')}`;
+  await receive(signEvent(replay)); assert.equal((await fulfill(replay.id)).status, 'review_required');
+  assert.equal((await fulfillmentState(f)).grants[0].status, 'revoked');
+});
+
+test('refund and grant concurrent processing never ends with paid access', async () => {
+  const f = await paidFixture(); const input = refund(f); await receive(input);
+  await Promise.all([fulfill(f.input.event.id), fulfill(input.event.id)]);
+  assert.equal((await fulfillmentState(f)).grants[0].status, 'refunded');
+});
+
+test('concurrent identical refund deliveries and different event IDs for the same refund cannot apply twice', async () => {
+  const f = await paidFixture(); await fulfill(f.input.event.id); const input = refund(f);
+  await Promise.all(Array.from({ length: 4 }, () => receive(input)));
+  const result = await Promise.all(Array.from({ length: 4 }, () => fulfill(input.event.id)));
+  assert.equal(result.filter(row => !row.duplicate).length, 1);
+  const repeat = structuredClone(input.event); repeat.id = `evt_${randomUUID().replaceAll('-', '')}`; repeat.type = 'refund.updated';
+  await receive(signEvent(repeat)); assert.equal((await fulfill(repeat.id)).outcome, 'already_refunded');
+  assert.equal((await fulfillmentState(f)).grants[0].status, 'refunded');
+  const changed = structuredClone(input.event); changed.data.object.amount--;
+  await assert.rejects(receive(signEvent(changed)), { code: 'lead_webhook_refund_conflict' });
+});
+
+test('refund cannot select purchase using metadata, unknown PI, wrong quote or pre-purchase timestamp', async () => {
+  const f = await paidFixture(); await fulfill(f.input.event.id);
+  const g = await paidFixture(); await fulfill(g.input.event.id);
+  for (const delta of [{ payment_intent: 'pi_unknown' }, { amount: 2501 },
+    { created: Math.floor(new Date(f.row.created_at).getTime() / 1000) - 1 }]) {
+    await assert.rejects(receive(refund(f, delta)), { code: 'lead_webhook_refund_mismatch' });
+  }
+  const input = refund(f, { metadata: { purchase_id: g.row.id, contractor_id: String(g.buyer.id) } });
+  await receive(input); await fulfill(input.event.id);
+  assert.equal((await fulfillmentState(g)).grants[0].status, 'paid');
+});
+
+test('a refund ID and an event ID cannot be rebound to another purchase', async () => {
+  const f = await paidFixture(); const g = await paidFixture();
+  const a = refund(f); const b = refund(g, { id: a.event.data.object.id });
+  const results = await Promise.allSettled([receive(a), receive(b)]);
+  assert.equal(results.filter(row => row.status === 'fulfilled').length, 1);
+  assert.equal(results.find(row => row.status === 'rejected').reason.code, 'lead_webhook_refund_conflict');
+  const collision = refund(g); collision.event.id = f.input.event.id;
+  await assert.rejects(receive(signEvent(collision.event)), { code: 'lead_webhook_replay_conflict' });
+  assert.equal((await pool.query('SELECT 1 FROM project_access_refund_bindings WHERE refund_id=$1', [collision.event.data.object.id])).rowCount, 0);
+});
+
+test('late full refund never revokes a replacement purchase or its different grant', async () => {
+  for (const hasGrant of [false, true]) {
+    const f = await paidFixture();
+    await pool.query("UPDATE project_access_purchases SET status='expired' WHERE id=$1", [f.row.id]);
+    const next = await reserveLeadPurchase(pool, { ...f.request, requestKey: randomUUID() }, policy);
+    const paid = signedEvent(next); await receive(paid);
+    if (hasGrant) await fulfill(paid.event.id);
+    const input = refund(f); await receive(input);
+    assert.equal((await fulfill(input.event.id)).status, 'review_required');
+    const state = await fulfillmentState(f);
+    assert.equal(state.purchase.status, 'expired');
+    assert.equal(state.grants.length, hasGrant ? 1 : 0);
+    if (hasGrant) {
+      assert.equal(state.grants[0].provider_payment_id, paid.event.data.object.payment_intent);
+      assert.equal(state.grants[0].status, 'paid');
+    }
+    assert.equal((await getLeadPurchase(pool, f.buyer.id, next.id)).status, hasGrant ? 'paid' : 'pending');
+  }
+});
+
+test('closed project and disabled users do not prevent observing a valid full refund', async () => {
+  const f = await paidFixture(); await fulfill(f.input.event.id);
+  await pool.query("UPDATE projects SET status='completed' WHERE id=$1", [f.project.id]);
+  await pool.query('UPDATE users SET is_active=FALSE WHERE id=ANY($1::int[])', [[f.owner.id, f.buyer.id]]);
+  const input = refund(f); await receive(input);
+  assert.equal((await fulfill(input.event.id)).outcome, 'refund_observed');
+  assert.equal((await fulfillmentState(f)).grants[0].status, 'refunded');
+});
+
+test('refund revocation waits for a locked entitlement, then commits only its current binding', async () => {
+  const f = await paidFixture(); await fulfill(f.input.event.id); const input = refund(f); await receive(input);
+  const blocker = await pool.connect(); let pending;
+  try {
+    await blocker.query('BEGIN');
+    await blocker.query("UPDATE project_access_entitlements SET provider_payment_id='pi_replaced' WHERE project_id=$1", [f.project.id]);
+    pending = fulfill(input.event.id).then(value => ({ value }), error => ({ error }));
+    await blocked(blocker); await blocker.query('COMMIT');
+    const result = await pending; assert.ifError(result.error);
+    assert.equal(result.value.outcome, 'entitlement_conflict');
+    assert.equal((await fulfillmentState(f)).grants[0].status, 'paid');
+  } finally { await blocker.query('ROLLBACK'); blocker.release(); if (pending) await pending; }
+});
+
+test('refund grant/purchase/outcome/audit failures roll back together and retry safely', async () => {
+  for (const table of ['project_access_entitlements', 'project_access_purchases', 'project_access_checkout_events', 'audit_events']) {
+    const f = await paidFixture(); await fulfill(f.input.event.id); const input = refund(f); await receive(input);
+    await pool.query(`CREATE FUNCTION fail_refund() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN RAISE EXCEPTION 'synthetic refund failure'; END $$`);
+    await pool.query(`CREATE TRIGGER fail_refund BEFORE INSERT OR UPDATE ON ${table} FOR EACH ROW EXECUTE FUNCTION fail_refund()`);
+    try { await assert.rejects(fulfill(input.event.id), /synthetic refund failure/); }
+    finally { await pool.query(`DROP TRIGGER fail_refund ON ${table}`); await pool.query('DROP FUNCTION fail_refund()'); }
+    const state = await fulfillmentState(f);
+    assert.equal(state.purchase.status, 'paid'); assert.equal(state.grants[0].status, 'paid');
+    assert.equal(state.audits.length, 1);
+    assert.equal((await fulfill(input.event.id)).outcome, 'refund_observed');
+  }
+});
+
+test('full-refund state is monotonic across old paid and partial-refund notifications', async () => {
+  const f = await paidFixture(); await fulfill(f.input.event.id);
+  const full = refund(f); await receive(full); await fulfill(full.event.id);
+  assert.equal((await fulfill(f.input.event.id)).duplicate, true);
+  const paid = structuredClone(f.input.event); paid.id = `evt_${randomUUID().replaceAll('-', '')}`;
+  await receive(signEvent(paid)); assert.equal((await fulfill(paid.id)).status, 'review_required');
+  const partial = refund(f, { amount: 500 }); await receive(partial);
+  assert.equal((await fulfill(partial.event.id)).outcome, 'already_refunded');
+  await assert.rejects(reserveLeadPurchase(pool, { ...f.request, requestKey: randomUUID() }, policy), { code: 'lead_checkout_existing_entitlement' });
+  const state = await fulfillmentState(f);
+  assert.equal(state.purchase.status, 'refunded'); assert.equal(state.grants[0].status, 'refunded');
+});
+
+test('tampered stored refund binding cannot revoke an unrelated entitlement', async () => {
+  const f = await paidFixture(); await fulfill(f.input.event.id);
+  const input = refund(f); await receive(input);
+  await pool.query('UPDATE project_access_refund_bindings SET amount_cents=amount_cents-1 WHERE refund_id=$1', [input.event.data.object.id]);
+  assert.equal((await fulfill(input.event.id)).outcome, 'refund_binding_mismatch');
+  assert.equal((await fulfillmentState(f)).grants[0].status, 'paid');
+});
+
+test('real local API denies details and new bids after signed full or partial refund processing', { timeout: 20000 }, async () => {
+  const api = require(path.join(snapshot, 'pure-server.cjs'));
+  try {
+    await api.initStorage(); api.listen(0, '127.0.0.1'); await once(api, 'listening');
+    const base = `http://127.0.0.1:${api.address().port}`;
+    async function request(method, route, user, body) {
+      const response = await loopbackFetch(base + route, { method, redirect: 'error', signal: AbortSignal.timeout(5000),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${api.jwtSign({ userId: user.id, role: user.role, email: user.email })}` },
+        ...(body ? { body: JSON.stringify(body) } : {}) });
+      return { status: response.status, body: await response.json() };
+    }
+    for (const amount of [2500, 500]) {
+      const f = await paidFixture();
+      assert.equal((await request('GET', `/api/projects/${f.project.id}/details`, f.buyer)).status, 404);
+      await fulfill(f.input.event.id);
+      assert.equal((await request('GET', `/api/projects/${f.project.id}/details`, f.buyer)).status, 200);
+      assert.equal((await request('POST', '/api/bids', f.buyer, { project_id: f.project.id, amount: 500, message: 'Synthetic proposal' })).status, 201);
+      const input = refund(f, { amount }); await receive(input); await fulfill(input.event.id);
+      const denied = await request('GET', `/api/projects/${f.project.id}/details`, f.buyer);
+      assert.equal(denied.status, 404); assert.equal(denied.body.project, undefined);
+      const bid = await request('POST', '/api/bids', f.buyer, { project_id: f.project.id, amount: 600 });
+      assert.equal(bid.status, 403); assert.equal(bid.body.code, 'project_access_required');
+      assert.equal((await pool.query('SELECT COUNT(*)::int AS count FROM bids WHERE project_id=$1', [f.project.id])).rows[0].count, 1);
+    }
+  } finally {
+    if (api.listening) await new Promise((resolve, reject) => api.close(error => error ? reject(error) : resolve()));
+    await api.closeStorage();
+  }
 });

@@ -77,7 +77,7 @@ test('explicit test policy and bounded raw UTF-8 are mandatory', () => {
   }
 });
 
-test('live, connected, unsupported-version and non-Checkout events cannot enter the inbox', () => {
+test('live, connected, unsupported-version and unsupported event types cannot enter the inbox', () => {
   for (const override of [{ livemode: true }, { account: 'acct_foreign' }, { context: 'acct_foreign' },
     { object: 'not-event' }, { id: 'invalid' }, { api_version: '2020-01-01' },
     { type: 'payment_intent.succeeded' }, { created: Math.floor(Date.now() / 1000) + 1000 }]) {
