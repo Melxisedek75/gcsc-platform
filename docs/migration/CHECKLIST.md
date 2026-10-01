@@ -516,6 +516,11 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   кандидат и не проверка опубликованного домена. Независимое repair-ревью:
   APPROVED_SOURCE_ONLY; прежние target blockers сохраняются до интеграции.
   `ACCOUNT-ROLE-REVIEW.md`.
+  Текущий локальный статус: после этих ранних находок совмещённые web/marketing
+  деревья получили независимый PASS и включены в publication `d613c440`;
+  прежний Medium owner CTA закрыт только для этого локального кандидата.
+  Реальные `gcsc.store`, регистрация, email/SMS и оценка новым пользователем
+  не проверены, поэтому L18d остаётся открытым.
 - [ ] **L18e / marketing / 10 октября.** Семантика, SEO/social previews,
   sitemap, аналитика без лишнего сбора PII, privacy/terms/support links,
   загрузка без сторонних CDN как обязательного условия. Проверка: локальный
@@ -532,7 +537,11 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   Финальный follow-up @ `733e5fda`: RIVIERA независимо подтвердил 18/18 и
   устранение дополнительного Low в robots-проверке; оба порядка перекрывающихся
   правил больше не дают ложный PASS. Low contrast также закрыт. Общий
-  integration gate остаётся CHANGES_REQUIRED из-за High API и Medium owner CTA.
+  На этапе того раннего marketing-only review integration gate оставался
+  CHANGES_REQUIRED из-за High API и Medium owner CTA. Позднее эти находки
+  закрыты для объединённого локального кандидата `d613c440` (см. L01/L18),
+  но не для опубликованного сайта; legal/support, analytics и доменная
+  проверка остаются открытыми.
 - [x] **L19a / creative / 29 сентября.** Написать две версии сценария hero loop
   (без звука) и 45-90-секундного объясняющего ролика: реальная проблема,
   работающий MVP, один понятный следующий шаг. Отделить уже доступное от
