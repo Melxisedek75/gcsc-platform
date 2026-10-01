@@ -1,6 +1,6 @@
 {
   "task": "october-launch-mvp-and-marketing",
-  "status": "L12_UNBOUND_REVIEWED_REMAINING_GATES_OPEN",
+  "status": "L12_BOUND_RETRY_REVIEWED_REMAINING_GATES_OPEN",
   "owner": "019e7c87-8410-79f1-b86a-eedf78a1aa27",
   "worktree": "C:/gcsc-platform/.worktrees/publication",
   "branch": "codex/monorepo-publication",
@@ -13,10 +13,20 @@
   ],
   "leaseUntil": null,
   "baseCommit": "a0834ac7917c3de57ebc02fb542814561469bca2",
-  "candidateCommit": "91e494c99ecd54842499fd155f0e1bc781cd01ac",
-  "review": "Independent reviewer01a0edd5-92a1-7b42-ac8f-88094d6f5637 APPROVED exactab00b5ed..a4b3da1e four-file dormant quarantine (own35/35, PG83/83 9ouNLY, root/static0), then separately APPROVED test-only a4b3da1e..91e494c9 clock repair (own35/35, PG84/84 tnuAun, root/static0). No confirmed unresolved findings. Parent verified result/log/runtime/test hashes; reviewer closed. No full L11/L12/MVP/provider/production approval.",
-  "result": "Local publication91e494c9 retains supported signed test negative observations with unknown PI in a minimal quarantine; exact event/digest replay is protected across both inboxes. Committed/committing quarantine prevents an initial grant for that PI; no metadata-selected purchase, automatic promotion, inferred revocation or provider IO. Parent focused35/35, root37+12+11/static0, baseline39/39 and API301/301. Receiving82/83 6Nw04u exposed a synthetic Node/PG second-boundary clock mismatch; deterministic RED83/84 9QhtLa and test-only repair preserved production time checks. Final PG84/84 twice y6WTCf/PjXd0q, independent84/84 tnuAun, receiving84/84 wqqY2s, all test/PG0. Source hashes match review; no HTTP activation, real payment/refund/dispute, push or deploy.",
-  "next": "Continue dependency-ready local L12 from reviewed91e494c9 plus checkpoint: tests/design for bounded durable retry of received events, especially lead_fulfillment_event_not_due, then evidence-driven quarantine promotion/held-purchase reconciliation. Unknown-PI facts now persist but replay intentionally remains unbound even after binding; do not discard them or automatically regrant won/closed disputes. All future inbox writers must share event-ID lock/check both tables and preserve purchase/PI lock order. No summing partial refunds or card-only expansion. Remaining refund lifecycle, authenticated bounded HTTP/private purchase DTO, SDK timeout recovery and separately authorized test-provider/browser acceptance follow. Parent checkout is free; check ownership and base a new scoped codex branch on publication. L10 commercial/contact/provider decisions, live activation and legacy escrow remain separate gates.",
+  "candidateCommit": "e98c08391cbd109d62add6d8abd8efd24a9b4110",
+  "review": "Independent reviewer 01a0edd5-92a1-7b42-ac8f-88094d6f5637 APPROVED exact a10f9144..e98c0839 dormant bound-inbox retry after P2 connection-reset repair. Own focused37/37, root37+12+11/static0, PostgreSQL93/93 Lp1VBU test/PG0. No confirmed unresolved P1-P3; reviewer closed. No full L11/L12/MVP/provider/production approval.",
+  "result": "Local publication e98c0839 adds only an explicitly invoked bounded sweep of due bound received signed-test inbox events, with durable lease, UUID fencing, capped backoff and manual parked state. It delegates all grant/refund/dispute changes to the existing atomic worker; no scheduler/HTTP/provider IO. Parent PG93/93 KZkCQx, independent93/93 Lp1VBU, receiving93/93 DZdIOa; focused37/37, root/static0, baseline39/39, API301/301. Ten API/database source hashes agree between reviewer and receiving. Earlier RED lease and recovered-connection failures and a preliminary WebAuth test timeout were retained, not counted PASS. No real payment, push or deploy.",
+  "next": "Continue dependency-ready local L12 from reviewed e98c0839: evidence-driven unknown-PI quarantine promotion and held-purchase reconciliation. Quarantine replay remains unbound even after binding; do not choose a purchase by metadata, infer revocation, or automatically regrant won/closed disputes. All future inbox writers must share event-ID lock/check both tables and preserve purchase/PI lock order. No summing partial refunds or card-only expansion. Remaining refund lifecycle, authenticated bounded HTTP/private purchase DTO, SDK timeout recovery and separately authorized test-provider/browser acceptance follow. Parent checkout is free; check ownership and base a new scoped codex branch on publication. L10 commercial/contact/provider decisions, live activation and legacy escrow remain separate gates.",
+  "leadRetry": {
+    "worktree": "C:/gcsc-platform/.worktrees/legacy-preservation",
+    "branch": "codex/lead-retry-20261001",
+    "baseCommit": "a10f91442091c712b62b02c7291f06adbd17bc61",
+    "candidateCommit": "e98c08391cbd109d62add6d8abd8efd24a9b4110",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "review": "Initial 1b5f4142 REVISIONS REQUIRED for P2 ECONNRESET parked after claim; repair e98c0839 APPROVED by independent 01a0edd5-92a1-7b42-ac8f-88094d6f5637. Reviewer PG93/93 Lp1VBU, focused37/37, root/static0, test/PG exits0.",
+    "checks": "Tests first stale lease 91/92 NfWUND and connection recovery 92/93 jvpEFa. Final parent PG93/93 KZkCQx, focused37/37, root/static0, baseline39/39 ZmliCd, API301/301 after one non-PASS WebAuth timeout. Receiving PG93/93 DZdIOa and focused37/37; ten API/database hashes match reviewer Lp1VBU.",
+    "next": "Unknown-PI quarantine promotion and held-purchase reconciliation remain separate. No scheduler, HTTP/provider IO or release approval; see LEAD-RETRY-REVIEW.md."
+  },
   "leadUnboundInProgress": {
     "worktree": "C:/gcsc-platform/.worktrees/legacy-preservation",
     "branch": "codex/lead-unbound-events-20261001",

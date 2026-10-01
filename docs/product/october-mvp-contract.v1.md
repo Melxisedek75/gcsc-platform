@@ -384,6 +384,24 @@ not resolve held purchases, revoke an existing grant by inference, start a retry
 scheduler or contact the provider. L11/L12 stay open.
 Evidence: `../migration/LEAD-UNBOUND-REVIEW.md`.
 
+## Local bound-inbox retry, 2026-10-01 UTC
+
+The independently reviewed `e98c0839` module provides an explicitly invoked,
+dormant sweep of already bound signed-test `received` events. PostgreSQL clock
+gates due events; the batch is 1..50. A persisted lease and UUID fencing token
+prevent concurrent or expired workers from overwriting each other's result.
+Known temporary database/connection failures back off for up to five attempts;
+unexpected failures park for manual review. The worker re-reads committed event
+status after a lost COMMIT acknowledgement and delegates every business-state
+change to the existing atomic fulfillment path. A future timestamp never
+authorizes early access.
+
+This does not start a scheduler, add HTTP/provider delivery, promote unknown-PI
+quarantine, clear held purchases or approve charging/refunding a card. Parked
+facts need an audited manual decision; no automatic replay of quarantined facts
+or access restoration is implied. L11/L12 and live gates remain open. Evidence:
+`../migration/LEAD-RETRY-REVIEW.md`.
+
 ## Founder decisions before live payments
 
 1. Exact fixed USD access price and tax/receipt presentation.

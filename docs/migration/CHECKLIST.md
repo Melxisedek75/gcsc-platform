@@ -355,8 +355,19 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   Независимый reviewer отдельно одобрил repair, повторил84/84 (`tnuAun`),
   35/35/root0 и закрыт. После exact fast-forward receiving84/84 (`wqqY2s`),
   test/PG0, runtime/test hashes совпали. Оба сбоя сохранены, не засчитаны PASS.
-  Bounded retry, перенос/сверка quarantine, оставшийся lifecycle и HTTP/provider
-  E2E открыты. L11/L12 НЕ закрыты; `LEAD-UNBOUND-REVIEW.md`. Live/deploy не было.
+  Перенос/сверка quarantine, оставшийся lifecycle и HTTP/provider E2E открыты.
+  L11/L12 НЕ закрыты; `LEAD-UNBOUND-REVIEW.md`. Live/deploy не было.
+  Срез 1 октября UTC `e98c0839`: dormant bounded retry для уже bound `received`
+  inbox. Только due по PG clock, batch 1..50, durable lease с UUID fencing,
+  backoff/limit5 и ручной parked для неожиданных ошибок. Existing atomic worker
+  сохраняет проверки покупки/quote/refund/dispute; ни scheduler, ни HTTP/provider
+  вызова нет. Tests first stale lease 91/92 (`NfWUND`) и найденный независимым
+  reviewer P2 connection reset 92/93 (`jvpEFa`) сохранены. Исправление повторно
+  одобрено по exact `a10f9144..e98c0839`; reviewer93/93 (`Lp1VBU`), parent93/93
+  (`KZkCQx`), receiving93/93 (`DZdIOa`), focused37/37, root/static0, API301/301,
+  baseline39/39. Все test/PG exits0; хеши source между review/receiving совпали.
+  Это не разрешение на live-обработку. Quarantine promotion, held-purchase
+  reconciliation и оставшиеся L11/L12 gates открыты; `LEAD-RETRY-REVIEW.md`.
 - [ ] **L13 / web + QA.** Чёткая цена, состояние оплаты, ожидание подтверждения,
   квитанция, отмена, ошибка, повтор без второго списания и обращение в
   поддержку. Сначала Stripe test mode end-to-end; live только после L10-L12,
