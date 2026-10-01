@@ -342,3 +342,17 @@ identity v2 и unsigned payload уже проверены в QA eb4a84d8/08636fd
 Открытые пункты выше не означают, что функцию нужно написать заново: сначала сверить
 существующий код и evidence в CAPABILITY-MATRIX.md. Факт сборки не заменяет тест
 на телефоне, а mock-транзакция не подтверждает реальную подпись или платёж.
+
+
+## Marketplace candidate — 2026-10-01
+
+- [x] На ветке `codex/lead-marketplace-mvp-20261001` локально исправлены компиляция
+  `gcscmarket11`, приём подписанных token-transfer уведомлений, сохранение условий
+  лида/claim, возвраты и проверки границ. `npm run test:contracts`: 73/73 PASS,
+  включая 42 marketplace-проверки; чистая offline-компиляция 14/14 контрактов PASS.
+- [ ] Независимое financial/security review точного нового commit.
+- [ ] Проверка совместимости ABI/таблиц, разрешений и settlement-provider до deploy.
+- [ ] API/UI consumers нового `claim:<id>` / `bid:<id>` payment interface и testnet evidence.
+
+Доказательства и ограничения: `docs/marketplace/VALIDATION-2026-10-01.md`.
+Это локальный кандидат в draft PR #1; не merge, не deploy, не professional audit.
