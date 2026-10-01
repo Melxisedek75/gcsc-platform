@@ -232,8 +232,9 @@ credential lookup. Unit/integration signing secrets are synthetic fixtures.
   no entitlement is issued and no refund is executed.
 
 This intake slice leaves transactional fulfillment/reconciliation to the worker
-described below. Refund/revocation/async-failure coverage, bounded raw-body HTTP
-parsing and provider test-mode delivery remain open. The helper body
+described below. The successful-refund extension is documented separately below;
+other refund/dispute/async-failure handling, bounded raw-body HTTP parsing and
+provider test-mode delivery remain open. The helper body
 limit does not yet constrain HTTP request buffering because it is not wired to
 a route. The old escrow webhook is separate and has not gained these guarantees.
 No live Checkout may be enabled before those layers and independent acceptance.
@@ -279,6 +280,41 @@ authentication; do not serialize database rows. Inbox IDs, raw digests, binding
 snapshots, audit internals, provider credentials and arbitrary metadata are not
 browser inputs or proof of payment. Every purchase/detail response is private
 and non-cacheable. The old escrow endpoint remains separate from lead purchase.
+
+## Local successful-refund observations, 2026-10-01 UTC
+
+Independently reviewed, locally integrated `980225e3` extends the dormant internal
+intake/worker. Evidence: `../migration/LEAD-REFUND-REVIEW.md`. This does not
+add a refund command, purchase HTTP route or provider connection, and does not
+approve a refund policy. Only signed test-mode `refund.created`/`refund.updated`
+events with Refund status `succeeded` are supported in this slice.
+
+| Verified observation | Persisted result | Consumer boundary |
+| --- | --- | --- |
+| One refund equals the original immutable quote | Exact original entitlement and purchase become `refunded`; event and audit commit together | Details and new proposals are no longer authorized; do not promise bank settlement |
+| Refund is less than the quote | Exact original entitlement becomes `revoked`; an active purchase and the event require review | Access is suspended; do not claim a full refund, sum partial events, request another charge or restore access automatically |
+| Same processed event again | Durable receipt only, no new grant or audit | A historical paid receipt must not restore current permission |
+| Refund for an older/different entitlement or superseded purchase | Event held for reconciliation; replacement grant is untouched | Do not revoke another purchase's access |
+| Refund already queued before initial fulfillment | No initial paid grant, regardless of worker order | Await reconciliation/refund processing, not redirect success |
+| Signed event timestamp is ahead of the database clock | Worker returns retryable `lead_fulfillment_event_not_due`; transaction rolls back and the inbox stays `received` | Future worker must retry with bounded backoff after the timestamp becomes due; do not finalize as review, claim refund completion or grant early |
+
+Refund metadata never chooses the purchase. An existing unique test PaymentIntent
+binding, immutable quote, refund-ID binding and timestamps must agree. Unknown
+PaymentIntent, including a refund delivered before its Checkout binding exists,
+is rejected before persistence. Durable unresolved delivery/retry/reconciliation
+is still required; arbitrary provider event ordering is not yet supported.
+
+The local actual-API fixture covers both full and partial refund: previously
+authorized private details become 404 and a new proposal is denied with
+`project_access_required`; the existing proposal remains stored. Already copied
+data cannot be recalled from a buyer's device. The new consumer must discard
+cached private details on loss of authorization, not trust its old receipt.
+
+Pending/failed/canceled refunds, later failure after a succeeded observation,
+disputes, asynchronous payment outcomes and held-event resolution are separate
+open gates. No automatic regrant, refund request or inference of the future
+50/50 auction economics. This slice does not enable real payments or prove
+provider/browser end-to-end delivery. L11/L12 and the decisions below stay open.
 
 ## Founder decisions before live payments
 
