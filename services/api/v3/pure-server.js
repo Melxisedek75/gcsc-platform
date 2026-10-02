@@ -3994,6 +3994,8 @@ const routes = {
   },
 
   'GET /api/admin/documents': async (req, res) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', 'Origin, Authorization');
     if (!await requireActiveUser(req, res, 'admin')) return;
 
     const parsed = parse(req.url, true);
@@ -4004,6 +4006,8 @@ const routes = {
   },
 
   'GET /api/admin/audit-events': async (req, res) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', 'Origin, Authorization');
     if (!await requireActiveUser(req, res, 'admin')) return;
 
     const parsed = parse(req.url, true);
@@ -4017,6 +4021,8 @@ const routes = {
   },
 
   'GET /api/admin/financing-prechecks': async (req, res) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', 'Origin, Authorization');
     if (!await requireActiveUser(req, res, 'admin')) return;
 
     const parsed = parse(req.url, true);

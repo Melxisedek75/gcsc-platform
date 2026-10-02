@@ -104,3 +104,16 @@ test('personal profile and wallet reads cannot be stored by a shared cache', asy
     expect(result.headers.get('vary')).toMatch(/Authorization/i);
   }
 });
+
+test('admin document, audit and financing reads cannot be stored by a shared cache', async () => {
+  for (const route of [
+    '/api/admin/documents',
+    '/api/admin/audit-events',
+    '/api/admin/financing-prechecks',
+  ]) {
+    const result = await request('GET', route, adminToken);
+    expect(result.status).toBe(200);
+    expect(result.headers.get('cache-control')).toContain('no-store');
+    expect(result.headers.get('vary')).toMatch(/Authorization/i);
+  }
+});
