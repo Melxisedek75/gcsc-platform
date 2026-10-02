@@ -276,6 +276,26 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     }
   });
 
+  await t.test('disabled or demoted accounts cannot list personal projects with an old JWT', async () => {
+    for (const user of [owner, contractor]) {
+      for (const change of [
+        'UPDATE users SET is_active=FALSE WHERE id=$1',
+        "UPDATE users SET role='admin' WHERE id=$1",
+      ]) {
+        await pool.query(change, [user.id]);
+        try {
+          const denied = await request('GET', '/api/projects/my/projects', user);
+          assert.equal(denied.status, 403);
+          assertPrivateDetailsHeaders(denied);
+          assert.equal(denied.body.projects, undefined);
+          assert.doesNotMatch(JSON.stringify(denied.body), /PRIVATE_(TITLE|DESCRIPTION|ADDRESS)_DO_NOT_EXPOSE/);
+        } finally {
+          await pool.query('UPDATE users SET is_active=TRUE, role=$2 WHERE id=$1', [user.id, user.role]);
+        }
+      }
+    }
+  });
+
   await t.test('malformed project IDs cannot read or publish the owner draft', async () => {
     for (const id of [`${project.id}suffix`, `0${project.id}`]) {
       for (const route of [`/api/projects/${id}`, `/api/projects/${id}/details`]) {
