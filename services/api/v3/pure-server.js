@@ -4409,7 +4409,7 @@ const routes = {
       || (typeof body.project_id === 'string' && /^[1-9]\d*$/.test(body.project_id));
     const validAmountInput = typeof body.amount === 'number'
       || (typeof body.amount === 'string' && /^[1-9]\d*$/.test(body.amount));
-    if (!validProjectInput || !Number.isSafeInteger(projectId) || projectId <= 0
+    if (!validProjectInput || !Number.isSafeInteger(projectId) || projectId <= 0 || projectId > 2147483647
       || !validAmountInput
       || !Number.isInteger(amount) || amount <= 0 || amount > 2147483647
     ) {
