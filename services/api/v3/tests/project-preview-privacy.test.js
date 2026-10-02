@@ -158,6 +158,32 @@ test('unpublished project is hidden from everyone except its active owner', asyn
   expect(response.body.project.location).toBe(secretLocation);
 });
 
+test('full JSON project detail is hidden if the owner is disabled during the read', async () => {
+  const token = server.jwtSign({ userId: owner.id, role: 'homeowner' });
+  const originalActive = Object.getOwnPropertyDescriptor(owner, 'is_active');
+  let active = true;
+  let signalRoleCheck;
+  const roleChecked = new Promise(resolve => { signalRoleCheck = resolve; });
+  Object.defineProperty(owner, 'is_active', {
+    configurable: true,
+    get() {
+      signalRoleCheck();
+      return active;
+    },
+    set(value) { active = value; },
+  });
+  try {
+    const pending = request(`/api/projects/${draft.id}`, token);
+    await roleChecked;
+    owner.is_active = false;
+    const response = await pending;
+    expect(response.status).toBe(404);
+    expect(JSON.stringify(response.body)).not.toContain(secretDescription);
+  } finally {
+    Object.defineProperty(owner, 'is_active', originalActive);
+  }
+});
+
 test('personal project responses cannot be shared or stored by caches', async () => {
   const ownerToken = server.jwtSign({ userId: owner.id, role: 'homeowner' });
   const contractorToken = server.jwtSign({ userId: contractor.id, role: 'contractor' });
