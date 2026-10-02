@@ -416,6 +416,44 @@ test('a verified entitlement applies only to its project and is revoked immediat
   }
 });
 
+test.each([
+  ['project closes', 404],
+  ['access is revoked', 403],
+])('bid creation rejects when %s after the initial access check', async (change, expectedStatus) => {
+  const token = server.jwtSign({ userId: contractor.id, role: 'contractor' });
+  let grantStatus = 'paid';
+  let signalAccessCheck;
+  const accessChecked = new Promise(resolve => { signalAccessCheck = resolve; });
+  const grant = {
+    project_id: electricalProject.id,
+    contractor_id: contractor.id,
+    get status() {
+      signalAccessCheck();
+      return grantStatus;
+    },
+    set status(value) { grantStatus = value; },
+    provider_payment_id: 'local-fixture-access-race',
+    verified_at: '2026-09-29T00:00:00.000Z',
+  };
+  const before = server.db.bids.length;
+  server.db.project_access_entitlements.push(grant);
+  try {
+    const pending = request('/api/bids', token, 'POST', {
+      project_id: electricalProject.id, amount: 1000,
+    });
+    await accessChecked;
+    if (change === 'project closes') electricalProject.status = 'cancelled';
+    else grant.status = 'revoked';
+    const response = await pending;
+    expect(response.status).toBe(expectedStatus);
+    expect(server.db.bids).toHaveLength(before);
+  } finally {
+    electricalProject.status = 'open';
+    server.db.project_access_entitlements.splice(server.db.project_access_entitlements.indexOf(grant), 1);
+    server.db.bids.splice(before);
+  }
+});
+
 test('bid creation rejects a stale contractor role and invalid amounts', async () => {
   const token = server.jwtSign({ userId: contractor.id, role: 'contractor' });
   const grant = {
