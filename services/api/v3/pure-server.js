@@ -1751,6 +1751,8 @@ async function listStoredBidsForContractor(contractorId) {
        WHERE b.contractor_id = u.id ORDER BY b.created_at DESC`, [contractorId]);
     return result.rows.map(normalizeBid);
   }
+  const contractor = db.users.find(user => Number(user.id) === Number(contractorId));
+  if (!contractor?.is_active || contractor.role !== 'contractor') return [];
   return db.bids.filter(b => b.contractor_id === contractorId);
 }
 
