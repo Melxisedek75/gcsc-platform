@@ -1573,20 +1573,23 @@ test('two concurrent sweeps claim one event and make one paid grant', async () =
   assert.equal((await fulfillmentState(f)).audits.length, 1);
 });
 
-test('a future refund already in the inbox prevents an earlier paid sweep from granting', async () => {
-  const f = await dueFixture();
-  const current = Math.floor(new Date((await pool.query('SELECT clock_timestamp() AS now')).rows[0].now).getTime() / 1000);
-  const event = refund(f).event; event.created = current + 2; event.data.object.created = event.created;
-  const negative = signEvent(event); await receive(negative);
-  const paid = await sweep({ eventIds: [f.input.event.id] });
-  assert.equal(paid.reviewRequired, 1);
-  assert.equal((await fulfillmentState(f)).grants.length, 0);
-  assert.equal((await sweep({ eventIds: [negative.event.id] })).considered, 0);
-  await pool.query('SELECT pg_sleep(2.1)');
-  const refunded = await sweep({ eventIds: [negative.event.id] });
-  assert.equal(refunded.processed, 1);
-  assert.equal((await fulfillmentState(f)).grants[0].status, 'refunded');
-  assert.equal((await fulfillmentState(f)).purchase.status, 'refunded');
+test('a future full or partial refund in the inbox prevents an earlier paid sweep from granting', async () => {
+  for (const amount of [2500, 500]) {
+    const f = await dueFixture();
+    const current = Math.floor(new Date((await pool.query('SELECT clock_timestamp() AS now')).rows[0].now).getTime() / 1000);
+    const event = refund(f, { amount }).event; event.created = current + 2; event.data.object.created = event.created;
+    const negative = signEvent(event); await receive(negative);
+    const paid = await sweep({ eventIds: [f.input.event.id] });
+    assert.equal(paid.reviewRequired, 1);
+    assert.equal((await fulfillmentState(f)).grants.length, 0);
+    assert.equal((await sweep({ eventIds: [negative.event.id] })).considered, 0);
+    await pool.query('SELECT pg_sleep(2.1)');
+    const result = await sweep({ eventIds: [negative.event.id] });
+    assert.equal(amount === 2500 ? result.processed : result.reviewRequired, 1);
+    const state = await fulfillmentState(f);
+    assert.equal(state.grants[0].status, amount === 2500 ? 'refunded' : 'revoked');
+    assert.equal(state.purchase.status, amount === 2500 ? 'refunded' : 'review_required');
+  }
 });
 
 test('transient worker failure rolls back grant, records backoff and succeeds on a later sweep', async () => {
