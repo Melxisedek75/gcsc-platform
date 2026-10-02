@@ -3983,6 +3983,8 @@ const routes = {
   },
 
   'GET /api/financing/prechecks': async (req, res) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', 'Origin, Authorization');
     const auth = getUser(req);
     if (!auth) return json(res, 401, { error: 'Unauthorized' });
     const user = await findUserById(auth.userId);
@@ -4164,6 +4166,8 @@ const routes = {
 
   // Get current user
   'GET /api/me': async (req, res) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', 'Origin, Authorization');
     const user = getUser(req);
     if (!user) return json(res, 401, { error: 'Unauthorized' });
     const u = await findUserById(user.userId);

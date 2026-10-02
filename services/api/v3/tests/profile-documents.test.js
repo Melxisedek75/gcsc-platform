@@ -117,3 +117,13 @@ test('admin document, audit and financing reads cannot be stored by a shared cac
     expect(result.headers.get('vary')).toMatch(/Authorization/i);
   }
 });
+
+test('current-user and personal financing reads cannot be stored by a shared cache', async () => {
+  const token = jwtSign({ userId: 1, role: 'contractor' });
+  for (const route of ['/api/me', '/api/financing/prechecks']) {
+    const result = await request('GET', route, token);
+    expect(result.status).toBe(200);
+    expect(result.headers.get('cache-control')).toContain('no-store');
+    expect(result.headers.get('vary')).toMatch(/Authorization/i);
+  }
+});
