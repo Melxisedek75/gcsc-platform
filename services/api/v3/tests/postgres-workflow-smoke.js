@@ -135,6 +135,19 @@ class Pool {
     if (sql === 'delete from wallet_challenges where expires_at <= now()') {
       return { rows: [], rowCount: 0 };
     }
+    if (sql.startsWith('insert into project_access_checkout_bindings')
+      && sql.includes('select provider_checkout_id,id from project_access_purchases')) {
+      if ((state.project_access_purchases || []).some(row => row.provider_checkout_id)) {
+        throw new Error('Fake PG cannot backfill existing Checkout purchases');
+      }
+      return { rows: [], rowCount: 0 };
+    }
+    if (sql.startsWith('do $$ begin') && sql.includes('conflicting stored checkout bindings')) {
+      if ((state.project_access_purchases || []).some(row => row.provider_checkout_id)) {
+        throw new Error('Fake PG cannot verify existing Checkout bindings');
+      }
+      return { rows: [], rowCount: 0 };
+    }
     if (sql.includes('select 1')) return { rows: [{ ok: 1 }], rowCount: 1 };
 
     if (sql.includes('select count(*)::int as count from users')) {
