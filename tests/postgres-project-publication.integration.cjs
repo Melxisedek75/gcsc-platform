@@ -112,6 +112,32 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
   const contractor = await fixtureUser('contractor', 'publication-contractor');
   let project;
 
+  await t.test('legacy lead payment challenge requires the current PostgreSQL contractor role', async () => {
+    const buyer = await fixtureUser('contractor', 'legacy-lead-role-buyer');
+    await pool.query('UPDATE users SET wallet=$2 WHERE id=$1', [buyer.id,
+      { accountName: 'fixturelead1', permission: 'active', verified: true }]);
+    const originalVerifier = api._hooks.verifyHyperionTransfer;
+    api._hooks.verifyHyperionTransfer = async () => { throw new Error('No payment should be verified'); };
+    try {
+      const active = await request('POST', '/api/payment/lead-token', buyer);
+      assert.equal(active.status, 402);
+      assert.match(active.headers.get('www-authenticate') || '', /^Payment /);
+      for (const change of [
+        'UPDATE users SET is_active=FALSE WHERE id=$1',
+        "UPDATE users SET is_active=TRUE, role='homeowner' WHERE id=$1",
+      ]) {
+        await pool.query(change, [buyer.id]);
+        const denied = await request('POST', '/api/payment/lead-token', buyer);
+        assert.equal(denied.status, 403);
+        assert.equal(denied.headers.get('www-authenticate'), null);
+      }
+    } finally {
+      api._hooks.verifyHyperionTransfer = originalVerifier;
+    }
+    assert.equal((await pool.query('SELECT COUNT(*)::int AS count FROM lead_tokens WHERE user_id=$1',
+      [buyer.id])).rows[0].count, 0);
+  });
+
   await t.test('disabled PostgreSQL user cannot read /api/me with a previously valid token', async () => {
     const disabled = await fixtureUser('contractor', 'disabled-current-user');
     assert.equal((await request('GET', '/api/me', disabled)).status, 200);
