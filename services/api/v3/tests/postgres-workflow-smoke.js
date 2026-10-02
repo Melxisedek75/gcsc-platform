@@ -174,6 +174,12 @@ class Pool {
       return { rows: user ? [user] : [], rowCount: user ? 1 : 0 };
     }
 
+    if (sql === "select id from users where id = $1 and is_active = true and role = 'homeowner' for share") {
+      const user = state.users.find((row) => row.id === Number(params[0])
+        && row.is_active === true && row.role === 'homeowner');
+      return { rows: user ? [{ id: user.id }] : [], rowCount: user ? 1 : 0 };
+    }
+
     if (sql.includes('select * from user_documents where user_id')) {
       const userId = Number(params[0]);
       const rows = state.user_documents.filter((row) => row.user_id === userId);

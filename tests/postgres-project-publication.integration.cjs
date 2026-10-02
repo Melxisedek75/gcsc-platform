@@ -331,6 +331,30 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     }
   });
 
+  await t.test('disabled owner cannot create a draft after the initial role check', async () => {
+    const title = 'PRIVATE_CREATE_ROLE_RACE_DO_NOT_PERSIST';
+    const blocker = await pool.connect();
+    let responsePromise;
+    try {
+      await blocker.query('BEGIN');
+      await blocker.query('SELECT id FROM users WHERE id=$1 FOR UPDATE', [owner.id]);
+      responsePromise = request('POST', '/api/projects', owner,
+        { title, description: 'A draft from a disabled owner must not persist' });
+      await expectBlockedBy(blocker, responsePromise);
+      await blocker.query('UPDATE users SET is_active=FALSE WHERE id=$1', [owner.id]);
+      await blocker.query('COMMIT');
+      const response = await responsePromise;
+      assert.equal(response.status, 403);
+      assert.equal((await pool.query('SELECT COUNT(*)::int AS count FROM projects WHERE title=$1',
+        [title])).rows[0].count, 0);
+    } finally {
+      await blocker.query('ROLLBACK');
+      blocker.release();
+      await pool.query('UPDATE users SET is_active=TRUE WHERE id=$1', [owner.id]);
+      await pool.query('DELETE FROM projects WHERE title=$1', [title]);
+    }
+  });
+
   await t.test('malformed project IDs cannot read or publish the owner draft', async () => {
     for (const id of [`${project.id}suffix`, `0${project.id}`]) {
       for (const route of [`/api/projects/${id}`, `/api/projects/${id}/details`]) {
