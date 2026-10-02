@@ -167,6 +167,17 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     assert.equal(disabled.body.contractor, undefined);
   });
 
+  await t.test('demoted contractor profile is not publicly readable from PostgreSQL', async () => {
+    const listed = await fixtureUser('contractor', 'public-profile-demoted');
+    const route = `/api/contractors/${listed.id}/public`;
+    assert.equal((await request('GET', route)).status, 200);
+    await pool.query("UPDATE users SET role='admin' WHERE id=$1", [listed.id]);
+    const demoted = await request('GET', route);
+    assert.equal(demoted.status, 404);
+    assert.equal(demoted.headers.get('cache-control'), 'no-store');
+    assert.equal(demoted.body.contractor, undefined);
+  });
+
   await t.test('public contractor profile is hidden after disable during document read', async () => {
     const listed = await fixtureUser('contractor', 'public-profile-race');
     const route = `/api/contractors/${listed.id}/public`;
