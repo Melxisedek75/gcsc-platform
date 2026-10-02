@@ -158,6 +158,20 @@ test('a contractor bid list cannot be shared or stored by caches', async () => {
   expect(response.headers.vary.split(/,\s*/)).toEqual(expect.arrayContaining(['Origin', 'Authorization']));
 });
 
+test('a disabled or demoted contractor cannot read proposals with an old token', async () => {
+  const token = server.jwtSign({ userId: contractor.id, role: 'contractor' });
+  try {
+    contractor.is_active = false;
+    expect((await request('/api/bids/my/bids', token)).status).toBe(403);
+    contractor.is_active = true;
+    contractor.role = 'homeowner';
+    expect((await request('/api/bids/my/bids', token)).status).toBe(403);
+  } finally {
+    contractor.is_active = true;
+    contractor.role = 'contractor';
+  }
+});
+
 test('project details and bids require an exact numeric project ID', async () => {
   const ownerToken = server.jwtSign({ userId: owner.id, role: 'homeowner' });
   const contractorToken = server.jwtSign({ userId: contractor.id, role: 'contractor' });

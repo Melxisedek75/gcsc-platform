@@ -4461,6 +4461,7 @@ const routes = {
     res.setHeader('Vary', [res.getHeader('Vary'), 'Authorization'].filter(Boolean).join(', '));
     const user = getUser(req);
     if (!user) return json(res, 401, { error: 'Unauthorized' });
+    if (!(await hasCurrentRole(user, 'contractor'))) return json(res, 403, { error: 'Contractors only' });
     const bids = await listStoredBidsForContractor(user.userId);
     json(res, 200, { bids });
   },
