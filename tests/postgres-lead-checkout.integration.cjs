@@ -811,6 +811,17 @@ test('refund and grant concurrent processing never ends with paid access', async
   assert.equal((await fulfillmentState(f)).grants[0].status, 'refunded');
 });
 
+test('partial refund and grant concurrent processing leaves access suspended for review', async () => {
+  const f = await paidFixture(); const input = refund(f, { amount: 500 }); await receive(input);
+  await Promise.all([fulfill(f.input.event.id), fulfill(input.event.id)]);
+  const state = await fulfillmentState(f);
+  assert.equal(state.purchase.status, 'review_required');
+  assert.equal(state.grants.length, 1);
+  assert.equal(state.grants[0].status, 'revoked');
+  assert.equal((await fulfill(f.input.event.id)).duplicate, true);
+  assert.equal((await fulfillmentState(f)).grants[0].status, 'revoked');
+});
+
 test('concurrent identical refund deliveries and different event IDs for the same refund cannot apply twice', async () => {
   const f = await paidFixture(); await fulfill(f.input.event.id); const input = refund(f);
   await Promise.all(Array.from({ length: 4 }, () => receive(input)));
