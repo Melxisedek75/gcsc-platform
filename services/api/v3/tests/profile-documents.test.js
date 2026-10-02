@@ -19,7 +19,7 @@ async function request(method, route, token, body) {
   const response = await fetch(base + route, { method, headers: { 'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     ...(body ? { body: JSON.stringify(body) } : {}), signal: AbortSignal.timeout(5000) });
-  return { status: response.status, body: await response.json() };
+  return { status: response.status, headers: response.headers, body: await response.json() };
 }
 
 beforeAll(done => {
@@ -77,4 +77,20 @@ test('JSON legacy document without revision gets version 1; invalid base64 does 
   expect((await request('POST', '/api/auth/documents', token, { ...upload, fileDataUrl: 'data:application/pdf;base64,====' })).status).toBe(400);
   expect(db.user_documents[0].status).toBe('approved');
   expect((await request('POST', '/api/auth/documents', token, upload)).body.document.revision).toBe(2);
+});
+
+test('personal document and compliance reads cannot be stored by a shared cache', async () => {
+  const token = jwtSign({ userId: 1, role: 'contractor' });
+  const created = await request('POST', '/api/auth/documents', token, upload);
+  expect(created.status).toBe(201);
+  for (const route of [
+    '/api/auth/documents',
+    '/api/auth/compliance',
+    `/api/auth/documents/${created.body.document.id}/file?revision=1`,
+  ]) {
+    const result = await request('GET', route, token);
+    expect(result.status).toBe(200);
+    expect(result.headers.get('cache-control')).toContain('no-store');
+    expect(result.headers.get('vary')).toMatch(/Authorization/i);
+  }
 });

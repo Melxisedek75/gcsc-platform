@@ -3650,6 +3650,8 @@ const routes = {
   },
 
   'GET /api/auth/documents': async (req, res) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', 'Origin, Authorization');
     const auth = getUser(req);
     if (!auth) return json(res, 401, { error: 'Unauthorized' });
     const user = await findUserById(auth.userId);
@@ -3699,6 +3701,7 @@ const routes = {
 
   'GET /api/auth/documents/:id/file': async (req, res, params) => {
     res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Vary', 'Origin, Authorization');
     const user = await requireActiveUser(req, res);
     if (!user) return;
     const id = Number(params.id);
@@ -3727,6 +3730,8 @@ const routes = {
   },
 
   'GET /api/auth/compliance': async (req, res) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', 'Origin, Authorization');
     const auth = getUser(req);
     if (!auth) return json(res, 401, { error: 'Unauthorized' });
     const user = await findUserById(auth.userId);
