@@ -4231,11 +4231,8 @@ const routes = {
       entityId: project.id,
       metadata: {
         project_id: project.id,
-        title: project.title,
-        category: project.category,
         budget_min: project.budget_min,
         budget_max: project.budget_max,
-        location: project.location,
         timeline_days: project.timeline_days,
         status: project.status,
       },

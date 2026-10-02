@@ -122,6 +122,31 @@ test('public catalog cannot infer a private address through location filtering',
   expect(response.status).toBe(400);
 });
 
+test('creating a private project does not copy free text into the audit event', async () => {
+  const token = server.jwtSign({ userId: owner.id, role: 'homeowner' });
+  const beforeProjects = server.db.projects.length;
+  const beforeAudits = server.db.audit_events.length;
+  try {
+    const response = await request('/api/projects', token, 'POST', {
+      title: 'Private title 555-0100',
+      description: 'Private description 555-0100',
+      category: 'Private category 555-0100',
+      location: 'Private address 555-0100',
+      budget_min: 1000,
+    });
+    expect(response.status).toBe(201);
+    expect(response.body.project.location).toBe('Private address 555-0100');
+    const audit = server.db.audit_events.find(event => event.action === 'project.created'
+      && event.entity_id === response.body.project.id);
+    expect(audit).toBeDefined();
+    expect(audit.metadata.project_id).toBe(response.body.project.id);
+    expect(JSON.stringify(audit.metadata)).not.toMatch(/Private|555-0100/);
+  } finally {
+    server.db.projects.splice(beforeProjects);
+    server.db.audit_events.splice(beforeAudits);
+  }
+});
+
 test('unpublished project is hidden from everyone except its active owner', async () => {
   const strangerToken = server.jwtSign({ userId: otherOwner.id, role: 'homeowner' });
   expect((await request(`/api/projects/${draft.id}`)).status).toBe(404);

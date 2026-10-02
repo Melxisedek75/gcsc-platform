@@ -848,7 +848,9 @@ async function waitForServer(child) {
     assert.strictEqual(projectAudit.data.events.length, 1);
     assert.strictEqual(projectAudit.data.events[0].actor_id, owner.data.user.id);
     assert.strictEqual(projectAudit.data.events[0].entity_id, project.data.project.id);
-    assert.strictEqual(projectAudit.data.events[0].metadata.category, 'remodel');
+    assert.strictEqual(projectAudit.data.events[0].metadata.category, undefined);
+    assert.strictEqual(projectAudit.data.events[0].metadata.title, undefined);
+    assert.strictEqual(projectAudit.data.events[0].metadata.location, undefined);
     assert.strictEqual(projectAudit.data.events[0].metadata.budget_max, 5000);
 
     const bidSubmittedAudit = await request('GET', '/api/admin/audit-events?action=bid.submitted', null, adminToken);
