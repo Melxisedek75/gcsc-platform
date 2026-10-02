@@ -122,6 +122,18 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     assert.equal(response.headers.get('cache-control'), 'private, no-store');
   });
 
+  await t.test('disabled contractor profile is not publicly readable from PostgreSQL', async () => {
+    const listed = await fixtureUser('contractor', 'public-profile-contractor');
+    const route = `/api/contractors/${listed.id}/public`;
+    const active = await request('GET', route);
+    assert.equal(active.status, 200);
+    assert.equal(active.body.contractor.id, listed.id);
+    await pool.query('UPDATE users SET is_active=FALSE WHERE id=$1', [listed.id]);
+    const disabled = await request('GET', route);
+    assert.equal(disabled.status, 404);
+    assert.equal(disabled.body.contractor, undefined);
+  });
+
   await t.test('owner creates a persisted private draft; strangers cannot discover or bid on it', async () => {
     const created = await request('POST', '/api/projects', owner, {
       title: 'PRIVATE_TITLE_DO_NOT_EXPOSE', description: 'PRIVATE_DESCRIPTION_DO_NOT_EXPOSE',
