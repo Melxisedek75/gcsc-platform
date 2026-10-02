@@ -442,6 +442,20 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     assert.equal(await bidCount(), before + 1);
   });
 
+  await t.test('a disabled or demoted contractor cannot list persisted bids with an old token', async () => {
+    const mine = await request('GET', '/api/bids/my/bids', contractor);
+    assert.equal(mine.status, 200);
+    assert.ok(mine.body.bids.some(bid => bid.project_id === project.id));
+    try {
+      await pool.query('UPDATE users SET is_active=FALSE WHERE id=$1', [contractor.id]);
+      assert.equal((await request('GET', '/api/bids/my/bids', contractor)).status, 403);
+      await pool.query("UPDATE users SET is_active=TRUE, role='homeowner' WHERE id=$1", [contractor.id]);
+      assert.equal((await request('GET', '/api/bids/my/bids', contractor)).status, 403);
+    } finally {
+      await pool.query("UPDATE users SET is_active=TRUE, role='contractor' WHERE id=$1", [contractor.id]);
+    }
+  });
+
   await t.test('a bid cannot pass a concurrent project close, access revocation or contractor disable', async () => {
     const created = await request('POST', '/api/projects', owner,
       { title: 'Concurrent access fixture', description: 'Local transaction check' });
