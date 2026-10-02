@@ -183,6 +183,33 @@ test('a contractor bid list cannot be shared or stored by caches', async () => {
   expect(response.headers.vary.split(/,\s*/)).toEqual(expect.arrayContaining(['Origin', 'Authorization']));
 });
 
+test.each([owner, contractor])('personal projects are empty if user $id is disabled during the read', async user => {
+  const token = server.jwtSign({ userId: user.id, role: user.role });
+  const originalActive = Object.getOwnPropertyDescriptor(user, 'is_active');
+  let active = true;
+  let signalRoleCheck;
+  const roleChecked = new Promise(resolve => { signalRoleCheck = resolve; });
+  Object.defineProperty(user, 'is_active', {
+    configurable: true,
+    get() {
+      signalRoleCheck();
+      return active;
+    },
+    set(value) { active = value; },
+  });
+  try {
+    const pending = request('/api/projects/my/projects', token);
+    await roleChecked;
+    user.is_active = false;
+    const response = await pending;
+    expect(response.status).toBe(200);
+    expect(response.body.projects).toEqual([]);
+    expect(JSON.stringify(response.body)).not.toContain(secretDescription);
+  } finally {
+    Object.defineProperty(user, 'is_active', originalActive);
+  }
+});
+
 test('a disabled or demoted contractor cannot read proposals with an old token', async () => {
   const token = server.jwtSign({ userId: contractor.id, role: 'contractor' });
   try {
