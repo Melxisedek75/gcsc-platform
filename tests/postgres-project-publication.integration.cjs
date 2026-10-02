@@ -112,6 +112,16 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
   const contractor = await fixtureUser('contractor', 'publication-contractor');
   let project;
 
+  await t.test('disabled PostgreSQL user cannot read /api/me with a previously valid token', async () => {
+    const disabled = await fixtureUser('contractor', 'disabled-current-user');
+    assert.equal((await request('GET', '/api/me', disabled)).status, 200);
+    await pool.query('UPDATE users SET is_active=FALSE WHERE id=$1', [disabled.id]);
+    const response = await request('GET', '/api/me', disabled);
+    assert.equal(response.status, 403);
+    assert.deepEqual(response.body, { error: 'Account is inactive' });
+    assert.equal(response.headers.get('cache-control'), 'private, no-store');
+  });
+
   await t.test('owner creates a persisted private draft; strangers cannot discover or bid on it', async () => {
     const created = await request('POST', '/api/projects', owner, {
       title: 'PRIVATE_TITLE_DO_NOT_EXPOSE', description: 'PRIVATE_DESCRIPTION_DO_NOT_EXPOSE',
