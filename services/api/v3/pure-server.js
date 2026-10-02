@@ -4415,6 +4415,14 @@ const routes = {
     ) {
       return json(res, 400, { error: 'Valid project ID and positive amount required' });
     }
+    const timelineInput = body.proposed_timeline_days;
+    const timelineDays = timelineInput === undefined ? 30 : Number(timelineInput);
+    const validTimelineInput = timelineInput === undefined || typeof timelineInput === 'number'
+      || (typeof timelineInput === 'string' && /^[1-9]\d*$/.test(timelineInput));
+    if (!validTimelineInput || !Number.isInteger(timelineDays) || timelineDays <= 0
+      || timelineDays > 2147483647) {
+      return json(res, 400, { error: 'Valid positive proposal timeline required' });
+    }
     const project = await findStoredProjectById(projectId);
     if (!project || project.published !== true || project.status !== 'open' || project.escrow_id) {
       return json(res, 404, { error: 'Project not found' });
@@ -4423,7 +4431,9 @@ const routes = {
       return json(res, 403, { error: 'Paid access to this project required', code: 'project_access_required' });
     }
 
-    const placement = await createStoredBid(user.userId, { ...body, project_id: projectId, amount });
+    const placement = await createStoredBid(user.userId, {
+      ...body, project_id: projectId, amount, proposed_timeline_days: timelineDays,
+    });
     if (placement.denial === 'project') return json(res, 404, { error: 'Project not found' });
     if (placement.denial === 'access') {
       return json(res, 403, { error: 'Paid access to this project required', code: 'project_access_required' });
