@@ -4350,6 +4350,10 @@ const routes = {
     const bids = await enrichBidsWithContractors(isOwner
       ? storedBids
       : storedBids.filter(bid => Number(bid.contractor_id) === Number(auth.userId)));
+    const stillAuthorized = isOwner
+      ? await hasCurrentRole(auth, 'homeowner')
+      : await isAcceptedProjectContractor(project, auth);
+    if (!stillAuthorized) return json(res, 404, { error: 'Project not found' });
     json(res, 200, { project, bids });
   },
 
