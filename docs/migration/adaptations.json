@@ -51,8 +51,8 @@
   {
     "path": "services/api/v3/pure-server.js",
     "sourceBlob": "952128e9316fe78bef42dba8ddc7b04eb09e29e5",
-    "sha256": "98df2d7d4f867e92829ac6a3608d7ad32ae2aec46ec2b329f358949d5ece983e",
-    "reason": "Require verified wallet ownership before payment challenges and bid readiness; preserve wallet-first login plus authenticated sign-only binding, single-use challenges and strict XPR Testnet authority checks. Fail closed on JWT configuration, isolate test storage and bind auth limits to the direct peer. Preserve fresh admin ACL, revision-bound document review and PostgreSQL participant chat. Merge October private drafts, free publication, redacted previews, project-specific paid details and transactional bid/accept checks through the canonical shared schema including paid entitlements. Reject malformed legacy project IDs before detail reads or owner publication. Keep personal project and bid-list responses private and uncacheable, varying by Authorization. Keep legacy posting opt-in and replay-safe without publishing pending receipts.",
+    "sha256": "63465a72da557b01b1f1e5b988364536cd876b373717e4048599a799675a5f59",
+    "reason": "Require verified wallet ownership before payment challenges and bid readiness; preserve wallet-first login plus authenticated sign-only binding, single-use challenges and strict XPR Testnet authority checks. Fail closed on JWT configuration, isolate test storage and bind auth limits to the direct peer. Preserve fresh admin ACL, revision-bound document review and PostgreSQL participant chat. Merge October private drafts, free publication, redacted previews, project-specific paid details and transactional bid/accept checks through the canonical shared schema including paid entitlements. Reject malformed legacy project IDs before detail reads or owner publication. Keep personal project, bid-list and escrow-read responses private and uncacheable, varying by Authorization. Keep legacy posting opt-in and replay-safe without publishing pending receipts.",
     "test": "npm run check; npm run test:api; npm run check:integration-contracts; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage; npm --prefix services/api/v3 run test:pg-workflow; focused project-preview-privacy and project-paid-details Jest tests; isolated project-publication and project-browser PostgreSQL acceptance"
   },
   {
@@ -65,9 +65,9 @@
   {
     "path": "services/api/v3/tests/escrow-milestones.test.js",
     "sourceBlob": "21f10e3556473b1ee6f99c552c7973dd1b74b1aa",
-    "sha256": "4b53a77137bea904b64f412d8099531dfc216ddc47cf5dc5206bc1b116404eef",
-    "reason": "Positive escrow lifecycle fixtures explicitly model already server-verified wallet bindings; forged metadata rejection is covered separately. Isolate JSON fixture IO from the checkout to prevent shared-file EBUSY and accidental data modification.",
-    "test": "npm run check; npm run test:api; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage"
+    "sha256": "88a466ee05cd85acde6f4fcc4fef0023a16be17089f254c2e77b5b2549e36a7b",
+    "reason": "Positive escrow lifecycle fixtures explicitly model already server-verified wallet bindings; forged metadata rejection is covered separately. Isolate JSON fixture IO from the checkout to prevent shared-file EBUSY and accidental data modification. Assert private no-store cache headers for participant escrow reads.",
+    "test": "npm run check; npm run test:api; focused escrow-milestones Jest suite; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage"
   },
   {
     "path": "services/api/v3/tests/postgres-storage-smoke.js",

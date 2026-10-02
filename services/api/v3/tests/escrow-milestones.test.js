@@ -127,7 +127,7 @@ function request({ method = 'POST', path, token, body }) {
       res.on('end', () => {
         let parsed;
         try { parsed = JSON.parse(buf); } catch { parsed = buf; }
-        resolve({ status: res.statusCode, body: parsed });
+        resolve({ status: res.statusCode, headers: res.headers, body: parsed });
       });
     });
     req.on('error', reject);
@@ -550,6 +550,10 @@ describe('GET /api/escrow/:id and /api/escrow/my/escrows', () => {
     expect(asHomeowner.status).toBe(200);
     expect(asContractor.status).toBe(200);
     expect(asOutsider.status).toBe(404);
+    for (const response of [asHomeowner, asContractor]) {
+      expect(response.headers['cache-control']).toBe('private, no-store');
+      expect(response.headers.vary.split(/,\s*/)).toEqual(expect.arrayContaining(['Origin', 'Authorization']));
+    }
   });
 
   test('my/escrows only returns escrows the caller participates in', async () => {
@@ -558,6 +562,8 @@ describe('GET /api/escrow/:id and /api/escrow/my/escrows', () => {
     const notMine = await request({ method: 'GET', path: '/api/escrow/my/escrows', token: OTHER_HOMEOWNER_TOKEN });
     expect(mine.body.escrows.map(e => e.id)).toContain(escrowId);
     expect(notMine.body.escrows.length).toBe(0);
+    expect(mine.headers['cache-control']).toBe('private, no-store');
+    expect(mine.headers.vary.split(/,\s*/)).toEqual(expect.arrayContaining(['Origin', 'Authorization']));
   });
 });
 

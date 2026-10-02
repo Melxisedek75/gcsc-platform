@@ -4450,6 +4450,8 @@ const routes = {
 
   // Get escrow
   'GET /api/escrow/:id': async (req, res, params) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', [res.getHeader('Vary'), 'Authorization'].filter(Boolean).join(', '));
     const user = getUser(req);
     if (!user) return json(res, 401, { error: 'Unauthorized' });
     
@@ -4710,6 +4712,8 @@ const routes = {
 
   // My escrows
   'GET /api/escrow/my/escrows': async (req, res) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', [res.getHeader('Vary'), 'Authorization'].filter(Boolean).join(', '));
     const user = getUser(req);
     if (!user) return json(res, 401, { error: 'Unauthorized' });
     const escrows = await listStoredEscrowsForUser(user.userId);
