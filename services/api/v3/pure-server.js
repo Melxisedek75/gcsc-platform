@@ -3684,7 +3684,6 @@ const routes = {
         entityId: document.id,
         metadata: {
           document_type: document.document_type,
-          file_name: document.file_name,
           file_sha256: document.file_sha256,
           revision: document.revision,
           status: document.status,

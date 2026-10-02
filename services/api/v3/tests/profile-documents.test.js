@@ -70,6 +70,19 @@ test('JSON document download and re-submission preserve owner ACL, revision and 
   expect(db.audit_events.filter(event => event.action === 'document.reviewed')[0].metadata.revision).toBe(1);
 });
 
+test('document audit metadata does not duplicate a private upload filename', async () => {
+  const token = jwtSign({ userId: 1, role: 'contractor' });
+  const fileName = 'Private client 555-0100.pdf';
+  const response = await request('POST', '/api/auth/documents', token, { ...upload, fileName });
+  expect(response.status).toBe(201);
+  expect(response.body.document.file_name).toBe(fileName);
+  const audit = db.audit_events.find(event => event.action === 'document.submitted'
+    && event.entity_id === response.body.document.id);
+  expect(audit).toBeDefined();
+  expect(audit.metadata.revision).toBe(1);
+  expect(JSON.stringify(audit.metadata)).not.toContain('Private client 555-0100');
+});
+
 test('JSON legacy document without revision gets version 1; invalid base64 does not replace it', async () => {
   const token = jwtSign({ userId: 1, role: 'contractor' });
   db.user_documents.push({ id: 7, user_id: 1, document_type: 'contractor_license', status: 'approved' });
