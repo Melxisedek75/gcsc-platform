@@ -166,6 +166,21 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     await pool.query("UPDATE users SET role='homeowner' WHERE id=$1", [owner.id]);
   });
 
+  await t.test('malformed project IDs cannot read or publish the owner draft', async () => {
+    for (const id of [`${project.id}suffix`, `0${project.id}`]) {
+      for (const route of [`/api/projects/${id}`, `/api/projects/${id}/details`]) {
+        const response = await request('GET', route, owner);
+        assert.equal(response.status, 404);
+        assert.doesNotMatch(JSON.stringify(response.body), /PRIVATE_(TITLE|DESCRIPTION|ADDRESS)_DO_NOT_EXPOSE/);
+      }
+      assert.equal((await request('POST', `/api/projects/${id}/publish`, owner)).status, 404);
+      assert.deepEqual((await pool.query('SELECT published,published_at FROM projects WHERE id=$1', [project.id])).rows,
+        [{ published: false, published_at: null }]);
+      assert.equal((await pool.query("SELECT COUNT(*)::int AS count FROM audit_events WHERE action='project.published' AND entity_id=$1",
+        [String(project.id)])).rows[0].count, 0);
+    }
+  });
+
   await t.test('only the current active owner can publish', async () => {
     const route = `/api/projects/${project.id}/publish`;
     assert.equal((await request('POST', route, null)).status, 401);
