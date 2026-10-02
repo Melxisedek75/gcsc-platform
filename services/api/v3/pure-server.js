@@ -4390,6 +4390,7 @@ const routes = {
         return project.published === true && project.status === 'open'
           ? publicProjectPreview(project) : null;
       }))).filter(Boolean);
+    if (!(await hasCurrentRole(user, user.role))) return json(res, 200, { projects: [] });
     json(res, 200, {
       projects: visibleProjects,
     });
