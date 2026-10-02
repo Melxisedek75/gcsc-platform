@@ -362,6 +362,65 @@ test('bid creation rejects a stale contractor role and invalid amounts', async (
   }
 });
 
+test('bid creation rejects a contractor disabled while the request body is pending', async () => {
+  const token = server.jwtSign({ userId: contractor.id, role: 'contractor' });
+  const grant = {
+    project_id: published.id,
+    contractor_id: contractor.id,
+    status: 'paid',
+    provider_payment_id: 'local-fixture-role-race',
+    verified_at: '2026-09-29T00:00:00.000Z',
+  };
+  const payload = JSON.stringify({ project_id: published.id, amount: 1000 });
+  server.db.project_access_entitlements.push(grant);
+  const before = server.db.bids.length;
+  const originalActive = Object.getOwnPropertyDescriptor(contractor, 'is_active');
+  let active = true;
+  let signalRoleCheck;
+  const roleChecked = new Promise(resolve => { signalRoleCheck = resolve; });
+  Object.defineProperty(contractor, 'is_active', {
+    configurable: true,
+    get() {
+      signalRoleCheck();
+      return active;
+    },
+    set(value) { active = value; },
+  });
+  try {
+    const response = await new Promise((resolve, reject) => {
+      const req = http.request({
+        hostname: '127.0.0.1',
+        port: server.address().port,
+        path: '/api/bids',
+        method: 'POST',
+        agent: false,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(payload),
+        },
+      }, res => {
+        let data = '';
+        res.on('data', chunk => { data += chunk; });
+        res.on('end', () => resolve({ status: res.statusCode, body: JSON.parse(data) }));
+      });
+      req.setTimeout(5000, () => req.destroy(new Error('Local request timed out')));
+      req.on('error', reject);
+      req.flushHeaders();
+      roleChecked.then(() => {
+        contractor.is_active = false;
+        req.end(payload);
+      });
+    });
+    expect(response.status).toBe(403);
+    expect(server.db.bids).toHaveLength(before);
+  } finally {
+    Object.defineProperty(contractor, 'is_active', originalActive);
+    server.db.project_access_entitlements.splice(server.db.project_access_entitlements.indexOf(grant), 1);
+    server.db.bids.splice(before);
+  }
+});
+
 test('category filtering uses an allowed public category without losing Electrical projects', async () => {
   const response = await request('/api/projects?category=Electrical');
   expect(response.status).toBe(200);
