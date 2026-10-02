@@ -2075,7 +2075,7 @@ async function verificationForContractorId(contractorId) {
 
 async function publicContractorDetails(contractorId) {
   const { contractor, verification } = await verificationForContractorId(contractorId);
-  if (!contractor || contractor.role !== 'contractor') return null;
+  if (!contractor?.is_active || contractor.role !== 'contractor') return null;
 
   return {
     contractor: publicContractorProfile(contractor),

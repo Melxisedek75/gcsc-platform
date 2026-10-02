@@ -172,6 +172,19 @@ test('a disabled or demoted contractor cannot read proposals with an old token',
   }
 });
 
+test('a disabled contractor is not exposed by the public profile endpoint', async () => {
+  const path = `/api/contractors/${contractor.id}/public`;
+  expect((await request(path)).status).toBe(200);
+  try {
+    contractor.is_active = false;
+    const response = await request(path);
+    expect(response.status).toBe(404);
+    expect(response.body).not.toHaveProperty('contractor');
+  } finally {
+    contractor.is_active = true;
+  }
+});
+
 test('project details and bids require an exact numeric project ID', async () => {
   const ownerToken = server.jwtSign({ userId: owner.id, role: 'homeowner' });
   const contractorToken = server.jwtSign({ userId: contractor.id, role: 'contractor' });

@@ -51,7 +51,7 @@
   {
     "path": "services/api/v3/pure-server.js",
     "sourceBlob": "952128e9316fe78bef42dba8ddc7b04eb09e29e5",
-    "sha256": "4f29697e1103411e3b6c48267e6fd443286967ea5caadb2bd992ac54db0c2456",
+    "sha256": "1b8c0716223fcc53aac0a1c25f6f2f8552ec262ea36025665bab93d2257a802b",
     "reason": "Require verified wallet ownership before payment challenges and bid readiness; preserve wallet-first login plus authenticated sign-only binding, single-use challenges and strict XPR Testnet authority checks. Fail closed on JWT configuration, isolate test storage and bind auth limits to the direct peer. Preserve fresh admin ACL, revision-bound document review and PostgreSQL participant chat. Merge October private drafts, free publication, redacted previews, project-specific paid details and transactional bid/accept checks through the canonical shared schema including paid entitlements. Reject malformed legacy project IDs before detail reads or owner publication. Keep personal project, bid-list, escrow-read, document, compliance, profile, wallet, admin review/audit, current-user and financing-precheck responses private and uncacheable, varying by Authorization. Require a currently active account for /api/me and a current contractor role before listing personal bids. Keep legacy posting opt-in and replay-safe without publishing pending receipts.",
     "test": "npm run check; npm run test:api; npm run check:integration-contracts; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage; npm --prefix services/api/v3 run test:pg-workflow; focused project-preview-privacy and project-paid-details Jest tests; isolated project-publication and project-browser PostgreSQL acceptance"
   },
