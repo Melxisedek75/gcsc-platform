@@ -166,6 +166,21 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     await pool.query("UPDATE users SET role='homeowner' WHERE id=$1", [owner.id]);
   });
 
+  await t.test('personal project reads are private and vary by authorization', async () => {
+    for (const [route, user] of [
+      [`/api/projects/${project.id}`, owner],
+      ['/api/projects/my/projects', owner],
+      ['/api/projects/my/projects', contractor],
+    ]) {
+      const response = await request('GET', route, user);
+      assert.equal(response.status, 200);
+      assert.equal(response.headers.get('cache-control'), 'private, no-store');
+      const vary = (response.headers.get('vary') || '').split(',').map(value => value.trim().toLowerCase());
+      assert.ok(vary.includes('origin'));
+      assert.ok(vary.includes('authorization'));
+    }
+  });
+
   await t.test('malformed project IDs cannot read or publish the owner draft', async () => {
     for (const id of [`${project.id}suffix`, `0${project.id}`]) {
       for (const route of [`/api/projects/${id}`, `/api/projects/${id}/details`]) {
