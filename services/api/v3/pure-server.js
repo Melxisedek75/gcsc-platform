@@ -1555,24 +1555,33 @@ async function createStoredProject(homeownerId, body) {
   };
 
   if (USE_POSTGRES) {
-    const result = await queryPostgres(
-      `INSERT INTO projects (homeowner_id, title, description, category, budget_min, budget_max, location, timeline_days)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING *`,
-      [
-        project.homeowner_id,
-        project.title,
-        project.description,
-        project.category,
-        project.budget_min,
-        project.budget_max,
-        project.location,
-        project.timeline_days,
-      ]
-    );
-    return normalizeProject(result.rows[0]);
+    return withPostgresTransaction(async client => {
+      const owner = await client.query(
+        "SELECT id FROM users WHERE id = $1 AND is_active = TRUE AND role = 'homeowner' FOR SHARE",
+        [homeownerId]
+      );
+      if (owner.rows.length === 0) return null;
+      const result = await client.query(
+        `INSERT INTO projects (homeowner_id, title, description, category, budget_min, budget_max, location, timeline_days)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         RETURNING *`,
+        [
+          project.homeowner_id,
+          project.title,
+          project.description,
+          project.category,
+          project.budget_min,
+          project.budget_max,
+          project.location,
+          project.timeline_days,
+        ]
+      );
+      return normalizeProject(result.rows[0]);
+    });
   }
 
+  const owner = db.users.find(user => user.id === homeownerId);
+  if (!owner?.is_active || owner.role !== 'homeowner') return null;
   const stored = { id: db.nextId('projects'), ...project };
   db.projects.push(stored);
   saveDatabase();
@@ -4232,6 +4241,7 @@ const routes = {
     const body = await parseBody(req);
     if (!body.title || !body.description) return json(res, 400, { error: 'Title and description required' });
     const project = await createStoredProject(user.userId, body);
+    if (!project) return json(res, 403, { error: 'Homeowners only' });
     await recordAuditEvent(req, {
       actorId: user.userId,
       targetUserId: user.userId,
