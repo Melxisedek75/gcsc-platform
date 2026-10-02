@@ -72,7 +72,7 @@ function request(path, token, method = 'GET', body) {
     }, res => {
       let body = '';
       res.on('data', chunk => { body += chunk; });
-      res.on('end', () => resolve({ status: res.statusCode, body: JSON.parse(body) }));
+      res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body: JSON.parse(body) }));
     });
     req.setTimeout(5000, () => req.destroy(new Error('Local request timed out')));
     req.on('error', reject);
@@ -131,6 +131,22 @@ test('unpublished project is hidden from everyone except its active owner', asyn
   expect(response.status).toBe(200);
   expect(response.body.project.description).toBe(secretDescription);
   expect(response.body.project.location).toBe(secretLocation);
+});
+
+test('personal project responses cannot be shared or stored by caches', async () => {
+  const ownerToken = server.jwtSign({ userId: owner.id, role: 'homeowner' });
+  const contractorToken = server.jwtSign({ userId: contractor.id, role: 'contractor' });
+  for (const [path, token] of [
+    [`/api/projects/${draft.id}`, ownerToken],
+    ['/api/projects/my/projects', ownerToken],
+    [`/api/projects/${acceptedProject.id}`, contractorToken],
+    ['/api/projects/my/projects', contractorToken],
+  ]) {
+    const response = await request(path, token);
+    expect(response.status).toBe(200);
+    expect(response.headers['cache-control']).toBe('private, no-store');
+    expect(response.headers.vary.split(/,\s*/)).toEqual(expect.arrayContaining(['Origin', 'Authorization']));
+  }
 });
 
 test('project details and bids require an exact numeric project ID', async () => {

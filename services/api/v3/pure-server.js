@@ -4286,6 +4286,8 @@ const routes = {
   },
 
   'GET /api/projects/:id': async (req, res, params) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', [res.getHeader('Vary'), 'Authorization'].filter(Boolean).join(', '));
     const projectId = Number(params.id);
     if (!/^[1-9]\d*$/.test(params.id) || !Number.isSafeInteger(projectId) || projectId > 2147483647) {
       return json(res, 404, { error: 'Project not found' });
@@ -4317,6 +4319,8 @@ const routes = {
 
   // My projects
   'GET /api/projects/my/projects': async (req, res) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', [res.getHeader('Vary'), 'Authorization'].filter(Boolean).join(', '));
     const user = getUser(req);
     if (!user) return json(res, 401, { error: 'Unauthorized' });
     if (!(await hasCurrentRole(user, user.role))) return json(res, 403, { error: 'Account role is not active' });
