@@ -2106,12 +2106,15 @@ async function verificationForContractorId(contractorId) {
 }
 
 async function publicContractorDetails(contractorId) {
-  const { contractor, verification } = await verificationForContractorId(contractorId);
+  const initial = await findUserById(contractorId);
+  if (!initial) return null;
+  const documents = await listStoredUserDocuments(contractorId);
+  const contractor = await findUserById(contractorId);
   if (!contractor?.is_active || contractor.role !== 'contractor') return null;
 
   return {
     contractor: publicContractorProfile(contractor),
-    verification,
+    verification: complianceForUser(contractor, documents),
   };
 }
 
