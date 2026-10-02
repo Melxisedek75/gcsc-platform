@@ -505,6 +505,16 @@ test('bid creation rejects a stale contractor role and invalid amounts', async (
   }
 });
 
+test('bid creation rejects project IDs outside PostgreSQL integer range', async () => {
+  const token = server.jwtSign({ userId: contractor.id, role: 'contractor' });
+  const before = server.db.bids.length;
+  for (const projectId of [2147483648, '2147483648']) {
+    const response = await request('/api/bids', token, 'POST', { project_id: projectId, amount: 1000 });
+    expect(response.status).toBe(400);
+    expect(server.db.bids).toHaveLength(before);
+  }
+});
+
 test('bid creation rejects a contractor disabled while the request body is pending', async () => {
   const token = server.jwtSign({ userId: contractor.id, role: 'contractor' });
   const grant = {

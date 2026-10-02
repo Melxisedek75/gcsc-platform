@@ -639,6 +639,16 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     assert.deepEqual(countsAfter, countsBefore, 'Details reads must not create bids or payment records');
   });
 
+  await t.test('bid creation rejects project IDs outside PostgreSQL integer range', async () => {
+    const before = (await pool.query('SELECT COUNT(*)::int AS count FROM bids')).rows[0].count;
+    for (const projectId of [2147483648, '2147483648']) {
+      const response = await request('POST', '/api/bids', contractor,
+        { project_id: projectId, amount: 1000 });
+      assert.equal(response.status, 400);
+      assert.equal((await pool.query('SELECT COUNT(*)::int AS count FROM bids')).rows[0].count, before);
+    }
+  });
+
   await t.test('only a current paid entitlement for this project allows a bid', async () => {
     const other = await request('POST', '/api/projects', owner,
       { title: 'Other project', description: 'Separate access grant', category: 'roofing' });
