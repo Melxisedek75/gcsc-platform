@@ -1720,6 +1720,14 @@ async function createStoredBid(contractorId, body) {
     });
   }
 
+  const currentProject = db.projects.find(project => Number(project.id) === bid.project_id);
+  if (!currentProject || currentProject.published !== true || currentProject.status !== 'open'
+    || currentProject.escrow_id) return { denial: 'project' };
+  const hasAccess = db.project_access_entitlements.some(grant =>
+    Number(grant.project_id) === bid.project_id
+    && Number(grant.contractor_id) === Number(contractorId)
+    && grant.status === 'paid' && !!grant.provider_payment_id && !!grant.verified_at);
+  if (!hasAccess) return { denial: 'access' };
   const contractor = db.users.find(user => Number(user.id) === Number(contractorId));
   if (!contractor?.is_active || contractor.role !== 'contractor') {
     return { denial: 'contractor' };
