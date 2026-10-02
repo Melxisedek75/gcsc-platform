@@ -296,6 +296,28 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     }
   });
 
+  await t.test('personal list does not disclose after account disable during its project read', async () => {
+    for (const user of [owner, contractor]) {
+      const blocker = await pool.connect();
+      let responsePromise;
+      try {
+        await blocker.query('BEGIN');
+        await blocker.query('LOCK TABLE projects IN ACCESS EXCLUSIVE MODE');
+        responsePromise = request('GET', '/api/projects/my/projects', user);
+        await expectBlockedBy(blocker, responsePromise);
+        await pool.query('UPDATE users SET is_active=FALSE WHERE id=$1', [user.id]);
+        await blocker.query('COMMIT');
+        const response = await responsePromise;
+        assert.equal(response.status, 200);
+        assert.deepEqual(response.body.projects, []);
+      } finally {
+        await blocker.query('ROLLBACK');
+        blocker.release();
+        await pool.query('UPDATE users SET is_active=TRUE WHERE id=$1', [user.id]);
+      }
+    }
+  });
+
   await t.test('malformed project IDs cannot read or publish the owner draft', async () => {
     for (const id of [`${project.id}suffix`, `0${project.id}`]) {
       for (const route of [`/api/projects/${id}`, `/api/projects/${id}/details`]) {

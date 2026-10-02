@@ -250,13 +250,19 @@ class Pool {
       return { rows: project ? [project] : [], rowCount: project ? 1 : 0 };
     }
 
-    if (sql.startsWith('select * from projects where homeowner_id')) {
-      const rows = byNewest(state.projects.filter((row) => row.homeowner_id === Number(params[0])));
+    if (sql.startsWith('select p.* from projects p join users u')
+      && sql.includes("u.role = 'homeowner'")) {
+      const user = state.users.find((row) => row.id === Number(params[0]));
+      const rows = user?.is_active && user.role === 'homeowner'
+        ? byNewest(state.projects.filter((row) => row.homeowner_id === user.id)) : [];
       return { rows, rowCount: rows.length };
     }
 
-    if (sql.startsWith('select distinct p.* from projects p join bids b')) {
+    if (sql.startsWith('select distinct p.* from projects p join users u')
+      && sql.includes("u.role = 'contractor'")) {
       const contractorId = Number(params[0]);
+      const user = state.users.find((row) => row.id === contractorId);
+      if (!user?.is_active || user.role !== 'contractor') return { rows: [], rowCount: 0 };
       const projectIds = new Set(state.bids.filter((row) => row.contractor_id === contractorId).map((row) => row.project_id));
       const rows = byNewest(state.projects.filter((row) => projectIds.has(row.id)));
       return { rows, rowCount: rows.length };

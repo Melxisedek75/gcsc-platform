@@ -205,8 +205,8 @@
   {
     "path": "services/api/v3/tests/postgres-workflow-smoke.js",
     "sourceBlob": "81ddb88e3f3fa65957478f7191a10d5e9b8720f4",
-    "sha256": "8cef7b80a0e5bf7dafc10bde711a2e652317db0394304a3901f4d19c8c555317",
-    "reason": "Model transactional rollback and project-specific paid grants; isolate API, wallet modules, canonical schema and JSON data in retained scratch with sanitized child environment. Model canonical challenge expiry cleanup and fail closed if Checkout binding backfill would need nonempty purchase data. Keep unpaid/unverified acceptance denial and use an explicit previously verified fixture only for the later workflow; no runtime ownership bypass or real settlement.",
+    "sha256": "e38b8354e97dea2d28e72556cf2481ba8a31ee7574968d4b062568519ae4aec3",
+    "reason": "Model transactional rollback and project-specific paid grants; isolate API, wallet modules, canonical schema and JSON data in retained scratch with sanitized child environment. Model canonical challenge expiry cleanup and fail closed if Checkout binding backfill would need nonempty purchase data. Recognize current-role-bound personal project SQL and filter inactive or role-changed users. Keep unpaid/unverified acceptance denial and use an explicit previously verified fixture only for the later workflow; no runtime ownership bypass or real settlement.",
     "test": "node services/api/v3/tests/postgres-workflow-smoke.js; npm run test:api; isolated PostgreSQL project acceptance; node --test tests/migration.test.mjs"
   },
   {
