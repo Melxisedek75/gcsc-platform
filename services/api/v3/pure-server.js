@@ -4369,6 +4369,7 @@ const routes = {
   },
 
   'GET /api/contractors/:id/public': async (req, res, params) => {
+    res.setHeader('Cache-Control', 'no-store');
     const contractorId = Number(params.id);
     if (!/^[1-9]\d*$/.test(params.id) || !Number.isSafeInteger(contractorId) || contractorId > 2147483647) {
       return json(res, 404, { error: 'Contractor profile not found' });
