@@ -236,6 +236,31 @@ test.each([owner, contractor])('personal projects are empty if user $id is disab
   }
 });
 
+test('accepted contractor project list omits private detail after role revocation during relationship lookup', async () => {
+  const token = server.jwtSign({ userId: contractor.id, role: 'contractor' });
+  const originalEscrowId = Object.getOwnPropertyDescriptor(acceptedProject, 'escrow_id');
+  let reads = 0;
+  Object.defineProperty(acceptedProject, 'escrow_id', {
+    configurable: true,
+    get() {
+      reads += 1;
+      if (reads === 2) contractor.is_active = false;
+      return acceptedEscrow.id;
+    },
+  });
+  try {
+    const response = await request('/api/projects/my/projects', token);
+    expect(reads).toBeGreaterThanOrEqual(2);
+    expect(response.status).toBe(200);
+    expect(response.body.projects).toEqual([]);
+    expect(JSON.stringify(response.body)).not.toContain(secretDescription);
+    expect(JSON.stringify(response.body)).not.toContain(secretLocation);
+  } finally {
+    Object.defineProperty(acceptedProject, 'escrow_id', originalEscrowId);
+    contractor.is_active = true;
+  }
+});
+
 test('a disabled or demoted contractor cannot read proposals with an old token', async () => {
   const token = server.jwtSign({ userId: contractor.id, role: 'contractor' });
   try {
