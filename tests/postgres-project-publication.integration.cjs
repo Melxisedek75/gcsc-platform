@@ -297,24 +297,37 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
   });
 
   await t.test('personal list does not disclose after account disable during its project read', async () => {
-    for (const user of [owner, contractor]) {
-      const blocker = await pool.connect();
-      let responsePromise;
-      try {
-        await blocker.query('BEGIN');
-        await blocker.query('LOCK TABLE projects IN ACCESS EXCLUSIVE MODE');
-        responsePromise = request('GET', '/api/projects/my/projects', user);
-        await expectBlockedBy(blocker, responsePromise);
-        await pool.query('UPDATE users SET is_active=FALSE WHERE id=$1', [user.id]);
-        await blocker.query('COMMIT');
-        const response = await responsePromise;
-        assert.equal(response.status, 200);
-        assert.deepEqual(response.body.projects, []);
-      } finally {
-        await blocker.query('ROLLBACK');
-        blocker.release();
-        await pool.query('UPDATE users SET is_active=TRUE WHERE id=$1', [user.id]);
+    const raceProject = (await pool.query(`INSERT INTO projects
+      (homeowner_id, title, description, published, published_at)
+      VALUES ($1, 'Role race fixture', 'PRIVATE_ROLE_RACE_DO_NOT_EXPOSE', TRUE, NOW()) RETURNING id`,
+    [owner.id])).rows[0];
+    try {
+      await pool.query(`INSERT INTO bids (project_id, contractor_id, amount, status)
+        VALUES ($1, $2, 1550, 'pending')`, [raceProject.id, contractor.id]);
+      for (const user of [owner, contractor]) {
+        const before = await request('GET', '/api/projects/my/projects', user);
+        assert.equal(before.status, 200);
+        assert.ok(before.body.projects.some(item => item.id === raceProject.id));
+        const blocker = await pool.connect();
+        let responsePromise;
+        try {
+          await blocker.query('BEGIN');
+          await blocker.query('LOCK TABLE projects IN ACCESS EXCLUSIVE MODE');
+          responsePromise = request('GET', '/api/projects/my/projects', user);
+          await expectBlockedBy(blocker, responsePromise);
+          await pool.query('UPDATE users SET is_active=FALSE WHERE id=$1', [user.id]);
+          await blocker.query('COMMIT');
+          const response = await responsePromise;
+          assert.equal(response.status, 200);
+          assert.deepEqual(response.body.projects, []);
+        } finally {
+          await blocker.query('ROLLBACK');
+          blocker.release();
+          await pool.query('UPDATE users SET is_active=TRUE WHERE id=$1', [user.id]);
+        }
       }
+    } finally {
+      await pool.query('DELETE FROM projects WHERE id=$1', [raceProject.id]);
     }
   });
 
