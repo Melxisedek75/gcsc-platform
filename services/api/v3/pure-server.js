@@ -4440,6 +4440,8 @@ const routes = {
 
   // My bids
   'GET /api/bids/my/bids': async (req, res) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', [res.getHeader('Vary'), 'Authorization'].filter(Boolean).join(', '));
     const user = getUser(req);
     if (!user) return json(res, 401, { error: 'Unauthorized' });
     const bids = await listStoredBidsForContractor(user.userId);

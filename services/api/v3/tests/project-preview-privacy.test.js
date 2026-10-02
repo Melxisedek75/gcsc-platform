@@ -149,6 +149,15 @@ test('personal project responses cannot be shared or stored by caches', async ()
   }
 });
 
+test('a contractor bid list cannot be shared or stored by caches', async () => {
+  const contractorToken = server.jwtSign({ userId: contractor.id, role: 'contractor' });
+  const response = await request('/api/bids/my/bids', contractorToken);
+  expect(response.status).toBe(200);
+  expect(response.body.bids.some(bid => bid.proposal === proposal.proposal)).toBe(true);
+  expect(response.headers['cache-control']).toBe('private, no-store');
+  expect(response.headers.vary.split(/,\s*/)).toEqual(expect.arrayContaining(['Origin', 'Authorization']));
+});
+
 test('project details and bids require an exact numeric project ID', async () => {
   const ownerToken = server.jwtSign({ userId: owner.id, role: 'homeowner' });
   const contractorToken = server.jwtSign({ userId: contractor.id, role: 'contractor' });
