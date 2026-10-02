@@ -339,6 +339,30 @@ test('signed event persists only binding metadata, survives reconnect and grants
   assert.equal((await pool.query('SELECT COUNT(*)::int AS count FROM project_access_entitlements WHERE project_id=$1', [f.project.id])).rows[0].count, 0);
 });
 
+test('unsupported signed payment failures cannot alter a purchase or grant access', async () => {
+  const f = await fixture();
+  const row = await reserveLeadPurchase(pool, f.request, policy);
+  for (const type of ['checkout.session.async_payment_failed', 'payment_intent.payment_failed']) {
+    const event = signedEvent(row).event;
+    event.type = type;
+    if (type === 'payment_intent.payment_failed') {
+      event.data.object = { object: 'payment_intent', id: `pi_${randomUUID().replaceAll('-', '')}`,
+        amount: row.amount_cents, currency: 'usd', status: 'requires_payment_method' };
+    } else {
+      event.data.object.payment_status = 'unpaid';
+    }
+    const input = signEvent(event);
+    await assert.rejects(receive(input), { code: 'lead_webhook_event_invalid' });
+    assert.equal((await pool.query('SELECT 1 FROM project_access_checkout_events WHERE event_id=$1',
+      [input.event.id])).rowCount, 0);
+    assert.equal((await pool.query('SELECT 1 FROM project_access_unbound_events WHERE event_id=$1',
+      [input.event.id])).rowCount, 0);
+  }
+  assert.equal((await getLeadPurchase(pool, f.buyer.id, row.id)).status, 'pending');
+  assert.equal((await pool.query('SELECT 1 FROM project_access_entitlements WHERE project_id=$1',
+    [f.project.id])).rowCount, 0);
+});
+
 test('six concurrent deliveries persist exactly one event; changed same-ID payload conflicts', async () => {
   const f = await fixture(); const row = await reserveLeadPurchase(pool, f.request, policy);
   const input = signedEvent(row);
