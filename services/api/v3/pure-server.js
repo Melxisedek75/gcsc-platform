@@ -4168,11 +4168,9 @@ const routes = {
   'GET /api/me': async (req, res) => {
     res.setHeader('Cache-Control', 'private, no-store');
     res.setHeader('Vary', 'Origin, Authorization');
-    const user = getUser(req);
-    if (!user) return json(res, 401, { error: 'Unauthorized' });
-    const u = await findUserById(user.userId);
-    if (!u) return json(res, 404, { error: 'User not found' });
-    json(res, 200, { user: publicUser(u) });
+    const user = await requireActiveUser(req, res);
+    if (!user) return;
+    json(res, 200, { user: publicUser(user) });
   },
 
   // Private project conversations; native/web consumers integrate separately.

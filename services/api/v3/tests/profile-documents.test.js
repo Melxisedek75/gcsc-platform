@@ -127,3 +127,12 @@ test('current-user and personal financing reads cannot be stored by a shared cac
     expect(result.headers.get('vary')).toMatch(/Authorization/i);
   }
 });
+
+test('a disabled account cannot read /api/me with a previously valid token', async () => {
+  const token = jwtSign({ userId: 1, role: 'contractor' });
+  expect((await request('GET', '/api/me', token)).status).toBe(200);
+  db.users[0].is_active = false;
+  const disabled = await request('GET', '/api/me', token);
+  expect(disabled.status).toBe(403);
+  expect(disabled.body).toEqual({ error: 'Account is inactive' });
+});
