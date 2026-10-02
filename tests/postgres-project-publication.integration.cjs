@@ -134,6 +134,24 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     assert.equal(disabled.body.contractor, undefined);
   });
 
+  await t.test('persisted document audit omits the private upload filename', async () => {
+    const documentOwner = await fixtureUser('contractor', 'audit-filename-contractor');
+    const fileName = 'Private client 555-0100.pdf';
+    const uploaded = await request('POST', '/api/auth/documents', documentOwner, {
+      documentType: 'contractor_license', fileName,
+      fileDataUrl: 'data:application/pdf;base64,JVBERi0xLjQK',
+    });
+    assert.equal(uploaded.status, 201);
+    assert.equal(uploaded.body.document.file_name, fileName);
+    const audit = await pool.query(
+      "SELECT metadata FROM audit_events WHERE action='document.submitted' AND entity_id=$1",
+      [String(uploaded.body.document.id)]);
+    assert.equal(audit.rowCount, 1);
+    assert.equal(audit.rows[0].metadata.file_name, undefined);
+    assert.equal(audit.rows[0].metadata.revision, 1);
+    assert.doesNotMatch(JSON.stringify(audit.rows[0].metadata), /Private client 555-0100/);
+  });
+
   await t.test('owner creates a persisted private draft; strangers cannot discover or bid on it', async () => {
     const created = await request('POST', '/api/projects', owner, {
       title: 'PRIVATE_TITLE_DO_NOT_EXPOSE', description: 'PRIVATE_DESCRIPTION_DO_NOT_EXPOSE',
