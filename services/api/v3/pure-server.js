@@ -2999,20 +2999,24 @@ function createTokenForUser(user) {
   return jwtSign({ userId: user.id, email: user.email, role: user.role });
 }
 
+const PROFILE_TEXT_FIELDS = [
+  'companyName', 'businessName', 'ein', 'licenseNumber', 'serviceArea', 'address',
+  'city', 'state', 'zip', 'yearsInBusiness', 'website', 'bio', 'projectNeeds',
+  'propertyAddress', 'propertyType', 'budgetRange'
+];
+const PROFILE_AUDIT_FIELDS = new Set([
+  'fullName', 'full_name', 'phone', ...PROFILE_TEXT_FIELDS, 'specialties', 'wallet'
+]);
+
 function updateProfileFromBody(user, body) {
   const profile = { ...defaultProfile(user.role), ...(user.profile || {}) };
-  const allowedTextFields = [
-    'companyName', 'businessName', 'ein', 'licenseNumber', 'serviceArea', 'address',
-    'city', 'state', 'zip', 'yearsInBusiness', 'website', 'bio', 'projectNeeds',
-    'propertyAddress', 'propertyType', 'budgetRange'
-  ];
 
   if (body.fullName !== undefined || body.full_name !== undefined) {
     user.full_name = cleanString(body.fullName || body.full_name, 120);
   }
   if (body.phone !== undefined) user.phone = cleanString(body.phone, 40);
 
-  for (const field of allowedTextFields) {
+  for (const field of PROFILE_TEXT_FIELDS) {
     if (body[field] !== undefined) profile[field] = cleanString(body[field], field === 'bio' ? 700 : 240);
   }
 
@@ -3643,7 +3647,7 @@ const routes = {
       entityType: 'user',
       entityId: user.id,
       metadata: {
-        fields: Object.keys(body || {}).filter((key) => key !== 'logoDataUrl'),
+        fields: Object.keys(body || {}).filter((key) => PROFILE_AUDIT_FIELDS.has(key)),
         profile_completion: publicUser(updatedUser).profile_completion,
       },
     });

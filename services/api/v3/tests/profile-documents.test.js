@@ -83,6 +83,20 @@ test('document audit metadata does not duplicate a private upload filename', asy
   expect(JSON.stringify(audit.metadata)).not.toContain('Private client 555-0100');
 });
 
+test('profile audit records only recognized field names, not arbitrary request keys', async () => {
+  const token = jwtSign({ userId: 1, role: 'contractor' });
+  const response = await request('PUT', '/api/auth/profile', token, {
+    fullName: 'Contractor Name',
+    'Private client 555-0100': 'ignored',
+  });
+  expect(response.status).toBe(200);
+  expect(response.body.user.full_name).toBe('Contractor Name');
+  const audit = db.audit_events.find(event => event.action === 'profile.updated');
+  expect(audit).toBeDefined();
+  expect(audit.metadata.fields).toEqual(['fullName']);
+  expect(JSON.stringify(audit.metadata)).not.toContain('Private client 555-0100');
+});
+
 test('JSON legacy document without revision gets version 1; invalid base64 does not replace it', async () => {
   const token = jwtSign({ userId: 1, role: 'contractor' });
   db.user_documents.push({ id: 7, user_id: 1, document_type: 'contractor_license', status: 'approved' });
