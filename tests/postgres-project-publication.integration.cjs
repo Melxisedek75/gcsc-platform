@@ -153,6 +153,7 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     const route = `/api/contractors/${listed.id}/public`;
     const active = await request('GET', route);
     assert.equal(active.status, 200);
+    assert.equal(active.headers.get('cache-control'), 'no-store');
     assert.equal(active.body.contractor.id, listed.id);
     for (const id of [`${listed.id}garbage`, `0${listed.id}`, '0', '2147483648']) {
       const malformed = await request('GET', `/api/contractors/${id}/public`);
@@ -162,6 +163,7 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     await pool.query('UPDATE users SET is_active=FALSE WHERE id=$1', [listed.id]);
     const disabled = await request('GET', route);
     assert.equal(disabled.status, 404);
+    assert.equal(disabled.headers.get('cache-control'), 'no-store');
     assert.equal(disabled.body.contractor, undefined);
   });
 
