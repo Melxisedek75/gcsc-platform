@@ -1717,6 +1717,10 @@ async function createStoredBid(contractorId, body) {
     });
   }
 
+  const contractor = db.users.find(user => Number(user.id) === Number(contractorId));
+  if (!contractor?.is_active || contractor.role !== 'contractor') {
+    return { denial: 'contractor' };
+  }
   const stored = { id: db.nextId('bids'), ...bid };
   db.bids.push(stored);
   saveDatabase();
