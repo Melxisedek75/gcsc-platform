@@ -165,6 +165,29 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     assert.equal(disabled.body.contractor, undefined);
   });
 
+  await t.test('public contractor profile is hidden after disable during document read', async () => {
+    const listed = await fixtureUser('contractor', 'public-profile-race');
+    const route = `/api/contractors/${listed.id}/public`;
+    assert.equal((await request('GET', route)).status, 200);
+    const blocker = await pool.connect();
+    let responsePromise;
+    try {
+      await blocker.query('BEGIN');
+      await blocker.query('LOCK TABLE user_documents IN ACCESS EXCLUSIVE MODE');
+      responsePromise = request('GET', route);
+      await expectBlockedBy(blocker, responsePromise);
+      await pool.query('UPDATE users SET is_active=FALSE WHERE id=$1', [listed.id]);
+      await blocker.query('COMMIT');
+      const denied = await responsePromise;
+      assert.equal(denied.status, 404);
+      assert.equal(denied.body.contractor, undefined);
+    } finally {
+      await blocker.query('ROLLBACK');
+      blocker.release();
+      await pool.query('DELETE FROM users WHERE id=$1', [listed.id]);
+    }
+  });
+
   await t.test('persisted document audit omits the private upload filename', async () => {
     const documentOwner = await fixtureUser('contractor', 'audit-filename-contractor');
     const fileName = 'Private client 555-0100.pdf';
