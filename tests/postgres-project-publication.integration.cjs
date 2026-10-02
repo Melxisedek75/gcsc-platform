@@ -152,6 +152,22 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     assert.doesNotMatch(JSON.stringify(audit.rows[0].metadata), /Private client 555-0100/);
   });
 
+  await t.test('persisted profile audit omits unrecognized private request keys', async () => {
+    const profileOwner = await fixtureUser('contractor', 'audit-profile-contractor');
+    const updated = await request('PUT', '/api/auth/profile', profileOwner, {
+      fullName: 'Contractor Name',
+      'Private client 555-0100': 'ignored',
+    });
+    assert.equal(updated.status, 200);
+    assert.equal(updated.body.user.full_name, 'Contractor Name');
+    const audit = await pool.query(
+      "SELECT metadata FROM audit_events WHERE action='profile.updated' AND entity_id=$1",
+      [String(profileOwner.id)]);
+    assert.equal(audit.rowCount, 1);
+    assert.deepEqual(audit.rows[0].metadata.fields, ['fullName']);
+    assert.doesNotMatch(JSON.stringify(audit.rows[0].metadata), /Private client 555-0100/);
+  });
+
   await t.test('owner creates a persisted private draft; strangers cannot discover or bid on it', async () => {
     const created = await request('POST', '/api/projects', owner, {
       title: 'PRIVATE_TITLE_DO_NOT_EXPOSE', description: 'PRIVATE_DESCRIPTION_DO_NOT_EXPOSE',
