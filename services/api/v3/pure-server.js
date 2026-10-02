@@ -1732,7 +1732,10 @@ async function listStoredBidsByProject(projectId) {
 
 async function listStoredBidsForContractor(contractorId) {
   if (USE_POSTGRES) {
-    const result = await queryPostgres('SELECT * FROM bids WHERE contractor_id = $1 ORDER BY created_at DESC', [contractorId]);
+    const result = await queryPostgres(
+      `SELECT b.* FROM bids b
+       JOIN users u ON u.id = $1 AND u.is_active = TRUE AND u.role = 'contractor'
+       WHERE b.contractor_id = u.id ORDER BY b.created_at DESC`, [contractorId]);
     return result.rows.map(normalizeBid);
   }
   return db.bids.filter(b => b.contractor_id === contractorId);
