@@ -162,6 +162,23 @@ describe('POST /api/payment/lead-token', () => {
     expect(r.status).toBe(403);
   });
 
+  test.each([
+    ['inactive', { is_active: 0 }],
+    ['demoted', { role: 'homeowner' }],
+  ])('rejects a %s contractor with an old JWT before a payment challenge', async (_label, update) => {
+    Object.assign(db.users.find(user => user.id === 2), update);
+    _hooks.verifyHyperionTransfer = jest.fn();
+    const r = await request({
+      path: '/api/payment/lead-token',
+      headers: { Authorization: `Bearer ${CONTRACTOR_TOKEN}` },
+    });
+    expect(r.status).toBe(403);
+    expect(r.headers['www-authenticate']).toBeUndefined();
+    expect(_hooks.verifyHyperionTransfer).not.toHaveBeenCalled();
+    expect(db.payment_receipts).toHaveLength(0);
+    expect(db.lead_tokens).toHaveLength(0);
+  });
+
   test('happy path: valid txHash → 200 + lead_id', async () => {
     _hooks.verifyHyperionTransfer = async (input) => {
       expect(input.expectedFrom).toBe('testacct1');

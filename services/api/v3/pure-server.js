@@ -4748,7 +4748,7 @@ const routes = {
   'POST /api/payment/lead-token': async (req, res) => {
     const user = getUser(req);
     if (!user) return json(res, 401, { error: 'Unauthorized' });
-    if (user.role !== 'contractor') return json(res, 403, { error: 'Contractors only' });
+    if (!(await hasCurrentRole(user, 'contractor'))) return json(res, 403, { error: 'Contractors only' });
 
     // Refuse to request funds until the caller's stored ownership proof is valid.
     const leadUser = await findUserById(user.userId);

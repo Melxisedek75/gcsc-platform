@@ -51,15 +51,15 @@
   {
     "path": "services/api/v3/pure-server.js",
     "sourceBlob": "952128e9316fe78bef42dba8ddc7b04eb09e29e5",
-    "sha256": "28c0536eac8bbe15a323f70b1b654f32442fb9de351d12b9e88a6553758354a4",
-    "reason": "Require verified wallet ownership before payment challenges and bid readiness; preserve wallet-first login plus authenticated sign-only binding, single-use challenges and strict XPR Testnet authority checks. Fail closed on JWT configuration, isolate test storage and bind auth limits to the direct peer. Preserve fresh admin ACL, revision-bound document review and PostgreSQL participant chat. Merge October private drafts, free publication, redacted previews, project-specific paid details and transactional bid/accept checks through the canonical shared schema including paid entitlements. Reject malformed legacy project IDs before detail reads or owner publication. Keep personal project, bid-list, escrow-read, document, compliance, profile, wallet, admin review/audit, current-user and financing-precheck responses private and uncacheable, varying by Authorization. Require a currently active account for /api/me and a current contractor role before listing personal bids. Keep legacy posting opt-in and replay-safe without publishing pending receipts.",
+    "sha256": "eb2fcc175db684747631e4945fbac830f1c11b7168ee833a25f67a7bc740f505",
+    "reason": "Require verified wallet ownership before payment challenges and bid readiness; preserve wallet-first login plus authenticated sign-only binding, single-use challenges and strict XPR Testnet authority checks. Fail closed on JWT configuration, isolate test storage and bind auth limits to the direct peer. Preserve fresh admin ACL, revision-bound document review and PostgreSQL participant chat. Merge October private drafts, free publication, redacted previews, project-specific paid details and transactional bid/accept checks through the canonical shared schema including paid entitlements. Reject malformed legacy project IDs before detail reads or owner publication. Keep personal project, bid-list, escrow-read, document, compliance, profile, wallet, admin review/audit, current-user and financing-precheck responses private and uncacheable, varying by Authorization. Require a currently active account for /api/me and a current contractor role before listing personal bids or issuing a legacy lead-token payment challenge. Keep legacy posting opt-in and replay-safe without publishing pending receipts.",
     "test": "npm run check; npm run test:api; npm run check:integration-contracts; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage; npm --prefix services/api/v3 run test:pg-workflow; focused project-preview-privacy and project-paid-details Jest tests; isolated project-publication and project-browser PostgreSQL acceptance"
   },
   {
     "path": "services/api/v3/tests/payments-402.test.js",
     "sourceBlob": "db703f6925ddf23794991f56baca83daae18cb86",
-    "sha256": "90853c0890fe20d24c457f60bee94787f8c21bebe7ee4734f2ac3c9d9a8c4333",
-    "reason": "Positive payment fixtures explicitly represent verified bindings; boot with the legacy false flag to prove ownership checks remain mandatory, including failed lookup and unchanged wallet assertions; isolate JSON database IO.",
+    "sha256": "663323f5681f59b2c94a5d0626c1766cec480652dffb60ac74901d79d294bb21",
+    "reason": "Positive payment fixtures explicitly represent verified bindings; boot with the legacy false flag to prove ownership checks remain mandatory, including failed lookup and unchanged wallet assertions; isolate JSON database IO. Reject inactive or demoted contractors with an old JWT before the legacy lead-token payment challenge.",
     "test": "npm run test:api"
   },
   {
