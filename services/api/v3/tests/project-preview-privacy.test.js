@@ -304,11 +304,14 @@ test('a contractor bid list cannot disclose proposals after role revocation duri
 
 test('a disabled contractor is not exposed by the public profile endpoint', async () => {
   const path = `/api/contractors/${contractor.id}/public`;
-  expect((await request(path)).status).toBe(200);
+  const activeResponse = await request(path);
+  expect(activeResponse.status).toBe(200);
+  expect(activeResponse.headers['cache-control']).toBe('no-store');
   try {
     contractor.is_active = false;
     const response = await request(path);
     expect(response.status).toBe(404);
+    expect(response.headers['cache-control']).toBe('no-store');
     expect(response.body).not.toHaveProperty('contractor');
   } finally {
     contractor.is_active = true;
