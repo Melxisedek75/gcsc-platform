@@ -1643,13 +1643,16 @@ async function publishStoredProject(project, homeownerId) {
 async function listStoredProjectsForUser(user) {
   if (USE_POSTGRES) {
     if (user.role === 'homeowner') {
-      const result = await queryPostgres('SELECT * FROM projects WHERE homeowner_id = $1 ORDER BY created_at DESC', [user.userId]);
+      const result = await queryPostgres(
+        `SELECT p.* FROM projects p
+         JOIN users u ON u.id = $1 AND u.is_active = TRUE AND u.role = 'homeowner'
+         WHERE p.homeowner_id = u.id ORDER BY p.created_at DESC`, [user.userId]);
       return result.rows.map(normalizeProject);
     }
     const result = await queryPostgres(
       `SELECT DISTINCT p.* FROM projects p
-       JOIN bids b ON b.project_id = p.id
-       WHERE b.contractor_id = $1
+       JOIN users u ON u.id = $1 AND u.is_active = TRUE AND u.role = 'contractor'
+       JOIN bids b ON b.project_id = p.id AND b.contractor_id = u.id
        ORDER BY p.created_at DESC`,
       [user.userId]
     );
