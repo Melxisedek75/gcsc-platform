@@ -197,6 +197,33 @@ test('a disabled or demoted contractor cannot read proposals with an old token',
   }
 });
 
+test('a contractor bid list cannot disclose proposals after role revocation during the read', async () => {
+  const token = server.jwtSign({ userId: contractor.id, role: 'contractor' });
+  const originalActive = Object.getOwnPropertyDescriptor(contractor, 'is_active');
+  let active = true;
+  let signalRoleCheck;
+  const roleChecked = new Promise(resolve => { signalRoleCheck = resolve; });
+  Object.defineProperty(contractor, 'is_active', {
+    configurable: true,
+    get() {
+      signalRoleCheck();
+      return active;
+    },
+    set(value) { active = value; },
+  });
+  try {
+    const pending = request('/api/bids/my/bids', token);
+    await roleChecked;
+    contractor.is_active = false;
+    const response = await pending;
+    expect(response.status).toBe(200);
+    expect(response.body.bids).toEqual([]);
+    expect(JSON.stringify(response.body)).not.toContain(proposal.proposal);
+  } finally {
+    Object.defineProperty(contractor, 'is_active', originalActive);
+  }
+});
+
 test('a disabled contractor is not exposed by the public profile endpoint', async () => {
   const path = `/api/contractors/${contractor.id}/public`;
   expect((await request(path)).status).toBe(200);
