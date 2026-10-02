@@ -685,6 +685,9 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     }
     assert.equal((await request('POST', '/api/bids', contractor, bidBody)).status, 201);
     assert.equal(await bidCount(), before + 1);
+    assert.equal((await pool.query(`SELECT proposed_timeline_days FROM bids
+      WHERE project_id=$1 AND contractor_id=$2 ORDER BY id DESC LIMIT 1`,
+    [project.id, contractor.id])).rows[0].proposed_timeline_days, 30);
 
     await pool.query(`UPDATE project_access_entitlements SET status='revoked'
       WHERE project_id=$1 AND contractor_id=$2`, [project.id, contractor.id]);
