@@ -812,8 +812,29 @@ test('refund and grant concurrent processing never ends with paid access', async
 });
 
 test('partial refund and grant concurrent processing leaves access suspended for review', async () => {
-  const f = await paidFixture(); const input = refund(f, { amount: 500 }); await receive(input);
-  await Promise.all([fulfill(f.input.event.id), fulfill(input.event.id)]);
+  const f = await paidFixture(); const input = refund(f, { amount: 500 });
+  let releasePaid, paidClient, pausePaid;
+  const paidPaused = new Promise(resolve => { pausePaid = resolve; });
+  const paidHold = new Promise(resolve => { releasePaid = resolve; });
+  const heldPool = { connect: async () => {
+    const client = await pool.connect(); paidClient = client;
+    return { release: error => client.release(error), query: async (sql, ...args) => {
+      if (sql.startsWith('SELECT 1 FROM project_access_checkout_events') && sql.includes('refund_id IS NOT NULL')) {
+        pausePaid(); await paidHold;
+      }
+      return client.query(sql, ...args);
+    } };
+  } };
+  let paid, intake;
+  try {
+    paid = fulfill(f.input.event.id, heldPool);
+    await paidPaused;
+    intake = receive(input);
+    await blocked(paidClient);
+  } finally { releasePaid(); }
+  assert.equal((await paid).outcome, 'paid_granted');
+  assert.equal((await intake).status, 'received');
+  assert.equal((await fulfill(input.event.id)).outcome, 'partial_refund_review');
   const state = await fulfillmentState(f);
   assert.equal(state.purchase.status, 'review_required');
   assert.equal(state.grants.length, 1);
