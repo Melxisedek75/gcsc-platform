@@ -331,6 +331,47 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     }
   });
 
+  await t.test('accepted contractor list does not disclose after disable during relationship read', async () => {
+    const privateDescription = 'PRIVATE_ACCEPTED_LIST_RACE_DO_NOT_EXPOSE';
+    const accepted = (await pool.query(`INSERT INTO projects
+      (homeowner_id, title, description, published, published_at, status)
+      VALUES ($1, 'Accepted role race', $2, TRUE, NOW(), 'in_progress') RETURNING id`,
+    [owner.id, privateDescription])).rows[0];
+    try {
+      await pool.query(`INSERT INTO bids (project_id, contractor_id, amount, status)
+        VALUES ($1, $2, 1600, 'accepted')`, [accepted.id, contractor.id]);
+      const escrow = (await pool.query(`INSERT INTO escrow_contracts
+        (project_id, homeowner_id, contractor_id, total_amount)
+        VALUES ($1, $2, $3, 1600) RETURNING id`,
+      [accepted.id, owner.id, contractor.id])).rows[0];
+      await pool.query('UPDATE projects SET escrow_id=$2 WHERE id=$1', [accepted.id, escrow.id]);
+      const before = await request('GET', '/api/projects/my/projects', contractor);
+      assert.equal(before.status, 200);
+      assert.equal(before.body.projects.find(item => item.id === accepted.id)?.description, privateDescription);
+
+      const blocker = await pool.connect();
+      let responsePromise;
+      try {
+        await blocker.query('BEGIN');
+        await blocker.query('LOCK TABLE escrow_contracts IN ACCESS EXCLUSIVE MODE');
+        responsePromise = request('GET', '/api/projects/my/projects', contractor);
+        await expectBlockedBy(blocker, responsePromise);
+        await pool.query('UPDATE users SET is_active=FALSE WHERE id=$1', [contractor.id]);
+        await blocker.query('COMMIT');
+        const denied = await responsePromise;
+        assert.equal(denied.status, 200);
+        assert.deepEqual(denied.body.projects, []);
+        assert.doesNotMatch(JSON.stringify(denied.body), /PRIVATE_ACCEPTED_LIST_RACE_DO_NOT_EXPOSE/);
+      } finally {
+        await blocker.query('ROLLBACK');
+        blocker.release();
+      }
+    } finally {
+      await pool.query('UPDATE users SET is_active=TRUE WHERE id=$1', [contractor.id]);
+      await pool.query('DELETE FROM projects WHERE id=$1', [accepted.id]);
+    }
+  });
+
   await t.test('full project detail does not disclose after owner disable during its bid read', async () => {
     const privateProject = (await pool.query(`INSERT INTO projects
       (homeowner_id, title, description, published)
