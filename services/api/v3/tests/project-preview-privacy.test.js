@@ -148,6 +148,16 @@ test('project details and bids require an exact numeric project ID', async () =>
   }
 });
 
+test('a malformed project ID cannot publish an owner draft', async () => {
+  const ownerToken = server.jwtSign({ userId: owner.id, role: 'homeowner' });
+  for (const id of [`${draft.id}garbage`, `0${draft.id}`]) {
+    const response = await request(`/api/projects/${id}/publish`, ownerToken, 'POST');
+    expect(response.status).toBe(404);
+    expect(draft.published).toBe(false);
+    expect(draft.published_at).toBeUndefined();
+  }
+});
+
 test('published project exposes only preview without bids to non-owner', async () => {
   const contractorToken = server.jwtSign({ userId: contractor.id, role: 'contractor' });
   for (const token of [undefined, contractorToken]) {

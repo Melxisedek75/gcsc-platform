@@ -4229,7 +4229,11 @@ const routes = {
   'POST /api/projects/:id/publish': async (req, res, params) => {
     const auth = getUser(req);
     if (!auth) return json(res, 401, { error: 'Unauthorized' });
-    const project = await findStoredProjectById(parseInt(params.id));
+    const projectId = Number(params.id);
+    if (!/^[1-9]\d*$/.test(params.id) || !Number.isSafeInteger(projectId) || projectId > 2147483647) {
+      return json(res, 404, { error: 'Project not found' });
+    }
+    const project = await findStoredProjectById(projectId);
     if (!project || Number(project.homeowner_id) !== Number(auth.userId)
       || !(await hasCurrentRole(auth, 'homeowner'))) {
       return json(res, 404, { error: 'Project not found' });
