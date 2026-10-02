@@ -596,6 +596,29 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     }
   });
 
+  await t.test('personal bid list does not disclose after disable during its SQL read', async () => {
+    const active = await request('GET', '/api/bids/my/bids', contractor);
+    assert.equal(active.status, 200);
+    assert.ok(active.body.bids.some(bid => bid.project_id === project.id));
+    const blocker = await pool.connect();
+    let responsePromise;
+    try {
+      await blocker.query('BEGIN');
+      await blocker.query('LOCK TABLE bids IN ACCESS EXCLUSIVE MODE');
+      responsePromise = request('GET', '/api/bids/my/bids', contractor);
+      await expectBlockedBy(blocker, responsePromise);
+      await pool.query('UPDATE users SET is_active=FALSE WHERE id=$1', [contractor.id]);
+      await blocker.query('COMMIT');
+      const denied = await responsePromise;
+      assert.equal(denied.status, 200);
+      assert.deepEqual(denied.body.bids, []);
+    } finally {
+      await blocker.query('ROLLBACK');
+      blocker.release();
+      await pool.query('UPDATE users SET is_active=TRUE WHERE id=$1', [contractor.id]);
+    }
+  });
+
   await t.test('a bid cannot pass a concurrent project close, access revocation or contractor disable', async () => {
     const created = await request('POST', '/api/projects', owner,
       { title: 'Concurrent access fixture', description: 'Local transaction check' });

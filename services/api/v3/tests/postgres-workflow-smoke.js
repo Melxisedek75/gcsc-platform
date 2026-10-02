@@ -306,8 +306,11 @@ class Pool {
       return { rows, rowCount: rows.length };
     }
 
-    if (sql.startsWith('select * from bids where contractor_id')) {
-      const rows = byNewest(state.bids.filter((row) => row.contractor_id === Number(params[0])));
+    if (sql.startsWith('select b.* from bids b join users u')
+      && sql.includes("u.role = 'contractor'")) {
+      const user = state.users.find((row) => row.id === Number(params[0]));
+      const rows = user?.is_active && user.role === 'contractor'
+        ? byNewest(state.bids.filter((row) => row.contractor_id === user.id)) : [];
       return { rows, rowCount: rows.length };
     }
 
