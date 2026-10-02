@@ -148,6 +148,14 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     assert.equal(project.published_at, null);
     assert.deepEqual((await pool.query('SELECT published,published_at FROM projects WHERE id=$1', [project.id])).rows,
       [{ published: false, published_at: null }]);
+    const audit = (await pool.query(
+      "SELECT metadata FROM audit_events WHERE action='project.created' AND entity_id=$1", [String(project.id)]));
+    assert.equal(audit.rowCount, 1);
+    assert.deepEqual(Object.keys(audit.rows[0].metadata).sort(),
+      ['budget_max', 'budget_min', 'project_id', 'status', 'timeline_days']);
+    assert.equal(audit.rows[0].metadata.project_id, project.id);
+    assert.doesNotMatch(JSON.stringify(audit.rows[0].metadata),
+      /PRIVATE_(TITLE|DESCRIPTION|ADDRESS)_DO_NOT_EXPOSE/);
     await stopApi();
     await startApi();
     assert.equal((await request('GET', `/api/projects/${project.id}`, owner)).body.project.title,
