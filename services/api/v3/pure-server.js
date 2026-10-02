@@ -1668,6 +1668,9 @@ async function listStoredProjectsForUser(user) {
     return result.rows.map(normalizeProject);
   }
 
+  const currentUser = db.users.find(stored => Number(stored.id) === Number(user.userId));
+  if (!currentUser?.is_active || currentUser.role !== user.role
+    || !['homeowner', 'contractor'].includes(user.role)) return [];
   if (user.role === 'homeowner') return db.projects.filter(p => p.homeowner_id === user.userId);
   const myBidProjectIds = db.bids.filter(b => b.contractor_id === user.userId).map(b => b.project_id);
   return db.projects.filter(p => myBidProjectIds.includes(p.id));
