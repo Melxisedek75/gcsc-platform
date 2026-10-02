@@ -3611,6 +3611,8 @@ const routes = {
   },
 
   'GET /api/auth/profile': async (req, res) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', 'Origin, Authorization');
     const auth = getUser(req);
     if (!auth) return json(res, 401, { error: 'Unauthorized' });
     const user = await findUserById(auth.userId);
@@ -3938,6 +3940,8 @@ const routes = {
   },
 
   'GET /api/wallet/me': async (req, res) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', 'Origin, Authorization');
     const auth = getUser(req);
     if (!auth) return json(res, 401, { error: 'Unauthorized' });
     const user = await findUserById(auth.userId);

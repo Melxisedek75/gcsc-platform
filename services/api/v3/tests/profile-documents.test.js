@@ -94,3 +94,13 @@ test('personal document and compliance reads cannot be stored by a shared cache'
     expect(result.headers.get('vary')).toMatch(/Authorization/i);
   }
 });
+
+test('personal profile and wallet reads cannot be stored by a shared cache', async () => {
+  const token = jwtSign({ userId: 1, role: 'contractor' });
+  for (const route of ['/api/auth/profile', '/api/wallet/me']) {
+    const result = await request('GET', route, token);
+    expect(result.status).toBe(200);
+    expect(result.headers.get('cache-control')).toContain('no-store');
+    expect(result.headers.get('vary')).toMatch(/Authorization/i);
+  }
+});
