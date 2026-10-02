@@ -4329,7 +4329,11 @@ const routes = {
   },
 
   'GET /api/contractors/:id/public': async (req, res, params) => {
-    const details = await publicContractorDetails(parseInt(params.id));
+    const contractorId = Number(params.id);
+    if (!/^[1-9]\d*$/.test(params.id) || !Number.isSafeInteger(contractorId) || contractorId > 2147483647) {
+      return json(res, 404, { error: 'Contractor profile not found' });
+    }
+    const details = await publicContractorDetails(contractorId);
     if (!details) return json(res, 404, { error: 'Contractor profile not found' });
     json(res, 200, details);
   },

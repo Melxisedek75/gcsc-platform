@@ -210,6 +210,15 @@ test('a disabled contractor is not exposed by the public profile endpoint', asyn
   }
 });
 
+test('public contractor profiles require an exact numeric ID', async () => {
+  expect((await request(`/api/contractors/${contractor.id}/public`)).status).toBe(200);
+  for (const id of [`${contractor.id}garbage`, `0${contractor.id}`, '0', '2147483648']) {
+    const response = await request(`/api/contractors/${id}/public`);
+    expect(response.status).toBe(404);
+    expect(response.body).not.toHaveProperty('contractor');
+  }
+});
+
 test('project details and bids require an exact numeric project ID', async () => {
   const ownerToken = server.jwtSign({ userId: owner.id, role: 'homeowner' });
   const contractorToken = server.jwtSign({ userId: contractor.id, role: 'contractor' });
