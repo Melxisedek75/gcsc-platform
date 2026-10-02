@@ -331,6 +331,35 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     }
   });
 
+  await t.test('full project detail does not disclose after owner disable during its bid read', async () => {
+    const privateProject = (await pool.query(`INSERT INTO projects
+      (homeowner_id, title, description, published)
+      VALUES ($1, 'Private detail race', 'PRIVATE_DETAIL_RACE_DO_NOT_EXPOSE', FALSE) RETURNING id`,
+    [owner.id])).rows[0];
+    const path = `/api/projects/${privateProject.id}`;
+    const active = await request('GET', path, owner);
+    assert.equal(active.status, 200);
+    assert.equal(active.body.project.description, 'PRIVATE_DETAIL_RACE_DO_NOT_EXPOSE');
+    const blocker = await pool.connect();
+    let responsePromise;
+    try {
+      await blocker.query('BEGIN');
+      await blocker.query('LOCK TABLE bids IN ACCESS EXCLUSIVE MODE');
+      responsePromise = request('GET', path, owner);
+      await expectBlockedBy(blocker, responsePromise);
+      await pool.query('UPDATE users SET is_active=FALSE WHERE id=$1', [owner.id]);
+      await blocker.query('COMMIT');
+      const response = await responsePromise;
+      assert.equal(response.status, 404);
+      assert.doesNotMatch(JSON.stringify(response.body), /PRIVATE_DETAIL_RACE_DO_NOT_EXPOSE/);
+    } finally {
+      await blocker.query('ROLLBACK');
+      blocker.release();
+      await pool.query('UPDATE users SET is_active=TRUE WHERE id=$1', [owner.id]);
+      await pool.query('DELETE FROM projects WHERE id=$1', [privateProject.id]);
+    }
+  });
+
   await t.test('disabled owner cannot create a draft after the initial role check', async () => {
     const title = 'PRIVATE_CREATE_ROLE_RACE_DO_NOT_PERSIST';
     const blocker = await pool.connect();
