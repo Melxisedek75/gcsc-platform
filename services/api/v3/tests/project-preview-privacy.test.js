@@ -515,6 +515,31 @@ test('bid creation rejects project IDs outside PostgreSQL integer range', async 
   }
 });
 
+test('bid creation rejects invalid proposal timelines before persistence', async () => {
+  const token = server.jwtSign({ userId: contractor.id, role: 'contractor' });
+  const grant = {
+    project_id: published.id,
+    contractor_id: contractor.id,
+    status: 'paid',
+    provider_payment_id: 'local-fixture-timeline',
+    verified_at: '2026-09-29T00:00:00.000Z',
+  };
+  const before = server.db.bids.length;
+  server.db.project_access_entitlements.push(grant);
+  try {
+    for (const timeline of [0, -1, '12days', '1.5', 1.5, true, 2147483648]) {
+      const response = await request('/api/bids', token, 'POST', {
+        project_id: published.id, amount: 1000, proposed_timeline_days: timeline,
+      });
+      expect(response.status).toBe(400);
+      expect(server.db.bids).toHaveLength(before);
+    }
+  } finally {
+    server.db.project_access_entitlements.splice(server.db.project_access_entitlements.indexOf(grant), 1);
+    server.db.bids.splice(before);
+  }
+});
+
 test('bid creation rejects a contractor disabled while the request body is pending', async () => {
   const token = server.jwtSign({ userId: contractor.id, role: 'contractor' });
   const grant = {

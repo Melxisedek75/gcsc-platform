@@ -677,6 +677,12 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     await pool.query(`UPDATE project_access_entitlements
       SET status='paid', verified_at=NOW() WHERE project_id=$1 AND contractor_id=$2`,
     [project.id, contractor.id]);
+    for (const timeline of [0, -1, '12days', '1.5', 1.5, true, 2147483648]) {
+      const invalid = await request('POST', '/api/bids', contractor,
+        { ...bidBody, proposed_timeline_days: timeline });
+      assert.equal(invalid.status, 400);
+      assert.equal(await bidCount(), before);
+    }
     assert.equal((await request('POST', '/api/bids', contractor, bidBody)).status, 201);
     assert.equal(await bidCount(), before + 1);
 
