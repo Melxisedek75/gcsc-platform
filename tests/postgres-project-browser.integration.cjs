@@ -251,9 +251,18 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
         'QA_BROWSER_OTHER_PRIVATE_ADDRESS','roofing',1200,2400,14,'open',TRUE,NOW()) RETURNING id`,
     [owner.id])).rows[0];
     const otherContractorPage = await openRole(otherContractor);
+    await row(otherContractorPage, id).waitFor();
+    await row(otherContractorPage, otherProject.id).waitFor();
+    await action(otherContractorPage, 'GET', `/api/projects/${id}`,
+      () => row(otherContractorPage, id).getByRole('button', { name: 'View', exact: true }).click(), 200);
     await noBrief(otherContractorPage);
+    const contractorScopePage = await openRole(contractor);
+    await row(contractorScopePage, otherProject.id).waitFor();
+    await action(contractorScopePage, 'GET', `/api/projects/${otherProject.id}`,
+      () => row(contractorScopePage, otherProject.id).getByRole('button', { name: 'View', exact: true }).click(), 200);
+    await noBrief(contractorScopePage);
     for (const [page, user, deniedId] of [
-      [otherContractorPage, otherContractor, id], [contractorPage, contractor, otherProject.id],
+      [otherContractorPage, otherContractor, id], [contractorScopePage, contractor, otherProject.id],
     ]) {
       const denied = await page.request.get(`${origin}/api/projects/${deniedId}/details`, {
         headers: { Authorization: `Bearer ${api.jwtSign({ userId: user.id, role: user.role, email: user.email })}` },
