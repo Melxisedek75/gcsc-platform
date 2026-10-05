@@ -1,4 +1,5 @@
 const http = require('http');
+const { execFileSync } = require('child_process');
 const server = require('../pure-server');
 
 const owner = { id: 992101, email: 'draft-owner@example.invalid', role: 'homeowner', is_active: true };
@@ -158,4 +159,55 @@ test('failed audit leaves neither an edited draft nor an audit event', async () 
     server.db.audit_events.push = originalPush;
     errorLog.mockRestore();
   }
+});
+
+test('a newly created JSON draft includes a version and can be edited immediately', async () => {
+  const created = await request('POST', '/api/projects', owner, replacement);
+  expect(created.status).toBe(201);
+  const stored = server.db.projects.find(item => item.id === created.body.project.id);
+  try {
+    expect(created.body.project.updated_at).toBe(created.body.project.created_at);
+    const edited = await request('PUT', `/api/projects/${stored.id}`, owner, {
+      ...replacement, title: 'Edited after creation', expected_updated_at: created.body.project.updated_at,
+    });
+    expect(edited.status).toBe(200);
+    expect(edited.body.project.title).toBe('Edited after creation');
+  } finally {
+    const index = server.db.projects.indexOf(stored);
+    if (index >= 0) server.db.projects.splice(index, 1);
+    for (let index = server.db.audit_events.length - 1; index >= 0; index--) {
+      if (String(server.db.audit_events[index].entity_id) === String(stored?.id)) {
+        server.db.audit_events.splice(index, 1);
+      }
+    }
+  }
+});
+
+test('legacy JSON projects acquire their original creation version on load', () => {
+  const modulePath = require.resolve('../pure-server');
+  const createdAt = '2026-09-01T12:30:00.000Z';
+  const child = `
+    const fs = require('fs');
+    const path = require('path');
+    const dbFile = path.join(path.dirname(${JSON.stringify(modulePath)}), 'gcsc.db');
+    const realExists = fs.existsSync;
+    const realRead = fs.readFileSync;
+    const realWrite = fs.writeFileSync;
+    fs.existsSync = file => file === dbFile ? true : realExists(file);
+    fs.readFileSync = (file, ...args) => file === dbFile
+      ? JSON.stringify({ projects: [{ id: 901, created_at: ${JSON.stringify(createdAt)} }] })
+      : realRead(file, ...args);
+    fs.writeFileSync = (file, ...args) => {
+      if (file === dbFile) throw new Error('Fixture must not write gcsc.db');
+      return realWrite(file, ...args);
+    };
+    const db = require(${JSON.stringify(modulePath)}).db;
+    process.stdout.write(JSON.stringify(db.projects[0]));
+  `;
+  const env = { ...process.env, NODE_ENV: 'development' };
+  delete env.DATABASE_URL;
+  const loaded = JSON.parse(execFileSync(process.execPath, ['-e', child], {
+    env, encoding: 'utf8', timeout: 5000,
+  }));
+  expect(loaded).toEqual({ id: 901, created_at: createdAt, updated_at: createdAt });
 });

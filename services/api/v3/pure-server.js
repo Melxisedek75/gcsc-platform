@@ -261,6 +261,9 @@ function loadDatabase() {
     for (const key of Object.keys(database)) {
       if (Array.isArray(saved[key])) database[key] = saved[key];
     }
+    for (const project of database.projects) {
+      if (!project.updated_at && project.created_at) project.updated_at = project.created_at;
+    }
   } catch (err) {
     console.error('[DB] Failed to load database, starting clean:', err.message);
   }
@@ -1539,6 +1542,7 @@ async function getCompletedEscrowCount() {
 }
 
 async function createStoredProject(homeownerId, body) {
+  const createdAt = new Date().toISOString();
   const project = {
     homeowner_id: homeownerId,
     title: String(body.title || '').trim(),
@@ -1551,7 +1555,8 @@ async function createStoredProject(homeownerId, body) {
     status: 'open',
     published: false,
     published_at: null,
-    created_at: new Date().toISOString(),
+    created_at: createdAt,
+    updated_at: createdAt,
   };
 
   if (USE_POSTGRES) {
