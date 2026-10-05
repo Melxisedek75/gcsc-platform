@@ -85,10 +85,12 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     const origin = `http://127.0.0.1:${report.apiPort}`;
     const users = (await pool.query(`INSERT INTO users(email,password_hash,role,full_name) VALUES
       ('browser-owner@example.invalid','fixture','homeowner','Browser Owner'),
-      ('browser-contractor@example.invalid','fixture','contractor','Browser Contractor')
+      ('browser-contractor@example.invalid','fixture','contractor','Browser Contractor'),
+      ('browser-other-contractor@example.invalid','fixture','contractor','Other Browser Contractor')
       RETURNING id,email,role,full_name`)).rows;
     const owner = users.find(user => user.role === 'homeowner');
-    const contractor = users.find(user => user.role === 'contractor');
+    const contractor = users.find(user => user.email === 'browser-contractor@example.invalid');
+    const otherContractor = users.find(user => user.email === 'browser-other-contractor@example.invalid');
 
     const webRequire = createRequire(path.join(webRoot, 'package.json'));
     esbuild = webRequire('esbuild');
@@ -171,7 +173,8 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     const row = (page, id) => page.getByRole('row').filter({ hasText: `#${id}` });
     const noBrief = async page => {
       const text = await page.locator('body').innerText();
-      for (const value of ['QA_BROWSER_PRIVATE_TITLE', 'QA_BROWSER_PRIVATE_BRIEF', 'QA_BROWSER_PRIVATE_ADDRESS']) {
+      for (const value of ['QA_BROWSER_PRIVATE_TITLE', 'QA_BROWSER_PRIVATE_BRIEF', 'QA_BROWSER_PRIVATE_ADDRESS',
+        'QA_BROWSER_OTHER_PRIVATE_TITLE', 'QA_BROWSER_OTHER_PRIVATE_BRIEF', 'QA_BROWSER_OTHER_PRIVATE_ADDRESS']) {
         assert.ok(!text.includes(value), `Private value leaked: ${value}`);
       }
       assert.equal(await page.getByRole('button', { name: /Prepare Bid|Send Bid/ }).count(), 0);
@@ -242,6 +245,25 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     await pool.query(`INSERT INTO project_access_entitlements
       (project_id,contractor_id,status,provider_payment_id,verified_at)
       VALUES ($1,$2,'paid','synthetic-browser-grant',NOW())`, [id, contractor.id]);
+    const otherProject = (await pool.query(`INSERT INTO projects
+      (homeowner_id,title,description,location,category,budget_min,budget_max,timeline_days,status,published,published_at)
+      VALUES ($1,'QA_BROWSER_OTHER_PRIVATE_TITLE','QA_BROWSER_OTHER_PRIVATE_BRIEF',
+        'QA_BROWSER_OTHER_PRIVATE_ADDRESS','roofing',1200,2400,14,'open',TRUE,NOW()) RETURNING id`,
+    [owner.id])).rows[0];
+    const otherContractorPage = await openRole(otherContractor);
+    await noBrief(otherContractorPage);
+    for (const [page, user, deniedId] of [
+      [otherContractorPage, otherContractor, id], [contractorPage, contractor, otherProject.id],
+    ]) {
+      const denied = await page.request.get(`${origin}/api/projects/${deniedId}/details`, {
+        headers: { Authorization: `Bearer ${api.jwtSign({ userId: user.id, role: user.role, email: user.email })}` },
+      });
+      assert.equal(denied.status(), 404);
+      assert.match(denied.headers()['cache-control'], /no-store/);
+      assert.deepEqual(await denied.json(),
+        { error: 'Project details unavailable', code: 'project_details_unavailable' });
+    }
+    report.steps.push('paid grant stays bound to one contractor and one project across direct private API reads');
     const details = await action(contractorPage, 'GET', `/api/projects/${id}/details`,
       () => contractorPage.getByRole('button', { name: 'Check access', exact: true }).click(), 200);
     assert.deepEqual(Object.keys(details.project).sort(),
