@@ -341,15 +341,25 @@ test('real PostgreSQL project/bid persistence and access baseline', { timeout: 9
     assert.equal(draft.status, 201);
     const projectId = draft.body.project.id;
     assert.equal(draft.body.project.homeowner_id, registeredOwner.user.id);
-    assert.equal((await request('POST', '/api/projects', null, { title: 'Forbidden' },
-      asToken(registeredContractor.token))).status, 403);
-    assert.equal((await request('GET', `/api/projects/${projectId}`, null, undefined,
-      asToken(registeredContractor.token))).status, 404);
+    const countBeforeDenial = (await pool.query('SELECT COUNT(*)::int AS count FROM projects')).rows[0].count;
+    const deniedCreate = await request('POST', '/api/projects', null,
+      { title: 'Forbidden', description: 'Must not be stored' }, asToken(registeredContractor.token));
+    assert.equal(deniedCreate.status, 403);
+    assert.deepEqual(deniedCreate.body, { error: 'Homeowners only' });
+    assert.equal((await pool.query('SELECT COUNT(*)::int AS count FROM projects')).rows[0].count,
+      countBeforeDenial);
+    const deniedDraft = await request('GET', `/api/projects/${projectId}`, null, undefined,
+      asToken(registeredContractor.token));
+    assert.equal(deniedDraft.status, 404);
+    assert.deepEqual(deniedDraft.body, { error: 'Project not found' });
     assert.equal((await request('POST', `/api/projects/${projectId}/publish`, null, undefined,
       asToken(registeredOwner.token))).status, 200);
     const preview = await request('GET', `/api/projects/${projectId}`, null, undefined,
       asToken(registeredContractor.token));
     assert.equal(preview.status, 200);
+    assert.deepEqual(Object.keys(preview.body), ['project']);
+    assert.deepEqual(Object.keys(preview.body.project).sort(),
+      ['id', 'title', 'category', 'budget_min', 'budget_max', 'timeline_days', 'status', 'published_at'].sort());
     assert.equal(preview.body.project.title, 'Roofing project');
     assert.ok(!JSON.stringify(preview.body).includes('Registered owner private'));
   });
