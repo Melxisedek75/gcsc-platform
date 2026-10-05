@@ -205,6 +205,23 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     const publication = (await pool.query('SELECT published,published_at FROM projects WHERE id=$1', [id])).rows[0];
     assert.equal(publication.published, true);
     assert.ok(publication.published_at instanceof Date);
+    const publicListResponse = await contractorPage.request.get(`${origin}/api/projects`);
+    assert.equal(publicListResponse.status(), 200);
+    const publicList = await publicListResponse.json();
+    const publicPreview = publicList.projects.find(project => project.id === id);
+    assert.ok(publicPreview);
+    assert.deepEqual(Object.keys(publicPreview).sort(),
+      ['id', 'title', 'category', 'budget_min', 'budget_max', 'timeline_days', 'status', 'published_at'].sort());
+    assert.equal(publicPreview.title, 'Roofing project');
+    const publicDetailResponse = await contractorPage.request.get(`${origin}/api/projects/${id}`);
+    assert.equal(publicDetailResponse.status(), 200);
+    assert.match(publicDetailResponse.headers()['cache-control'], /no-store/);
+    assert.deepEqual((await publicDetailResponse.json()).project, publicPreview);
+    for (const body of [JSON.stringify(publicList), await publicDetailResponse.text()]) {
+      for (const value of ['QA_BROWSER_PRIVATE_TITLE', 'QA_BROWSER_PRIVATE_BRIEF', 'QA_BROWSER_PRIVATE_ADDRESS']) {
+        assert.ok(!body.includes(value), `Private value leaked in public API: ${value}`);
+      }
+    }
     report.steps.push('owner UI creates private draft and publishes; SQL state and contractor draft invisibility verified');
 
     await contractorPage.reload();
