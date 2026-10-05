@@ -2,8 +2,8 @@
   {
     "path": "apps/marketing/index.html",
     "sourceBlob": "cb8564ebb98cd04d1930993c7af9a0cd54cdce3e",
-    "sha256": "99c21c2c6e6cc22a9cdfb0076aca5c01710a500ef1eda3e106752942081641e6",
-    "reason": "Replace the historical landing with the reviewed October pilot presentation and homeowner/contractor account CTAs; financial services remain planned, not live.",
+    "sha256": "32502c376dea4cfc09ca46753ca31ea58b2f634f97141380dcfcd46a6d2fc96e",
+    "reason": "Replace the historical landing with the reviewed October pilot presentation and homeowner/contractor account CTAs; disclose the AI-generated hero concept image as not a customer project. Financial services remain planned, not live.",
     "test": "node apps/marketing/validate-static.mjs --test; node apps/marketing/validate-static.mjs; node apps/marketing/verify-browser.cjs; node apps/web/scripts/verify-account-role-browser.cjs --marketing"
   },
   {
