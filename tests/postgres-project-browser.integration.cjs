@@ -208,16 +208,22 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     const publicListResponse = await contractorPage.request.get(`${origin}/api/projects`);
     assert.equal(publicListResponse.status(), 200);
     const publicList = await publicListResponse.json();
+    assert.deepEqual(Object.keys(publicList), ['projects']);
+    assert.ok(Array.isArray(publicList.projects));
+    const previewKeys = ['id', 'title', 'category', 'budget_min', 'budget_max', 'timeline_days', 'status', 'published_at'].sort();
+    for (const preview of publicList.projects) {
+      assert.deepEqual(Object.keys(preview).sort(), previewKeys);
+    }
     const publicPreview = publicList.projects.find(project => project.id === id);
     assert.ok(publicPreview);
-    assert.deepEqual(Object.keys(publicPreview).sort(),
-      ['id', 'title', 'category', 'budget_min', 'budget_max', 'timeline_days', 'status', 'published_at'].sort());
     assert.equal(publicPreview.title, 'Roofing project');
     const publicDetailResponse = await contractorPage.request.get(`${origin}/api/projects/${id}`);
     assert.equal(publicDetailResponse.status(), 200);
     assert.match(publicDetailResponse.headers()['cache-control'], /no-store/);
-    assert.deepEqual((await publicDetailResponse.json()).project, publicPreview);
-    for (const body of [JSON.stringify(publicList), await publicDetailResponse.text()]) {
+    const publicDetail = await publicDetailResponse.json();
+    assert.deepEqual(Object.keys(publicDetail), ['project']);
+    assert.deepEqual(publicDetail.project, publicPreview);
+    for (const body of [JSON.stringify(publicList), JSON.stringify(publicDetail)]) {
       for (const value of ['QA_BROWSER_PRIVATE_TITLE', 'QA_BROWSER_PRIVATE_BRIEF', 'QA_BROWSER_PRIVATE_ADDRESS']) {
         assert.ok(!body.includes(value), `Private value leaked in public API: ${value}`);
       }
