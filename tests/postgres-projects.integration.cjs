@@ -304,6 +304,56 @@ test('real PostgreSQL project/bid persistence and access baseline', { timeout: 9
   await profileDocumentAcceptance(t, { pool, request, fixtureUser, startApi, stopApi });
   await chatAcceptance(t, { pool, request, fixtureUser, startApi, stopApi });
 
+  await t.test('local registration persists owner/contractor roles without claiming verification', async () => {
+    const registrations = [];
+    for (const [role, channel, email] of [
+      ['homeowner', 'sms', 'registered-owner@example.invalid'],
+      ['contractor', 'email', 'registered-contractor@example.invalid'],
+    ]) {
+      const response = await request('POST', '/api/auth/register', null, {
+        email, password: 'local-fixture-password', role, fullName: `Registered ${role}`,
+        phone: role === 'homeowner' ? '+12065550101' : '', verificationMode: 'preferred',
+      });
+      assert.equal(response.status, 201);
+      assert.equal(response.body.verification_required, false);
+      assert.equal(response.body.verification_configured, false);
+      assert.equal(response.body.verification_channel, channel);
+      assert.equal(response.body.user.role, role);
+      assert.equal(response.body.user.is_verified, false);
+      assert.equal(response.body.user.verification_status, 'verification_provider_pending');
+      assert.ok(response.body.token);
+      const stored = (await pool.query(`SELECT role,is_verified,email_verified,phone_verified,
+        verification_status,verification_channel,password_hash FROM users WHERE email=$1`, [email])).rows[0];
+      assert.equal(stored.role, role);
+      assert.equal(stored.is_verified, false);
+      assert.equal(stored.email_verified, false);
+      assert.equal(stored.phone_verified, false);
+      assert.equal(stored.verification_status, 'verification_provider_pending');
+      assert.equal(stored.verification_channel, channel);
+      assert.notEqual(stored.password_hash, 'local-fixture-password');
+      registrations.push(response.body);
+    }
+    const [registeredOwner, registeredContractor] = registrations;
+    const asToken = token => ({ headers: { Authorization: `Bearer ${token}` } });
+    const draft = await request('POST', '/api/projects', null,
+      { title: 'Registered owner private title', description: 'Registered owner private brief', category: 'roofing' },
+      asToken(registeredOwner.token));
+    assert.equal(draft.status, 201);
+    const projectId = draft.body.project.id;
+    assert.equal(draft.body.project.homeowner_id, registeredOwner.user.id);
+    assert.equal((await request('POST', '/api/projects', null, { title: 'Forbidden' },
+      asToken(registeredContractor.token))).status, 403);
+    assert.equal((await request('GET', `/api/projects/${projectId}`, null, undefined,
+      asToken(registeredContractor.token))).status, 404);
+    assert.equal((await request('POST', `/api/projects/${projectId}/publish`, null, undefined,
+      asToken(registeredOwner.token))).status, 200);
+    const preview = await request('GET', `/api/projects/${projectId}`, null, undefined,
+      asToken(registeredContractor.token));
+    assert.equal(preview.status, 200);
+    assert.equal(preview.body.project.title, 'Roofing project');
+    assert.ok(!JSON.stringify(preview.body).includes('Registered owner private'));
+  });
+
   fs.writeFileSync(path.join(runDirectory, 'api-source.sha256'), createHash('sha256').update(source).digest('hex') + '\n');
   const hashes = Object.fromEntries(['pure-server.cjs', 'wallet-ownership-proof.cjs', 'wallet-challenge-store.cjs',
     'database/migrate-schema.cjs', 'database/schema-statements.cjs']
