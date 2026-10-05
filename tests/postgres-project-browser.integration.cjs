@@ -398,6 +398,9 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     assert.equal(existingOwner.user.id, registeredOwner.registered.user.id);
     assert.equal(existingOwner.user.role, 'homeowner');
     assert.equal(await existingOwnerPage.evaluate(() => localStorage.getItem('gcsc_auth_token')), existingOwner.token);
+    await existingOwnerPage.getByRole('heading', { name: 'My Projects', exact: true }).waitFor();
+    await existingOwnerPage.getByPlaceholder('Project title', { exact: true }).waitFor();
+    assert.equal(await existingOwnerPage.getByRole('heading', { name: 'Open Projects', exact: true }).count(), 0);
     await row(existingOwnerPage, registeredId).waitFor();
     const registeredContractor = await registerPage('contractor', 'qa-browser-registered-contractor@example.invalid');
     assert.equal(await row(registeredContractor.page, registeredId).count(), 0);
