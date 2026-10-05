@@ -250,17 +250,29 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
       VALUES ($1,'QA_BROWSER_OTHER_PRIVATE_TITLE','QA_BROWSER_OTHER_PRIVATE_BRIEF',
         'QA_BROWSER_OTHER_PRIVATE_ADDRESS','roofing',1200,2400,14,'open',TRUE,NOW()) RETURNING id`,
     [owner.id])).rows[0];
+    const viewDeniedPreview = async (page, deniedId) => {
+      const detailsResponse = page.waitForResponse(response =>
+        response.url() === `${origin}/api/projects/${deniedId}/details` && response.request().method() === 'GET');
+      const preview = await action(page, 'GET', `/api/projects/${deniedId}`,
+        () => row(page, deniedId).getByRole('button', { name: 'View', exact: true }).click(), 200);
+      assert.deepEqual(Object.keys(preview), ['project']);
+      assert.deepEqual(Object.keys(preview.project).sort(), previewKeys);
+      assert.equal(preview.project.title, 'Roofing project');
+      const denied = await detailsResponse;
+      assert.equal(denied.status(), 404);
+      assert.match(denied.headers()['cache-control'], /no-store/);
+      assert.deepEqual(await denied.json(),
+        { error: 'Project details unavailable', code: 'project_details_unavailable' });
+      await page.getByRole('button', { name: 'Check access', exact: true }).waitFor();
+      await noBrief(page);
+    };
     const otherContractorPage = await openRole(otherContractor);
     await row(otherContractorPage, id).waitFor();
     await row(otherContractorPage, otherProject.id).waitFor();
-    await action(otherContractorPage, 'GET', `/api/projects/${id}`,
-      () => row(otherContractorPage, id).getByRole('button', { name: 'View', exact: true }).click(), 200);
-    await noBrief(otherContractorPage);
+    await viewDeniedPreview(otherContractorPage, id);
     const contractorScopePage = await openRole(contractor);
     await row(contractorScopePage, otherProject.id).waitFor();
-    await action(contractorScopePage, 'GET', `/api/projects/${otherProject.id}`,
-      () => row(contractorScopePage, otherProject.id).getByRole('button', { name: 'View', exact: true }).click(), 200);
-    await noBrief(contractorScopePage);
+    await viewDeniedPreview(contractorScopePage, otherProject.id);
     for (const [page, user, deniedId] of [
       [otherContractorPage, otherContractor, id], [contractorScopePage, contractor, otherProject.id],
     ]) {
