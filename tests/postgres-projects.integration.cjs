@@ -140,9 +140,14 @@ test('real PostgreSQL project/bid persistence and access baseline', { timeout: 9
     const ownerProjects = await request('GET', '/api/projects/my/projects', owner);
     assert.equal(ownerProjects.status, 200);
     assert.equal(ownerProjects.body.projects.find(item => item.id === project.id)?.title, 'Roof repair');
-    assert.deepEqual((await request('GET', '/api/projects/my/projects', otherOwner)).body.projects, []);
-    assert.equal((await request('GET', `/api/projects/${project.id}`, contractor)).status, 404);
-    assert.equal((await request('GET', `/api/projects/${project.id}`)).status, 404);
+    const otherOwnerProjects = await request('GET', '/api/projects/my/projects', otherOwner);
+    assert.equal(otherOwnerProjects.status, 200);
+    assert.deepEqual(otherOwnerProjects.body, { projects: [] });
+    for (const viewer of [contractor, null]) {
+      const denied = await request('GET', `/api/projects/${project.id}`, viewer);
+      assert.equal(denied.status, 404);
+      assert.deepEqual(denied.body, { error: 'Project not found' });
+    }
     assert.deepEqual((await pool.query('SELECT homeowner_id,published FROM projects WHERE id=$1', [project.id])).rows[0],
       { homeowner_id: owner.id, published: false });
   });
