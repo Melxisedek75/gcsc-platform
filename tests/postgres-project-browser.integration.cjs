@@ -292,6 +292,18 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     assert.equal(details.project.published_at, publication.published_at.toISOString());
     await contractorPage.locator('aside').getByText('QA_BROWSER_PRIVATE_BRIEF', { exact: true }).waitFor();
     assert.ok(!(await contractorPage.locator('body').innerText()).includes('QA_BROWSER_PRIVATE_ADDRESS'));
+    await pool.query("UPDATE project_access_entitlements SET status='refunded' WHERE project_id=$1 AND contractor_id=$2",
+      [id, contractor.id]);
+    await action(contractorPage, 'GET', `/api/projects/${id}/details`,
+      () => contractorPage.getByRole('button', { name: 'Refresh details', exact: true }).click(), 404);
+    await contractorPage.getByRole('button', { name: 'Check access', exact: true }).waitFor();
+    await noBrief(contractorPage);
+    await pool.query("UPDATE project_access_entitlements SET status='paid' WHERE project_id=$1 AND contractor_id=$2",
+      [id, contractor.id]);
+    await action(contractorPage, 'GET', `/api/projects/${id}/details`,
+      () => contractorPage.getByRole('button', { name: 'Check access', exact: true }).click(), 200);
+    await contractorPage.locator('aside').getByText('QA_BROWSER_PRIVATE_BRIEF', { exact: true }).waitFor();
+    report.steps.push('refunded synthetic grant clears a previously visible brief; restored local grant requires a new access check');
     await compose(contractorPage, 'QA_BROWSER_PERSISTED_PROPOSAL');
     const submitted = await action(contractorPage, 'POST', '/api/bids',
       () => contractorPage.getByRole('button', { name: 'Send Bid', exact: true }).click(), 201);
