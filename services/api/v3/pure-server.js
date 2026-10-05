@@ -1588,6 +1588,81 @@ async function createStoredProject(homeownerId, body) {
   return stored;
 }
 
+function parseProjectDraftReplacement(body) {
+  const fields = ['title', 'description', 'category', 'budget_min', 'budget_max', 'location', 'timeline_days',
+    'expected_updated_at'];
+  if (!body || typeof body !== 'object' || Array.isArray(body)
+    || Object.keys(body).some(key => !fields.includes(key))
+    || !fields.every(key => Object.hasOwn(body, key))) return null;
+  const text = (value, max, required = false) =>
+    typeof value === 'string' && value.trim().length <= max && (!required || value.trim().length > 0)
+      ? value.trim() : null;
+  const title = text(body.title, 160, true);
+  const description = text(body.description, 10000, true);
+  const category = text(body.category, 80, true);
+  const location = text(body.location, 200);
+  const integer = (value, min, max) => Number.isInteger(value) && value >= min && value <= max;
+  const expectedUpdatedAt = body.expected_updated_at;
+  if (title === null || description === null || category === null || location === null
+    || !integer(body.budget_min, 0, 1000000000) || !integer(body.budget_max, 0, 1000000000)
+    || (body.budget_max > 0 && body.budget_min > body.budget_max)
+    || !integer(body.timeline_days, 1, 3650)
+    || typeof expectedUpdatedAt !== 'string' || !Number.isFinite(Date.parse(expectedUpdatedAt))
+    || new Date(expectedUpdatedAt).toISOString() !== expectedUpdatedAt) return null;
+  return { title, description, category, budget_min: body.budget_min, budget_max: body.budget_max,
+    location, timeline_days: body.timeline_days, expected_updated_at: expectedUpdatedAt };
+}
+
+async function replaceStoredDraftProject(req, projectId, homeownerId, draft) {
+  const audit = {
+    actorId: homeownerId, targetUserId: homeownerId, action: 'project.updated',
+    entityType: 'project', entityId: projectId, metadata: { project_id: projectId },
+  };
+  if (USE_POSTGRES) {
+    return withPostgresTransaction(async client => {
+      const owner = await client.query(
+        "SELECT id FROM users WHERE id = $1 AND is_active = TRUE AND role = 'homeowner' FOR SHARE",
+        [homeownerId]
+      );
+      if (owner.rows.length === 0) return null;
+      const result = await client.query(
+        `UPDATE projects SET title=$3, description=$4, category=$5, budget_min=$6,
+           budget_max=$7, location=$8, timeline_days=$9,
+           updated_at=GREATEST(NOW(), date_trunc('milliseconds', updated_at) + INTERVAL '1 millisecond')
+         WHERE id=$1 AND homeowner_id=$2 AND status='open' AND published=FALSE AND escrow_id IS NULL
+           AND date_trunc('milliseconds', updated_at)=$10::timestamptz
+         RETURNING *`,
+        [projectId, homeownerId, draft.title, draft.description, draft.category, draft.budget_min,
+          draft.budget_max, draft.location, draft.timeline_days, draft.expected_updated_at]
+      );
+      const updated = normalizeProject(result.rows[0]);
+      if (updated) await recordAuditEvent(req, audit, client.query.bind(client));
+      return updated;
+    });
+  }
+  const owner = db.users.find(user => user.id === homeownerId);
+  const project = db.projects.find(item => item.id === projectId);
+  if (!owner?.is_active || owner.role !== 'homeowner' || !project
+    || project.homeowner_id !== homeownerId || project.status !== 'open'
+    || project.published === true || project.escrow_id) return null;
+  if (project.updated_at !== draft.expected_updated_at) return null;
+  const previous = { ...project };
+  const auditCount = db.audit_events.length;
+  const { expected_updated_at, ...fields } = draft;
+  Object.assign(project, fields, {
+    updated_at: new Date(Math.max(Date.now(), Date.parse(expected_updated_at) + 1)).toISOString(),
+  });
+  try {
+    await recordAuditEvent(req, audit);
+  } catch (error) {
+    for (const key of Object.keys(project)) if (!Object.hasOwn(previous, key)) delete project[key];
+    Object.assign(project, previous);
+    db.audit_events.length = auditCount;
+    throw error;
+  }
+  return project;
+}
+
 async function listStoredProjects(filters = {}) {
   if (USE_POSTGRES) {
     const result = await queryPostgres(
@@ -4277,6 +4352,29 @@ const routes = {
       },
     });
     json(res, 201, { message: 'Project created', project });
+  },
+
+  'PUT /api/projects/:id': async (req, res, params) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    const auth = getUser(req);
+    if (!auth) return json(res, 401, { error: 'Unauthorized' });
+    const projectId = Number(params.id);
+    if (!/^[1-9]\d*$/.test(params.id) || !Number.isSafeInteger(projectId) || projectId > 2147483647) {
+      return json(res, 404, { error: 'Project not found' });
+    }
+    const project = await findStoredProjectById(projectId);
+    if (!project || Number(project.homeowner_id) !== Number(auth.userId)
+      || !(await hasCurrentRole(auth, 'homeowner'))) {
+      return json(res, 404, { error: 'Project not found' });
+    }
+    if (project.status !== 'open' || project.published === true || project.escrow_id) {
+      return json(res, 409, { error: 'Only an open private draft can be edited' });
+    }
+    const draft = parseProjectDraftReplacement(await parseBody(req));
+    if (!draft) return json(res, 400, { error: 'Invalid project draft' });
+    const updated = await replaceStoredDraftProject(req, projectId, auth.userId, draft);
+    if (!updated) return json(res, 409, { error: 'Project changed; refresh and retry' });
+    json(res, 200, { project: updated });
   },
 
   'POST /api/projects/:id/publish': async (req, res, params) => {
