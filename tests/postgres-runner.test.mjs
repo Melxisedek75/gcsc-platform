@@ -111,6 +111,7 @@ function sourceFixture({ database = true } = {}) {
     write(apiRoot, 'database/unrelated.sql', 'not part of the module snapshot');
   }
   write(webRoot, 'src/pages/dashboard/ProjectsPanel.tsx', 'export const fixturePanel = true;');
+  write(webRoot, 'src/pages/dashboard/AccountAccess.tsx', 'export const fixtureAccountAccess = true;');
   write(webRoot, 'src/services/api.ts', 'export const fixtureClient = true;');
   return { directory, boundary, checkout, apiRoot, webRoot,
     capture: () => captureProjectSources({ apiRoot, webRoot, apiExplicit: true, webExplicit: true }, boundary, [checkout]) };

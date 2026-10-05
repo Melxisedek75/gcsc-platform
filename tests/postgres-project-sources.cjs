@@ -64,7 +64,7 @@ function captureProjectSources(options, workspaceRoot, worktreeRoots) {
   if (options.webRoot) {
     const webRoot = resolveSourceRoot(options.webRoot, 'web', workspaceRoot, worktreeRoots);
     result.web = { root: webRoot, explicit: !!options.webExplicit, files: files(webRoot,
-      ['src/pages/dashboard/ProjectsPanel.tsx', 'src/services/api.ts']) };
+      ['src/pages/dashboard/ProjectsPanel.tsx', 'src/pages/dashboard/AccountAccess.tsx', 'src/services/api.ts']) };
   }
   return result;
 }

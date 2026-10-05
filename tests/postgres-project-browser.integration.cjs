@@ -43,6 +43,7 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
   const expected = {
     api: selectedSources.api.files['pure-server.js'],
     panel: selectedSources.web.files['src/pages/dashboard/ProjectsPanel.tsx'],
+    account: selectedSources.web.files['src/pages/dashboard/AccountAccess.tsx'],
     client: selectedSources.web.files['src/services/api.ts'],
   };
   if (!selectedSources.api.explicit) assert.equal(expected.api, defaultPins.api, 'Default API pin changed');
@@ -51,6 +52,7 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
   }
   const sourcePaths = { api: fs.realpathSync(process.env.GCSC_API_SOURCE),
     panel: path.join(webRoot, 'src/pages/dashboard/ProjectsPanel.tsx'),
+    account: path.join(webRoot, 'src/pages/dashboard/AccountAccess.tsx'),
     client: path.join(webRoot, 'src/services/api.ts') };
   const sources = Object.fromEntries(Object.entries(sourcePaths).map(([name, file]) =>
     [name, { path: file, sha256: hash(fs.readFileSync(file)) }]));
@@ -103,11 +105,21 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
         import {createRoot} from 'react-dom/client';
         import {HashRouter} from 'react-router';
         import {ProjectsPanel} from './src/pages/dashboard/ProjectsPanel';
+        import {AccountAccess} from './src/pages/dashboard/AccountAccess';
+        import {useState} from 'react';
         import {api} from './src/services/api';
         const fixture = window.__qaFixture;
-        api.setToken(fixture.token);
+        if (fixture.token) api.setToken(fixture.token);
+        function Registration() {
+          const [user, setUser] = useState(null);
+          return user
+            ? <ProjectsPanel user={user} onOpenChat={()=>{}}/>
+            : <AccountAccess initialRole={fixture.registrationRole} onAuthenticated={setUser}/>;
+        }
         createRoot(document.getElementById('root')).render(
-          <HashRouter><ProjectsPanel user={fixture.user} onOpenChat={()=>{}}/></HashRouter>);
+          <HashRouter>{fixture.registrationRole
+            ? <Registration/>
+            : <ProjectsPanel user={fixture.user} onOpenChat={()=>{}}/>}</HashRouter>);
       ` } });
     const code = bundle.outputFiles[0].text;
     report.bundleSha256 = hash(code);
@@ -116,7 +128,7 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     report.webInputs = Object.fromEntries(Object.keys(bundle.metafile.inputs)
       .filter(file => !report.virtualInputs.includes(file) && !file.includes('node_modules'))
       .map(file => [file, hash(fs.readFileSync(path.resolve(webRoot, file)))]));
-    for (const name of ['panel', 'client']) assert.ok(Object.values(report.webInputs).includes(expected[name]),
+    for (const name of ['panel', 'account', 'client']) assert.ok(Object.values(report.webInputs).includes(expected[name]),
       `${name} must be an actual bundle input`);
     for (const [name, file] of Object.entries(sourcePaths)) assert.equal(hash(fs.readFileSync(file)), expected[name]);
     fs.writeFileSync(path.join(runDirectory, 'project-ui.js'), code);
@@ -132,13 +144,14 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     browser = await chromium.connect(browserServer.wsEndpoint(), { timeout: 10000 });
     report.browserVersion = browser.version();
 
-    async function openRole(user) {
+    async function openRole(user, registrationRole = null) {
       const context = await browser.newContext({ viewport: { width: 1280, height: 900 },
         reducedMotion: 'reduce', serviceWorkers: 'block' });
       // Edge requires loopback permission for this intercepted-HTML origin.
       await context.grantPermissions(['local-network-access'], { origin: uiOrigin });
       await context.addInitScript(fixture => { window.__qaFixture = fixture; },
-        { user, token: api.jwtSign({ userId: user.id, role: user.role, email: user.email }) });
+        { user, token: user ? api.jwtSign({ userId: user.id, role: user.role, email: user.email }) : null,
+          registrationRole });
       await context.route('**/*', route => {
         const req = route.request();
         const url = new URL(req.url());
@@ -149,7 +162,7 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
           return route.fulfill({ contentType: 'text/javascript', body: code });
         }
         const read = ['GET', 'OPTIONS'].includes(req.method()) && /^\/api\/projects(?:\/my\/projects|\/\d+(?:\/details)?)?$/.test(url.pathname);
-        const write = ['POST', 'OPTIONS'].includes(req.method()) && /^\/api\/(?:projects(?:\/\d+\/publish)?|bids)$/.test(url.pathname);
+        const write = ['POST', 'OPTIONS'].includes(req.method()) && /^\/api\/(?:auth\/(?:register|login)|projects(?:\/\d+\/publish)?|bids)$/.test(url.pathname);
         if (url.origin === origin && (read || write)) return route.continue();
         report.blockedRequests.push({ method: req.method(), url: url.href });
         return route.abort('blockedbyclient');
@@ -174,7 +187,8 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     const noBrief = async page => {
       const text = await page.locator('body').innerText();
       for (const value of ['QA_BROWSER_PRIVATE_TITLE', 'QA_BROWSER_PRIVATE_BRIEF', 'QA_BROWSER_PRIVATE_ADDRESS',
-        'QA_BROWSER_OTHER_PRIVATE_TITLE', 'QA_BROWSER_OTHER_PRIVATE_BRIEF', 'QA_BROWSER_OTHER_PRIVATE_ADDRESS']) {
+        'QA_BROWSER_OTHER_PRIVATE_TITLE', 'QA_BROWSER_OTHER_PRIVATE_BRIEF', 'QA_BROWSER_OTHER_PRIVATE_ADDRESS',
+        'QA_BROWSER_REGISTER_PRIVATE_TITLE', 'QA_BROWSER_REGISTER_PRIVATE_BRIEF']) {
         assert.ok(!text.includes(value), `Private value leaked: ${value}`);
       }
       assert.equal(await page.getByRole('button', { name: /Prepare Bid|Send Bid/ }).count(), 0);
@@ -338,6 +352,64 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     assert.equal((await pool.query('SELECT COUNT(*)::int AS count FROM escrow_contracts')).rows[0].count, 0);
     await contractorPage.screenshot({ path: path.join(runDirectory, 'revoked-preview.png'), fullPage: true });
     report.steps.push('revoked grant rejects stale UI submission with 403 and details with 404; brief cleared and no second bid');
+
+    const registerPage = async (role, email) => {
+      const page = await openRole(null, role);
+      await page.getByPlaceholder('Full name', { exact: true }).fill(`Browser ${role}`);
+      await page.getByPlaceholder('Email', { exact: true }).fill(email);
+      await page.getByPlaceholder('Password, minimum 8 characters').fill('local-browser-password');
+      if (role === 'homeowner') await page.getByPlaceholder('Phone', { exact: true }).fill('+12065550102');
+      const registered = await action(page, 'POST', '/api/auth/register',
+        () => page.getByRole('button', { name: 'Create GCSC Account', exact: true }).click(), 201);
+      assert.equal(registered.user.role, role);
+      assert.equal(registered.user.is_verified, false);
+      assert.equal(registered.user.verification_status, 'verification_provider_pending');
+      assert.equal(registered.verification_required, false);
+      assert.equal(registered.verification_configured, false);
+      assert.equal(registered.verification_channel, role === 'homeowner' ? 'sms' : 'email');
+      assert.equal(await page.evaluate(() => localStorage.getItem('gcsc_auth_token')), registered.token);
+      if (role === 'homeowner') await page.getByPlaceholder('Project title', { exact: true }).waitFor();
+      else await row(page, id).waitFor();
+      const stored = (await pool.query(`SELECT role,is_verified,verification_status,verification_channel
+        FROM users WHERE email=$1`, [email])).rows[0];
+      assert.deepEqual(stored, {
+        role, is_verified: false, verification_status: 'verification_provider_pending',
+        verification_channel: role === 'homeowner' ? 'sms' : 'email',
+      });
+      return { page, registered };
+    };
+    const registeredOwner = await registerPage('homeowner', 'qa-browser-registered-owner@example.invalid');
+    await registeredOwner.page.getByPlaceholder('Project title', { exact: true }).fill('QA_BROWSER_REGISTER_PRIVATE_TITLE');
+    await registeredOwner.page.locator('select').selectOption({ label: 'Roofing' });
+    await registeredOwner.page.getByPlaceholder('Describe the work, property condition, timing, and anything contractors should know.')
+      .fill('QA_BROWSER_REGISTER_PRIVATE_BRIEF');
+    const registeredDraft = await action(registeredOwner.page, 'POST', '/api/projects',
+      () => registeredOwner.page.getByRole('button', { name: 'Save Draft', exact: true }).click(), 201);
+    const registeredId = registeredDraft.project.id;
+    assert.equal(registeredDraft.project.homeowner_id, registeredOwner.registered.user.id);
+    const registeredContractor = await registerPage('contractor', 'qa-browser-registered-contractor@example.invalid');
+    assert.equal(await row(registeredContractor.page, registeredId).count(), 0);
+    const privateDraft = await registeredContractor.page.request.get(`${origin}/api/projects/${registeredId}`, {
+      headers: { Authorization: `Bearer ${registeredContractor.registered.token}` },
+    });
+    assert.equal(privateDraft.status(), 404);
+    assert.deepEqual(await privateDraft.json(), { error: 'Project not found' });
+    await action(registeredOwner.page, 'POST', `/api/projects/${registeredId}/publish`,
+      () => registeredOwner.page.getByRole('button', { name: 'Publish project', exact: true }).click(), 200);
+    await registeredContractor.page.reload();
+    await registeredContractor.page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    await registeredContractor.page.getByPlaceholder('Email', { exact: true })
+      .fill('qa-browser-registered-contractor@example.invalid');
+    await registeredContractor.page.getByPlaceholder('Password, minimum 8 characters')
+      .fill('local-browser-password');
+    const signedIn = await action(registeredContractor.page, 'POST', '/api/auth/login',
+      () => registeredContractor.page.getByRole('button', { name: 'Open Dashboard', exact: true }).click(), 200);
+    assert.equal(signedIn.user.id, registeredContractor.registered.user.id);
+    assert.equal(await registeredContractor.page.evaluate(() => localStorage.getItem('gcsc_auth_token')), signedIn.token);
+    await row(registeredContractor.page, registeredId).waitFor();
+    await viewDeniedPreview(registeredContractor.page, registeredId);
+    report.steps.push('real browser owner/contractor registration persists unverified roles; owner draft stays private, published preview is generic');
+
     assert.deepEqual(report.apiRequests.filter(req => req.method === 'POST' && req.path === '/api/bids').map(req => req.status), [201, 403]);
     assert.ok(report.apiRequests.length < 100);
     assert.deepEqual(report.blockedRequests, []);
