@@ -16,10 +16,10 @@ const replacement = {
 };
 const withVersion = (draft = replacement) => ({ ...draft, expected_updated_at: project.updated_at });
 
-function request(method, route, user, body) {
+function request(method, route, user, body, tokenOverride) {
   return new Promise((resolve, reject) => {
     const payload = body === undefined ? '' : JSON.stringify(body);
-    const token = user && server.jwtSign({ userId: user.id, role: user.role, email: user.email });
+    const token = tokenOverride || (user && server.jwtSign({ userId: user.id, role: user.role, email: user.email }));
     const req = http.request({ hostname: '127.0.0.1', port: server.address().port, path: route,
       method, agent: false, headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -69,6 +69,20 @@ test('only an active owner replaces a private draft; audit omits private text', 
   }
   expect(project).toEqual(before);
   expect(server.db.audit_events).toHaveLength(auditCount);
+  const staleToken = server.jwtSign({ userId: owner.id, role: owner.role, email: owner.email });
+  for (const change of [{ is_active: false }, { role: 'admin' }]) {
+    const original = { is_active: owner.is_active, role: owner.role };
+    Object.assign(owner, change);
+    try {
+      const denied = await request('PUT', route, owner, withVersion(), staleToken);
+      expect(denied.status).toBe(404);
+      expect(denied.body).toEqual({ error: 'Project not found' });
+      expect(project).toEqual(before);
+      expect(server.db.audit_events).toHaveLength(auditCount);
+    } finally {
+      Object.assign(owner, original);
+    }
+  }
   for (const invalidId of [`0${project.id}`, `${project.id}extra`, '-1']) {
     const denied = await request('PUT', `/api/projects/${invalidId}`, owner, withVersion());
     expect(denied.status).toBe(404);
