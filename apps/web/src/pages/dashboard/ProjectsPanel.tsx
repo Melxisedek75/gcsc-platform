@@ -33,7 +33,11 @@ import { MilestoneManager } from './MilestoneManager';
 
 const legacyEscrowWorkflowEnabled = import.meta.env.VITE_ENABLE_LEGACY_ESCROW_WORKFLOW === 'true';
 
-function ProjectRequestForm({ onCreated }: { onCreated: (project: GcscProject) => void }) {
+function ProjectRequestForm({ onCreated, disabled, onSavingChange }: {
+  onCreated: (project: GcscProject) => void;
+  disabled: boolean;
+  onSavingChange: (saving: boolean) => void;
+}) {
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -52,7 +56,9 @@ function ProjectRequestForm({ onCreated }: { onCreated: (project: GcscProject) =
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    if (disabled) return;
     setSaving(true);
+    onSavingChange(true);
     setStatus('');
     try {
       const response = await api.createProject({
@@ -79,11 +85,13 @@ function ProjectRequestForm({ onCreated }: { onCreated: (project: GcscProject) =
       setStatus(err instanceof Error ? err.message : 'Could not create project');
     } finally {
       setSaving(false);
+      onSavingChange(false);
     }
   };
 
   return (
     <form onSubmit={submit} className="glass-card p-5 space-y-4">
+      <fieldset disabled={disabled} className="space-y-4 disabled:opacity-60">
       <div>
         <h3 className="font-outfit font-semibold text-[#0F172A] text-lg">New project draft</h3>
         <p className="text-sm text-[#64748B] mt-1">
@@ -165,6 +173,143 @@ function ProjectRequestForm({ onCreated }: { onCreated: (project: GcscProject) =
         {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
         Save Draft
       </button>
+      </fieldset>
+    </form>
+  );
+}
+
+function DraftEditForm({ project, onSaved, onCancel, onSavingChange }: {
+  project: GcscProject;
+  onSaved: (project: GcscProject) => void;
+  onCancel: () => void;
+  onSavingChange: (saving: boolean) => void;
+}) {
+  const [form, setForm] = useState({
+    title: project.title, description: project.description || '', category: project.category,
+    budget_min: String(project.budget_min), budget_max: String(project.budget_max),
+    location: project.location || '', timeline_days: String(project.timeline_days),
+  });
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState('');
+  const [version, setVersion] = useState(project.updated_at || '');
+  const [conflictProject, setConflictProject] = useState<GcscProject | null>(null);
+  const [needsRefresh, setNeedsRefresh] = useState(false);
+  const update = (field: keyof typeof form, value: string) => {
+    setForm((current) => ({ ...current, [field]: value }));
+  };
+  const refreshConflict = async () => {
+    try {
+      const response = await api.getProject(project.id);
+      const current: GcscProject = response.project;
+      if (!current || current.id !== project.id || !current.updated_at
+        || current.published === true || current.status !== 'open') {
+        setStatus('This draft is no longer editable. Your unsaved text remains here until you cancel.');
+        return;
+      }
+      setConflictProject(current);
+      setStatus('The stored draft changed. Compare it below before replacing it with your edits.');
+    } catch {
+      setStatus('Could not load the latest draft. Your edits are still here; try again.');
+    }
+  };
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!version) {
+      setStatus('Refresh this project before editing.');
+      return;
+    }
+    setSaving(true);
+    onSavingChange(true);
+    setStatus('');
+    try {
+      const response = await api.updateProjectDraft(project.id, {
+        title: form.title, description: form.description, category: form.category,
+        budget_min: Number(form.budget_min || 0), budget_max: Number(form.budget_max || 0),
+        location: form.location, timeline_days: Number(form.timeline_days),
+        expected_updated_at: version,
+      });
+      onSaved(response.project);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        setNeedsRefresh(true);
+        await refreshConflict();
+      }
+      else setStatus(err instanceof Error ? err.message : 'Could not save draft. Try again.');
+    } finally {
+      setSaving(false);
+      onSavingChange(false);
+    }
+  };
+
+  return (
+    <form onSubmit={submit} className="space-y-3 border-t border-[#E2E8F0] pt-4">
+      <h4 className="font-outfit font-semibold text-[#0F172A]">Edit private draft</h4>
+      <label className="block text-sm text-[#475569]">Project title
+        <input className={fieldClass} value={form.title} maxLength={160} required
+          onChange={(event) => update('title', event.target.value)} />
+      </label>
+      <label className="block text-sm text-[#475569]">Description
+        <textarea className={fieldClass + ' min-h-[110px]'} value={form.description} maxLength={10000} required
+          onChange={(event) => update('description', event.target.value)} />
+      </label>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <label className="block text-sm text-[#475569]">Category
+          <input className={fieldClass} value={form.category} maxLength={80} required
+            onChange={(event) => update('category', event.target.value)} />
+        </label>
+        <label className="block text-sm text-[#475569]">Location
+          <input className={fieldClass} value={form.location} maxLength={200}
+            onChange={(event) => update('location', event.target.value)} />
+        </label>
+        <label className="block text-sm text-[#475569]">Minimum budget
+          <input className={fieldClass} type="number" min="0" max="1000000000" step="1"
+            value={form.budget_min} onChange={(event) => update('budget_min', event.target.value)} />
+        </label>
+        <label className="block text-sm text-[#475569]">Maximum budget
+          <input className={fieldClass} type="number" min="0" max="1000000000" step="1"
+            value={form.budget_max} onChange={(event) => update('budget_max', event.target.value)} />
+        </label>
+        <label className="block text-sm text-[#475569]">Timeline in days
+          <input className={fieldClass} type="number" min="1" max="3650" step="1" required
+            value={form.timeline_days} onChange={(event) => update('timeline_days', event.target.value)} />
+        </label>
+      </div>
+      {status && <p role="alert" className="text-sm text-[#B91C1C]">{status}</p>}
+      {needsRefresh && !conflictProject && (
+        <button type="button" onClick={() => void refreshConflict()}
+          className="min-h-11 rounded-md border border-[#CBD5E1] px-3 py-2 text-sm font-semibold text-[#334155]">
+          <RefreshCw size={16} className="inline mr-2" /> Refresh comparison
+        </button>
+      )}
+      {conflictProject && (
+        <div className="space-y-2 border-t border-[#CBD5E1] pt-3 text-sm text-[#334155]">
+          <p className="font-semibold">Current saved draft</p>
+          <p>Title: {conflictProject.title}</p>
+          <p className="whitespace-pre-wrap">Description: {conflictProject.description}</p>
+          <p>Category: {conflictProject.category}</p>
+          <p>Location: {conflictProject.location || 'Not set'}</p>
+          <p>Budget: {formatCurrency(conflictProject.budget_min)} - {formatCurrency(conflictProject.budget_max)}</p>
+          <p>Timeline: {conflictProject.timeline_days} days</p>
+          <button type="button" onClick={() => {
+            setVersion(conflictProject.updated_at || '');
+            setConflictProject(null);
+            setNeedsRefresh(false);
+            setStatus('Your edits are kept. Save changes to replace the current draft.');
+          }} className="min-h-11 rounded-md border border-[#0F766E] px-3 py-2 font-semibold text-[#0F766E]">
+            Keep my edits
+          </button>
+        </div>
+      )}
+      <div className="flex flex-wrap gap-2">
+        <button type="submit" disabled={saving || !version || needsRefresh}
+          className="inline-flex min-h-11 items-center gap-2 rounded-md bg-[#0F766E] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+          {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save changes
+        </button>
+        <button type="button" onClick={onCancel} disabled={saving}
+          className="min-h-11 rounded-md border border-[#CBD5E1] px-4 py-2 text-sm font-semibold text-[#334155] disabled:opacity-60">
+          Cancel
+        </button>
+      </div>
     </form>
   );
 }
@@ -282,6 +427,12 @@ function AccountProjectsPanel({ user, onOpenChat }: ProjectsPanelProps) {
   const [error, setError] = useState('');
   const [detailMessage, setDetailMessage] = useState('');
   const [publishingId, setPublishingId] = useState<number | null>(null);
+  const [editingDraftId, setEditingDraftId] = useState<number | null>(null);
+  const [draftSaving, setDraftSaving] = useState(false);
+  const draftSavingRef = useRef(false);
+  const [creatingDraft, setCreatingDraft] = useState(false);
+  const creatingDraftRef = useRef(false);
+  const editButtonRef = useRef<HTMLButtonElement>(null);
   const requestGate = useRef(createLatestRequestGate()).current;
   const detailGate = useRef(createLatestRequestGate()).current;
   const isHomeowner = user.role === 'homeowner';
@@ -314,6 +465,7 @@ function AccountProjectsPanel({ user, onOpenChat }: ProjectsPanelProps) {
       if (!requestGate.isCurrent(requestId)) return;
       setProjects([]);
       setSelectedProject(null);
+      setEditingDraftId(null);
       detailGate.invalidate();
       setPaidBrief(null);
       setBiddingProjectId(null);
@@ -333,8 +485,10 @@ function AccountProjectsPanel({ user, onOpenChat }: ProjectsPanelProps) {
   }, [loadProjects, requestGate, detailGate]);
 
   const loadDetails = async (projectId: number) => {
+    if (draftSavingRef.current || editingDraftId !== null) return;
     const requestId = detailGate.start();
     setSelectedProject(null);
+    setEditingDraftId(null);
     setPaidBrief(null);
     setBiddingProjectId(null);
     setSelectedBids([]);
@@ -397,6 +551,7 @@ function AccountProjectsPanel({ user, onOpenChat }: ProjectsPanelProps) {
   };
 
   const onProjectCreated = (project: GcscProject) => {
+    setEditingDraftId(null);
     setProjects((current) => [project, ...current]);
     setSelectedProject(project);
     setSelectedBids([]);
@@ -417,6 +572,19 @@ function AccountProjectsPanel({ user, onOpenChat }: ProjectsPanelProps) {
     } finally {
       setPublishingId(null);
     }
+  };
+
+  const onDraftSaved = (project: GcscProject) => {
+    setProjects((current) => current.map((item) => item.id === project.id ? project : item));
+    setSelectedProject((current) => current?.id === project.id ? project : current);
+    setEditingDraftId((current) => current === project.id ? null : current);
+    setDetailMessage('Draft changes saved. Review before publishing.');
+    requestAnimationFrame(() => editButtonRef.current?.focus());
+  };
+
+  const closeDraftEditor = () => {
+    setEditingDraftId(null);
+    requestAnimationFrame(() => editButtonRef.current?.focus());
   };
 
   const filtered = useMemo(() => {
@@ -462,7 +630,12 @@ function AccountProjectsPanel({ user, onOpenChat }: ProjectsPanelProps) {
         </div>
       </div>
 
-      {isHomeowner && <ProjectRequestForm onCreated={onProjectCreated} />}
+      {isHomeowner && <ProjectRequestForm onCreated={onProjectCreated}
+        disabled={editingDraftId !== null || draftSaving}
+        onSavingChange={(saving) => {
+          creatingDraftRef.current = saving;
+          setCreatingDraft(saving);
+        }} />}
 
       <div className="flex items-center gap-2 flex-wrap">
         {(['All', ...(isHomeowner ? ['Draft'] : []), 'Open', 'In Progress', 'Completed', 'Cancelled'] as const).map((status) => (
@@ -538,6 +711,8 @@ function AccountProjectsPanel({ user, onOpenChat }: ProjectsPanelProps) {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => void loadDetails(project.id)}
+                            disabled={draftSaving || editingDraftId !== null}
+                            title={editingDraftId !== null ? 'Save or cancel your draft edits first' : undefined}
                             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium bg-[#F1F5F9] text-[#475569] hover:bg-[#E2E8F0] hover:text-[#0F172A] transition-colors"
                           >
                             <Eye size={12} /> View
@@ -572,21 +747,35 @@ function AccountProjectsPanel({ user, onOpenChat }: ProjectsPanelProps) {
                 </p>
               </div>
               {!isHomeowner && (
-                <button type="button" onClick={() => void loadDetails(selectedProject.id)}
+                <button type="button" onClick={() => void loadDetails(selectedProject.id)} disabled={draftSaving}
                   className="inline-flex min-h-11 items-center gap-2 rounded-md border border-[#CBD5E1] px-3 py-2 text-sm font-semibold text-[#334155]">
                   <RefreshCw size={16} /> {paidBrief || selectedProject.escrow_id ? 'Refresh details' : 'Check access'}
                 </button>
               )}
               {isHomeowner && selectedProject.published !== true && selectedProject.status === 'open' && (
-                <button
-                  type="button"
-                  onClick={() => void publishProject(selectedProject)}
-                  disabled={publishingId === selectedProject.id}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#0F766E] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                >
-                  {publishingId === selectedProject.id ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                  Publish project
-                </button>
+                editingDraftId === selectedProject.id ? (
+                  <DraftEditForm key={`${selectedProject.id}:${selectedProject.updated_at}`} project={selectedProject}
+                    onSaved={onDraftSaved} onCancel={closeDraftEditor}
+                    onSavingChange={(saving) => {
+                      draftSavingRef.current = saving;
+                      setDraftSaving(saving);
+                    }} />
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" ref={editButtonRef}
+                      onClick={() => { if (!creatingDraftRef.current) setEditingDraftId(selectedProject.id); }}
+                      disabled={!selectedProject.updated_at || publishingId === selectedProject.id || creatingDraft}
+                      className="inline-flex min-h-11 items-center gap-2 rounded-md border border-[#CBD5E1] px-4 py-2 text-sm font-semibold text-[#334155] disabled:opacity-60">
+                      <Save size={16} /> Edit draft
+                    </button>
+                    <button type="button" onClick={() => void publishProject(selectedProject)}
+                      disabled={publishingId === selectedProject.id}
+                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#0F766E] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+                      {publishingId === selectedProject.id ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                      Publish project
+                    </button>
+                  </div>
+                )
               )}
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="rounded-xl bg-[#F8FAFC] p-3">
@@ -713,7 +902,7 @@ function AccountProjectsPanel({ user, onOpenChat }: ProjectsPanelProps) {
                 />
               )}
 
-              {detailMessage && <p className="text-sm text-[#475569]">{detailMessage}</p>}
+              {detailMessage && <p role="status" className="text-sm text-[#475569]">{detailMessage}</p>}
             </div>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center text-[#64748B] py-10">

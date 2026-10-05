@@ -156,6 +156,7 @@ export interface GcscProject {
   status: string
   published?: boolean
   published_at?: string | null
+  updated_at?: string
   access_status?: 'unpaid' | 'pending' | 'paid' | 'refunded' | 'revoked'
   escrow_id?: number | null
   created_at?: string
@@ -445,6 +446,18 @@ class ApiClient {
   }
   publishProject(id: number): Promise<{ project: GcscProject }> {
     return this.request(`/projects/${id}/publish`, { method: 'POST' })
+  }
+  updateProjectDraft(id: number, body: {
+    title: string
+    description: string
+    category: string
+    budget_min: number
+    budget_max: number
+    location: string
+    timeline_days: number
+    expected_updated_at: string
+  }): Promise<{ project: GcscProject }> {
+    return this.request(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(body) })
   }
 
   // BIDS
