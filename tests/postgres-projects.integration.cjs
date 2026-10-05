@@ -134,6 +134,19 @@ test('real PostgreSQL project/bid persistence and access baseline', { timeout: 9
     assert.equal(events.rows[0].actor_id, owner.id);
   });
 
+  await t.test('owner draft survives a local API instance restart without widening access', async () => {
+    await stopApi();
+    await startApi();
+    const ownerProjects = await request('GET', '/api/projects/my/projects', owner);
+    assert.equal(ownerProjects.status, 200);
+    assert.equal(ownerProjects.body.projects.find(item => item.id === project.id)?.title, 'Roof repair');
+    assert.deepEqual((await request('GET', '/api/projects/my/projects', otherOwner)).body.projects, []);
+    assert.equal((await request('GET', `/api/projects/${project.id}`, contractor)).status, 404);
+    assert.equal((await request('GET', `/api/projects/${project.id}`)).status, 404);
+    assert.deepEqual((await pool.query('SELECT homeowner_id,published FROM projects WHERE id=$1', [project.id])).rows[0],
+      { homeowner_id: owner.id, published: false });
+  });
+
   await t.test('drafts stay private until free publication and discovery never filters on private location', async () => {
     assert.deepEqual((await request('GET', '/api/projects/my/projects', otherOwner)).body.projects, []);
     assert.equal((await request('GET', '/api/projects/my/projects', owner)).body.projects[0].id, project.id);
