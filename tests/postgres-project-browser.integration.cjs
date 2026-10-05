@@ -387,6 +387,18 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
       () => registeredOwner.page.getByRole('button', { name: 'Save Draft', exact: true }).click(), 201);
     const registeredId = registeredDraft.project.id;
     assert.equal(registeredDraft.project.homeowner_id, registeredOwner.registered.user.id);
+    const existingOwnerPage = await openRole(null, 'contractor');
+    await existingOwnerPage.getByRole('button', { name: 'Sign in', exact: true }).click();
+    await existingOwnerPage.getByPlaceholder('Email', { exact: true })
+      .fill('qa-browser-registered-owner@example.invalid');
+    await existingOwnerPage.getByPlaceholder('Password, minimum 8 characters')
+      .fill('local-browser-password');
+    const existingOwner = await action(existingOwnerPage, 'POST', '/api/auth/login',
+      () => existingOwnerPage.getByRole('button', { name: 'Open Dashboard', exact: true }).click(), 200);
+    assert.equal(existingOwner.user.id, registeredOwner.registered.user.id);
+    assert.equal(existingOwner.user.role, 'homeowner');
+    assert.equal(await existingOwnerPage.evaluate(() => localStorage.getItem('gcsc_auth_token')), existingOwner.token);
+    await row(existingOwnerPage, registeredId).waitFor();
     const registeredContractor = await registerPage('contractor', 'qa-browser-registered-contractor@example.invalid');
     assert.equal(await row(registeredContractor.page, registeredId).count(), 0);
     const privateDraft = await registeredContractor.page.request.get(`${origin}/api/projects/${registeredId}`, {
@@ -408,7 +420,7 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     assert.equal(await registeredContractor.page.evaluate(() => localStorage.getItem('gcsc_auth_token')), signedIn.token);
     await row(registeredContractor.page, registeredId).waitFor();
     await viewDeniedPreview(registeredContractor.page, registeredId);
-    report.steps.push('real browser owner/contractor registration persists unverified roles; owner draft stays private, published preview is generic');
+    report.steps.push('browser registration persists unverified roles; previously registered owner signs in from a separate contractor-selected context; draft stays private, published preview is generic');
 
     assert.deepEqual(report.apiRequests.filter(req => req.method === 'POST' && req.path === '/api/bids').map(req => req.status), [201, 403]);
     assert.ok(report.apiRequests.length < 100);
