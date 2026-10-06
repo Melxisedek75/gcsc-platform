@@ -116,6 +116,7 @@ export async function main(args = process.argv.slice(2)) {
     if (projectSources.web) env.GCSC_WEB_ROOT = projectSources.web.root;
   }
   if (options.playwrightDir) env.GCSC_PLAYWRIGHT_DIR = await realpath(options.playwrightDir);
+  if (options.suite === 'project-draft-edit') env.GCSC_TEST_PG_CTL = binary('pg_ctl');
   const { Client } = createRequire(path.join(apiRoot, 'package.json'))('pg');
   const passwordFile = path.join(runDirectory, 'init-password');
   const report = { startedAt: new Date().toISOString(), runDirectory, port, suite: options.suite,
@@ -200,9 +201,19 @@ export async function main(args = process.argv.slice(2)) {
     report.status = 'FAIL';
     report.error = error.message.replaceAll(password, '[fixture password]');
   } finally {
-    if (postgres?.pid && postgres.exitCode === null && !serverError) {
+    if (postgres?.pid && !serverError) {
       try {
-        command(binary('pg_ctl'), ['-D', cluster, '-m', 'fast', '-w', '-t', '30', 'stop'], env);
+        let activePid;
+        try {
+          activePid = Number((await readFile(path.join(cluster, 'postmaster.pid'), 'utf8')).split(/\r?\n/)[0]);
+        } catch (error) {
+          if (error.code !== 'ENOENT') throw error;
+        }
+        if (activePid) {
+          report.postgresFinalPid = activePid;
+          report.postgresRestarted = activePid !== postgres.pid;
+          command(binary('pg_ctl'), ['-D', cluster, '-m', 'fast', '-w', '-t', '30', 'stop'], env);
+        }
         report.postgresExitCode = await stopped;
         if (report.postgresExitCode !== 0) throw new Error('PostgreSQL did not stop cleanly');
       } catch (error) {

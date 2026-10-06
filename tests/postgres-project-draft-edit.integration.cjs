@@ -4,6 +4,7 @@ const { once } = require('node:events');
 const fs = require('node:fs');
 const path = require('node:path');
 const { createRequire } = require('node:module');
+const { spawnSync } = require('node:child_process');
 const { validateLocalTestDatabase } = require('../scripts/local-test-database.cjs');
 const { readProjectManifest, copyApiSnapshot } = require('./postgres-project-sources.cjs');
 
@@ -17,7 +18,7 @@ assert.equal(process.env.NODE_ENV, 'test');
 const sources = readProjectManifest(runDirectory);
 const appFile = copyApiSnapshot(sources, runDirectory);
 const { Pool } = createRequire(path.join(apiRoot, 'package.json'))('pg');
-const pool = new Pool({ connectionString: databaseUrl, connectionTimeoutMillis: 3000 });
+let pool = new Pool({ connectionString: databaseUrl, connectionTimeoutMillis: 3000 });
 let api;
 let base;
 
@@ -112,6 +113,21 @@ test('real PostgreSQL draft edit stays private, durable, versioned and audited',
     assert.equal((await pool.query('SELECT title FROM projects WHERE id=$1', [projectId])).rows[0].title,
       replacement.title);
     await stopApi();
+    const cluster = path.join(runDirectory, 'cluster');
+    const beforePid = Number(fs.readFileSync(path.join(cluster, 'postmaster.pid'), 'utf8').split(/\r?\n/)[0]);
+    await pool.end();
+    assert.equal(path.basename(process.env.GCSC_TEST_PG_CTL).toLowerCase(),
+      process.platform === 'win32' ? 'pg_ctl.exe' : 'pg_ctl');
+    const restarted = spawnSync(process.env.GCSC_TEST_PG_CTL,
+      ['restart', '-D', cluster, '-m', 'fast', '-w', '-t', '30'],
+      { stdio: 'ignore', windowsHide: true, timeout: 30000 });
+    assert.ifError(restarted.error);
+    assert.equal(restarted.status, 0, 'Disposable PostgreSQL restart failed');
+    const afterPid = Number(fs.readFileSync(path.join(cluster, 'postmaster.pid'), 'utf8').split(/\r?\n/)[0]);
+    assert.notEqual(afterPid, beforePid, 'PostgreSQL process must actually restart');
+    pool = new Pool({ connectionString: databaseUrl, connectionTimeoutMillis: 3000 });
+    const dataAfterRestart = await pool.query('SHOW data_directory');
+    assert.equal(fs.realpathSync(dataAfterRestart.rows[0].data_directory), fs.realpathSync(cluster));
     await startApi();
     const stored = await pool.query('SELECT title, description, location FROM projects WHERE id=$1', [projectId]);
     assert.deepEqual(stored.rows[0], { title: replacement.title, description: replacement.description,

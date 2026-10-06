@@ -403,6 +403,16 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   исправлен, `zhPHIL`/`E4Ug4A` Edge/API/PG1/1 PASS, test/PG exit0,
   runner12/12 и root check PASS. Независимый reviewer APPROVED без находок.
   Не проверены согласие на Back и PostgreSQL-process restart; L06 открыт.
+  PG-process follow-up: opt-in одноразовый кластер действительно остановлен
+  и перезапущен через `pg_ctl`, PID изменился, каталог БД остался тем же,
+  исправленная заявка сохранилась после нового подключения API/Pool.
+  `HzcBFJ`/`AqlC1J`/`MC7jwO` PG5/5, `postgresRestarted=true`, test/PG exit0;
+  независимый reviewer повторил PG5/5 `Jddllj`, финальный diff APPROVED
+  без P1-P3. Общий runner после изменения: baseline PG41/41 `pYPGH7`,
+  Edge/API/PG browser1/1 `iAOYXs`, runner12/12, root check PASS.
+  Запись `ai-review/records/2026-10-06-private-draft-pg-process-restart.md`.
+  Не проверены accepted Back и Linux/macOS; CODEX/CLAUDE review gate для
+  полной интеграции/релиза не заменён test-only Codex review. L06 открыт.
 - [ ] **L07 / backend + web.** Обезличенный каталог заявок с фильтрами;
   закрыть контакты, адрес и чувствительные детали в обоих GET маршрутах,
   вложениях, логах и кеше до оплаченного доступа. Приёмка: анонимный и
