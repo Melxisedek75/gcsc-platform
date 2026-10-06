@@ -86,11 +86,17 @@ test('real PostgreSQL draft edit stays private, durable, versioned and audited',
       assert.equal(denied.status, status);
       assert.equal(denied.cache, 'private, no-store');
       assert.equal(denied.body.project, undefined);
+      assert.doesNotMatch(JSON.stringify(denied.body),
+        /Original draft|Original private details|Private address|Revised private details|New private address/);
     }
     await pool.query("UPDATE users SET role='admin' WHERE id=$1", [owner.id]);
-    assert.equal((await request('PUT', route, owner, replacement)).status, 404);
+    const demoted = await request('PUT', route, owner, replacement);
+    assert.equal(demoted.status, 404);
+    assert.doesNotMatch(JSON.stringify(demoted.body), /Original private details|Private address/);
     await pool.query("UPDATE users SET role='homeowner', is_active=FALSE WHERE id=$1", [owner.id]);
-    assert.equal((await request('PUT', route, owner, replacement)).status, 404);
+    const disabled = await request('PUT', route, owner, replacement);
+    assert.equal(disabled.status, 404);
+    assert.doesNotMatch(JSON.stringify(disabled.body), /Original private details|Private address/);
     await pool.query('UPDATE users SET is_active=TRUE WHERE id=$1', [owner.id]);
     assert.deepEqual((await pool.query('SELECT * FROM projects WHERE id=$1', [projectId])).rows, before.rows);
   });
@@ -146,7 +152,10 @@ test('real PostgreSQL draft edit stays private, durable, versioned and audited',
     assert.doesNotMatch(JSON.stringify(audits.rows[0].metadata), /Revised private details|New private address/);
     const published = await request('POST', `${route}/publish`, owner);
     assert.equal(published.status, 200);
+    const beforeDenied = await pool.query('SELECT * FROM projects WHERE id=$1', [projectId]);
     assert.equal((await request('PUT', route, owner,
       { ...replacement, expected_updated_at: published.body.project.updated_at })).status, 409);
+    assert.deepEqual((await pool.query('SELECT * FROM projects WHERE id=$1', [projectId])).rows,
+      beforeDenied.rows);
   });
 });
