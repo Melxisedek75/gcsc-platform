@@ -413,6 +413,15 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   Запись `ai-review/records/2026-10-06-private-draft-pg-process-restart.md`.
   Не проверены accepted Back и Linux/macOS; CODEX/CLAUDE review gate для
   полной интеграции/релиза не заменён test-only Codex review. L06 открыт.
+  Browser Back follow-up: согласие на сброс через реальную SPA-историю
+  переводит на `#/token`, не отправляет PUT, строка PostgreSQL остаётся
+  прежней; после возврата повторный редактор показывает сохранённый текст.
+  `IBfHCk`/`uC1w0Z` Edge/API/PG1/1 PASS, test/PG exit0, нет browser/cleanup
+  ошибок, runner12/12 и root check PASS. Независимый reviewer APPROVED
+  test-only diff без P1-P3. Первый маршрут About дал отдельное падение
+  `SplitText is not defined` (`mQocKp`); сайт не исправлен, эта находка
+  должна идти в свою lane. Локальные L06 сценарии проверены, но формальный
+  CODEX/CLAUDE gate и live-risk решения не заменены; L06 пока открыт.
 - [ ] **L07 / backend + web.** Обезличенный каталог заявок с фильтрами;
   закрыть контакты, адрес и чувствительные детали в обоих GET маршрутах,
   вложениях, логах и кеше до оплаченного доступа. Приёмка: анонимный и

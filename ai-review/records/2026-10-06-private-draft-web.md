@@ -67,5 +67,17 @@ navigation. The app retains hash URLs with a data-backed router.
   Edge/API/PG1/1 twice `zhPHIL`/`E4Ug4A`, test/PG exits 0, runner12/12 and
   root check PASS. Independent reviewer APPROVED with no findings; reviewer
   checked saved reports and syntax/diff, not a fresh browser run.
-- Remaining P3 test-coverage note: accepted browser Back after real in-app
-  history. PostgreSQL process restart remains a separate acceptance gate.
+- Accepted browser Back after real in-app history is now covered by a further
+  test-only diff. The browser confirms discard, lands on `#/token`, sends no
+  PUT, leaves the PostgreSQL row unchanged, and reopens the saved draft before
+  the existing delayed-PUT path. The first route choice (`#/about`) exposed
+  an unrelated `SplitText is not defined` page crash in `mQocKp`; changing
+  the fixture route to Token reached the final allowlist and required three
+  exact local image paths. Final Edge/API/PG1/1 twice `IBfHCk`/`uC1w0Z`,
+  test/PG exits 0, empty blocked/page/request/cleanup errors, runner12/12
+  and root check PASS. Independent reviewer APPROVED with no P1-P3; personally
+  checked syntax/diff and saved evidence, not a new browser run. The About
+  crash is not fixed or included in this approval.
+- PostgreSQL process restart is independently covered by the separate
+  `2026-10-06-private-draft-pg-process-restart.md` review record. Formal
+  CODEX/CLAUDE integration and live-risk gates remain open.
