@@ -598,6 +598,38 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
       'PRIVATE_TITLE_DO_NOT_EXPOSE');
   });
 
+  await t.test('free-text category cannot leak owner contact through public previews', async () => {
+    const privateCategory = 'Private category 555-0100';
+    const originalCategory = (await pool.query('SELECT category FROM projects WHERE id=$1', [project.id])).rows[0].category;
+    const previewKeys = ['id', 'title', 'category', 'budget_min', 'budget_max',
+      'timeline_days', 'status', 'published_at'].sort();
+    await pool.query('UPDATE projects SET category=$2 WHERE id=$1', [project.id, privateCategory]);
+    try {
+      for (const viewer of [null, stranger, contractor]) {
+        const list = await request('GET', '/api/projects', viewer);
+        const detail = await request('GET', `/api/projects/${project.id}`, viewer);
+        assert.equal(list.status, 200);
+        assert.equal(detail.status, 200);
+        assert.deepEqual(Object.keys(list.body), ['projects']);
+        assert.deepEqual(Object.keys(detail.body), ['project']);
+        assert.ok(!JSON.stringify(list.body).includes('555-0100'));
+        assert.ok(!JSON.stringify(detail.body).includes('555-0100'));
+        assert.equal(list.body.projects.length, 1);
+        for (const preview of [list.body.projects[0], detail.body.project]) {
+          assert.deepEqual(Object.keys(preview).sort(), previewKeys);
+          assert.equal(preview.id, project.id);
+          assert.equal(preview.category, 'General');
+          assert.equal(preview.title, 'General project');
+        }
+      }
+      const filtered = await request('GET', `/api/projects?category=${encodeURIComponent(privateCategory)}`);
+      assert.equal(filtered.status, 200);
+      assert.deepEqual(filtered.body, { projects: [] });
+    } finally {
+      await pool.query('UPDATE projects SET category=$2 WHERE id=$1', [project.id, originalCategory]);
+    }
+  });
+
   await t.test('paid project details expose only the nine-field brief to a current matching contractor', async () => {
     const route = `/api/projects/${project.id}/details`;
     const paidContractor = await fixtureUser('contractor', 'details-paid-contractor');
