@@ -1034,6 +1034,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   `ai-review/records/2026-10-06-about-splittext-candidate.md`. Кандидат
   не интегрирован в publication, не является полной L20/сайт-приёмкой
   и не опубликован.
+  Marketing test-only candidate `1c0c6127` проверяет реальный Tab-порядок
+  desktop/384 px, скрытые ссылки закрытого mobile menu, открытие Enter и
+  доступность первой ссылки с клавиатуры. Edge 154: восемь viewport-кейсов,
+  `failures: []`, `errors: []` локально и у независимого Codex reviewer;
+  static CTA2 pages/7 PASS. Разовая проверка 384 CSS px (эквивалент
+  768 px/200%) не показала горизонтального переполнения. Предварительный
+  сигнал от CSS `zoom: 2` был ложным: он не переключал media breakpoint.
+  Кандидат остаётся в marketing lane, не интегрирован и не закрывает L20.
 - [ ] **L21 / продукт + QA.** Матрица публичных утверждений и политики:
   доступно сейчас / тестируется / планируется; убрать заявления о действующем
   escrow, займах, гарантиях, оценках и «тысячах клиентов» без доказательств.
