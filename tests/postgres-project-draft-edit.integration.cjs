@@ -85,18 +85,16 @@ test('real PostgreSQL draft edit stays private, durable, versioned and audited',
       const denied = await request('PUT', route, user, replacement);
       assert.equal(denied.status, status);
       assert.equal(denied.cache, 'private, no-store');
-      assert.equal(denied.body.project, undefined);
-      assert.doesNotMatch(JSON.stringify(denied.body),
-        /Original draft|Original private details|Private address|Revised private details|New private address/);
+      assert.deepEqual(denied.body, { error: user ? 'Project not found' : 'Unauthorized' });
     }
     await pool.query("UPDATE users SET role='admin' WHERE id=$1", [owner.id]);
     const demoted = await request('PUT', route, owner, replacement);
     assert.equal(demoted.status, 404);
-    assert.doesNotMatch(JSON.stringify(demoted.body), /Original private details|Private address/);
+    assert.deepEqual(demoted.body, { error: 'Project not found' });
     await pool.query("UPDATE users SET role='homeowner', is_active=FALSE WHERE id=$1", [owner.id]);
     const disabled = await request('PUT', route, owner, replacement);
     assert.equal(disabled.status, 404);
-    assert.doesNotMatch(JSON.stringify(disabled.body), /Original private details|Private address/);
+    assert.deepEqual(disabled.body, { error: 'Project not found' });
     await pool.query('UPDATE users SET is_active=TRUE WHERE id=$1', [owner.id]);
     assert.deepEqual((await pool.query('SELECT * FROM projects WHERE id=$1', [projectId])).rows, before.rows);
   });
