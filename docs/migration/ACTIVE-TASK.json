@@ -1,6 +1,6 @@
 {
   "task": "october-launch-mvp-and-marketing",
-  "status": "L12_LATE_NEGATIVE_CANDIDATE_REVIEWED_RECEIVING_DISK_BLOCKED",
+  "status": "LOCAL_OCTOBER_MVP_CONTINUATION_ACTIVE",
   "owner": "019e7c87-8410-79f1-b86a-eedf78a1aa27",
   "worktree": "C:/gcsc-platform/.worktrees/publication",
   "branch": "codex/monorepo-publication",
@@ -13,10 +13,249 @@
   ],
   "leaseUntil": null,
   "baseCommit": "a0834ac7917c3de57ebc02fb542814561469bca2",
-  "candidateCommit": "af6c9409b8ce035120c56911e384f76ccdf343dc",
-  "review": "Independent reviewer 01a0edd5-92a1-7b42-ac8f-88094d6f5637 APPROVED exact 45156d25..1bcd894f dormant held-purchase reconciliation (own focused39/39, root/static0, PG98/98 mE0jkg) and separately APPROVED test-only 1bcd894f..af6c9409 (own focused39/39, PG101/101 eZUj8X). No confirmed P1-P3. No full L11/L12/provider/production approval.",
-  "result": "Local publication af6c9409 contains an explicit audited transaction moving a signed test negative observation from quarantine to bound inbox only for an exact later PI binding and already held signed paid fact with matching quote/time and no current grant. It does not itself fulfill, grant, revoke or restore access; no scheduler/HTTP/provider IO. Parent PG98/98 XvoMjl then101/101 yJjWQC; independent98/98 mE0jkg then101/101 eZUj8X; receiving98/98 bqX52D then101/101 g5NIGA, all test/PG0. Focused39/39, root/static0, baseline39/39, API301/301. Eleven API/database hashes and final test hash agree between reviewer and receiving. No real payment, push or deploy.",
-  "next": "Late-negative candidate 3ade39b1 is independently APPROVED but NOT integrated: receiving local PostgreSQL is blocked by C: free 29143040 bytes (initdb ENOSPC). Preserve evidence; do not count reviewer initdb failure as PG PASS or rerun identical disk check. Resume receiving PG and exact hash checks only after deliberate storage recovery. L19c local A/B animatic is only a storyboard; browser/visual and two new-viewer comprehension tests remain. Continue independent no-PostgreSQL marketing/SmartContractor tasks. Later L12: mismatched/superseded purchase and multi-event lifecycle, authenticated private HTTP DTO, provider timeout recovery and separately authorized test-provider/browser acceptance. No live activation, automatic won/closed restoration, provider settlement inference, real payment, push or deploy.",
+  "candidateCommit": "9d8a67da",
+  "marketingConceptDisclosure": "2026-10-04 LA: separate Codex reviewer 01a10a8c-ed8d-7350-930a-cf19e089a921 APPROVED exact b229fd4e source/static candidate and receiving 87fbb29c plus the existing index.html adaptation hash; adaptation and signed review record committed dcdfd734. Local cherry-pick only. Receiving marketing static18/18, Edge154 eight viewport/text variants errors0/failures0, root check37+12+11/static PASS. Initial root failure on old manifest hash resolved by verified SHA-256 32502c376dea4cfc09ca46753ca31ea58b2f634f97141380dcfcd46a6d2fc96e. Review record ai-review/records/2026-10-04-generated-hero-disclosure.md. Reviewer did not run browser; image rights, full accessibility and live claims/deploy remain blocked. No push or public replacement.",
+  "latestLocalIntegration": "2026-10-05 LA: L05 prior-owner browser test-only 7789fffb/ad2314c7 independently APPROVED and integrated as 15a642e2/62e7f5b3; receiving Edge/API/PG 1/1 bv1eU1, runner11/11, root check PASS. L06 QA draft-after-local-API-instance-restart test-only 4b6ab7a0/919dfe6f independently APPROVED after P2 generic-body repair; QA PG41/41 JzoQ6V, reviewer PG41/41 6xPSC5. Cherry-picked as bcb4a457/9d8a67da. Initial publication PG WNlwaL failed ENOSPC; after owner-authorized disk cleanup, publication receiving PG41/41 cXigP5 PASS with test/PG exits 0 and npm run check exit 0. Runtime API unchanged; this is test-only receiving acceptance, not full L06 or PostgreSQL-process restart. No provider, payment, push or deploy.",
+  "localDiskEvidence": "2026-10-05 LA: owner authorized deletion of verified disposable local test clusters and Gradle caches. Removed 57 QA plus 21 publication stopped postgres-baseline cluster subdirectories, preserving parent result/review evidence; removed five inactive Gradle user-home caches under C:/gcsc/.tools. C: free space rose from 5.79 to 22.66 GiB. Subsequent publication PG41/41 cXigP5 PASS. Other dirty worktrees, source, reports, Android SDK/JDK, Docker/WSL and application data were preserved; do not infer 50 GiB is safely reclaimable without verified archival.",
+  "privateDraftEditCandidate": "2026-10-05 UTC: backend 7c5e4c54 adds owner-only PUT /api/projects/:id for open unpublished drafts, full-body validation, expected_updated_at conflict guard and transactional PostgreSQL audit. Test-only b815388e adds inactive/demoted owner with stale JWT. Follow-up 0dde0a06 versions new JSON drafts and derives legacy updated_at from created_at on load; RED fresh-create test, focused6/6 and full API Jest334/334 PASS. Independent read-only reviewer found no P1-P3 after backfill fixture repair and independently ran focused6/6; not a formal integration gate. 2026-10-06 UTC: QA opt-in real-PG draft-edit tests b3ed02ef/1e5af966/9380c66d against backend working-tree snapshot SHA-256 30ee422b passed 5/5, isolated PG/test exits0, evidence postgres-baseline-hS4pA0. Independent informal reviewer found two P2 assertion gaps; follow-ups require exact generic denial JSON and unchanged full PostgreSQL row after published 409; narrow static re-review closed both, not formal CODEX/CLAUDE gate. QA runner12/12 and root check PASS after final assertion follow-up. Backend full Jest with explicit dummy test JWT_SECRET passed 340/340; earlier ambient-secret run was invalid and interrupted. Backend working tree also includes dirty L05a changes. Publication pinned source hash still needs coordinated adaptation at integration. Not READY_FOR_REVIEW, not cherry-picked to publication, not full L06 acceptance. October-web UI remains unintegrated. No provider, real payment, push or deploy.",
+  "privateDraftEditUiCandidate": "2026-10-05 UTC: October-web 65312daa adds owner draft edit form with versioned PUT, explicit 409 comparison/keep-edits flow, disabled cross-project/new-create navigation while editing, in-flight POST guard and focus return. Independent read-only source reviewer closed P2/P3 findings and found no new P1-P3. Web build, scoped eslint and dashboard validator PASS. QA test-only 2a6714f8/4df74d64/e17dcd0e ran synthetic Edge desktop/mobile 14/14 twice WgpclX/5kAOjr on exact web hashes; independent reviewer APPROVED both test-only diffs without running browser. PUT 500 then manual identical-body/version retry 200 passes in synthetic browser. QA root check PASS. October-web root check RED on pre-existing manifest mismatch for apps/web/scripts/validate-auth-channel-verification-ui.mjs; do not call review-ready. No real PG or publication integration. No site marketing changes or deploy.",
+  "privateDraftEditApiBrowserQa": "2026-10-05 UTC: QA test-only 964cd181, Edge/API 1/1 gyoIgQ and root check PASS against backend 0dde0a06 and October-web 65312daa. Real local API in JSON test-mode plus new browser session checked owner create/edit, version conflict, cross-role denial and publish lock. Not real PostgreSQL or API-process restart; no publication integration.",
+  "privateDraftEditPgBrowserQa": "2026-10-06 UTC: QA test-only 5dac2937/a7e735af extends real Edge -> backend API -> isolated PostgreSQL project-browser flow with owner edit before publication, SQL persisted revised title/description/location, private preview checks and post-payment revised description. Explicit backend working-tree source and October-web 65312daa; initial existing test E4xJUs PASS before edit, first edited run 6Q94cz failed on stale fixture expectation, corrected vnIPbR PASS. Independent informal review found P2 broad PUT allowlist; follow-up binds request to created ID and asserts exactly one PUT. Revised full browser scenario xFHwEQ/hZhBQL PASS 1/1 twice, test/PG exits0, Edge/API/UI closed. QA 5adb3555 tests real PostgreSQL stale-version 409, browser comparison, Keep my edits retry 200 and persisted choice; WCHxe6/3yNatV PASS 1/1 twice. Reviewer found P2 missing proof of mandatory user action; follow-up b38e3610 asserts Save changes disabled and only two PUTs before confirmation, then enabled after Keep my edits. Final i7ZUL3/4wHu66 PASS 1/1 twice, test/PG exits0, Edge/API/UI ports closed, cleanup errors empty, QA root check PASS. Informal read-only re-review closed P2 without running tests. Formal CODEX/CLAUDE gate pending; no source integration, payment provider, push or deploy.",
+  "privateDraftEditQaReceiving": "2026-10-06 UTC: separate Codex reviewer 01a11007-866c-73f1-8e0d-69fb8a9f1686 APPROVED exact QA test-only diff 964cd181..b38e3610 after own runner12/12, root check, opt-in PG5/5 ghV7nN and Edge/API/PG1/1 BbZikw; test/PG exits0, browser/API/UI closed. Review record ai-review/records/2026-10-06-private-draft-edit-qa.md. Publication cherry-picked only seven test commits as 60c15509..fa95650f. Receiving runner12/12, root check, baseline PG41/41 7cMUKx, opt-in PG5/5 coYE3t and Edge/API/PG1/1 34utSP PASS with test/PG exits0 and browser cleanup clean. Selected backend source remains dirty L05a working tree SHA-256 30ee422b; October-web source remains separate 65312daa. No backend/UI integration, formal source approval, payment, push or deploy.",
+  "documentUploadCandidate": "2026-10-05 UTC: backend worktree uncommitted L05a candidate rejects declared PDF/PNG/JPEG/WebP header mismatch, early 413 beyond 2.1 MB request body, and legacy download MIME/header mismatch. RED 2 cases, then focused18/18 and API340/340 PASS. Independent read-only reviewer found no P1-P3 and independently ran focused18/18. A final test-fixture-only change added explicit MIME; subsequent full API rerun failed ENOSPC while Jest wrote cache (244 executed tests PASS, 8 suites could not run). Not full-suite accepted or committed. Header check is not file integrity/antivirus. Owner decision on old generated PG clusters still pending; do not delete without approval.",
+  "review": "Independent reviewer 01a0edd5-92a1-7b42-ac8f-88094d6f5637 APPROVED exact 2c15d92c..3ade39b1 late-negative hold source with no confirmed P1-P3. Reviewer PG initdb ENOSPC was not PASS. Earlier reconciliation source and test-only follow-up were independently APPROVED with PG101/101. No full L11/L12/provider/production approval.",
+  "result": "Local publication 0727b2e6 adds a reviewed test-only real-PostgreSQL regression for a public contractor whose role changes to admin: active 200, demoted 404 without contractor payload and with no-store. Candidate PG33/33 jiJLkC and root check passed; independent Codex Sol/medium review of 34f3244c..0727b2e6 found no defect. Publication receiving PG33/33 NYNNnr and root check passed. Runtime source remains 34f3244c, whose receiving API328/328, PG32/32, fake-PG and root check passed. No provider activation, real payment, push or deploy. L07/L08/L09/L12 remain open.",
+  "publicPreviewBrowserQaCandidate": {
+    "qaCommits": ["daa97d60", "14b3361e"],
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "Test-only QA worktree addition: after publishing a local project, anonymous direct GET /api/projects and GET /api/projects/:id expose only the public preview allowlist, a generic title and no owner title, description or address. Existing unpaid/paid/revoked browser journey remains. First PG/Edge run stopped before behavior on a stale default API pin (qYlzQj), not counted PASS. Exact diff 0727b2e6..daa97d60 had two P2 test gaps found by independent Astra review: extra top-level fields and escaped private sentinel. Follow-up 14b3361e checks complete response allowlists and parsed JSON. Explicit current publication API/web roots: Edge/API/isolated PostgreSQL 1/1 PASS uAYqpw before review and 1/1 PASS MY9Je1 after repair, test/PG exits0, browser/API/Edge ports closed and cleanup errors empty; node syntax, diff and root check passed. Independent Astra focused re-review APPROVED exact 0727b2e6..14b3361e and checked assertions, but did not run Edge/PG. Publication fast-forward 14b3361e and receiving explicit publication API/web Edge/API/isolated PostgreSQL 1/1 PASS FcVf1O, test/PG exits0; npm run check PASS. No runtime API change, provider, payment, push or deploy; full L07 remains open."
+  },
+  "hybridFreeLlmPilot": "2026-10-04 LA: isolated CodexFree home with freellmapi/auto:codex-free answered a harmless CLI smoke request and a read-only tool task comparing only synthetic docs/product/fixtures/october-project-v1.json and tests/postgres-project-browser.integration.cjs; result MATCH. The worker read the entire test file (about 44k tokens reported), so future task capsules must provide exact snippets or bounded line ranges. This proves one routed tool task, not free-quota accounting, autonomous dispatch, parallel throughput, or transfer of full project context. No secrets, customer data, live provider, payment, push or deploy were used.",
+  "publicContractorDemotionPg": {
+    "qaCommit": "0727b2e6",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "Test-only real PostgreSQL fixture starts with an active public contractor profile, changes role to admin, then requires 404, no contractor payload and Cache-Control no-store. Candidate PG33/33 jiJLkC and root check passed; independent Codex Sol/medium review of 34f3244c..0727b2e6 found no defect. Publication fast-forward 0727b2e6; receiving PG33/33 NYNNnr and root check passed. API runtime unchanged from 34f3244c; no provider, payment, push or deploy. Full L07 remains open."
+  },
+  "next": "L06 QA test-only diff now independently APPROVED and locally received in publication fa95650f: baseline PG41/41 7cMUKx, opt-in draft PG5/5 coYE3t, Edge/API/PG1/1 34utSP and root check PASS. Backend full Jest340/340 PASS with dummy test JWT_SECRET. Next coordinate backend dirty L05a ownership, exact L06 source adaptation and independent source/UI review before receiving runtime code and browser acceptance. Preserve separate lane ownership and dirty L05a changes. L05 provider/session/device and L07 privacy remain open. L08/L11/L12 real purchases require founder decisions on payment provider and refund/dispute/reconciliation policy. No live activation, real payment, push or deploy without applicable review and separate authority.",
+  "publicContractorCachePolicy": {
+    "qaTestCommit": "43081436",
+    "backendCommit": "76a307e5",
+    "qaCommit": "34f3244c",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "Public contractor profile HTTP responses had no Cache-Control after a current-role revocation guard; focused JSON test RED with undefined header. Route now sets no-store before ID validation, covering active 200 and disabled 404. Backend focused32/32, API328/328, root check, fake-PG MfaFHw and real PG32/32 MC0VZc passed. QA added real-PG active/disabled assertions; candidate API328/328, root check, fake-PG EdsQgF and real PG32/32 TCvj1n passed. Independent Codex Sol/high review of 59ec9da0..34f3244c found no introduced defect and repeated focused32/32; reviewer did not run PG. Publication fast-forward 34f3244c; receiving root check, fake-PG 5QNlrS, real PG32/32 RSg5Xa and API328/328 passed. No provider, real payment, push or deploy; full L07 remains open."
+  },
+  "publicContractorRoleRace": {
+    "qaTestCommit": "28eff051",
+    "backendCommit": "e536ed17",
+    "qaCommit": "59ec9da0",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "Public GET /api/contractors/:id/public read current user, awaited documents and could return the stale profile after contractor disable. Real PostgreSQL table-lock test returned 200 instead of 404 on old API (RED OJ3oI); final current-user read now returns 404 with no profile. Candidate focused32/32, API328/328, root check, fake-PG xxNZN1 and real PG32/32 twice 5Hy3Aj/5Q0kl4 passed. Independent Codex Sol/high review of 884eeb94..59ec9da0 found no introduced defect and repeated focused32/32; reviewer did not run PG. Publication fast-forward 59ec9da0; receiving root check, fake-PG dre9H1, real PG32/32 CqAZg4 and API328/328 passed. No provider, real payment, push or deploy; full L07 remains open."
+  },
+  "bidTimelineValidation": {
+    "qaTestCommits": ["26fa47c3", "c8ef93aa"],
+    "backendCommit": "64e7c420",
+    "qaCommit": "884eeb94",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "POST /api/bids previously persisted a zero-day proposed_timeline_days in JSON and real PostgreSQL (RED 201, PG 7LHzZ6 test/PG1). Reviewed route now validates optional timeline as a positive integer <= 2147483647, rejecting negative, fractional, boolean, malformed string and oversized values before storage; omitted timeline remains 30. Candidate focused32/32, API328/328, root check, fake-PG yfn74a and real PG31/31 twice OQGo49/rLde09 passed. Independent Codex Sol/high review of 5f3e67b7..884eeb94 found no introduced defect and repeated focused32/32; reviewer did not run PG. Publication fast-forward 884eeb94; receiving root check, fake-PG j4n4ZS, real PG31/31 RB8SAh and API328/328 passed. No provider, real payment, push or deploy; full L09 remains open."
+  },
+  "bidProjectIdRange": {
+    "qaTestCommit": "842911d7",
+    "backendCommit": "dcb5cbda",
+    "qaCommit": "5f3e67b7",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "POST /api/bids accepted safe-integer project IDs beyond PostgreSQL INTEGER range: JSON returned 404 instead of input error, local PG returned 500 (RED QTFPLC, test/PG1). JSON focused RED failed at 404. Validation now requires projectId <= 2147483647 before storage; both numeric and string forms return 400 with no bid. Candidate focused31/31, API327/327, root check, fake-PG twRE5x and real PG31/31 twice Svvn3R/5JezDa passed. Independent Codex Sol/high review of b8ce1811..5f3e67b7 found no introduced defect and repeated focused checks; reviewer did not run real PG. Publication fast-forward 5f3e67b7; receiving root check, fake-PG q9i0sz, real PG31/31 KN3Mz3 and API327/327 passed. No provider, payment, push or deploy; full L09 remains open."
+  },
+  "contractorProjectListFinalRoleRace": {
+    "qaTestCommit": "41cae0c6",
+    "backendCommit": "4f8006ec",
+    "qaCommit": "d37df7a6",
+    "pgQaCommit": "b8ce1811",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "Deterministic JSON test revokes contractor role after isAcceptedProjectContractor's first role check but before relationship lookup finishes. Old GET /api/projects/my/projects returned full accepted project with private address/description (RED); final role recheck returns 200 with an empty list. Candidate focused30/30, API326/326, root check, fake-PG MmB1VP and real PG29/29 iRayUh passed. Independent Codex Sol/high review of 00586274..d37df7a6 found no introduced defect, verified adaptation hash and repeated focused30/30; reviewer did not run PG. Publication fast-forward d37df7a6; receiving root check, fake-PG C1nPih, API326/326 and real PG29/29 crbb7L passed. Follow-up real-PG lock test b8ce1811 reproduced private description on old API (RED vuAtKp, test/PG1), passed corrected PG30/30 twice Pu9iYZ/Ro2EPA, and received PG30/30 oe7j3d plus root check. Independent Sol/high test-only review found no defect, but did not run PG. No real escrow transition, provider, payment, push or deploy. Full L07 remains open."
+  },
+  "bidJsonProjectAccessRace": {
+    "backendCommit": "4c3cdca5",
+    "qaCommit": "00586274",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "Deterministic JSON POST /api/bids tests revoke project state or synthetic paid grant after the route's first access check and before persistence. Old behavior saved a bid with 201 (RED); JSON createStoredBid now synchronously rechecks published/open project state, current active contractor role and project-specific paid grant immediately before saving. Focused29/29 twice, candidate API325/325, root check, fake-PG Fq0Nub and real PG29/29 ovOp7X passed. Independent Codex Sol/high review of bbad88d3..00586274 found no introduced defect and repeated focused29/29; reviewer did not run PG. Publication fast-forward 00586274; receiving root check, fake-PG FJcB1e, API325/325 and real PG29/29 a2SED0 passed. Grant is synthetic local data; no actual provider charge, push or deploy. L08 remains open."
+  },
+  "legacyLeadCurrentRole": {
+    "backendCommit": "99139529",
+    "qaCommit": "3f1b4ed4",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "Legacy POST /api/payment/lead-token trusted contractor role in stale JWT. RED JSON HTTP returned 402 for inactive and demoted accounts; reviewed backend guard uses current stored active role before payment challenge. Focused35/35, API318/318, root check exit0; independent Sol/high review found no new defects and repeated focused35/35. QA test uses real local PostgreSQL: active verified fixture 402, then disabled and demoted with old token 403, no verifier or lead row. Candidate fresh PG24/24 twice 4ceoEg/Zu7aQO, root check exit0; independent Sol/medium review found no defects but did not run PG. Publication fast-forward through 3f1b4ed4, receiving root check exit0 and fresh PG24/24 j2VSeM test/PG0. This old generic XPR route is not project-specific lead checkout and does not close L08/L11/L12. No real payment, provider, push or deploy."
+  },
+  "personalProjectsCurrentRolePg": {
+    "qaCommit": "6f7b7e0a",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "New real-PostgreSQL test verifies disabled and admin-demoted owner and contractor with old JWT cannot list personal projects: 403, private no-store/Authorization vary, no projects or private sentinel in response. Candidate fresh PG25/25 twice Wf4kpB/xJVXF7 test/PG0, root check exit0 and syntax/diff clean; independent Sol/medium review found no defects but did not run PG. Publication fast-forward 6f7b7e0a and receiving fresh PG25/25 43X4Bd test/PG0. No runtime change; L07 full browser/API/privacy acceptance remains open."
+  },
+  "personalProjectsRoleRace": {
+    "backendCommit": "7d3dc571",
+    "qaCommits": ["05b300bc", "99f363d6"],
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "Real PostgreSQL row-lock test held the project read after the route's first role check, disabled the owner, then observed the old SQL return a full private draft (RED I1lSo5, test/PG1). Backend SQL now joins the current active role in the same statement as owner or contractor project selection. QA added a separate published project and bid so both owner and contractor lists are nonempty before each blocked read, then requires an empty response after disable; disposable fixture is removed. Candidate real PG26/26 twice hFDEar/lmrzOI test/PG0, fake-PG workflow twice HxXhHI/6aRHxa, root check and API318/318 exit0. Initial independent review found P2 fake-PG SQL mismatch; repaired in QA. Combined review then found P2 contractor list lacked a preexisting project; fixed in follow-up 99f363d6. Final independent Sol/high review of 6f7b7e0a..99f363d6 found no introduced defects, ran fake-PG smoke and inspected saved real PG PASS. Publication fast-forward 99f363d6; receiving fake-PG eAPoDK, real PG26/26 jCXJ3b and root check exit0. No site, provider, real payment, push or deploy; L07 remains open."
+  },
+  "personalBidsRoleRace": {
+    "backendCommit": "ae5089fc",
+    "qaCommit": "ec1ba0e8",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "Real PostgreSQL lock test reproduced the old bid-list TOCTOU: after the route checked role, disabling the contractor still returned a persisted private bid (RED QCVv2v, test/PG1). Backend list SQL now joins the current active contractor role in the same statement as bid selection. QA updated fake-PG query matching. Candidate real PG27/27 twice gIJfie/FIzQVF, fake-PG 3zLALQ, API318/318 and root check exit0. Independent Sol/high review of 99f363d6..ec1ba0e8 found no introduced defects and independently ran API318/318, migration7/7 and fake-PG smoke; reviewer did not run real PG. Publication fast-forward ec1ba0e8; receiving fake-PG PG6ijm, real PG27/27 ebPnMU and root check exit0. L07 browser/API/DB acceptance remains open; no real payment, provider, push or deploy."
+  },
+  "projectCreateRoleRaceCandidate": {
+    "backendCommit": "2c53ff19",
+    "qaCommit": "43edb655",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "Real PostgreSQL RED twice ixWVK0/PTm1Gi: after first role check, disabling homeowner still let POST /api/projects create a persisted draft (201 rather than 403). Backend locks current active homeowner row FOR SHARE in the same transaction as INSERT and rechecks JSON role before save; QA adds row-lock race regression and fake-PG adapter. API318/318, fake-PG BzfAUP and root check exit0; independent Sol/high review of ec1ba0e8..43edb655 found no introduced defects, but did not run real PG. Initial GREEN attempt stopped before tests at initdb ENOSPC (lYoxho), not counted PASS. After owner-authorized disk cleanup, candidate PG28/28 twice BWRUUq/vCyhax, test/PG0. Publication fast-forward 43edb655; receiving fake-PG uNHAEG, real PG28/28 OrEz0R, root check and API318/318 exits0. No provider, real payment, push or deploy; L07 full acceptance remains open."
+  },
+  "bidJsonRoleRace": {
+    "backendCommit": "cef8a94f",
+    "qaCommit": "a590633c",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "A request held after the initial contractor role check reproduced JSON POST /api/bids returning 201 after the contractor was disabled. The test now observes the actual role read before sending the body, avoiding a timer-based race. JSON createStoredBid rechecks active contractor role just before persistence; PostgreSQL already rechecks under transaction. Focused project privacy23/23 twice, candidate API319/319, root check, fake-PG qKkgDM and real PG28/28 A2O0iE passed. Independent Codex Sol/medium review of 43edb655..a590633c found no introduced defects and repeated focused23/23; reviewer did not run real PG. Publication fast-forward a590633c; receiving root check, fake-PG fEaEyC, real PG28/28 W6qP8U and API319/319 passed. JSON local storage only; no provider, real payment, push or deploy. L07 full acceptance remains open."
+  },
+  "bidListJsonRoleRace": {
+    "backendCommit": "363aea1a",
+    "qaCommit": "528c7c89",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "JSON GET /api/bids/my/bids could disclose two persisted private proposals after account disable between route-level role check and list read. Deterministic test observes the first role read, disables the contractor, then asserts an empty list. RED returned both proposals. JSON listStoredBidsForContractor now rechecks the current active contractor role immediately before filtering; PostgreSQL already binds it in one SQL statement. Focused privacy24/24 twice, candidate API320/320, root check, fake-PG yZR7am and real PG28/28 XBYXYz passed. Independent Codex Sol/medium review of a590633c..528c7c89 found no introduced defects and repeated focused24/24; reviewer did not run real PG. Publication fast-forward 528c7c89; receiving root check, fake-PG Ia2DhE, real PG28/28 NtHbk0 and API320/320 passed. JSON local storage only; no provider, real payment, push or deploy. L07 full acceptance remains open."
+  },
+  "projectListJsonRoleRace": {
+    "backendCommit": "3bf8ffda",
+    "qaCommit": "e8a92102",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "JSON GET /api/projects/my/projects disclosed a private owner draft or contractor project preview when the account was disabled between initial route role check and list read. Deterministic owner and contractor tests observed the first role read, disabled the account and required an empty list; both were RED before fix. JSON listStoredProjectsForUser now checks current active account and matching homeowner/contractor role before selecting projects; PostgreSQL already binds role in its SQL. Focused privacy26/26 twice, candidate API322/322, root check, fake-PG xUTCRz and real PG28/28 X8Wg8p passed. Independent Codex Sol/medium review of 528c7c89..e8a92102 found no introduced defects and repeated focused26/26; reviewer did not run real PG. Publication fast-forward e8a92102; receiving root check, fake-PG CPsi0o, real PG28/28 rOk93p and API322/322 passed. JSON local storage only; no provider, real payment, push or deploy. L07 full acceptance remains open."
+  },
+  "projectDetailRoleRace": {
+    "backendCommit": "0924e037",
+    "qaCommit": "8222cdbd",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "Real PostgreSQL GET /api/projects/:id returned a private draft with 200 after owner disable between its initial role check and bid read. New test locks bids, disables owner and requires 404 without private description; RED esUbP3. Route now revalidates current owner role or accepted-contractor relationship immediately before sending the full response. Candidate PG29/29 twice CyELaE/yWLhIl, API322/322, root check and fake-PG nPt7rE passed. Independent Codex Sol/high review of e8a92102..8222cdbd found no introduced defects, independently ran API322/322 and syntax/integration checks, but did not run real PG. Publication fast-forward 8222cdbd; receiving root check, fake-PG gGWFLR, real PG29/29 3EdS6h and API322/322 passed. No provider, real payment, push or deploy. Full L07 browser/API/DB acceptance remains open."
+  },
+  "projectDetailJsonRaceRegression": {
+    "qaCommit": "bbad88d3",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "Follow-up deterministic JSON HTTP test observes the initial owner role read, disables owner while GET /api/projects/:id is pending and requires 404 without private draft description. Added after the PostgreSQL-derived runtime fix, so it is GREEN-only and not a separate RED reproduction. Focused privacy27/27, candidate API323/323, root check, fake-PG MgCOuI and real PG29/29 4kFl1N passed. Independent Codex Sol/medium review of 8222cdbd..bbad88d3 found no issue and repeated focused27/27. Publication fast-forward bbad88d3; receiving API323/323, root check, fake-PG 9HGFCB and real PG29/29 QDR2Dj passed. No runtime or provider change, real payment, push or deploy. Full L07 acceptance remains open."
+  },
+  "unsupportedPaymentFailurePgRegression": {
+    "qaCommit": "762cc291",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "Realistic locally SDK-signed checkout.session.async_payment_failed and payment_intent.payment_failed events are unsupported; test asserts lead_webhook_event_invalid, no bound or unbound inbox row, pending purchase and no entitlement. Candidate fresh PG105/105 twice Vd80tk and gjj7si test/PG0, root check exit0, syntax/diff clean. Earlier draft payload form also ran PG105/105 ZxQu7a/TKLzMs but final evidence is the realistic form. Independent Sol/medium review found no introduced defects but did not run PG. Publication fast-forward 762cc291, receiving root check exit0 and PG105/105 b9z6IQ test/PG0. This proves local fail-closed behavior, not full async-failure handling or provider delivery; no real payment, push or deploy."
+  },
+  "fakePgWorkflowMigrationRepair": {
+    "qaCommit": "4df009d1",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "The isolated fake-PG workflow smoke failed startup on new schema INSERT INTO project_access_checkout_bindings SELECT and its DO $$ consistency check. QA emulator now permits only an empty Checkout backfill and throws if existing purchases require migration, preserving a fail-closed mock boundary. Candidate smoke passed twice C5sxh3/e5OEiR, root check exit0, syntax/diff clean; independent Sol/medium review found no introduced defects, repeated smoke and migration tests, and explicitly did not claim real PG. Publication fast-forward 4df009d1, receiving smoke passed aPSHOi and root check exit0. Runtime source unchanged from prior API316/316 and real project PG23/23 07cxQP. No provider, push or deploy."
+  },
+  "publicContractorExactId": {
+    "backendCommit": "d832f7bb",
+    "qaCommit": "9cb4f8a9",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "GET /api/contractors/:id/public previously used parseInt and aliased an active contractor profile for an ID with a garbage suffix or leading zero. RED JSON HTTP returned 200 for malformed ID; guard requires exact positive decimal ID within PostgreSQL int range. Backend focused22/22, root check exit0, API316/316, project PG23/23 I7m93e test/PG0; independent Sol/high review found no introduced defects and reran focused22/22. QA real PG regression checks active exact ID 200 and malformed IDs 404: PG23/23 twice CgJ9Ur and EAvikj test/PG0, root check exit0; independent Sol/medium review found no introduced defects but did not run PG. Publication fast-forward through 9cb4f8a9, receiving root check exit0 and PG23/23 07cxQP test/PG0. No push/deploy; full L07 remains open."
+  },
+  "privateProfileAuditKeys": {
+    "backendCommit": "062450e5",
+    "qaCommit": "8b7cc1f0",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "PUT /api/auth/profile ignored unknown body keys but copied their attacker-controlled names to profile.updated metadata.fields. RED JSON HTTP test exposed a private sentinel key; backend uses the same recognized text-field list as profile mutation plus recognized scalar fields, while still omitting logoDataUrl. Focused12/12, root check exit0, API315/315, project PG22/22 7ndknA test/PG0; independent Codex Sol/high review found no introduced defects and reran profile tests. QA persisted-audit regression with an isolated contractor passed fresh PG23/23 twice LZiPdO and UEiNAX test/PG0, root check exit0; independent Sol/medium review found no introduced defects but did not run PG. Publication fast-forward through 8b7cc1f0, receiving root check exit0 and fresh PG23/23 QbWmB3 test/PG0. No provider, push or deploy; full L07 remains open."
+  },
+  "privateDocumentAuditMetadata": {
+    "backendCommit": "a232fd9f",
+    "qaCommit": "5ccf40a7",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "document.submitted audit previously duplicated user-controlled upload file_name. RED focused JSON test proved private filename in metadata; backend fix keeps document record and ACL unchanged. Backend focused11/11, root check exit0, API314/314, project PG21/21 7NUrKH test/PG0; independent Codex Sol/high review found no introduced defects and reran profile/migration checks. QA real PG regression initially caused unrelated bid-compliance failure by mutating a shared contractor fixture (PUcoma, not PASS); isolated document owner and repeated fresh PG22/22 okMllt and o1vi63 test/PG0, root check exit0. Independent Sol/medium review found no introduced defects but did not run PG. Publication fast-forward through 5ccf40a7, receiving root check exit0 and fresh PG22/22 Tb0PVq test/PG0. No provider, push or deploy; full L07 remains open."
+  },
+  "privateProjectAuditMetadata": {
+    "backendCommit": "20310386",
+    "qaCommit": "8d392ff4",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "POST /api/projects previously copied private title/category/location into project.created audit metadata. RED focused test exposed it; backend fix retains project ID and bounded numeric/status fields only. Backend root check exit0, API313/313 and fresh project PG21/21 GvlJNa test/PG0; independent Codex Sol/high review found no introduced defects and reran focused21/21. QA persisted-audit regression passed real PG21/21 twice nN9kS2 and 7LbtMe test/PG0, root check exit0; independently reviewed without PG rerun. Publication fast-forward through 8d392ff4, receiving root check exit0 and fresh PG21/21 Kkn6EO test/PG0. Fake-PG workflow smoke did not start because its emulator lacks INSERT INTO project_access_checkout_bindings; not counted PASS. No provider, push or deploy; full L07 remains open."
+  },
+  "inactiveContractorPublicProfile": {
+    "backendCommit": "c2a815c1",
+    "qaCommit": "506c0af0",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "Public GET /api/contractors/:id/public exposed a disabled contractor profile with 200. RED JSON HTTP test 200 instead of 404; reviewed backend guard requires is_active and contractor role. Backend focused20/20, root check exit0, API312/312 and project PostgreSQL20/20 abcHqv test/PG0; independent Codex Sol/high review found no introduced defects and reran focused20/20 and migration7/7. Test-only QA real PostgreSQL regression active 200 then disabled 404: candidate21/21 YV1LAn test/PG0, root check exit0, independently reviewed without running PG. Publication fast-forward through 506c0af0; receiving root check exit0, API312/312 on the same runtime source, fresh PG21/21 H55nz6 test/PG0. No provider, push or deploy; L07 remains open."
+  },
+  "futurePartialRefundPgRegression": {
+    "worktree": "C:/gcsc-platform/.worktrees/qa",
+    "candidateCommit": "d6b1e084",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "Test-only real PostgreSQL regression extends the future-refund inbox case to both full and partial signed synthetic refunds. Before due time the earlier paid sweep grants no access; after due, partial refund leaves purchase review_required and entitlement revoked rather than claiming a full refund. QA fresh PG104/104 twice TIPNSg and 27SJh1 test/PG0, root check exit0. Independent Codex Sol/high review found no introduced defects, ran syntax and related unit5/5 but did not run PG. Publication fast-forward fe11ab6b..d6b1e084, receiving root check exit0 and fresh PG104/104 30lBT1 test/PG0. No provider, real payment, push or deploy."
+  },
+  "partialRefundRacePgRegression": {
+    "worktree": "C:/gcsc-platform/.worktrees/qa",
+    "candidateCommit": "fe11ab6b",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "Initial test-only 2f484e28 ran PG104/104 twice (Ci9s3T, L7HLnd) and root check, but independent Codex Sol/high review found P2: refund was already in the inbox before both workers, so the asserted race was not exercised. Follow-up fe11ab6b holds the paid worker after it locks the purchase, starts partial-refund intake, observes a real PostgreSQL blocking PID, then releases the worker and verifies review_required/revoked and replay denial. QA fresh PG104/104 twice ydF5mi and Mcy4zi test/PG0, root check exit0. Independent Codex Sol/high re-review of exact 58cebcd4..fe11ab6b found no introduced defects; reviewer syntax checked but did not run PG. Publication fast-forward and receiving root check exit0, PG104/104 LW4XBL test/PG0. Dormant synthetic lifecycle only; no provider, real payment, push or deploy."
+  },
+  "currentBidListPgRegression": {
+    "worktree": "C:/gcsc-platform/.worktrees/qa",
+    "candidateCommit": "58cebcd4",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "Test-only real PostgreSQL regression confirms active contractor can list own bid, then disabled and homeowner-demoted contractor with the same token get 403. Legacy API RED f9kPDX showed 200 at the target assertion; its other failures are older guards and not counted as this regression. Corrected API GREEN20/20 Dnznsq test/PG0. QA root check exit0, independent Codex Sol/medium review found no introduced defects but did not run PG. Publication fast-forward d083ec84..58cebcd4; receiving root check exit0 and fresh PG20/20 7ZQimJ test/PG0. No provider, push or deploy."
+  },
+  "currentBidListRoleGuard": {
+    "worktree": "C:/gcsc-platform/.worktrees/backend",
+    "candidateCommit": "d083ec84",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "RED JSON HTTP test: inactive contractor with old token received private bid list 200; GREEN focused19/19 covers inactive and demoted contractor, backend root check, API311/311, local project PostgreSQL19/19 7GR9p1 test/PG0. Independent Codex Sol/high review found no introduced defects and repeated focused19/19. Local publication fast-forward fc8095a2..d083ec84; receiving root check exit0, API311/311 and PG19/19 WzeD7H test/PG0. Dedicated real-PG bid-list role regression was subsequently integrated as 58cebcd4. No provider, push or deploy."
+  },
+  "disabledMePgRegression": {
+    "worktree": "C:/gcsc-platform/.worktrees/qa",
+    "candidateCommit": "fc8095a2",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "Real PostgreSQL test creates a contractor, confirms initial /api/me 200, disables it in DB, then requires 403 and private no-store. Old legacy API RED in TfyNgJ (200 instead of 403), plus older unrelated malformed-ID failure; not counted PASS. Corrected publication API GREEN19/19 3KUBXk test/PG0. QA root check exit0, independent Codex Sol/medium review found no introduced defects (reviewer syntax check, not PG). Publication fast-forward ebb6553e..fc8095a2, receiving root check and PG19/19 n7Ocnq test/PG0. No provider, push or deploy."
+  },
+  "disabledMeGuard": {
+    "worktree": "C:/gcsc-platform/.worktrees/backend",
+    "candidateCommit": "ebb6553e",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "RED JSON HTTP regression: disabled account with previously valid token received 200 at GET /api/me; GREEN focused10/10, backend root check, API310/310, local project PostgreSQL18/18 CPvsqw test/PG0. Independent Codex Sol/high review found no introduced defects and repeated focused10/10. Local publication fast-forward 0554e30e..ebb6553e; receiving root check exit0, API310/310 and PG18/18 gs87mM test/PG0. Dedicated real-PG /api/me regression remains next. No provider, push or deploy."
+  },
+  "privateMeFinanceCache": {
+    "worktree": "C:/gcsc-platform/.worktrees/backend",
+    "candidateCommit": "0554e30e",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "RED focused current-user/financing cache test: missing Cache-Control; GREEN focused9/9, backend root check, API309/309 and local project PostgreSQL18/18 jLyirj test/PG0. Independent Codex Sol/high review found no introduced defects and repeated focused9/9. Local publication fast-forward 90263c34..0554e30e; receiving root check exit0, API309/309 and PG18/18 z2zuSh test/PG0. User/finance behavior unchanged; no provider, push or deploy."
+  },
+  "privateAdminCache": {
+    "worktree": "C:/gcsc-platform/.worktrees/backend",
+    "candidateCommit": "90263c34",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "RED focused admin document/audit/financing cache test: missing Cache-Control; GREEN focused8/8, backend root check, API308/308 and local project PostgreSQL18/18 u9gEtj test/PG0. Independent Codex Sol/high review found no introduced defects and repeated focused8/8. Local publication fast-forward 0cd9084c..90263c34; receiving root check exit0, API308/308 and PG18/18 vnWYgy test/PG0. Admin ACL and finance logic unchanged; no provider, push or deploy."
+  },
+  "privateProfileWalletCache": {
+    "worktree": "C:/gcsc-platform/.worktrees/backend",
+    "candidateCommit": "0cd9084c",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "RED focused personal profile/wallet cache test: missing Cache-Control; GREEN focused7/7, backend root check, API307/307 and local project PostgreSQL18/18 drtZEP test/PG0. Independent Codex Sol/high review found no introduced defects and repeated focused7/7. Local publication fast-forward 31f19c5d..0cd9084c; receiving root check exit0, API307/307 and PG18/18 g2j0t0 test/PG0. Wallet/auth behavior unchanged; no real signature, provider, push or deploy."
+  },
+  "privateDocumentCache": {
+    "worktree": "C:/gcsc-platform/.worktrees/backend",
+    "candidateCommit": "31f19c5d",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "RED focused personal document/compliance cache test: missing Cache-Control; GREEN focused6/6, backend root check, API306/306 and local project PostgreSQL18/18 wfXYpb test/PG0. Independent Codex Sol/high review found no introduced defects and repeated focused6/6. Local publication fast-forward a10f929b..31f19c5d; receiving root check exit0, API306/306 and PG18/18 Q3RZkL test/PG0. Existing document ACL and revision behavior unchanged; no provider, push or deploy."
+  },
+  "privateEscrowCache": {
+    "worktree": "C:/gcsc-platform/.worktrees/backend",
+    "candidateCommit": "a10f929b",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "RED two missing-cache-header checks on participant GET /api/escrow/:id and personal GET /api/escrow/my/escrows; GREEN focused53/53, backend root check and API305/305, local project PostgreSQL18/18 tFGx0T test/PG0. Independent Codex Sol/high review found no introduced defects and repeated focused53/53. Local publication fast-forward 5e240bc7..a10f929b; receiving root check exit0, API305/305 and PG18/18 zMflVx test/PG0. Escrow/payment transitions unchanged; no provider, push or deploy."
+  },
+  "privateBidCache": {
+    "worktree": "C:/gcsc-platform/.worktrees/backend",
+    "candidateCommit": "5e240bc7",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "RED missing cache-control on GET /api/bids/my/bids; GREEN focused49/49, root check37+12+11/static0, API305/305, local project PostgreSQL18/18 YAP2qO test/PG0. Independent Codex Sol/high review validated scoped test and header behavior. Local publication fast-forward 0ef8c308..5e240bc7; receiving root check exit0, API305/305 and PG18/18 HPCZ87 test/PG0. No escrow transition change, provider, push or deploy."
+  },
+  "privateProjectCache": {
+    "worktree": "C:/gcsc-platform/.worktrees/backend",
+    "candidateCommit": "76b0a9db",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "RED one missing-cache-header test on current publication; GREEN focused48/48, API304/304, root check37+12+11/static0, local project PostgreSQL17/17 oRTE88 test/PG0. Independent Codex Sol/high commit review found no introduced defects. Local publication fast-forward 8aac6d7b..76b0a9db, receiving root check exit0, API304/304, project PG17/17 wCidZx test/PG0. No provider, push or deploy.",
+    "next": "QA test-only 0ef8c308 independently reviewed and locally received: real PG cache-header RED on old API M4wCqp, GREEN18/18 on corrected QA source 2hro2E and publication aqKbev, test/PG exits0; root check PASS. Public preview title is category-derived, but full L07 PII/browser acceptance remains open."
+  },
   "videoAnimatic": {
     "path": "docs/migration/VIDEO-ANIMATIC-A-B.html",
     "status": "LOCAL_CONCEPT_ONLY",
@@ -27,19 +266,36 @@
     "branch": "codex/marketing-concept-disclosure-20261001",
     "baseCommit": "7d5a8b3d",
     "candidateCommit": "b229fd4e",
-    "status": "SOURCE_CANDIDATE_REVIEW_REQUIRED_NOT_INTEGRATED",
+    "status": "SOURCE_CANDIDATE_REVIEW_AUTH_BLOCKED_NOT_INTEGRATED",
     "checks": "Red Edge verifier absent disclosure exit1, green Edge154 eight viewport/text variants exit0, static18/18, two pages/seven CTAs, syntax/diff checks exit0. Mobile/desktop JPEG inspected. No independent review or receiving integration.",
-    "next": "Obtain independent CODEX/CLAUDE review on exact diff, then receiving checks before integration. Rights, full accessibility, live domain and release remain open."
+    "next": "Claude Code 2.1.186 read-only review attempt exited1 before analysis: 401 OAuth access token is invalid. Do not retry unchanged credentials. Obtain independent CODEX/CLAUDE review on exact diff after authorization is restored or an alternate gate is expressly accepted, then receiving checks before integration. Rights, full accessibility, live domain and release remain open."
+  },
+  "legacyProjectIdGuard": {
+    "worktree": "C:/gcsc-platform/.worktrees/backend",
+    "branch": "codex/backend-integration",
+    "candidateCommit": "ce7ffe97",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "checks": "RED legacy GET returned 200 for malformed ID; GREEN focused46/46, API293/293, syntax/static/contract7/7 exits0. Independent read-only reviewer found no scoped findings and repeated project-preview-privacy15/15. Root npm run check exits1 on preexisting committed .env.example/import-manifest mismatch; not a PASS. No PostgreSQL or browser acceptance for this candidate.",
+    "next": "Receiving 5f76fbf3 on current base is included in publication dae15b71 with exact adaptation hash; root check, API303/303 and local project PostgreSQL16/16 pass. L07 full privacy/browser acceptance remains open. No push, deployment or real payment."
+  },
+  "publishProjectIdGuard": {
+    "worktree": "C:/gcsc-platform/.worktrees/backend",
+    "branch": "codex/backend-integration",
+    "baseCommit": "ce7ffe97",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
+    "candidateCommit": "07c2efce",
+    "checks": "New negative POST /api/projects/:id/publish test first returned 200 for malformed ID and mutated owner draft. After C: recovered to 4.59 GiB, focused47/47, full API294/294, syntax/static/contract and diff checks exit0. Backend branch root npm run check still exits1 on stale import-manifest .env.example; current publication baseline npm run check exits0. Independent Codex CLI review session 01a0fd0a-033a-7191-a30a-a0ed820cb297 found no scoped defects in exact 07c2efce. Commit is local only.",
+    "next": "Receiving commits 3a7aa344 and provenance dae15b71 are in local publication. Independent Codex Sol/high review of 150d63e8..dae15b71 found no introduced defects. Receiving root check37+12+11/static0, API303/303 and local project PostgreSQL16/16 ADOejR test/PG0. QA test-only 8aac6d7b independently reviewed and received: malformed-ID RED on old API 15/17, GREEN17/17 on corrected API and final publication uQZeFk test/PG0. This is not full L07, browser E2E or release approval."
   },
   "lateNegativeHold": {
     "worktree": "C:/gcsc-platform/.worktrees/legacy-preservation",
     "branch": "codex/lead-late-negative-hold-20261001",
     "baseCommit": "2c15d92c",
     "candidateCommit": "3ade39b1e621acdf1fb0b1e2889cca74229d7aff",
-    "status": "REVIEWED_RECEIVING_BLOCKED_ENOSPC_NOT_INTEGRATED",
+    "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
     "review": "Independent reviewer 01a0edd5-92a1-7b42-ac8f-88094d6f5637 APPROVED exact 2c15d92c..3ade39b1 with no confirmed P1-P3. Own focused39/39 and root/static0; own PG initdb failed before tests with No space left on device in DmLx9j, not counted PASS.",
-    "checks": "Parent focused39/39, root/static0, baseline39/39 XnpU6T, API301/301 and PostgreSQL103/103 Kbpylb test/PG0 on exact candidate. Synthetic stale-PI lookup verifies atomic exact grant hold; real local API denies details/bids after hold. Reviewer verified parent PG evidence and exact hashes but could not run independent PG. Receiving PG not run. C: free 29143040 bytes at checkpoint.",
-    "next": "Do not fast-forward until local disk capacity permits receiving PostgreSQL and hash verification. Preserve source and test evidence; no automatic cleanup of evidence. Partial-refund and real interleaving coverage remain open."
+    "checks": "Parent focused39/39, root/static0, baseline39/39 XnpU6T, API301/301 and PostgreSQL103/103 Kbpylb test/PG0 on exact candidate. After disk recovery candidate PG103/103 tZ5LxD and local receiving cherry-pick 150d63e8 PG103/103 yNSdih, both test/PG exits0. Eleven API source hashes and test SHA-256 match; receiving focused39/39, root check37+12+11/static0, API301/301. Reviewer PG initdb had failed before tests and remains not PASS; reviewed source was not changed by cherry-pick. No push/deploy/real payment.",
+    "next": "Partial-refund and real interleaving coverage remain open. HTTP/provider flow and full L12 acceptance are separate gates."
   },
   "leadReconciliation": {
     "worktree": "C:/gcsc-platform/.worktrees/legacy-preservation",
@@ -235,7 +491,7 @@
     "review": "APPROVED: Beauvoir, independent Sol/high agent01a09e82-0111-7803-ba04-dac9514c52a5, reviewed a0834ac7..e9f954fbb105ba4f6e05ff54c860ecaffec6ff28. Independently ran guards4/4 and real PostgreSQL18.4 tests9/9, exits0; source SHA matches, canonical gcsc.db unchanged and PostgreSQL stopped. Root43/43/API159 remain parent evidence. No main integration or production approval.",
     "result": "Added native PostgreSQL runner without Docker or downloads. Real PostgreSQL18.4:9/9 including parent; runtime schema idempotency, project/bid creation, role isolation, audit, FK/UNIQUE and API module/connection restart pass. Root43/43 plus syntax/static and API159/159 pass. services/api/v3/.tmp/postgres-baseline-ZUU0yU/result.json: testExitCode0, postgresExitCode0. Missing pg_isready diagnosed and replaced by pg driver probe. No mobile, WebAuth or financial runtime edits."
   },
-  "updatedAt": "2026-10-01T05:50:43Z",
+  "updatedAt": "2026-10-06T07:10:07Z",
   "latestFollowup": "Continued L12 with durable minimal unknown-PI quarantine a4b3da1e. Independent full-slice review approved83/83, but receiving exposed a synthetic Node/PG clock tick failure82/83. Diagnosed from stored invalid_event_time evidence, reproduced83/84, repaired only fixtures in91e494c9. Parent84/84 twice, independent84/84 and receiving84/84 wqqY2s all test/PG0, source/test hashes verified; reviewer closed. Runtime guards remain unchanged by repair. LEAD-UNBOUND-REVIEW.md records both failures and exact approvals. No active owned tests or provider activation; automation unchanged. L11/L12 retry/reconciliation and HTTP/provider acceptance remain open.",
   "previousMigrationTask": {
     "task": "canonical-postgres-migrations",

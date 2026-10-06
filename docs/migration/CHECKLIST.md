@@ -5,7 +5,9 @@
 Дата решения: 27 сентября 2026. Цель: проверяемый пилот к 15 октября,
 публичный кандидат к 20 октября и готовая презентация к 2 ноября. Даты -
 контрольные точки, не обещание выпуска при открытом блокере безопасности или
-оплаты. Этот раздел задаёт порядок до 20 октября; старые планы ниже остаются
+оплаты. Этот раздел задаёт порядок до 20 октября; незакрытые пункты остаются
+активным backlog до конца октября, без автоматического сдвига критериев приёмки.
+Старые планы ниже остаются
 историей и расширенным backlog, но не меняют приоритет MVP. Единственный
 рабочий список - этот `CHECKLIST.md`.
 Отмечать `[x]` только после результата с точным commit, средой и проверкой.
@@ -19,6 +21,20 @@
 | 6-10 октября | Test-mode покупка конкретного лида, AI-черновики с ручным подтверждением, видео-черновики | Подтверждённый webhook в изолированной БД; UX-сценарии без кошелька; storyboard и черновые ролики |
 | 11-15 октября | Пилотный кандидат обоих сайтов | Полный preview E2E, security review, доступность, производительность, видео с субтитрами и fallback |
 | 16-20 октября | Исправления пилота и решение о публичном запуске | Проверка точного SHA, владельца доменов/платежей, backup/rollback, отдельное разрешение на deploy |
+| 21-31 октября | Закрытие оставшихся безопасных пунктов и повторная приёмка кандидата; решение владельца по live-блокерам | Подтверждённые тесты на точном SHA, независимое ревью там, где оно обязательно, и явный список незакрытых live-гейтов. Само наступление срока не разрешает релиз |
+
+### Непрерывность работы
+
+`CHECKLIST.md` задаёт порядок задач, `WORK-LANES.md` - владельца изменений,
+`ACTIVE-TASK.json` - точку продолжения. Запуск следующего цикла обеспечивает
+расписание Codex, а не текст этих файлов. После безопасного шага сразу брать
+следующий готовый пункт. На следующем запуске сверить актуальный checkpoint,
+рабочие деревья и активных исполнителей; не повторять неизменные проверки ради
+активности. Блокер одной lane не останавливает остальные. Отсутствие ответа
+владельца не разрешает live-действия. Пауза всей автоматизации допустима только
+по прямой просьбе владельца, при исчерпании лимита, после 31 октября либо после
+проверки всех разрешённых lane, когда ни одной безопасной задачи действительно
+нет; тогда сохранить точный блокер и уведомить владельца один раз.
 
 «Входит в мировой топ-3» не является проверяемым техническим статусом и не может
 быть гарантировано или заявлено без внешнего признания. Рабочая цель: оригинальный
@@ -197,15 +213,147 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   RIVIERA независимо одобрил точный repair SHA: 13/13 in-memory probes,
   TypeScript/auth validators/diff exit 0, обе Medium-находки закрыты.
   Это source-only одобрение; evidence: `ACCOUNT-ROLE-REVIEW.md`.
+  QA `fcfaaa72`/`3ee96662` проверили настоящий локальный PostgreSQL
+  `POST /api/auth/register` для новых owner/contractor без настроенного
+  провайдера: обе роли сохраняются как unverified/pending-provider, выданные
+  JWT разрешают черновик только владельцу; подрядчику `403/404` с generic
+  body, без побочной записи, после публикации только полный preview allowlist.
+  Первый кандидат `1JTu7U` упал на неверной категории тестовой фикстуры,
+  не засчитан. Исправленный candidate PG40/40 `h4hpqL`, root check PASS;
+  независимое ревью точного `eaec4e58..3ee96662` закрыло P2 тестового
+  покрытия и повторило PG40/40 `vX3l5s`. Локальные cherry-pick
+  `ad358862`/`63abced0`: receiving PG40/40 `c9HM9U`, root check PASS.
+  Это API/DB, не web/OTP/email/SMS/live приёмка.
+  QA `f2cf2b6e` связал настоящую форму `AccountAccess` и `ProjectsPanel`
+  с API и изолированной PostgreSQL в Edge: owner/contractor регистрируются
+  без провайдера как unverified, owner создаёт приватный draft, подрядчик
+  не видит его; после публикации подрядчик повторно входит и видит только
+  generic preview, закрытые детали `404`. Manifest фиксирует исходник формы;
+  внешние запросы блокируются. Первая попытка `wsgZha` выявила потерю
+  React-состояния тестовой оболочки при reload; повторный вход через форму
+  исправил именно тест. Candidate `GOkncQ` 1/1 PASS, runner11/11, root check
+  PASS; независимый reviewer APPROVED точный `3ee96662..f2cf2b6e` и повторил
+  Edge/API/PG 1/1 `pbPdzY`. Локальный cherry-pick `15e22d81`: receiving
+  1/1 `oJuBiU`, runner11/11, root check PASS. Нет реальной OTP-доставки,
+  восстановление сессии/пароля и Android Chrome не проверены.
+  QA `7789fffb`/`ad2314c7`: ранее зарегистрированный в этом прогоне owner
+  входит в отдельном контексте с выбранной на форме ролью contractor; ответ
+  API и интерфейс остаются owner, форма создания и сохранённый draft видны,
+  contractor-заголовок отсутствует. Первый reviewer нашёл P2: исходный тест
+  не проверял owner UI; follow-up закрыл это явными элементами. Candidate
+  Edge/API/PG 1/1 `U9ASbx`, независимый повтор 1/1 `pizXDb`, receiving
+  cherry-picks `15a642e2`/`62e7f5b3` 1/1 `bv1eU1`; test/PG exits0,
+  runner11/11 и root check PASS. Это не отдельный старый аккаунт до прогона,
+  не восстановление сессии приложения и не полная L05-приёмка.
   L05 остаётся открытым до сквозной проверки API/DB/провайдера.
 - [ ] **L05a / backend + web.** Быстрая загрузка документов подрядчика:
   тип, размер и формат файла, приватное хранение, антивирус/сканирование,
   повторная загрузка, удаление и статус рассмотрения без ложного бейджа
   «verified». Приёмка: только владелец и уполномоченный reviewer читают файл;
   новый подрядчик видит ясное состояние и может продолжить черновик proposal.
+  Backend candidate (5 октября, незакоммичен): загрузка PDF/PNG/JPEG/WebP
+  сверяет начальные байты и заявленный MIME, превышение 2.1 MB отклоняется
+  ранним 413; скачивание старой записи отклоняет несовпадение MIME/сигнатуры.
+  RED 2 теста, затем focused18/18 и полный API340/340 PASS. Независимое
+  read-only ревью: P1-P3 нет, focused18/18 PASS. После уточнения fixture
+  повтор полного API остановился на ENOSPC (244 теста PASS, 8 suites не
+  запустились); финальный full-suite PASS не заявляется. Проверка заголовка
+  не заменяет декодирование файла или антивирус, L05a остаётся открытым.
 - [ ] **L06 / backend + web.** Создание/редактирование/публикация заявки
   владельцем, обязательные поля, черновик, ошибки, повтор после сбоя.
   Приёмка: запись переживает рестарт API/DB; только её владелец меняет её.
+  QA `4b6ab7a0`/`919dfe6f` проверили draft на локальной PostgreSQL после
+  остановки HTTP API, повторной загрузки модуля и подключения к той же БД:
+  владелец видит запись, другой владелец получает точный пустой список,
+  подрядчик и анонимный запрос получают только generic `404`. Первый reviewer
+  нашёл P2: одного статуса `404` недостаточно для исключения утечки текста;
+  follow-up добавил точные тела. Candidate PG41/41 `JzoQ6V`, независимый
+  reviewer PG41/41 `6xPSC5`, root check PASS на QA. Cherry-picks в publication
+  `bcb4a457`/`9d8a67da` есть. Первый receiving PG `WNlwaL` завершился
+  FAIL (`ENOSPC`, test exit1, PG exit0). После разрешённой очистки только
+  остановленных тестовых `cluster` receiving PG41/41 `cXigP5` прошёл с
+  test/PG exit0; `npm run check` exit0. Это приёмка тестового diff, не L06.
+  Это не перезапуск процесса PostgreSQL. Source inspection: API имеет
+  `POST /api/projects` и `POST /api/projects/:id/publish`, но не PUT/PATCH
+  проекта; web-клиент имеет create/publish, но не update/edit. Отдельный backend
+  candidate `7c5e4c54` добавил owner-only PUT для приватного черновика с
+  `expected_updated_at`, атомарным PostgreSQL-аудитом и JSON HTTP тестами:
+  API Jest 332/332 PASS, preliminary read-only re-review без P1-P3.
+  Test-only follow-up `b815388e` проверил отключённого и сменившего роль
+  владельца со старым JWT: focused 4/4, полный API 332/332 PASS. Реальный
+  PostgreSQL первоначально не запускался после `ENOSPC`; pinned source hash в root check
+  требует обновления adaptation только при интеграции. Candidate не перенесён
+  в publication, не является `READY_FOR_REVIEW` или L06-приёмкой. Web edit,
+  retry после сбоя и полный L06 остаются открытыми.
+  Backend follow-up `0dde0a06`: RED-тест выявил, что новый JSON draft не
+  имел `updated_at`; после исправления новый draft редактируется сразу,
+  legacy JSON запись получает версию из `created_at` при загрузке. Focused6/6,
+  API334/334, независимое узкое source/test re-review без P1-P3. Отдельный
+  October-web UI edit candidate собирается и проходит scoped lint.
+  2026-10-06 UTC: QA добавил отдельный opt-in тест реальной локальной
+  PostgreSQL для owner-only PUT против снимка backend working tree (SHA-256
+  `30ee422b7c68a2e3781abfc417e3980c7d38e7b5fa86b1897e1c74dd30d4027a`).
+  PASS 5/5 `FalQT9`, test/PG exit0: приватность и актуальные роли, сохранение
+  после перезапуска API, stale-version 409, отсутствие приватного текста в
+  аудите и откат изменения при сбое аудита. QA runner 12/12 и root check PASS.
+  Тестовые коммиты `b3ed02ef`/`1e5af966`: независимый неформальный просмотр
+  выявил две P2-лакуны assertions; follow-up проверяет полный текст отказа
+  и неизменность строки БД после отказа для опубликованного проекта.
+  Повторная PG 5/5 `DxzCCj`, test/PG exit0. Backend Jest 340/340 PASS с
+  явным фиктивным тестовым `JWT_SECRET` (первый запуск без него был прерван
+  из-за ошибки окружения). Последняя P2 закрыта точным сравнением всего JSON
+  отказа в `9380c66d`; повторная PG5/5 `hS4pA0`, test/PG exit0,
+  неформальный read-only reviewer подтвердил оба исправления. Формальный
+  независимый CODEX/CLAUDE review gate ещё не пройден;
+  backend working tree содержит отдельный dirty L05a-кандидат. Это не
+  интеграция, не полный L06 и не проверка остановки процесса PostgreSQL.
+  QA `5dac2937` расширил реальный Edge/API/изолированная PostgreSQL
+  сценарий: владелец создаёт черновик, редактирует его через UI/PUT,
+  исправленные поля подтверждаются SQL до публикации; приватный preview
+  не раскрывает их, подтверждённый тестовый доступ показывает уже новое
+  описание. Первый запуск после расширения `6Q94cz` упал на старом
+  ожидании исходного описания; после исправления тестовой фикстуры полный
+  сценарий `vnIPbR` PASS 1/1, test/PG exit0, Edge/API/UI порты закрыты,
+  cleanup errors пусты, QA root check PASS. Независимое ревью нового diff
+  нашло P2: слишком широкий PUT allowlist. Follow-up `a7e735af` ограничил
+  PUT созданным ID и проверяет ровно один успешный запрос. Повторные
+  полные Edge/API/PG сценарии `xFHwEQ` и `hZhBQL` PASS 1/1,
+  test/PG exit0, QA root check PASS; неформальный read-only reviewer
+  подтвердил закрытие P2, но не запускал тест. Это не формальный gate,
+  не приёмка backend/UI и не провайдерский платёж.
+  Следующий тестовый commit `5adb3555`: после первого успешного PUT меняет
+  версию строки в одноразовой PostgreSQL, получает из UI реальный 409,
+  показывает сравнение и оставляет текст владельца без потери. Только
+  после явного `Keep my edits` повторный PUT 200 сохраняет выбранный текст.
+  Edge/API/PG `WCHxe6` и `3yNatV` PASS 1/1 подряд, test/PG exit0,
+  Edge/API/UI порты закрыты, cleanup errors пусты; QA root check PASS.
+  Неформальный независимый просмотр выявил P2: тест не требовал доказать,
+  что до решения владельца повтор заблокирован. Follow-up `b38e3610`
+  проверяет disabled `Save changes`, ровно два PUT до подтверждения и
+  enabled после `Keep my edits`; Edge/API/PG `i7ZUL3` и `4wHu66`
+  PASS 1/1 подряд, test/PG exit0, QA root check PASS. Read-only reviewer
+  подтвердил закрытие P2, но сам тест не запускал. Это не релиз.
+  Отдельный Codex reviewer `01a11007-866c-73f1-8e0d-69fb8a9f1686`
+  самостоятельно проверил точный test-only diff `964cd181..b38e3610`:
+  runner12/12, root check, PG5/5 `ghV7nN`, Edge/API/PG1/1 `BbZikw`
+  PASS; review record `ai-review/records/2026-10-06-private-draft-edit-qa.md`.
+  Publication принял только тестовые коммиты `60c15509..fa95650f`;
+  receiving runner12/12, root check, baseline PG41/41 `7cMUKx`, opt-in
+  PG5/5 `coYE3t`, Edge/API/PG1/1 `34utSP` PASS, test/PG exit0,
+  browser/API/UI закрыты. Backend и UI по-прежнему не интегрированы;
+  эти тесты не закрывают L06 без отдельного source review и приёмки.
+  QA test-only `2a6714f8`/`4df74d64` дал synthetic Edge desktop/mobile
+  12/12 дважды (`iu2XOf`, `vGtmPt`) на точном UI `65312daa`;
+  независимый reviewer одобрил тестовый diff. Это не реальная PostgreSQL/API
+  приёмка. Follow-up QA `e17dcd0e`: первый synthetic PUT `500`, ручной повтор
+  с теми же семью полями и `expected_updated_at` получает `200`, UI обновлён;
+  Edge desktop/mobile 14/14 дважды (`WgpclX`, `5kAOjr`), независимое
+  test-only ревью APPROVED. Ни один кандидат не интегрирован.
+  QA test-only `964cd181` добавил браузерную проверку с настоящим локальным
+  API в JSON test-mode: Edge/API 1/1 `gyoIgQ`, root check PASS на backend
+  `0dde0a06` и UI `65312daa`. Создание, PUT, новая браузерная сессия,
+  чужие роли, stale-version 409 и запрет правки после publish проверены.
+  Это не PostgreSQL, не рестарт API и не receiving publication.
 - [ ] **L07 / backend + web.** Обезличенный каталог заявок с фильтрами;
   закрыть контакты, адрес и чувствительные детали в обоих GET маршрутах,
   вложениях, логах и кеше до оплаченного доступа. Приёмка: анонимный и
@@ -221,6 +369,294 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   проверены и отложенные owner/publish/receipt races. Старый ENOSPC-блокер
   снят после нового замера свободного места. Это не whole-MVP acceptance;
   evidence: `PAID-PROJECT-DETAILS-REVIEW.md`.
+  Дополнительный backend-кандидат `ce7ffe97` (1 октября): legacy
+  `GET /api/projects/:id` теперь отклоняет ID с суффиксом или ведущим нулём
+  до чтения проекта и bids. RED-тест получил 200 вместо 404; после исправления
+  focused 46/46, API 293/293, syntax, static web и contract check 7/7 PASS.
+  Независимое узкое ревью diff: без замечаний, собственный тест 15/15 PASS.
+  Кандидат не интегрирован и не проверен в PostgreSQL; `npm run check`
+  отдельно красный на ранее закоммиченном расхождении import-manifest
+  с четырьмя файлами API/фикстур, начиная с `services/api/v3/.env.example`.
+  Следующий зависимый тест: malformed `POST /api/projects/:id/publish` реально
+  вернул 200 и опубликовал черновик. Узкое исправление в backend пока
+  НЕ закоммичено: оба запуска Jest после правки остановились до тестов на
+  `ENOSPC` при записи transform cache; syntax/diff PASS, поведения PASS нет.
+  2 октября: диск восстановился; POST publish guard закоммичен в backend
+  `07c2efce`. Focused47/47 и API294/294 PASS; независимое узкое ревью
+  exact commit не нашло дефектов. Оба ID guard остаются вне publication:
+  требуется receiving с актуальными adaptation hashes и повтор проверок.
+  Старый backend root check красный; publication baseline root check зелёный.
+  Receiving на базе `150d63e8`: exact code commits `5f76fbf3`, `3a7aa344`
+  и adaptation hash `dae15b71` локально включены в publication. Независимое
+  ревью receiving diff не нашло дефектов. На итоговой ветке root check
+  37+12+11/static0, API303/303, локальный PostgreSQL project16/16
+  (`ADOejR`, test/PG0); malformed ID пока проверен JSON HTTP-тестом,
+  отдельный негативный PG-тест ещё нужен. Ни push, ни deploy.
+  QA test-only `8aac6d7b`: новый реальный PG-тест получает 200 вместо 404
+  на старом API (`giY6mU`, test1/PG0), 17/17 на исправленном (`4dy4Cu`,
+  test/PG0). После независимого ревью fast-forward в publication: receiving
+  PG17/17 (`uQZeFk`, test/PG0) и root check PASS. Это не полный L07.
+  Найден второй privacy-риск: legacy `GET /api/projects/:id` и
+  `GET /api/projects/my/projects` отдавали персональные ответы без
+  `Cache-Control`. Тест RED 16/17, reviewed fix `76b0a9db` задаёт
+  `private, no-store` и `Vary: Origin, Authorization` до чтения; focused48/48,
+  API304/304, root check PASS. Receiving на publication: API304/304,
+  PostgreSQL17/17 (`wCidZx`, test/PG0), root check PASS. Это не утверждение,
+  что все маршруты, посредники и браузерный сценарий прошли аудит.
+  QA PG-заголовки `0ef8c308` получили RED на старом API (`M4wCqp`:
+  отсутствует `Cache-Control`) и GREEN18/18 на исправленном (`2hro2E`).
+  Независимое ревью test-only diff без находок, reviewer сам PostgreSQL
+  не запускал. Receiving publication PG18/18 (`aqKbev`, test/PG0), root check
+  PASS. Следующий пункт: проверить другие приватные GET-маршруты.
+  Личный список предложений `GET /api/bids/my/bids` тоже не запрещал shared
+  cache. RED-тест получил ответ без заголовка; reviewed fix `5e240bc7`
+  выставляет `private, no-store` и `Vary: Authorization`. Candidate focused49/49,
+  API305/305, root check и PG18/18 (`YAP2qO`) PASS. Receiving publication:
+  API305/305, root check, PG18/18 (`HPCZ87`, test/PG0) PASS. Платёжная
+  логика не менялась; L07/L12 остаются открытыми.
+  Escrow participant `GET /api/escrow/:id` и личный список
+  `GET /api/escrow/my/escrows` тоже не запрещали shared cache. RED-тесты
+  выявили отсутствие заголовков; reviewed fix `a10f929b` выставляет
+  `private, no-store` и `Vary: Authorization`. Candidate focused53/53,
+  root check, API305/305 и локальный PG18/18 (`tFGx0T`, test/PG0) PASS.
+  Receiving publication: root check, API305/305, PG18/18 (`zMflVx`,
+  test/PG0) PASS. Escrow/payment transitions не менялись; полный L07/L12
+  и provider/browser acceptance остаются открытыми.
+  Личные `GET /api/auth/documents` и `GET /api/auth/compliance` отдавали
+  документы без запрета shared cache; file-route уже имел `no-store`, но
+  не `Vary: Authorization`. RED-тест обнаружил отсутствующий заголовок;
+  reviewed fix `31f19c5d` добавил `private, no-store` и `Vary` для
+  списков, `Vary` для файла. Candidate focused6/6, root check, API306/306,
+  PG18/18 (`wfXYpb`, test/PG0) PASS. Receiving publication: root check,
+  API306/306, PG18/18 (`Q3RZkL`, test/PG0) PASS. ACL/revision не менялись;
+  полный L07 и browser acceptance открыты.
+  Личные `GET /api/auth/profile` и `GET /api/wallet/me` тоже не запрещали
+  shared cache. RED-тест выявил отсутствие `Cache-Control`; reviewed fix
+  `0cd9084c` добавил `private, no-store` и `Vary: Origin, Authorization`.
+  Candidate focused7/7, root check, API307/307, PG18/18 (`drtZEP`,
+  test/PG0) PASS. Receiving publication: root check, API307/307 и PG18/18
+  (`g2j0t0`, test/PG0) PASS. Кошелёк не подписывали; L07 открыт.
+  Административные `GET /api/admin/documents`, `/api/admin/audit-events`
+  и `/api/admin/financing-prechecks` не запрещали shared cache. RED-тест
+  выявил отсутствие `Cache-Control`; reviewed fix `90263c34` добавил
+  `private, no-store` и `Vary: Origin, Authorization`. Candidate focused8/8,
+  root check, API308/308, PG18/18 (`u9gEtj`, test/PG0) PASS. Receiving
+  publication: root check, API308/308, PG18/18 (`vnWYgy`, test/PG0) PASS.
+  Admin ACL/финансовая логика не менялись; L07/L12 открыты.
+  Chat GET уже задаёт `no-store` в `requireChatUser`; не дублировать.
+  `GET /api/me` и личный `GET /api/financing/prechecks` не запрещали
+  shared cache. RED-тест выявил отсутствие `Cache-Control`; reviewed fix
+  `0554e30e` добавил `private, no-store` и `Vary: Origin, Authorization`.
+  Candidate focused9/9, root check, API309/309, PG18/18 (`jLyirj`,
+  test/PG0) PASS. Receiving publication: root check, API309/309, PG18/18
+  (`z2zuSh`, test/PG0) PASS. Финансовую логику не активировали; L07/L12
+  остаются открытыми. Далее не повторять sweep заголовков без нового риска.
+  Legacy `GET /api/me` возвращал `200` отключённому аккаунту со старым
+  JWT, в отличие от `/api/auth/profile`. RED JSON HTTP-тест это воспроизвёл;
+  reviewed fix `ebb6553e` использует общий `requireActiveUser`.
+  Candidate focused10/10, root check, API310/310, PG18/18 (`CPvsqw`,
+  test/PG0) PASS. Receiving publication: root check, API310/310, PG18/18
+  (`gs87mM`, test/PG0) PASS. Отдельный PG-регрессионный тест `/api/me`
+  выполнен test-only `fc8095a2`. Старый legacy API RED (`TfyNgJ`: на
+  деактивацию ответил 200 вместо 403; также старый unrelated ID guard),
+  исправленный API GREEN19/19 (`3KUBXk`, test/PG0). Независимое ревью
+  test-only diff без находок, reviewer PG сам не запускал. Receiving
+  publication root check и PG19/19 (`n7Ocnq`, test/PG0) PASS.
+  Личный `GET /api/bids/my/bids` выдавал предложения отключённому
+  подрядчику со старым JWT: RED JSON HTTP ответ 200. Reviewed fix
+  `d083ec84` проверяет текущую активность и роль подрядчика; GREEN
+  focused19/19 включает и демоцию. Candidate root check, API311/311,
+  PG19/19 (`7GR9p1`, test/PG0) PASS; receiving publication root check,
+  API311/311, PG19/19 (`WzeD7H`, test/PG0) PASS. Отдельный PG-регрессионный
+  test-only `58cebcd4`: legacy RED (`f9kPDX`, 200 вместо 403; также старые
+  unrelated отказы), исправленный API GREEN20/20 (`Dnznsq`, test/PG0).
+  Независимое ревью diff без находок, reviewer PG сам не запускал. Receiving
+  publication root check и PG20/20 (`7ZQimJ`, test/PG0) PASS; полный L07 открыт.
+  Публичный профиль подрядчика продолжал отвечать `200` после деактивации.
+  RED JSON HTTP-тест воспроизвёл; reviewed backend `c2a815c1` возвращает
+  `404` для неактивного аккаунта. Candidate focused20/20, root check,
+  API312/312 и PG20/20 (`abcHqv`, test/PG0) PASS; независимое ревью без
+  находок. Отдельный test-only PG-регрессионный тест `506c0af0` прошёл
+  21/21 (`YV1LAn`, test/PG0), независимое ревью без находок, reviewer PG
+  не запускал. Receiving publication root check и PG21/21 (`H55nz6`,
+  test/PG0) PASS; полный L07 по-прежнему открыт.
+  `project.created` audit ранее сохранял свободный текст title/category/location
+  приватной заявки. Reviewed backend `20310386` удалил эти поля из metadata;
+  RED/GREEN JSON HTTP, API313/313 и real PG21/21 (`GvlJNa`, test/PG0)
+  PASS. Reviewed QA `8d392ff4` проверяет сохранённый audit JSON в реальной
+  PostgreSQL: 21/21 дважды (`nN9kS2`, `7LbtMe`, test/PG0), root check PASS.
+  Receiving publication root check и PG21/21 (`Kkn6EO`, test/PG0) PASS.
+  Fake-PG workflow smoke сначала не стартовал: его эмулятор не поддерживал
+  `INSERT INTO project_access_checkout_bindings`; это не PG PASS. Reviewed
+  QA `4df009d1` разрешает только пустой migration backfill и fail-closed
+  останавливается при непустых Checkout purchases. Candidate fake smoke
+  PASS дважды (`C5sxh3`, `e5OEiR`), receiving PASS (`aPSHOi`), root check
+  PASS. Это не заменяет отдельную реальную PostgreSQL-приёмку.
+  `document.submitted` audit также дублировал пользовательское имя файла.
+  Reviewed backend `a232fd9f` убрал `file_name` только из metadata:
+  RED/GREEN focused11/11, API314/314, PG21/21 (`7NUrKH`, test/PG0).
+  Reviewed QA `5ccf40a7` проверил сохранённое событие в реальной PG;
+  сначала общий contractor fixture нарушил поздний bid-тест (`PUcoma`, не
+  PASS), после изоляции PG22/22 дважды (`okMllt`, `o1vi63`, test/PG0).
+  Receiving publication root check и PG22/22 (`Tb0PVq`, test/PG0) PASS.
+  `profile.updated.metadata.fields` раньше копировал произвольные имена
+  ключей запроса, хотя сервер игнорировал неизвестные поля. Reviewed backend
+  `062450e5` ограничил их тем же allowlist, что обработка профиля:
+  RED/GREEN focused12/12, API315/315, PG22/22 (`7ndknA`, test/PG0).
+  Reviewed QA `8b7cc1f0` проверил сохранённый audit JSON с отдельным
+  contractor fixture: PG23/23 дважды (`LZiPdO`, `UEiNAX`, test/PG0).
+  Receiving publication root check и PG23/23 (`QbWmB3`, test/PG0) PASS.
+  Публичный маршрут подрядчика принимал `parseInt` от URL-ID и показывал
+  профиль по ID с мусорным суффиксом/ведущим нулём. Reviewed backend
+  `d832f7bb`: RED 200, GREEN exact-positive-int guard, focused22/22,
+  API316/316, PG23/23 (`I7m93e`, test/PG0). Reviewed QA `9cb4f8a9`
+  проверил active 200 и malformed 404 в реальной PG23/23 дважды
+  (`CgJ9Ur`, `EAvikj`, test/PG0). Receiving publication root check и
+  PG23/23 (`07cxQP`, test/PG0) PASS.
+  Audit privacy changes apply to new events only. Historical persisted
+  metadata has not been scrubbed; no irreversible data backfill is authorized.
+  Reviewed QA `6f7b7e0a` добавил реальный PostgreSQL-тест личного списка:
+  отключённые и демотированные owner/contractor со старым JWT получают
+  `403`, private/no-store и не получают заявки. Candidate PG25/25 дважды
+  (`Wf4kpB`, `xJVXF7`, test/PG0), receiving PG25/25 (`43X4Bd`, test/PG0),
+  root check PASS. Код API не менялся; полная L07-приёмка ещё открыта.
+  Следующая проверка выявила TOCTOU: роль подтверждалась отдельным SELECT,
+  после чего отключённый owner получал приватный черновик из списка.
+  RED на реальной PG (`I1lSo5`, test/PG1) показал полный private response.
+  Reviewed backend `7d3dc571` связал текущую роль и чтение проектов одним SQL.
+  QA `05b300bc` обновил fake-PG, а `99f363d6` добавил подрядчику реальную
+  непустую фикстуру до гонки по замечанию независимого ревью. Final candidate
+  PG26/26 дважды (`hFDEar`, `lmrzOI`, test/PG0), API318/318, root check и
+  fake-PG smoke PASS. Receiving publication PG26/26 (`jCXJ3b`, test/PG0),
+  fake-PG smoke (`eAPoDK`) и root check PASS. Локальная фикстура удалена;
+  это не полная проверка каталога, логов, исторических данных или браузера.
+  Аналогичная гонка личного списка предложений воспроизведена на реальной PG:
+  после отключения подрядчика старый SQL вернул сохранённое предложение
+  (`QCVv2v`, RED test/PG1). Reviewed backend `ae5089fc` связал текущую
+  активную роль и чтение bids одним SQL; QA `ec1ba0e8` добавил тест гонки
+  и обновил fake-PG. Candidate PG27/27 дважды (`gIJfie`, `FIzQVF`),
+  API318/318, root check и fake-PG smoke PASS. Независимый Sol/high review
+  не нашёл новых дефектов, повторил API318/318, migration7/7 и fake-PG,
+  но не запускал реальную PG. Receiving publication `ec1ba0e8`:
+  PG27/27 (`ebPnMU`, test/PG0), fake-PG (`PG6ijm`) и root check PASS.
+  Гонка при `POST /api/projects` также воспроизведена: реальная PG дважды
+  показала RED (`ixWVK0`, `PTm1Gi`):
+  отключённый после первой проверки owner всё ещё сохранял черновик (`201`).
+  Backend `2c53ff19` удерживает строку текущего активного owner до INSERT,
+  QA `43edb655` добавил race-тест и fake-PG адаптер. API318/318,
+  fake-PG `BzfAUP`, root check и независимый Sol/high review прошли.
+  Первый GREEN не запустился: `initdb` ENOSPC (`lYoxho`), не PASS. После
+  освобождения места кандидат прошёл PG28/28 дважды (`BWRUUq`, `vCyhax`,
+  test/PG0); локальный fast-forward `43edb655` и receiving PG28/28
+  (`OrEz0R`), fake-PG (`uNHAEG`), root check и API318/318 прошли.
+  Дополнительно JSON `POST /api/bids` после первой проверки роли допускал
+  сохранение предложения уже отключённого подрядчика: delayed-body HTTP
+  regression RED `201`, затем backend `cef8a94f` проверяет активную роль
+  непосредственно перед сохранением. QA `a590633c` ждёт фактического первого
+  чтения роли, а не таймера. Candidate focused23/23 дважды, API319/319,
+  fake-PG `qKkgDM`, PG28/28 `A2O0iE` и root check PASS. Независимый
+  Codex Sol/medium review не нашёл новых дефектов, но PG не запускал.
+  Локальный fast-forward `a590633c`: receiving API319/319, PG28/28
+  `W6qP8U`, fake-PG `fEaEyC` и root check PASS. Это локальная JSON
+  регрессия, не проверка реальной оплаты.
+  JSON `GET /api/bids/my/bids` также выдавал два приватных предложения,
+  когда contractor отключался между первой проверкой роли и чтением списка
+  (детерминированный RED). Backend `363aea1a` повторно проверяет текущую
+  активную роль прямо перед JSON-фильтрацией; QA `528c7c89` проверяет
+  пустой список после отзыва роли. Candidate focused24/24 дважды,
+  API320/320, fake-PG `yZR7am`, PG28/28 `XBYXYz` и root check PASS.
+  Независимый Codex Sol/medium review не нашёл новых дефектов, но PG
+  не запускал. Локальный fast-forward `528c7c89`: receiving API320/320,
+  PG28/28 `NtHbk0`, fake-PG `Ia2DhE` и root check PASS.
+  JSON `GET /api/projects/my/projects` также возвращал приватный черновик
+  владельца или превью подрядчика после отключения аккаунта между первой
+  проверкой роли и чтением списка (оба случая RED). Backend `3bf8ffda`
+  связывает JSON-выборку с текущим активным homeowner/contractor;
+  QA `e8a92102` проверяет обе роли. Candidate focused26/26 дважды,
+  API322/322, fake-PG `xUTCRz`, PG28/28 `X8Wg8p` и root check PASS.
+  Независимый Codex Sol/medium review не нашёл новых дефектов, но PG
+  не запускал. Локальный fast-forward `e8a92102`: receiving API322/322,
+  PG28/28 `rOk93p`, fake-PG `CPsi0o` и root check PASS.
+  Для полного `GET /api/projects/:id` реальный PG-тест задержал чтение bids,
+  отключил owner и воспроизвёл приватный черновик в ответе `200`
+  (`esUbP3`, RED). Backend `0924e037` повторно проверяет текущую роль
+  владельца или связь принятого подрядчика непосредственно перед полным
+  ответом; QA `8222cdbd` проверяет отсутствие приватного текста после
+  отзыва роли. Candidate PG29/29 дважды (`CyELaE`, `yWLhIl`), API322/322,
+  fake-PG `nPt7rE` и root check PASS. Независимый Codex Sol/high review
+  не нашёл новых дефектов, но PG не запускал. Локальный fast-forward
+  `8222cdbd`: receiving API322/322, PG29/29 `3EdS6h`, fake-PG
+  `gGWFLR` и root check PASS.
+  QA follow-up `bbad88d3` добавил отдельный JSON HTTP-регресс для
+  приватного черновика: после первой проверки роли owner отключается,
+  полный detail отвечает `404` без описания. Это GREEN-only тест после
+  PG-исправления, не отдельный RED. Candidate focused27/27, API323/323,
+  PG29/29 `4kFl1N`, fake-PG `MgCOuI` и root check PASS; независимый
+  Codex Sol/medium review не нашёл проблем. Локальный fast-forward
+  `bbad88d3`: receiving API323/323, PG29/29 `QDR2Dj`, fake-PG
+  `9HGFCB` и root check PASS.
+  Отдельный JSON role-race в личном списке подрядчика: после первичной
+  проверки роли и до завершения проверки принятого проекта отключённый
+  подрядчик всё ещё получал полный адрес и описание (RED). QA `41cae0c6`
+  воспроизвёл это без таймера; backend `4f8006ec` повторно сверяет роль
+  перед ответом и возвращает пустой список. Candidate focused30/30,
+  API326/326, PG29/29 `iRayUh`, fake-PG `MmB1VP` и root check PASS.
+  Независимый Sol/high review не нашёл дефектов и повторил focused30/30,
+  но PG не запускал. Локальный fast-forward `d37df7a6`: receiving
+  API326/326, PG29/29 `crbb7L`, fake-PG `C1nPih` и root check PASS.
+  Follow-up QA `b8ce1811` добавил реальную PG-блокировку чтения связи после
+  проверки роли: старый API вернул полное приватное описание (RED `vuAtKp`,
+  test/PG1), исправленный прошёл PG30/30 дважды (`Pu9iYZ`, `Ro2EPA`).
+  Независимое Sol/high ревью test-only diff без находок; reviewer PG не
+  запускал. Локальный fast-forward `b8ce1811`: receiving PG30/30
+  `oe7j3d` и root check PASS. Ни реального escrow-перехода, ни платежа нет.
+  Публичный профиль подрядчика также проверен на смену роли во время чтения
+  документов. Старый API после отключения пользователя возвращал профиль
+  `200` (реальная PG, RED `OJ3oI`); backend `e536ed17` повторно читает
+  текущий статус и роль перед ответом, QA `28eff051` ожидает `404` без
+  профиля. Candidate `59ec9da0`: focused32/32, API328/328, PG32/32 дважды
+  (`5Hy3Aj`, `5Q0kl4`), fake-PG `xxNZN1`, root check PASS. Независимое
+  Sol/high ревью без находок, но без запуска PG. Локальный fast-forward:
+  receiving API328/328, PG32/32 `CqAZg4`, fake-PG `dre9H1`, root check PASS.
+  Дополнительно публичный профиль не задавал `Cache-Control` даже после
+  отключения подрядчика (JSON HTTP RED: заголовок отсутствует). Backend
+  `76a307e5` задаёт `no-store` для активного `200` и отказа `404`;
+  QA `43081436` и `34f3244c` проверяют JSON и реальную PostgreSQL.
+  Candidate API328/328, PG32/32 `TCvj1n`, fake-PG `EdsQgF`, root check
+  PASS. Независимое Sol/high ревью без находок, PG reviewer не запускал.
+  Fast-forward `34f3244c`: receiving API328/328, PG32/32 `RSg5Xa`,
+  fake-PG `5QNlrS` и root check PASS. Это локальная cache-проверка, не
+  browser/E2E приёмка.
+  Test-only QA `0727b2e6` проверил смену роли активного подрядчика на
+  `admin` в реальной PostgreSQL: публичный профиль после смены отдаёт
+  `404`, без contractor payload и с `no-store`. Candidate PG33/33
+  `jiJLkC`, root check PASS; независимый Sol/medium review без замечаний.
+  Локальный fast-forward: receiving PG33/33 `NYNNnr`, root check PASS;
+  runtime не менялся.
+  QA `daa97d60` и `14b3361e` добавили прямые анонимные запросы к
+  публичному списку и карточке в браузерный API/PostgreSQL путь: проверяются
+  полные allowlist ключей, обобщённый заголовок и отсутствие приватных
+  title/brief/address. Независимое Astra-ревью исправленного test-only diff
+  одобрило исходник, но не запускало браузер. Локальный fast-forward
+  `14b3361e`: receiving Edge/API/изолированная PostgreSQL 1/1 PASS
+  `FcVf1O` (test/PG exit 0), root `npm run check` PASS; API runtime не менялся.
+  QA `1de5eda2`, `787262bc`, `2f55060d` добавили отрицательный браузерный
+  сценарий: синтетический paid grant для подрядчика A и проекта A не открывает
+  закрытые детали подрядчику B либо детали проекта B подрядчику A. Оба UI
+  пути дожидаются `/details` 404, проверяют generic body, `no-store`,
+  публичный allowlist и отсутствие private sentinel. Независимый reviewer
+  APPROVED точный diff `14b3361e..2f55060d` и отдельно получил Edge/API/PG
+  1/1 PASS (`qPpuaw`). Локальные cherry-pick `87cd958e`, `c8165f5c`,
+  `e9224dd3`: receiving 1/1 PASS (`vG0U44`), root check PASS. Это не
+  checkout, webhook или подтверждение реального платежа.
+  QA `eaec4e58` дополнительно проверил browser refund: после показа paid
+  brief синтетический `refunded` заставляет `Refresh details` получить 404,
+  очистить приватный текст и скрыть отправку предложения. Возврат фикстуры
+  к `paid` требует нового `Check access`. Независимый reviewer одобрил точный
+  diff `2f55060d..eaec4e58`, его Edge/API/PG 1/1 PASS `XujnfQ`;
+  candidate `vNGVRA` и receiving cherry-pick `a7e5ca99` 1/1 PASS
+  `na5J6h`, root check PASS. Это локальный тест, не реальный refund.
+  L07 остаётся открыт до полного privacy и browser/API/DB acceptance.
 - [ ] **L08 / backend + web.** Доступ к одному project ID: право покупателя,
   серверные состояния `unpaid/pending/paid/refunded/revoked`, уникальность
   project+contractor и проверка перед раскрытием/предложением. Приёмка:
@@ -237,6 +673,24 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   browser22/22 + types/lint/static PASS. QA `f345b2fd`, `wZruXv`: реальный
   Edge/API/PG путь из пяти этапов PASS и чистое завершение процессов.
   Доступ выдан SQL-фикстурой, не платежом; checkout/webhook и L08 открыты.
+  JSON `POST /api/bids` мог сохранить предложение после закрытия проекта
+  или отзыва синтетического project-specific grant между первой проверкой
+  и сохранением (оба случая RED `201`). Backend `4c3cdca5` повторно
+  проверяет состояние проекта и оплаченный доступ непосредственно перед
+  JSON-записью; QA `00586274` требует `404`/`403` без нового bid.
+  Candidate focused29/29 дважды, API325/325, fake-PG `Fq0Nub`, PG29/29
+  `ovOp7X` и root check PASS; независимый Sol/high review не нашёл дефектов,
+  но PG не запускал. Локальный fast-forward `00586274`: receiving API325/325,
+  PG29/29 `a2SED0`, fake-PG `FJcB1e` и root check PASS. Grant остаётся
+  локальной фикстурой, не подтверждением реального платежа; L08 открыт.
+  Узкий role guard 2 октября для старого generic XPR `lead-token`:
+  reviewed backend `99139529` отклоняет отключённого или демотированного
+  подрядчика со старым JWT до `402` challenge (RED 402, GREEN 403;
+  focused35/35, API318/318, root check PASS). Reviewed QA `3f1b4ed4`
+  подтвердил это на настоящей локальной PostgreSQL: PG24/24 дважды
+  (`4ceoEg`, `Zu7aQO`, test/PG0), receiving PG24/24 (`j2VSeM`) и root
+  check PASS. Тест не передаёт платёж и не вызывает verifier. Этот маршрут
+  всё ещё не привязан к project ID; L08/L11/L12 не закрыты.
 - [ ] **L09 / backend + web.** Подрядчик после доступа отправляет редактируемое
   предложение с ценой/сроком/описанием; владелец видит его в аккаунте.
   Приёмка: предложение сохраняется, связано с project и contractor;
@@ -249,6 +703,23 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   путь включён в локальную publication `d613c440`; повтор `FuE0Vg` на общем
   API/UI/PG подтвердил те же пять этапов. Checkout и полный запуск остаются
   открытыми; см. `PAID-PROJECT-DETAILS-REVIEW.md`.
+  QA `842911d7` обнаружил отдельный диапазон `project_id`: значение
+  `2147483648` давало JSON `404`, а в локальной PG `500` (RED `QTFPLC`),
+  без bid-записи. Backend `dcb5cbda` отклоняет число до SQL как `400`.
+  Candidate focused31/31, API327/327, PG31/31 дважды (`Svvn3R`,
+  `5JezDa`), fake-PG `twRE5x`, root check PASS. Независимое Sol/high
+  ревью не нашло дефектов, но PG не запускало. Fast-forward `5f3e67b7`:
+  receiving API327/327, PG31/31 `KN3Mz3`, fake-PG `q9i0sz` и root check
+  PASS. Это input validation, не закрытие L09 или оплаты.
+  Для редактируемого срока предложения нулевое значение ранее сохранялось
+  как bid в JSON и реальной PG (RED `201`, PG `7LHzZ6`). QA `26fa47c3` и
+  `c8ef93aa` проверяют неверные сроки без новой записи и прежний default
+  30 дней. Backend `64e7c420` принимает только положительное целое в
+  диапазоне PG INTEGER, если поле задано. Candidate focused32/32,
+  API328/328, PG31/31 дважды (`OQGo49`, `rLde09`), fake-PG `yfn74a` и
+  root check PASS. Независимый Sol/high review без находок, PG не запускал.
+  Fast-forward `884eeb94`: receiving API328/328, PG31/31 `RB8SAh`,
+  fake-PG `j4n4ZS` и root check PASS. L09 остаётся открыт.
 
 ### P1 - настоящая оплата лида, 1-10 октября
 
@@ -381,6 +852,37 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   все test/PG exits0, исходные хеши совпали. Активный grant, несоответствие
   quote/времени и не удержанные покупки остаются в quarantine для отдельной
   сверки. L11/L12 НЕ закрыты; `LEAD-RECONCILIATION-REVIEW.md`.
+  2 октября: после восстановления диска candidate `3ade39b1` повторно прошёл
+  PostgreSQL103/103 (`tZ5LxD`), затем reviewed source перенесён локально в
+  publication `150d63e8`. Receiving PostgreSQL103/103 (`yNSdih`), оба
+  test/PG exits0; совпали 11 API hashes и SHA-256 теста. Receiving focused39/39,
+  root check37+12+11/static0, API301/301. Ранее сорвавшийся reviewer PG
+  не засчитан PASS. Нет HTTP/provider активации, платежа, push или deploy;
+  L11/L12 открыты.
+  Test-only QA `2f484e28` добавил проверку частичного возврата, но независимое
+  ревью нашло P2: обе обработки начинались после сохранения события, поэтому
+  гонка поступления не проверялась. Исправление `fe11ab6b` удерживает paid
+  worker после блокировки покупки, запускает приём signed test refund и
+  наблюдает реальный PostgreSQL lock wait. После release итог: покупка
+  `review_required`, доступ `revoked`, повтор paid его не восстанавливает.
+  QA PG104/104 дважды (`ydF5mi`, `Mcy4zi`, test/PG0), root check PASS;
+  независимое re-review exact diff без находок, reviewer PG не запускал.
+  Receiving publication root check и PG104/104 (`LW4XBL`, test/PG0) PASS.
+  Нет provider/HTTP активации или реального платежа; L11/L12 открыты.
+  Test-only `d6b1e084` расширяет будущий refund во входящей очереди на
+  частичную сумму: ранний paid sweep не создаёт доступ, после наступления
+  времени доступ `revoked`, покупка `review_required`, а не `refunded`.
+  QA PG104/104 дважды (`TIPNSg`, `27SJh1`, test/PG0), root check PASS;
+  независимое ревью без находок, reviewer PG сам не запускал. Receiving
+  publication root check и PG104/104 (`30lBT1`, test/PG0) PASS. Только
+  synthetic local lifecycle; L11/L12 по-прежнему открыты.
+  Reviewed test-only QA `762cc291` закрепляет fail-closed для двух пока
+  неподдержанных signed test events: `checkout.session.async_payment_failed`
+  и `payment_intent.payment_failed`. Они не меняют pending-покупку и не
+  создают inbox, quarantine или entitlement. Candidate real PG105/105 дважды
+  (`Vd80tk`, `gjj7si`, test/PG0), receiving PG105/105 (`b9z6IQ`, test/PG0),
+  root check PASS. Это не полноценная обработка async failure и не provider E2E;
+  L12 остаётся открытым.
 - [ ] **L13 / web + QA.** Чёткая цена, состояние оплаты, ожидание подтверждения,
   квитанция, отмена, ошибка, повтор без второго списания и обращение в
   поддержку. Сначала Stripe test mode end-to-end; live только после L10-L12,
@@ -521,6 +1023,13 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   прежний Medium owner CTA закрыт только для этого локального кандидата.
   Реальные `gcsc.store`, регистрация, email/SMS и оценка новым пользователем
   не проверены, поэтому L18d остаётся открытым.
+  4 октября LA локальный `87fbb29c` добавил видимое раскрытие, что hero
+  изображение сгенерировано AI и не показывает проект клиента. Отдельный
+  Codex reviewer одобрил исходник и receiving hash; receiving статические
+  18/18, Edge 154 восемь viewport/text-сценариев и root check PASS.
+  Независимый браузерный прогон, права на изображение, полный accessibility
+  и опубликованный домен не проверены; запись в
+  `ai-review/records/2026-10-04-generated-hero-disclosure.md`.
 - [ ] **L18e / marketing / 10 октября.** Семантика, SEO/social previews,
   sitemap, аналитика без лишнего сбора PII, privacy/terms/support links,
   загрузка без сторонних CDN как обязательного условия. Проверка: локальный
