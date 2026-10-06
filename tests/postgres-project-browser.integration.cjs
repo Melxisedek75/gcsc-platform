@@ -462,6 +462,19 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
         assert.ok(!body.includes(value), `Private value leaked in public API: ${value}`);
       }
     }
+    const privateCategory = 'Roofing call 555-0177';
+    await pool.query('UPDATE projects SET category=$2 WHERE id=$1', [id, privateCategory]);
+    try {
+      await contractorPage.reload();
+      const previewRow = row(contractorPage, id);
+      await previewRow.getByText('General project', { exact: true }).waitFor();
+      assert.match(await previewRow.innerText(), /General project/);
+      assert.ok(!(await contractorPage.locator('body').innerText()).includes('555-0177'));
+    } finally {
+      await pool.query('UPDATE projects SET category=$2 WHERE id=$1', [id, 'Roofing']);
+      await contractorPage.reload();
+    }
+    report.steps.push('contractor browser table generalizes a private free-text category without showing its phone');
     report.steps.push('owner UI creates private draft and publishes; SQL state and contractor draft invisibility verified');
 
     await contractorPage.reload();

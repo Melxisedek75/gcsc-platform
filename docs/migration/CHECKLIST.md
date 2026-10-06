@@ -732,6 +732,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   `qtAgv6`, root check и syntax/diff checks PASS. Review record
   `ai-review/records/2026-10-06-public-preview-category-pg.md`. Runtime
   не менялся; это не полная L07-приёмка и не review gate для релиза.
+  Следующий test-only Edge/API/изолированная PostgreSQL шаг проверил уже
+  видимую contractor таблицу после временной приватной категории с номером:
+  строка показывает `General project`, номер отсутствует во всём тексте
+  страницы; категория восстановлена в `finally`. Candidate 1/1 `jmmnp8`,
+  независимый reviewer 1/1 `K3Wpa7`, test/PG exits0, browser/API/UI
+  закрылись без cleanup errors. Root check и syntax/diff checks PASS;
+  `ai-review/records/2026-10-06-public-category-browser.md`. Это локальная
+  браузерная QA, без изменения runtime.
   L07 остаётся открыт до полного privacy и browser/API/DB acceptance.
 - [ ] **L08 / backend + web.** Доступ к одному project ID: право покупателя,
   серверные состояния `unpaid/pending/paid/refunded/revoked`, уникальность
