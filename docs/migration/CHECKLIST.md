@@ -366,6 +366,20 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   `0dde0a06` и UI `65312daa`. Создание, PUT, новая браузерная сессия,
   чужие роли, stale-version 409 и запрет правки после publish проверены.
   Это не PostgreSQL, не рестарт API и не receiving publication.
+  2026-10-06 UTC: UI `65312daa` локально перенесён как `7103e902` и
+  дополнен защитой от потери несохранённых правок в `979130af`. Независимый
+  reviewer `01a1101b-09dd-7df3-8d7c-4414e586e62f` сначала отклонил
+  уход через Dashboard/Navbar без решения владельца и тест, не загружающий
+  настоящий `main.tsx`; итоговый объединённый кандидат APPROVED без P1/P2.
+  Запись `ai-review/records/2026-10-06-private-draft-web.md`. Приёмка
+  загружает реальный `main.tsx`/App/Navbar с PIN-хешем, проверяет отказ от
+  ухода через Cancel, desktop/mobile, Token, Navbar и sign-out; Edge/API/
+  изолированная PG1/1 дважды `llsPCH`/`80TkfV` PASS, test/PG exit0, cleanup
+  clean. Web build, scoped ESLint, root check, runner12/12, auth-channel
+  validator, account-role10/10, paid-project21/21 и chat UI PASS. Остаток:
+  browser-тест согласия отбросить правки, Back после настоящей SPA-истории,
+  перехода во время задержанного PUT и перезапуск именно процесса PostgreSQL.
+  API/QA/UI интегрированы только локально; L06 пока открыт, нет push/deploy.
 - [ ] **L07 / backend + web.** Обезличенный каталог заявок с фильтрами;
   закрыть контакты, адрес и чувствительные детали в обоих GET маршрутах,
   вложениях, логах и кеше до оплаченного доступа. Приёмка: анонимный и
