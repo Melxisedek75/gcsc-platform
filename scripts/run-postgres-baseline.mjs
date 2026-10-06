@@ -29,7 +29,7 @@ export function testEnvironment(ambient, databaseUrl, runDirectory) {
 }
 
 export function parseRunnerArgs(args) {
-  const usage = () => { throw new Error('Usage: npm run test:postgres:local -- --postgres-bin <absolute bin directory> [--project-publication [--api-root <worktree/services/api/v3>] | --project-browser --playwright-dir <absolute installed node_modules> [--api-root <worktree/services/api/v3>] [--web-root <worktree/apps/web>] | --lead-checkout --api-root <worktree/services/api/v3>]'); };
+  const usage = () => { throw new Error('Usage: npm run test:postgres:local -- --postgres-bin <absolute bin directory> [--project-publication [--api-root <worktree/services/api/v3>] | --project-draft-edit --api-root <worktree/services/api/v3> | --project-browser --playwright-dir <absolute installed node_modules> [--api-root <worktree/services/api/v3>] [--web-root <worktree/apps/web>] | --lead-checkout --api-root <worktree/services/api/v3>]'); };
   if (args[0] !== '--postgres-bin' || !args[1] || !path.isAbsolute(args[1])) usage();
   const result = { binaryDir: args[1], suite: 'baseline' };
   const seen = new Set();
@@ -38,7 +38,7 @@ export function parseRunnerArgs(args) {
     const flag = args[index];
     if (seen.has(flag)) usage();
     seen.add(flag);
-    if (['--project-publication', '--project-browser', '--lead-checkout'].includes(flag)) {
+    if (['--project-publication', '--project-draft-edit', '--project-browser', '--lead-checkout'].includes(flag)) {
       if (result.suite !== 'baseline') usage();
       result.suite = flag.slice(2);
     } else {
@@ -52,7 +52,7 @@ export function parseRunnerArgs(args) {
   if ((result.suite === 'baseline' && seen.size)
     || (result.suite !== 'project-browser' && (result.webRoot || result.playwrightDir))
     || (result.suite === 'project-browser' && !result.playwrightDir)
-    || (result.suite === 'lead-checkout' && !result.apiRoot)) usage();
+    || (['lead-checkout', 'project-draft-edit'].includes(result.suite) && !result.apiRoot)) usage();
   return result;
 }
 
@@ -173,6 +173,7 @@ export async function main(args = process.argv.slice(2)) {
     const result = await new Promise((resolve, reject) => {
       const testFile = { baseline: 'tests/postgres-projects.integration.cjs',
         'project-publication': 'tests/postgres-project-publication.integration.cjs',
+        'project-draft-edit': 'tests/postgres-project-draft-edit.integration.cjs',
         'project-browser': 'tests/postgres-project-browser.integration.cjs',
         'lead-checkout': 'tests/postgres-lead-checkout.integration.cjs' }[options.suite];
       const child = spawn(process.execPath, ['--test', testFile], {

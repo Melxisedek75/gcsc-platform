@@ -41,6 +41,17 @@ test('lead checkout suite requires explicit receiving API and rejects other suit
   }
 });
 
+test('draft edit suite requires an explicit receiving API and remains opt-in', () => {
+  const binaryDir = path.resolve('local/postgres/bin');
+  const apiRoot = path.resolve('local/receiver/services/api/v3');
+  const args = ['--postgres-bin', binaryDir, '--project-draft-edit', '--api-root', apiRoot];
+  assert.deepEqual(parseRunnerArgs(args), { binaryDir, suite: 'project-draft-edit', apiRoot });
+  for (const invalid of [args.slice(0, 3), [...args, '--project-publication'],
+    [...args, '--web-root', apiRoot], [...args, '--playwright-dir', apiRoot]]) {
+    assert.throws(() => parseRunnerArgs(invalid));
+  }
+});
+
 test('project source options are explicit, unambiguous and scoped to their suite', () => {
   const binaryDir = path.resolve('local/postgres/bin');
   const apiRoot = path.resolve('local/receiver/services/api/v3');
