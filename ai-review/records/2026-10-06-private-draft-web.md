@@ -38,7 +38,7 @@ navigation. The app retains hash URLs with a data-backed router.
   reopens and saves. Another follow-up holds the PUT before the API receives
   it and confirms Navbar navigation is blocked with an alert while saving;
   PostgreSQL remains unchanged until the request is released. It does not yet
-  exercise confirmed Navbar discard or Back after real in-app history. The
+  exercise accepting Back after real in-app history. The
   reviewer found no source defect in those branches; add focused regressions.
 - The real PostgreSQL runner stops its disposable cluster. It has not proved
   survival of a separate PostgreSQL process restart. The local API-instance
@@ -59,5 +59,13 @@ navigation. The app retains hash URLs with a data-backed router.
   `RoJrl5`/`8AW4zl`, test/PG exits 0, runner12/12 and root check PASS.
   Reviewer independently ran syntax/diff checks and inspected saved run
   reports, not the browser journey.
-- Remaining P3 test-coverage note: confirmed Navbar discard and browser Back
-  after real in-app history.
+- Follow-up test-only diff confirms accepted Navbar About discard with no PUT
+  or PostgreSQL change, then returns through Dashboard and selects the saved
+  project. Browser Back from the resulting real SPA history is rejected with
+  the unsaved title intact. A first run `XoLqDi` failed because the selected
+  project resets on Dashboard reentry; the test now explicitly selects it.
+  Edge/API/PG1/1 twice `zhPHIL`/`E4Ug4A`, test/PG exits 0, runner12/12 and
+  root check PASS. Independent reviewer APPROVED with no findings; reviewer
+  checked saved reports and syntax/diff, not a fresh browser run.
+- Remaining P3 test-coverage note: accepted browser Back after real in-app
+  history. PostgreSQL process restart remains a separate acceptance gate.

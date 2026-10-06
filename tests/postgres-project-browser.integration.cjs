@@ -289,6 +289,40 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     await reopenedEditForm.getByRole('textbox', { name: 'Project title' }).fill('QA_BROWSER_EDITED_TITLE');
     await reopenedEditForm.getByRole('textbox', { name: 'Description' }).fill('QA_BROWSER_EDITED_BRIEF');
     await reopenedEditForm.getByRole('textbox', { name: 'Location' }).fill('QA_BROWSER_EDITED_ADDRESS');
+    const navDiscardDialog = ownerPage.waitForEvent('dialog', { timeout: 7000 });
+    const aboutNavigation = ownerPage.locator('nav').first().getByRole('link', { name: 'About' }).first().click();
+    const acceptedNavDiscard = await navDiscardDialog;
+    assert.equal(acceptedNavDiscard.message(), 'Discard unsaved project changes?');
+    await acceptedNavDiscard.accept();
+    await aboutNavigation;
+    await ownerPage.waitForURL(/#\/about$/);
+    assert.equal(report.apiRequests.filter(request => request.method === 'PUT').length, 0);
+    assert.deepEqual((await pool.query('SELECT title,description,location FROM projects WHERE id=$1', [id])).rows,
+      [{ title: 'QA_BROWSER_PRIVATE_TITLE', description: 'QA_BROWSER_PRIVATE_BRIEF',
+        location: 'QA_BROWSER_PRIVATE_ADDRESS' }]);
+    await ownerPage.locator('nav').first().getByRole('link', { name: 'Dashboard' }).first().click();
+    await ownerPage.waitForURL(/#\/dashboard$/);
+    await row(ownerPage, id).getByRole('button', { name: 'View' }).click();
+    await ownerPage.getByRole('button', { name: 'Edit draft', exact: true }).click();
+    const saveForm = ownerPage.locator('form').filter({
+      has: ownerPage.getByRole('heading', { name: 'Edit private draft' }),
+    });
+    assert.equal(await saveForm.getByRole('textbox', { name: 'Project title' }).inputValue(),
+      'QA_BROWSER_PRIVATE_TITLE');
+    await saveForm.getByRole('textbox', { name: 'Project title' }).fill('QA_BROWSER_EDITED_TITLE');
+    await saveForm.getByRole('textbox', { name: 'Description' }).fill('QA_BROWSER_EDITED_BRIEF');
+    await saveForm.getByRole('textbox', { name: 'Location' }).fill('QA_BROWSER_EDITED_ADDRESS');
+    report.steps.push('accepted Navbar discard changes route without PUT or PostgreSQL write; reopened editor shows saved draft');
+    const backDialogPromise = ownerPage.waitForEvent('dialog', { timeout: 7000 });
+    await ownerPage.evaluate(() => { window.history.back(); });
+    const backDialog = await backDialogPromise;
+    assert.equal(backDialog.type(), 'confirm');
+    assert.equal(backDialog.message(), 'Discard unsaved project changes?');
+    await backDialog.dismiss();
+    await ownerPage.waitForURL(/#\/dashboard$/);
+    assert.equal(await saveForm.getByRole('textbox', { name: 'Project title' }).inputValue(),
+      'QA_BROWSER_EDITED_TITLE');
+    report.steps.push('browser Back through real in-app history preserves unsaved edits when discard is rejected');
     let releasePut;
     let putHeld;
     const putGate = new Promise(resolve => { releasePut = resolve; });
@@ -302,7 +336,7 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     };
     await ownerPage.route(`${origin}/api/projects/${id}`, holdPut);
     const editSave = action(ownerPage, 'PUT', `/api/projects/${id}`,
-      () => reopenedEditForm.getByRole('button', { name: 'Save changes' }).click(), 200)
+      () => saveForm.getByRole('button', { name: 'Save changes' }).click(), 200)
       .then(value => ({ value }), error => ({ error }));
     let interceptionTimer;
     let completedSave;
@@ -315,7 +349,7 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
         }),
       ]);
       clearTimeout(interceptionTimer);
-      assert.equal(await reopenedEditForm.getByRole('button', { name: 'Save changes' }).isDisabled(), true);
+      assert.equal(await saveForm.getByRole('button', { name: 'Save changes' }).isDisabled(), true);
       const warningPromise = ownerPage.waitForEvent('dialog', { timeout: 7000 });
       const walletClick = ownerPage.locator('nav').first().getByRole('link', { name: 'Wallet' }).first().click();
       const warning = await warningPromise;
@@ -324,7 +358,7 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
       await warning.accept();
       await walletClick;
       assert.match(ownerPage.url(), /#\/dashboard$/);
-      await reopenedEditForm.getByRole('heading', { name: 'Edit private draft' }).waitFor();
+      await saveForm.getByRole('heading', { name: 'Edit private draft' }).waitFor();
       assert.deepEqual((await pool.query('SELECT title,description,location FROM projects WHERE id=$1', [id])).rows,
         [{ title: 'QA_BROWSER_PRIVATE_TITLE', description: 'QA_BROWSER_PRIVATE_BRIEF',
           location: 'QA_BROWSER_PRIVATE_ADDRESS' }]);

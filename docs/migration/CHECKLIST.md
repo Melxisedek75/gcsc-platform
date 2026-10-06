@@ -395,6 +395,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   ограниченное ожидание и обязательные release/await/unroute закрыли P2,
   финальный вердикт APPROVED без P1-P3. Остаток L06: подтверждённый Navbar
   discard, Back после настоящей SPA-истории и restart процесса PostgreSQL.
+  Browser follow-up: подтверждённый Navbar About discard не отправляет PUT
+  и не меняет PostgreSQL; после возврата Dashboard явно выбирает прежний
+  проект и показывает сохранённые поля. Back через настоящую SPA-историю
+  с отказом от сброса сохраняет маршрут и несохранённый текст. Первый прогон
+  `XoLqDi` упал из-за сброса выбранной строки при повторном входе; тест
+  исправлен, `zhPHIL`/`E4Ug4A` Edge/API/PG1/1 PASS, test/PG exit0,
+  runner12/12 и root check PASS. Независимый reviewer APPROVED без находок.
+  Не проверены согласие на Back и PostgreSQL-process restart; L06 открыт.
 - [ ] **L07 / backend + web.** Обезличенный каталог заявок с фильтрами;
   закрыть контакты, адрес и чувствительные детали в обоих GET маршрутах,
   вложениях, логах и кеше до оплаченного доступа. Приёмка: анонимный и
