@@ -1079,6 +1079,13 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   legal-claims, Edge 390 px без overflow и независимое Codex-ревью PASS.
   Не интегрирован и не опубликован; цены/условия всё ещё требуют решения
   владельца, Security/About/прочие публичные страницы остаются в L21.
+  Design-кандидат `b3e46353` переводит Security из ложного описания
+  действующей защиты средств в roadmap: нет live escrow, подтверждённого
+  AES-256/identity-check, утверждённых fees или завершённого аудита; схема
+  платежей явно помечена как концепт, CTA ведут на реальные маршруты.
+  Build, scoped ESLint, legal-claims, локальный Edge 390 px без overflow и
+  независимое Codex-ревью PASS. Не интегрирован; About и остальные claim
+  проверки открыты, formal gate не пройден.
 
 ### P0 - приёмка и публикация, 11-20 октября
 
