@@ -191,6 +191,7 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
       const text = await page.locator('body').innerText();
       for (const value of ['QA_BROWSER_PRIVATE_TITLE', 'QA_BROWSER_PRIVATE_BRIEF', 'QA_BROWSER_PRIVATE_ADDRESS',
         'QA_BROWSER_EDITED_TITLE', 'QA_BROWSER_EDITED_BRIEF', 'QA_BROWSER_EDITED_ADDRESS',
+        'QA_BROWSER_CONFLICT_WIN_TITLE', 'QA_BROWSER_SERVER_TITLE',
         'QA_BROWSER_OTHER_PRIVATE_TITLE', 'QA_BROWSER_OTHER_PRIVATE_BRIEF', 'QA_BROWSER_OTHER_PRIVATE_ADDRESS',
         'QA_BROWSER_REGISTER_PRIVATE_TITLE', 'QA_BROWSER_REGISTER_PRIVATE_BRIEF']) {
         assert.ok(!text.includes(value), `Private value leaked: ${value}`);
@@ -234,6 +235,27 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     assert.deepEqual(report.apiRequests.filter(request => request.method === 'PUT'),
       [{ method: 'PUT', path: `/api/projects/${id}`, status: 200 }]);
     report.steps.push('owner UI edits private draft through PUT; PostgreSQL retains revised fields before publication');
+    await ownerPage.getByRole('button', { name: 'Edit draft', exact: true }).click();
+    const conflictForm = ownerPage.locator('form').filter({
+      has: ownerPage.getByRole('heading', { name: 'Edit private draft' }),
+    });
+    await conflictForm.getByRole('textbox', { name: 'Project title' }).fill('QA_BROWSER_CONFLICT_WIN_TITLE');
+    await pool.query(`UPDATE projects SET title='QA_BROWSER_SERVER_TITLE',
+      updated_at=GREATEST(NOW(), updated_at + INTERVAL '1 second') WHERE id=$1`, [id]);
+    const conflict = await action(ownerPage, 'PUT', `/api/projects/${id}`,
+      () => conflictForm.getByRole('button', { name: 'Save changes' }).click(), 409);
+    assert.deepEqual(conflict, { error: 'Project changed; refresh and retry' });
+    await conflictForm.getByText('Current saved draft', { exact: true }).waitFor();
+    await conflictForm.getByText('Title: QA_BROWSER_SERVER_TITLE', { exact: true }).waitFor();
+    assert.equal(await conflictForm.getByRole('textbox', { name: 'Project title' }).inputValue(),
+      'QA_BROWSER_CONFLICT_WIN_TITLE');
+    await conflictForm.getByRole('button', { name: 'Keep my edits' }).click();
+    const retried = await action(ownerPage, 'PUT', `/api/projects/${id}`,
+      () => conflictForm.getByRole('button', { name: 'Save changes' }).click(), 200);
+    assert.equal(retried.project.title, 'QA_BROWSER_CONFLICT_WIN_TITLE');
+    assert.deepEqual((await pool.query('SELECT title,description FROM projects WHERE id=$1', [id])).rows,
+      [{ title: 'QA_BROWSER_CONFLICT_WIN_TITLE', description: 'QA_BROWSER_EDITED_BRIEF' }]);
+    report.steps.push('real PostgreSQL version conflict preserves browser edits until explicit compare and retry');
     const contractorPage = await openRole(contractor);
     await contractorPage.getByText('No open projects are available right now.', { exact: true }).waitFor();
     await noBrief(contractorPage);
@@ -262,7 +284,8 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     assert.deepEqual(publicDetail.project, publicPreview);
     for (const body of [JSON.stringify(publicList), JSON.stringify(publicDetail)]) {
       for (const value of ['QA_BROWSER_PRIVATE_TITLE', 'QA_BROWSER_PRIVATE_BRIEF', 'QA_BROWSER_PRIVATE_ADDRESS',
-        'QA_BROWSER_EDITED_TITLE', 'QA_BROWSER_EDITED_BRIEF', 'QA_BROWSER_EDITED_ADDRESS']) {
+        'QA_BROWSER_EDITED_TITLE', 'QA_BROWSER_EDITED_BRIEF', 'QA_BROWSER_EDITED_ADDRESS',
+        'QA_BROWSER_CONFLICT_WIN_TITLE', 'QA_BROWSER_SERVER_TITLE']) {
         assert.ok(!body.includes(value), `Private value leaked in public API: ${value}`);
       }
     }
@@ -450,7 +473,7 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     assert.ok(report.apiRequests.length < 100);
     assert.deepEqual(report.blockedRequests, []);
     assert.deepEqual(report.apiRequests.filter(request => request.method === 'PUT'),
-      [{ method: 'PUT', path: `/api/projects/${id}`, status: 200 }]);
+      [200, 409, 200].map(status => ({ method: 'PUT', path: `/api/projects/${id}`, status })));
     assert.deepEqual(report.pageErrors, []);
     assert.deepEqual(report.requestFailures, []);
     report.status = 'PASS';
