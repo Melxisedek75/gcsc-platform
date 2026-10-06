@@ -377,9 +377,16 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   изолированная PG1/1 дважды `llsPCH`/`80TkfV` PASS, test/PG exit0, cleanup
   clean. Web build, scoped ESLint, root check, runner12/12, auth-channel
   validator, account-role10/10, paid-project21/21 и chat UI PASS. Остаток:
-  browser-тест согласия отбросить правки, Back после настоящей SPA-истории,
+  на момент приёмки browser-тест согласия отбросить правки, Back после настоящей SPA-истории,
   перехода во время задержанного PUT и перезапуск именно процесса PostgreSQL.
   API/QA/UI интегрированы только локально; L06 пока открыт, нет push/deploy.
+  Follow-up test-only: подтверждённый Cancel закрывает редактор без PUT и
+  без изменения строки PostgreSQL; повторное открытие и явное сохранение
+  проходят. Изолированная Edge/API/PG1/1 дважды `e4YqVf`/`zLF67H` PASS,
+  test/PG exit0, runner12/12 и root check PASS. Независимый reviewer
+  `01a1101b-09dd-7df3-8d7c-4414e586e62f` APPROVED diff без P1-P3,
+  сам браузер не запускал. Подтверждённый Navbar discard, Back, задержанный
+  PUT и PostgreSQL-process restart остаются открыты.
 - [ ] **L07 / backend + web.** Обезличенный каталог заявок с фильтрами;
   закрыть контакты, адрес и чувствительные детали в обоих GET маршрутах,
   вложениях, логах и кеше до оплаченного доступа. Приёмка: анонимный и

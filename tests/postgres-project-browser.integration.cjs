@@ -270,8 +270,27 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     await rejectDiscard(() => ownerPage.locator('aside.fixed').last().getByRole('button', { name: 'Estimator' }).click());
     await ownerPage.setViewportSize({ width: 1280, height: 900 });
     report.steps.push('Cancel, desktop/mobile section, sidebar Token, top Navbar and sign-out require explicit discard of unsaved edits');
+    const discardDialog = ownerPage.waitForEvent('dialog', { timeout: 7000 });
+    const discardClick = editForm.getByRole('button', { name: 'Cancel' }).click();
+    const confirmedDiscard = await discardDialog;
+    assert.equal(confirmedDiscard.message(), 'Discard unsaved project changes?');
+    await confirmedDiscard.accept();
+    await discardClick;
+    await editForm.getByRole('heading', { name: 'Edit private draft' }).waitFor({ state: 'detached' });
+    assert.deepEqual((await pool.query('SELECT title,description,location FROM projects WHERE id=$1', [id])).rows,
+      [{ title: 'QA_BROWSER_PRIVATE_TITLE', description: 'QA_BROWSER_PRIVATE_BRIEF',
+        location: 'QA_BROWSER_PRIVATE_ADDRESS' }]);
+    assert.equal(report.apiRequests.filter(request => request.method === 'PUT').length, 0);
+    report.steps.push('accepting discard closes the editor without PUT or changing the PostgreSQL draft');
+    await ownerPage.getByRole('button', { name: 'Edit draft', exact: true }).click();
+    const reopenedEditForm = ownerPage.locator('form').filter({
+      has: ownerPage.getByRole('heading', { name: 'Edit private draft' }),
+    });
+    await reopenedEditForm.getByRole('textbox', { name: 'Project title' }).fill('QA_BROWSER_EDITED_TITLE');
+    await reopenedEditForm.getByRole('textbox', { name: 'Description' }).fill('QA_BROWSER_EDITED_BRIEF');
+    await reopenedEditForm.getByRole('textbox', { name: 'Location' }).fill('QA_BROWSER_EDITED_ADDRESS');
     const edited = await action(ownerPage, 'PUT', `/api/projects/${id}`,
-      () => editForm.getByRole('button', { name: 'Save changes' }).click(), 200);
+      () => reopenedEditForm.getByRole('button', { name: 'Save changes' }).click(), 200);
     assert.equal(edited.project.id, id);
     assert.equal(edited.project.title, 'QA_BROWSER_EDITED_TITLE');
     assert.deepEqual((await pool.query('SELECT title,description,location,published FROM projects WHERE id=$1', [id])).rows,

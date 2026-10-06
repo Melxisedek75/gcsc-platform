@@ -33,7 +33,9 @@ navigation. The app retains hash URLs with a data-backed router.
 ## Remaining Boundaries
 
 - The browser journey rejects leaving on Cancel, desktop/mobile section,
-  sidebar Token and top Navbar. It does not yet exercise accepting discard,
+  sidebar Token and top Navbar. A follow-up test now exercises accepting
+  discard on Cancel, confirms no PUT and unchanged PostgreSQL fields, then
+  reopens and saves. It does not yet exercise confirmed Navbar discard,
   Back after real in-app history, or navigation during a delayed PUT. The
   reviewer found no source defect in those branches; add focused regressions.
 - The real PostgreSQL runner stops its disposable cluster. It has not proved
@@ -45,5 +47,9 @@ navigation. The app retains hash URLs with a data-backed router.
 
 - Reviewer decision: APPROVED for the exact locally integrated UI candidate.
 - Unresolved P1/P2 findings: none.
-- Remaining P3 test-coverage note: positive discard, browser Back and
-  navigation while save is in flight.
+- Follow-up positive-discard test-only diff independently APPROVED by the same
+  reviewer with no P1-P3. Edge/API/PG1/1 twice `e4YqVf`/`zLF67H`, test/PG
+  exits 0, runner12/12 and root check PASS. Reviewer independently ran
+  `node --check` and `git diff --check`, not the browser journey.
+- Remaining P3 test-coverage note: confirmed Navbar discard, browser Back
+  and navigation while save is in flight.
