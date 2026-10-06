@@ -163,7 +163,8 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
         }
         const read = ['GET', 'OPTIONS'].includes(req.method()) && /^\/api\/projects(?:\/my\/projects|\/\d+(?:\/details)?)?$/.test(url.pathname);
         const write = ['POST', 'OPTIONS'].includes(req.method()) && /^\/api\/(?:auth\/(?:register|login)|projects(?:\/\d+\/publish)?|bids)$/.test(url.pathname);
-        if (url.origin === origin && (read || write)) return route.continue();
+        const edit = ['PUT', 'OPTIONS'].includes(req.method()) && /^\/api\/projects\/\d+$/.test(url.pathname);
+        if (url.origin === origin && (read || write || edit)) return route.continue();
         report.blockedRequests.push({ method: req.method(), url: url.href });
         return route.abort('blockedbyclient');
       });
@@ -187,6 +188,7 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     const noBrief = async page => {
       const text = await page.locator('body').innerText();
       for (const value of ['QA_BROWSER_PRIVATE_TITLE', 'QA_BROWSER_PRIVATE_BRIEF', 'QA_BROWSER_PRIVATE_ADDRESS',
+        'QA_BROWSER_EDITED_TITLE', 'QA_BROWSER_EDITED_BRIEF', 'QA_BROWSER_EDITED_ADDRESS',
         'QA_BROWSER_OTHER_PRIVATE_TITLE', 'QA_BROWSER_OTHER_PRIVATE_BRIEF', 'QA_BROWSER_OTHER_PRIVATE_ADDRESS',
         'QA_BROWSER_REGISTER_PRIVATE_TITLE', 'QA_BROWSER_REGISTER_PRIVATE_BRIEF']) {
         assert.ok(!text.includes(value), `Private value leaked: ${value}`);
@@ -214,6 +216,19 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     report.projectId = id;
     assert.deepEqual((await pool.query('SELECT homeowner_id,published,published_at FROM projects WHERE id=$1', [id])).rows,
       [{ homeowner_id: owner.id, published: false, published_at: null }]);
+    await ownerPage.getByRole('button', { name: 'Edit draft', exact: true }).click();
+    const editForm = ownerPage.locator('form').filter({ has: ownerPage.getByRole('heading', { name: 'Edit private draft' }) });
+    await editForm.getByRole('textbox', { name: 'Project title' }).fill('QA_BROWSER_EDITED_TITLE');
+    await editForm.getByRole('textbox', { name: 'Description' }).fill('QA_BROWSER_EDITED_BRIEF');
+    await editForm.getByRole('textbox', { name: 'Location' }).fill('QA_BROWSER_EDITED_ADDRESS');
+    const edited = await action(ownerPage, 'PUT', `/api/projects/${id}`,
+      () => editForm.getByRole('button', { name: 'Save changes' }).click(), 200);
+    assert.equal(edited.project.id, id);
+    assert.equal(edited.project.title, 'QA_BROWSER_EDITED_TITLE');
+    assert.deepEqual((await pool.query('SELECT title,description,location,published FROM projects WHERE id=$1', [id])).rows,
+      [{ title: 'QA_BROWSER_EDITED_TITLE', description: 'QA_BROWSER_EDITED_BRIEF',
+        location: 'QA_BROWSER_EDITED_ADDRESS', published: false }]);
+    report.steps.push('owner UI edits private draft through PUT; PostgreSQL retains revised fields before publication');
     const contractorPage = await openRole(contractor);
     await contractorPage.getByText('No open projects are available right now.', { exact: true }).waitFor();
     await noBrief(contractorPage);
@@ -241,7 +256,8 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     assert.deepEqual(Object.keys(publicDetail), ['project']);
     assert.deepEqual(publicDetail.project, publicPreview);
     for (const body of [JSON.stringify(publicList), JSON.stringify(publicDetail)]) {
-      for (const value of ['QA_BROWSER_PRIVATE_TITLE', 'QA_BROWSER_PRIVATE_BRIEF', 'QA_BROWSER_PRIVATE_ADDRESS']) {
+      for (const value of ['QA_BROWSER_PRIVATE_TITLE', 'QA_BROWSER_PRIVATE_BRIEF', 'QA_BROWSER_PRIVATE_ADDRESS',
+        'QA_BROWSER_EDITED_TITLE', 'QA_BROWSER_EDITED_BRIEF', 'QA_BROWSER_EDITED_ADDRESS']) {
         assert.ok(!body.includes(value), `Private value leaked in public API: ${value}`);
       }
     }
@@ -304,8 +320,8 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     assert.deepEqual(Object.keys(details.project).sort(),
       ['id','title','description','category','budget_min','budget_max','timeline_days','status','published_at'].sort());
     assert.equal(details.project.published_at, publication.published_at.toISOString());
-    await contractorPage.locator('aside').getByText('QA_BROWSER_PRIVATE_BRIEF', { exact: true }).waitFor();
-    assert.ok(!(await contractorPage.locator('body').innerText()).includes('QA_BROWSER_PRIVATE_ADDRESS'));
+    await contractorPage.locator('aside').getByText('QA_BROWSER_EDITED_BRIEF', { exact: true }).waitFor();
+    assert.ok(!(await contractorPage.locator('body').innerText()).includes('QA_BROWSER_EDITED_ADDRESS'));
     await pool.query("UPDATE project_access_entitlements SET status='refunded' WHERE project_id=$1 AND contractor_id=$2",
       [id, contractor.id]);
     await action(contractorPage, 'GET', `/api/projects/${id}/details`,
@@ -316,7 +332,7 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
       [id, contractor.id]);
     await action(contractorPage, 'GET', `/api/projects/${id}/details`,
       () => contractorPage.getByRole('button', { name: 'Check access', exact: true }).click(), 200);
-    await contractorPage.locator('aside').getByText('QA_BROWSER_PRIVATE_BRIEF', { exact: true }).waitFor();
+    await contractorPage.locator('aside').getByText('QA_BROWSER_EDITED_BRIEF', { exact: true }).waitFor();
     report.steps.push('refunded synthetic grant clears a previously visible brief; restored local grant requires a new access check');
     await compose(contractorPage, 'QA_BROWSER_PERSISTED_PROPOSAL');
     const submitted = await action(contractorPage, 'POST', '/api/bids',
