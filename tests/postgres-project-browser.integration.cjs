@@ -144,6 +144,7 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     browser = await chromium.connect(browserServer.wsEndpoint(), { timeout: 10000 });
     report.browserVersion = browser.version();
 
+    let draftEditProjectId = null;
     async function openRole(user, registrationRole = null) {
       const context = await browser.newContext({ viewport: { width: 1280, height: 900 },
         reducedMotion: 'reduce', serviceWorkers: 'block' });
@@ -163,7 +164,8 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
         }
         const read = ['GET', 'OPTIONS'].includes(req.method()) && /^\/api\/projects(?:\/my\/projects|\/\d+(?:\/details)?)?$/.test(url.pathname);
         const write = ['POST', 'OPTIONS'].includes(req.method()) && /^\/api\/(?:auth\/(?:register|login)|projects(?:\/\d+\/publish)?|bids)$/.test(url.pathname);
-        const edit = ['PUT', 'OPTIONS'].includes(req.method()) && /^\/api\/projects\/\d+$/.test(url.pathname);
+        const edit = req.method() === 'PUT' && draftEditProjectId !== null
+          && url.pathname === `/api/projects/${draftEditProjectId}`;
         if (url.origin === origin && (read || write || edit)) return route.continue();
         report.blockedRequests.push({ method: req.method(), url: url.href });
         return route.abort('blockedbyclient');
@@ -213,6 +215,7 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     const created = await action(ownerPage, 'POST', '/api/projects',
       () => ownerPage.getByRole('button', { name: 'Save Draft', exact: true }).click(), 201);
     const id = created.project.id;
+    draftEditProjectId = id;
     report.projectId = id;
     assert.deepEqual((await pool.query('SELECT homeowner_id,published,published_at FROM projects WHERE id=$1', [id])).rows,
       [{ homeowner_id: owner.id, published: false, published_at: null }]);
@@ -228,6 +231,8 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     assert.deepEqual((await pool.query('SELECT title,description,location,published FROM projects WHERE id=$1', [id])).rows,
       [{ title: 'QA_BROWSER_EDITED_TITLE', description: 'QA_BROWSER_EDITED_BRIEF',
         location: 'QA_BROWSER_EDITED_ADDRESS', published: false }]);
+    assert.deepEqual(report.apiRequests.filter(request => request.method === 'PUT'),
+      [{ method: 'PUT', path: `/api/projects/${id}`, status: 200 }]);
     report.steps.push('owner UI edits private draft through PUT; PostgreSQL retains revised fields before publication');
     const contractorPage = await openRole(contractor);
     await contractorPage.getByText('No open projects are available right now.', { exact: true }).waitFor();
@@ -444,6 +449,8 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     assert.deepEqual(report.apiRequests.filter(req => req.method === 'POST' && req.path === '/api/bids').map(req => req.status), [201, 403]);
     assert.ok(report.apiRequests.length < 100);
     assert.deepEqual(report.blockedRequests, []);
+    assert.deepEqual(report.apiRequests.filter(request => request.method === 'PUT'),
+      [{ method: 'PUT', path: `/api/projects/${id}`, status: 200 }]);
     assert.deepEqual(report.pageErrors, []);
     assert.deepEqual(report.requestFailures, []);
     report.status = 'PASS';
