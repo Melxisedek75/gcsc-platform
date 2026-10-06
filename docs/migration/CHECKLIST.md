@@ -803,7 +803,16 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   API328/328, PG31/31 дважды (`OQGo49`, `rLde09`), fake-PG `yfn74a` и
   root check PASS. Независимый Sol/high review без находок, PG не запускал.
   Fast-forward `884eeb94`: receiving API328/328, PG31/31 `RB8SAh`,
-  fake-PG `j4n4ZS` и root check PASS. L09 остаётся открыт.
+  fake-PG `j4n4ZS` и root check PASS.
+  Test-only локальная PostgreSQL проверка приватного текста proposal после
+  сохранения: точная запись доступна владельцу в project bids и подрядчику
+  в собственном списке; paid-but-not-accepted project read, платный brief,
+  чужой/анонимный preview и публичный список не содержат этот текст.
+  Первый `pNCPhl` упал на неверном ожидании full project для paid buyer;
+  исправленный candidate PG34/34 `9rcKMq`, независимый reviewer PG34/34
+  `MezCQR`, root check и syntax/diff checks PASS. Reviewer потребовал и
+  получил post-save `/details` и строгую проверку публичного списка;
+  `ai-review/records/2026-10-06-private-proposal-pg.md`. L09 остаётся открыт.
 
 ### P1 - настоящая оплата лида, 1-10 октября
 

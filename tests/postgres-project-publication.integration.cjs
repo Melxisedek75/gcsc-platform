@@ -723,7 +723,8 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     assert.equal(other.status, 201);
     assert.equal((await request('POST', `/api/projects/${other.body.project.id}/publish`, owner)).status, 200);
 
-    const bidBody = { project_id: project.id, amount: 1800 };
+    const privateProposal = 'PRIVATE_PROPOSAL_555-0123';
+    const bidBody = { project_id: project.id, amount: 1800, message: privateProposal };
     const bidCount = async () => (await pool.query('SELECT COUNT(*)::int AS count FROM bids')).rows[0].count;
     const before = await bidCount();
     assert.equal((await request('POST', '/api/bids', contractor, bidBody)).status, 403);
@@ -753,9 +754,34 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     }
     assert.equal((await request('POST', '/api/bids', contractor, bidBody)).status, 201);
     assert.equal(await bidCount(), before + 1);
-    assert.equal((await pool.query(`SELECT proposed_timeline_days FROM bids
+    assert.deepEqual((await pool.query(`SELECT proposed_timeline_days,message FROM bids
       WHERE project_id=$1 AND contractor_id=$2 ORDER BY id DESC LIMIT 1`,
-    [project.id, contractor.id])).rows[0].proposed_timeline_days, 30);
+    [project.id, contractor.id])).rows[0], { proposed_timeline_days: 30, message: privateProposal });
+    const ownerRead = await request('GET', `/api/projects/${project.id}`, owner);
+    assert.equal(ownerRead.status, 200);
+    assert.equal(ownerRead.body.bids.at(-1).message, privateProposal);
+    const contractorRead = await request('GET', `/api/projects/${project.id}`, contractor);
+    assert.equal(contractorRead.status, 200);
+    assert.deepEqual(Object.keys(contractorRead.body), ['project']);
+    assert.ok(!JSON.stringify(contractorRead.body).includes(privateProposal));
+    const paidDetails = await request('GET', `/api/projects/${project.id}/details`, contractor);
+    assert.equal(paidDetails.status, 200);
+    assert.deepEqual(Object.keys(paidDetails.body), ['project']);
+    assert.ok(!JSON.stringify(paidDetails.body).includes(privateProposal));
+    const ownBids = await request('GET', '/api/bids/my/bids', contractor);
+    assert.equal(ownBids.status, 200);
+    assert.equal(ownBids.body.bids.find(bid => bid.project_id === project.id).message, privateProposal);
+    for (const viewer of [null, stranger]) {
+      const unrelated = await request('GET', `/api/projects/${project.id}`, viewer);
+      assert.equal(unrelated.status, 200);
+      assert.deepEqual(Object.keys(unrelated.body), ['project']);
+      assert.ok(!JSON.stringify(unrelated.body).includes(privateProposal));
+    }
+    const publicList = await request('GET', '/api/projects');
+    assert.equal(publicList.status, 200);
+    assert.deepEqual(Object.keys(publicList.body), ['projects']);
+    assert.ok(publicList.body.projects.some(listed => listed.id === project.id));
+    assert.ok(!JSON.stringify(publicList.body).includes(privateProposal));
 
     await pool.query(`UPDATE project_access_entitlements SET status='revoked'
       WHERE project_id=$1 AND contractor_id=$2`, [project.id, contractor.id]);
