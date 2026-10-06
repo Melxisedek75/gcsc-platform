@@ -997,6 +997,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   один главный CTA на шаг, крупные поля, ясные ошибки, понятная цена/статус,
   200% zoom, клавиатура, screen reader, 360/390/768/1440 px. Проверить
   с человеком, ранее не видевшим продукт, без подсказок разработчика.
+  2026-10-06 UTC: браузерный L06 сценарий `mQocKp` обнаружил отдельный
+  runtime crash `SplitText is not defined` на `apps/web` About. Design lane
+  commit `18697c88` импортирует установленный GSAP plugin; build, scoped
+  ESLint, Edge About 1280/390 без pageerror PASS, mobile overflow нет.
+  Независимый Codex reviewer APPROVED узкий diff; запись
+  `ai-review/records/2026-10-06-about-splittext-candidate.md`. Кандидат
+  не интегрирован в publication, не является полной L20/сайт-приёмкой
+  и не опубликован.
 - [ ] **L21 / продукт + QA.** Матрица публичных утверждений и политики:
   доступно сейчас / тестируется / планируется; убрать заявления о действующем
   escrow, займах, гарантиях, оценках и «тысячах клиентов» без доказательств.
