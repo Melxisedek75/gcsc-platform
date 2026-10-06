@@ -121,6 +121,10 @@ function sourceFixture({ database = true } = {}) {
     write(apiRoot, 'database/schema-statements.cjs', "module.exports.value = 'synthetic-offline-migration';");
     write(apiRoot, 'database/unrelated.sql', 'not part of the module snapshot');
   }
+  write(webRoot, 'src/main.tsx', 'export const fixtureMain = true;');
+  write(webRoot, 'src/App.tsx', 'export const fixtureApp = true;');
+  write(webRoot, 'src/components/Navbar.tsx', 'export const fixtureNavbar = true;');
+  write(webRoot, 'src/pages/Dashboard.tsx', 'export const fixtureDashboard = true;');
   write(webRoot, 'src/pages/dashboard/ProjectsPanel.tsx', 'export const fixturePanel = true;');
   write(webRoot, 'src/pages/dashboard/AccountAccess.tsx', 'export const fixtureAccountAccess = true;');
   write(webRoot, 'src/services/api.ts', 'export const fixtureClient = true;');

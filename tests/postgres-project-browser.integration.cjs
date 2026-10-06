@@ -42,6 +42,10 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
   const webRoot = selectedSources.web.root;
   const expected = {
     api: selectedSources.api.files['pure-server.js'],
+    main: selectedSources.web.files['src/main.tsx'],
+    app: selectedSources.web.files['src/App.tsx'],
+    navbar: selectedSources.web.files['src/components/Navbar.tsx'],
+    dashboard: selectedSources.web.files['src/pages/Dashboard.tsx'],
     panel: selectedSources.web.files['src/pages/dashboard/ProjectsPanel.tsx'],
     account: selectedSources.web.files['src/pages/dashboard/AccountAccess.tsx'],
     client: selectedSources.web.files['src/services/api.ts'],
@@ -51,6 +55,10 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     for (const name of ['panel', 'client']) assert.equal(expected[name], defaultPins[name], `Default ${name} pin changed`);
   }
   const sourcePaths = { api: fs.realpathSync(process.env.GCSC_API_SOURCE),
+    main: path.join(webRoot, 'src/main.tsx'),
+    app: path.join(webRoot, 'src/App.tsx'),
+    navbar: path.join(webRoot, 'src/components/Navbar.tsx'),
+    dashboard: path.join(webRoot, 'src/pages/Dashboard.tsx'),
     panel: path.join(webRoot, 'src/pages/dashboard/ProjectsPanel.tsx'),
     account: path.join(webRoot, 'src/pages/dashboard/AccountAccess.tsx'),
     client: path.join(webRoot, 'src/services/api.ts') };
@@ -96,42 +104,46 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
 
     const webRequire = createRequire(path.join(webRoot, 'package.json'));
     esbuild = webRequire('esbuild');
-    const bundle = await esbuild.build({ absWorkingDir: webRoot, bundle: true, write: false,
+    const bundleOptions = { absWorkingDir: webRoot, bundle: true, write: false,
       minify: true, jsx: 'automatic', platform: 'browser', format: 'iife', metafile: true,
       define: { 'import.meta.env': '{}', 'process.env.NODE_ENV': '"production"',
         'import.meta.env.VITE_API_URL': JSON.stringify(origin),
         'import.meta.env.VITE_ENABLE_LEGACY_ESCROW_WORKFLOW': '"false"' },
+    };
+    const bundle = await esbuild.build({ ...bundleOptions, loader: { '.css': 'empty' },
+      stdin: { resolveDir: webRoot, loader: 'js', contents: "import './src/main.tsx';" } });
+    const registrationBundle = await esbuild.build({ ...bundleOptions,
       stdin: { resolveDir: webRoot, loader: 'tsx', contents: `
         import {createRoot} from 'react-dom/client';
         import {HashRouter} from 'react-router';
         import {ProjectsPanel} from './src/pages/dashboard/ProjectsPanel';
         import {AccountAccess} from './src/pages/dashboard/AccountAccess';
         import {useState} from 'react';
-        import {api} from './src/services/api';
         const fixture = window.__qaFixture;
-        if (fixture.token) api.setToken(fixture.token);
         function Registration() {
           const [user, setUser] = useState(null);
           return user
-            ? <ProjectsPanel user={user} onOpenChat={()=>{}}/>
+            ? <ProjectsPanel user={user} onOpenChat={()=>{}} onEditStateChange={()=>{}}/>
             : <AccountAccess initialRole={fixture.registrationRole} onAuthenticated={setUser}/>;
         }
-        createRoot(document.getElementById('root')).render(
-          <HashRouter>{fixture.registrationRole
-            ? <Registration/>
-            : <ProjectsPanel user={fixture.user} onOpenChat={()=>{}}/>}</HashRouter>);
+        createRoot(document.getElementById('root')).render(<HashRouter><Registration/></HashRouter>);
       ` } });
     const code = bundle.outputFiles[0].text;
+    const registrationCode = registrationBundle.outputFiles[0].text;
     report.bundleSha256 = hash(code);
-    report.virtualInputs = Object.keys(bundle.metafile.inputs)
+    report.registrationBundleSha256 = hash(registrationCode);
+    const inputNames = [...new Set([...Object.keys(bundle.metafile.inputs),
+      ...Object.keys(registrationBundle.metafile.inputs)])];
+    report.virtualInputs = inputNames
       .filter(file => file.startsWith('<') || file.startsWith('(disabled):'));
-    report.webInputs = Object.fromEntries(Object.keys(bundle.metafile.inputs)
+    report.webInputs = Object.fromEntries(inputNames
       .filter(file => !report.virtualInputs.includes(file) && !file.includes('node_modules'))
       .map(file => [file, hash(fs.readFileSync(path.resolve(webRoot, file)))]));
-    for (const name of ['panel', 'account', 'client']) assert.ok(Object.values(report.webInputs).includes(expected[name]),
+    for (const name of ['main', 'app', 'navbar', 'dashboard', 'panel', 'account', 'client']) assert.ok(Object.values(report.webInputs).includes(expected[name]),
       `${name} must be an actual bundle input`);
     for (const [name, file] of Object.entries(sourcePaths)) assert.equal(hash(fs.readFileSync(file)), expected[name]);
     fs.writeFileSync(path.join(runDirectory, 'project-ui.js'), code);
+    fs.writeFileSync(path.join(runDirectory, 'project-registration-ui.js'), registrationCode);
     process.env.TEMP = runDirectory;
     process.env.TMP = runDirectory;
     const { chromium } = require(path.join(process.env.GCSC_PLAYWRIGHT_DIR, 'playwright'));
@@ -150,7 +162,10 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
         reducedMotion: 'reduce', serviceWorkers: 'block' });
       // Edge requires loopback permission for this intercepted-HTML origin.
       await context.grantPermissions(['local-network-access'], { origin: uiOrigin });
-      await context.addInitScript(fixture => { window.__qaFixture = fixture; },
+      await context.addInitScript(fixture => {
+        window.__qaFixture = fixture;
+        if (fixture.token) localStorage.setItem('gcsc_auth_token', fixture.token);
+      },
         { user, token: user ? api.jwtSign({ userId: user.id, role: user.role, email: user.email }) : null,
           registrationRole });
       await context.route('**/*', route => {
@@ -160,9 +175,17 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
           return route.fulfill({ contentType: 'text/html', body: '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"></head><body><div id="root"></div><script src="/qa-bundle.js"></script></body></html>' });
         }
         if (url.origin === uiOrigin && req.method() === 'GET' && url.pathname === '/qa-bundle.js') {
-          return route.fulfill({ contentType: 'text/javascript', body: code });
+          return route.fulfill({ contentType: 'text/javascript', body: registrationRole ? registrationCode : code });
         }
-        const read = ['GET', 'OPTIONS'].includes(req.method()) && /^\/api\/projects(?:\/my\/projects|\/\d+(?:\/details)?)?$/.test(url.pathname);
+        if (url.origin === uiOrigin && req.method() === 'GET'
+          && ['/gcsc-header-banner.jpg', '/gcsc-logo-round-64.png'].includes(url.pathname)) {
+          const file = path.join(webRoot, 'public', url.pathname.slice(1));
+          return route.fulfill({ contentType: url.pathname.endsWith('.jpg') ? 'image/jpeg' : 'image/png',
+            body: fs.readFileSync(file) });
+        }
+        const read = ['GET', 'OPTIONS'].includes(req.method())
+          && (/^\/api\/projects(?:\/my\/projects|\/\d+(?:\/details)?)?$/.test(url.pathname)
+            || url.pathname === '/api/auth/profile');
         const write = ['POST', 'OPTIONS'].includes(req.method()) && /^\/api\/(?:auth\/(?:register|login)|projects(?:\/\d+\/publish)?|bids)$/.test(url.pathname);
         const edit = req.method() === 'PUT' && draftEditProjectId !== null
           && url.pathname === `/api/projects/${draftEditProjectId}`;
@@ -176,7 +199,7 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
       page.on('pageerror', error => report.pageErrors.push(error.message));
       page.on('requestfailed', req => report.requestFailures.push({ url: req.url(), error: req.failure()?.errorText }));
       page.on('console', message => { if (message.type() === 'error') report.consoleErrors.push(message.text()); });
-      await page.goto(uiOrigin + '/qa');
+      await page.goto(uiOrigin + '/qa' + (registrationRole ? '' : '#/dashboard'));
       return page;
     }
     async function action(page, method, route, click, status) {
@@ -225,6 +248,28 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     await editForm.getByRole('textbox', { name: 'Project title' }).fill('QA_BROWSER_EDITED_TITLE');
     await editForm.getByRole('textbox', { name: 'Description' }).fill('QA_BROWSER_EDITED_BRIEF');
     await editForm.getByRole('textbox', { name: 'Location' }).fill('QA_BROWSER_EDITED_ADDRESS');
+    const rejectDiscard = async click => {
+      const dialogPromise = ownerPage.waitForEvent('dialog', { timeout: 7000 });
+      const clickPromise = click();
+      const dialog = await dialogPromise;
+      assert.equal(dialog.type(), 'confirm');
+      assert.equal(dialog.message(), 'Discard unsaved project changes?');
+      await dialog.dismiss();
+      await clickPromise;
+      assert.equal(await editForm.getByRole('textbox', { name: 'Project title' }).inputValue(),
+        'QA_BROWSER_EDITED_TITLE');
+      await editForm.getByRole('heading', { name: 'Edit private draft' }).waitFor();
+    };
+    await rejectDiscard(() => editForm.getByRole('button', { name: 'Cancel' }).click());
+    await rejectDiscard(() => ownerPage.locator('aside').first().getByRole('button', { name: 'Estimator' }).click());
+    await rejectDiscard(() => ownerPage.locator('aside.fixed').first().getByRole('link', { name: 'Token' }).click());
+    await rejectDiscard(() => ownerPage.locator('nav').first().getByRole('link', { name: 'Wallet' }).first().click());
+    await rejectDiscard(() => ownerPage.getByRole('button', { name: 'Sign out' }).click());
+    await ownerPage.setViewportSize({ width: 390, height: 844 });
+    await ownerPage.locator('main main button').first().click();
+    await rejectDiscard(() => ownerPage.locator('aside.fixed').last().getByRole('button', { name: 'Estimator' }).click());
+    await ownerPage.setViewportSize({ width: 1280, height: 900 });
+    report.steps.push('Cancel, desktop/mobile section, sidebar Token, top Navbar and sign-out require explicit discard of unsaved edits');
     const edited = await action(ownerPage, 'PUT', `/api/projects/${id}`,
       () => editForm.getByRole('button', { name: 'Save changes' }).click(), 200);
     assert.equal(edited.project.id, id);

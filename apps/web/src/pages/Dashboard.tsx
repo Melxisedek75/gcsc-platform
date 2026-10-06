@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { Link, useBlocker, useSearchParams } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api, type GcscUser } from '../services/api';
 import {
@@ -63,13 +63,56 @@ export default function Dashboard() {
   const [loadingUser, setLoadingUser] = useState(true);
   const [registrationNotice, setRegistrationNotice] = useState<{ email?: string; phone?: string } | null>(null);
   const [chatBidId, setChatBidId] = useState<number | null>(null);
+  const [draftEditState, setDraftEditState] = useState({ dirty: false, saving: false });
+
+  const canLeaveProjects = useCallback(() => {
+    if (draftEditState.saving) {
+      window.alert('Wait for the draft to finish saving.');
+      return false;
+    }
+    return !draftEditState.dirty || window.confirm('Discard unsaved project changes?');
+  }, [draftEditState]);
+
+  const navigateSection = (section: Section) => {
+    if (section === activeSection) return true;
+    if (!canLeaveProjects()) return false;
+    setActiveSection(section);
+    return true;
+  };
 
   const openChatForBid = useCallback((bidId: number) => {
+    if (!canLeaveProjects()) return;
     setChatBidId(bidId);
     setActiveSection('chat');
     setMobileMenuOpen(false);
-  }, []);
+  }, [canLeaveProjects]);
   const consumeChatBid = useCallback(() => setChatBidId(null), []);
+
+  useEffect(() => {
+    if (!draftEditState.dirty && !draftEditState.saving) return;
+    const preventUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', preventUnload);
+    return () => window.removeEventListener('beforeunload', preventUnload);
+  }, [draftEditState]);
+
+  const routeBlocker = useBlocker(({ currentLocation, nextLocation }) =>
+    (draftEditState.dirty || draftEditState.saving)
+    && (currentLocation.pathname !== nextLocation.pathname
+      || currentLocation.search !== nextLocation.search));
+  useEffect(() => {
+    if (routeBlocker.state !== 'blocked') return;
+    if (draftEditState.saving) {
+      window.alert('Wait for the draft to finish saving.');
+      routeBlocker.reset();
+    } else if (window.confirm('Discard unsaved project changes?')) {
+      routeBlocker.proceed();
+    } else {
+      routeBlocker.reset();
+    }
+  }, [routeBlocker, draftEditState.saving]);
 
   useEffect(() => {
     let mounted = true;
@@ -109,9 +152,11 @@ export default function Dashboard() {
   }, [user]);
 
   const logout = () => {
+    if (!canLeaveProjects()) return false;
     api.logout();
     setUser(null);
     setActiveSection('projects');
+    return true;
   };
 
   const renderPanel = () => {
@@ -119,7 +164,7 @@ export default function Dashboard() {
 
     switch (activeSection) {
       case 'projects':
-        return <ProjectsPanel user={user} onOpenChat={openChatForBid} />;
+        return <ProjectsPanel user={user} onOpenChat={openChatForBid} onEditStateChange={setDraftEditState} />;
       case 'estimator':
         return <EstimatorPanel />;
       case 'bids':
@@ -133,17 +178,17 @@ export default function Dashboard() {
       case 'compliance':
         return <CompliancePanel user={user} />;
       case 'admin-review':
-        return user.role === 'admin' ? <AdminDocumentReviewPanel /> : <ProjectsPanel user={user} onOpenChat={openChatForBid} />;
+        return user.role === 'admin' ? <AdminDocumentReviewPanel /> : <ProjectsPanel user={user} onOpenChat={openChatForBid} onEditStateChange={setDraftEditState} />;
       case 'admin-financing':
-        return user.role === 'admin' ? <AdminFinancingPrechecksPanel /> : <ProjectsPanel user={user} onOpenChat={openChatForBid} />;
+        return user.role === 'admin' ? <AdminFinancingPrechecksPanel /> : <ProjectsPanel user={user} onOpenChat={openChatForBid} onEditStateChange={setDraftEditState} />;
       case 'admin-audit':
-        return user.role === 'admin' ? <AdminAuditLogPanel /> : <ProjectsPanel user={user} onOpenChat={openChatForBid} />;
+        return user.role === 'admin' ? <AdminAuditLogPanel /> : <ProjectsPanel user={user} onOpenChat={openChatForBid} onEditStateChange={setDraftEditState} />;
       case 'wallet':
         return user ? <WalletPanel user={user} onUserChange={setUser} /> : null;
       case 'token':
         return <TokenRedirect />;
       default:
-        return <ProjectsPanel user={user} onOpenChat={openChatForBid} />;
+        return <ProjectsPanel user={user} onOpenChat={openChatForBid} onEditStateChange={setDraftEditState} />;
     }
   };
 
@@ -179,7 +224,7 @@ export default function Dashboard() {
             return (
               <button
                 key={item.key}
-                onClick={() => setActiveSection(item.key)}
+                onClick={() => { void navigateSection(item.key); }}
                 className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200"
                 style={{
                   backgroundColor: isActive ? 'rgba(123,47,247,0.08)' : 'transparent',
@@ -270,8 +315,7 @@ export default function Dashboard() {
                     <button
                       key={item.key}
                       onClick={() => {
-                        setActiveSection(item.key);
-                        setMobileMenuOpen(false);
+                        if (navigateSection(item.key)) setMobileMenuOpen(false);
                       }}
                       className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all duration-200"
                       style={{
@@ -296,8 +340,7 @@ export default function Dashboard() {
                 </Link>
                 <button
                   onClick={() => {
-                    logout();
-                    setMobileMenuOpen(false);
+                    if (logout()) setMobileMenuOpen(false);
                   }}
                   className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium text-[#475569] hover:bg-[rgba(123,47,247,0.06)] hover:text-[#7B2FF7] transition-all duration-200"
                 >

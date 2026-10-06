@@ -29,7 +29,7 @@ const checks = [
     message: 'Dashboard must route homeowners to SMS and contractors to email with clear copy.',
   },
   {
-    ok: router.includes('<HashRouter>') &&
+    ok: router.includes('createHashRouter(') && router.includes('<RouterProvider router={router} />') &&
       dashboard.includes("searchParams.get('role')") &&
       dashboard.includes("requestedRole === 'homeowner' ? 'homeowner' : 'contractor'") &&
       dashboard.includes('initialRole={initialRole}') &&

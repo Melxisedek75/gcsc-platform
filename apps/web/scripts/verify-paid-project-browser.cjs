@@ -32,7 +32,7 @@ async function main() {
       function App() {
         const [user,setUser]=useState({id:21,role:'contractor',full_name:'Fixture',email:'fixture@example.test'});
         window.changeUser=(id,role='contractor')=>flushSync(()=>{api.setToken('fixture-'+id);setUser({...user,id,role})});
-        return <ProjectsPanel user={user} onOpenChat={()=>{}}/>;
+        return <ProjectsPanel user={user} onOpenChat={()=>{}} onEditStateChange={()=>{}}/>;
       }
       api.setToken('fixture-21');
       createRoot(document.getElementById('root')).render(<HashRouter><App/></HashRouter>);`,

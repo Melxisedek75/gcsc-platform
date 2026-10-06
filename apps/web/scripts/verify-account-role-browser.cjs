@@ -34,11 +34,12 @@ async function bundle() {
     absWorkingDir: root, bundle: true, write: false, minify: true, jsx: 'automatic',
     platform: 'browser', format: 'iife', define: { 'process.env.NODE_ENV': '"production"' },
     stdin: { contents: `import {createRoot} from 'react-dom/client';
-      import {HashRouter, Routes, Route, useLocation} from 'react-router';
+      import {createHashRouter, RouterProvider, Routes, Route, useLocation} from 'react-router';
       import Dashboard from './src/pages/Dashboard';
       function Query() { return <output data-query>{useLocation().search}</output>; }
-      createRoot(document.getElementById('root')).render(<HashRouter><Query/><Routes>
-        <Route path="/dashboard" element={<Dashboard/>}/></Routes></HashRouter>);`,
+      const router = createHashRouter([{path: '*', element: <><Query/><Routes>
+        <Route path="/dashboard" element={<Dashboard/>}/></Routes></>}]);
+      createRoot(document.getElementById('root')).render(<RouterProvider router={router}/>);`,
       resolveDir: root, loader: 'tsx' },
     plugins: [{ name: 'local-role-fixture', setup(api) {
       api.onResolve({ filter: apiPattern }, () => ({ path: fixture }));
@@ -186,7 +187,7 @@ async function main() {
     }, 'contractor');
     const report = { source, sourceMode: sourceRef ? 'pinned two-component source' : 'working tree',
       componentInputs, marketingInputs, marketingOriginRemapped: marketingMode, bundleSha256: digest(code), browser: browser.version(),
-      boundary: 'Real React/HashRouter/Dashboard/AccountAccess, synthetic API and authenticated panels; no actual server or external requests', results };
+      boundary: 'Real React/data-backed hash router/Dashboard/AccountAccess, synthetic API and authenticated panels; no actual server or external requests', results };
     fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify(report, null, 2));
     console.log(JSON.stringify(report, null, 2));
     assert(results.every(result => result.pass), 'Account-role browser regression failed');

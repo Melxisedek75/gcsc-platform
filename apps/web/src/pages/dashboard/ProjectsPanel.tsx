@@ -178,11 +178,14 @@ function ProjectRequestForm({ onCreated, disabled, onSavingChange }: {
   );
 }
 
-function DraftEditForm({ project, onSaved, onCancel, onSavingChange }: {
+type DraftEditState = { dirty: boolean; saving: boolean };
+
+function DraftEditForm({ project, onSaved, onCancel, onSavingChange, onEditStateChange }: {
   project: GcscProject;
   onSaved: (project: GcscProject) => void;
   onCancel: () => void;
   onSavingChange: (saving: boolean) => void;
+  onEditStateChange: (state: DraftEditState) => void;
 }) {
   const [form, setForm] = useState({
     title: project.title, description: project.description || '', category: project.category,
@@ -190,6 +193,11 @@ function DraftEditForm({ project, onSaved, onCancel, onSavingChange }: {
     location: project.location || '', timeline_days: String(project.timeline_days),
   });
   const [saving, setSaving] = useState(false);
+  const initialForm = useRef(form);
+  const dirty = (Object.keys(form) as (keyof typeof form)[])
+    .some((key) => form[key] !== initialForm.current[key]);
+  useEffect(() => { onEditStateChange({ dirty, saving }); }, [dirty, saving, onEditStateChange]);
+  useEffect(() => () => onEditStateChange({ dirty: false, saving: false }), [onEditStateChange]);
   const [status, setStatus] = useState('');
   const [version, setVersion] = useState(project.updated_at || '');
   const [conflictProject, setConflictProject] = useState<GcscProject | null>(null);
@@ -305,7 +313,9 @@ function DraftEditForm({ project, onSaved, onCancel, onSavingChange }: {
           className="inline-flex min-h-11 items-center gap-2 rounded-md bg-[#0F766E] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
           {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save changes
         </button>
-        <button type="button" onClick={onCancel} disabled={saving}
+        <button type="button" onClick={() => {
+          if (!dirty || window.confirm('Discard unsaved project changes?')) onCancel();
+        }} disabled={saving}
           className="min-h-11 rounded-md border border-[#CBD5E1] px-4 py-2 text-sm font-semibold text-[#334155] disabled:opacity-60">
           Cancel
         </button>
@@ -405,14 +415,18 @@ function BidComposer({ project, onSubmitted, onAccessLost }: {
   );
 }
 
-type ProjectsPanelProps = { user: GcscUser; onOpenChat: (bidId: number) => void };
+type ProjectsPanelProps = {
+  user: GcscUser;
+  onOpenChat: (bidId: number) => void;
+  onEditStateChange: (state: DraftEditState) => void;
+};
 
 export function ProjectsPanel(props: ProjectsPanelProps) {
   // Remount before painting another account: no previous private state or draft is reused.
   return <AccountProjectsPanel key={`${props.user.id}:${props.user.role}`} {...props} />;
 }
 
-function AccountProjectsPanel({ user, onOpenChat }: ProjectsPanelProps) {
+function AccountProjectsPanel({ user, onOpenChat, onEditStateChange }: ProjectsPanelProps) {
   const [filter, setFilter] = useState<string>('All');
   const [search, setSearch] = useState('');
   const [projects, setProjects] = useState<GcscProject[]>([]);
@@ -756,6 +770,7 @@ function AccountProjectsPanel({ user, onOpenChat }: ProjectsPanelProps) {
                 editingDraftId === selectedProject.id ? (
                   <DraftEditForm key={`${selectedProject.id}:${selectedProject.updated_at}`} project={selectedProject}
                     onSaved={onDraftSaved} onCancel={closeDraftEditor}
+                    onEditStateChange={onEditStateChange}
                     onSavingChange={(saving) => {
                       draftSavingRef.current = saving;
                       setDraftSaving(saving);

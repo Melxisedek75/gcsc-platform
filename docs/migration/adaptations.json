@@ -16,8 +16,8 @@
   {
     "path": "apps/web/scripts/validate-auth-channel-verification-ui.mjs",
     "sourceBlob": "fe926fcfa75b86fbbad619adccf900ba12c9e309",
-    "sha256": "392f4dfec2c24328f2d4e11277b5295c1b080c4ddc33b9bc7a983d248e0ab4f0",
-    "reason": "Add account-role hint and stale verification-state guards; static checks do not imply provider acceptance.",
+    "sha256": "3f5b55acf2b869cc8152b0adea4f4b19e25c4cb0fde96b14beace94328361e56",
+    "reason": "Add account-role hint and stale verification-state guards; accept the data-backed hash router needed for private draft navigation blocking. Static checks do not imply provider acceptance.",
     "test": "npm --prefix apps/web run check:auth-channel-verification-ui; account-role browser regressions"
   },
   {
@@ -79,8 +79,8 @@
   {
     "path": "apps/web/src/services/api.ts",
     "sourceBlob": "386771574699c2d98c025c8bcae2e27b91bfa9c9",
-    "sha256": "a51b71f7d0cbdf22850b6285c243471e28e905c8031d613303da3b23cc1649fd",
-    "reason": "Preserve explicit API origin and typed HTTP errors; expose document review, wallet-first challenge/verify and participant chat methods while suppressing stale application JWT headers on unauthenticated wallet routes. Add typed owner draft, publish and project-specific paid-brief methods with current-session requests.",
+    "sha256": "d2c0a308b55f9f8b9eb4e94cb8becb71b500535f8fb88d70030205271412cb9b",
+    "reason": "Preserve explicit API origin and typed HTTP errors; expose document review, wallet-first challenge/verify and participant chat methods while suppressing stale application JWT headers on unauthenticated wallet routes. Add typed owner draft, publish and project-specific paid-brief methods with current-session requests. Add versioned owner-only private draft replacement request.",
     "test": "npm run check; npm run test:api; npm run test:web-wallet-login; node scripts/check-chat-ui.mjs; npm run build:web; browser document and chat smoke; account-role and paid-project browser regressions; actual receiving-tree API/PostgreSQL journey"
   },
   {
@@ -359,16 +359,23 @@
   {
     "path": "apps/web/src/pages/dashboard/ProjectsPanel.tsx",
     "sourceBlob": "11b314e2e4936411906e898cadb2cf94356a2a18",
-    "sha256": "316b708a56eada68e0b1f18df23d197e4a5b2e5ba6f3e91bace2de50633ba044",
-    "reason": "Expose accessible loading and recoverable API error states, ignore stale out-of-order refresh responses, and add participant chat navigation without changing project, bid, escrow or milestone API behavior. Add private drafts, free publication, redacted previews and guarded paid briefs; clear stale private state and preserve accepted-project reads while legacy financial controls default off.",
+    "sha256": "b95e9f67cc3d2c16aacdc4afd5b517c6aa1a22a9779a9675589aee0fc5740f9e",
+    "reason": "Expose accessible loading and recoverable API error states, ignore stale out-of-order refresh responses, and add participant chat navigation without changing project, bid, escrow or milestone API behavior. Add private drafts, free publication, redacted previews and guarded paid briefs; clear stale private state and preserve accepted-project reads while legacy financial controls default off. Let owners edit versioned private drafts with explicit conflict comparison and retry; report unsaved state to dashboard navigation.",
     "test": "npm run test:web-jobs-bids-states; node scripts/check-chat-ui.mjs; npm run build:web; npm run lint:web; account-role and paid-project browser regressions; actual receiving-tree API/PostgreSQL journey"
   },
   {
     "path": "apps/web/src/pages/Dashboard.tsx",
     "sourceBlob": "ba747aeac2490dd44470a4816daa546962701fb4",
-    "sha256": "0e434b8abace1a98d89e115e8f25a7cfccc2fb76a28bbf230d2caaa8b6b50a4f",
-    "reason": "Add the participant chat destination and route bid/project chat actions into it without changing authentication, payment or project ownership behavior. Accept homeowner/contractor registration role hints; absent or unsupported hints, including owner, default to contractor. Preserve logged-in identity.",
+    "sha256": "d22c72d395ffc9f198a21908b77f1d3e8f3b2641294c16acf990f195ca946288",
+    "reason": "Add the participant chat destination and route bid/project chat actions into it without changing authentication, payment or project ownership behavior. Accept homeowner/contractor registration role hints; absent or unsupported hints, including owner, default to contractor. Preserve logged-in identity. Require explicit discard before dashboard section or sign-out navigation with unsaved owner draft edits; block leaving during save. Use a router blocker for all route changes, including the shared Navbar and browser history, and beforeunload for tab exit.",
     "test": "node scripts/check-chat-ui.mjs --playwright-dir <installed node_modules>; npm run build:web; account-role and paid-project browser regressions; actual receiving-tree API/PostgreSQL journey"
+  },
+  {
+    "path": "apps/web/src/main.tsx",
+    "sourceBlob": "dce27a580fd3f18a2327adf931dcba26366fcd0c",
+    "sha256": "ed9d2ae42e111fe272d7018492c61a341b58c47f3909e7fe91e517f1acbbc5d0",
+    "reason": "Use a data-backed hash router so the authenticated dashboard can block SPA route changes while an owner draft has unsaved changes or a save is in flight; preserve existing hash URLs.",
+    "test": "npm run check; npm --prefix apps/web run build; scoped ESLint; full App and Navbar Edge/API/isolated PostgreSQL project browser journey"
   },
   {
     "path": "apps/web/src/pages/dashboard/types.ts",
