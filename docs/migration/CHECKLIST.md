@@ -812,7 +812,11 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   исправленный candidate PG34/34 `9rcKMq`, независимый reviewer PG34/34
   `MezCQR`, root check и syntax/diff checks PASS. Reviewer потребовал и
   получил post-save `/details` и строгую проверку публичного списка;
-  `ai-review/records/2026-10-06-private-proposal-pg.md`. L09 остаётся открыт.
+  `ai-review/records/2026-10-06-private-proposal-pg.md`. Follow-up
+  отдельной contractor-фикстуры подтвердил пустой личный список bids,
+  публичный preview без текста и generic отказ `/details`: PG34/34
+  `viUxpC`, независимый reviewer PG34/34 `Uo9RAo`, root check PASS.
+  L09 остаётся открыт.
 
 ### P1 - настоящая оплата лида, 1-10 октября
 

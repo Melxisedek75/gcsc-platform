@@ -771,6 +771,15 @@ test('real PostgreSQL draft, publication, privacy and legacy-bid acceptance', { 
     const ownBids = await request('GET', '/api/bids/my/bids', contractor);
     assert.equal(ownBids.status, 200);
     assert.equal(ownBids.body.bids.find(bid => bid.project_id === project.id).message, privateProposal);
+    const otherContractor = await fixtureUser('contractor', 'proposal-outsider');
+    const otherBids = await request('GET', '/api/bids/my/bids', otherContractor);
+    assert.equal(otherBids.status, 200);
+    assert.deepEqual(otherBids.body, { bids: [] });
+    const otherPreview = await request('GET', `/api/projects/${project.id}`, otherContractor);
+    assert.equal(otherPreview.status, 200);
+    assert.deepEqual(Object.keys(otherPreview.body), ['project']);
+    assert.ok(!JSON.stringify(otherPreview.body).includes(privateProposal));
+    assertDetailsDenied(await request('GET', `/api/projects/${project.id}/details`, otherContractor));
     for (const viewer of [null, stranger]) {
       const unrelated = await request('GET', `/api/projects/${project.id}`, viewer);
       assert.equal(unrelated.status, 200);

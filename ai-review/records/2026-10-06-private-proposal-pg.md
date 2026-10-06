@@ -22,6 +22,7 @@ preview and public list do not disclose the proposal message.
 |---|---|
 | Revised candidate PostgreSQL | 34/34 `9rcKMq`, test and PG exits 0 |
 | Independent reviewer PostgreSQL | 34/34 `MezCQR`, test and PG exits 0 |
+| Unrelated-contractor follow-up | 34/34 `viUxpC`; independent reviewer 34/34 `Uo9RAo`, test and PG exits 0 |
 | Syntax, diff and root checks | `node --check`, `git diff --check`, `npm run check` PASS |
 
 The first test run `pNCPhl` failed because a paid buyer was incorrectly
@@ -30,3 +31,8 @@ public-list and post-save paid-details assertions; both were added before
 approval. This is local QA, not a runtime change, full L09/L16 acceptance or
 formal CODEX/CLAUDE release gate. No live provider, payment, push or deploy
 was touched.
+
+The follow-up creates an unrelated contractor after storing the proposal.
+Their personal bid list is empty, ordinary project read remains a public
+preview without the message, and the protected brief denies access. The same
+reviewer independently approved and reran that test-only addition.
