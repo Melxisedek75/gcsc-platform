@@ -78,6 +78,15 @@ class Pool {
       return { rows: [], rowCount: 0 };
     }
 
+    if (sql.startsWith('insert into project_access_checkout_bindings')
+      && sql.includes('select provider_checkout_id,id from project_access_purchases')) {
+      return { rows: [], rowCount: 0 };
+    }
+
+    if (sql.startsWith('do $$ begin') && sql.includes('conflicting stored checkout bindings')) {
+      return { rows: [], rowCount: 0 };
+    }
+
     if (sql.includes('select 1')) {
       return { rows: [{ ok: 1 }], rowCount: 1 };
     }

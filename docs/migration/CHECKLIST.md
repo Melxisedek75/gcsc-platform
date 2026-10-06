@@ -349,6 +349,18 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   с теми же семью полями и `expected_updated_at` получает `200`, UI обновлён;
   Edge desktop/mobile 14/14 дважды (`WgpclX`, `5kAOjr`), независимое
   test-only ревью APPROVED. Ни один кандидат не интегрирован.
+  2026-10-06 UTC: отдельный Codex reviewer
+  `01a1100e-6250-7b73-8372-493928ae1151` APPROVED точный committed backend
+  diff `76a307e5..0dde0a06` без P1-P3; запись
+  `ai-review/records/2026-10-06-private-draft-api.md`. В publication перенесены
+  только L06 source commits `ba53b340`/`c7455937`/`feaa3777`, не dirty L05a.
+  Приёмка чистого API SHA-256 `154436a6...`: Jest334/334, root check,
+  integration contracts7/7, реальная PG41/41 `l2kPf2`, edit PG5/5 `jYTPp8`
+  и Edge/API/PG1/1 `rRfyQh` с October-web UI-кандидатом PASS; test/PG exit0,
+  browser cleanup clean. Fake-PG storage сначала упал на уже существующем
+  checkout-binding schema backfill; узкий тестовый fixture fix независимо
+  одобрен, storage и workflow smoke затем PASS. Это не проверка конфликтующих
+  исторических checkout-привязок, не интеграция UI и не полный L06.
   QA test-only `964cd181` добавил браузерную проверку с настоящим локальным
   API в JSON test-mode: Edge/API 1/1 `gyoIgQ`, root check PASS на backend
   `0dde0a06` и UI `65312daa`. Создание, PUT, новая браузерная сессия,
