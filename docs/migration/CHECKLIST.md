@@ -1046,6 +1046,19 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   доступно сейчас / тестируется / планируется; убрать заявления о действующем
   escrow, займах, гарантиях, оценках и «тысячах клиентов» без доказательств.
   Проверить privacy, terms, cookies, возвраты и контакты поддержки до запуска.
+  2026-10-06 UTC: `apps/web` Footer и MarketingFooter локально содержали
+  утверждения о действующем escrow/verified contractors и ссылки
+  Terms/Privacy/Cookies на `/contact` либо несуществующие `/#...` якоря.
+  Отдельный design-lane candidate `a8846662` заменяет только footer-текст
+  на статус пилота, вместо мнимых документов показывает, что политики ещё
+  проходят review, и оставляет реальный Contact. Web build, scoped ESLint,
+  Edge 1280/390 обеих оболочек без pageerror, independent Codex review PASS;
+  `ai-review/records/2026-10-06-web-footer-claims-candidate.md`. Не
+  интегрирован. Home и Contact по-прежнему содержат неподтверждённые
+  escrow/verified/нулевые fee/AES-256 утверждения; Home при 390 px имеет
+  `scrollWidth=406`. `check:legal-claims` footer-файлы не читает. Для L21
+  нужны проверка всех публичных страниц и одобренный текст политик;
+  Contact-маршрут не заменяет юридические документы.
 
 ### P0 - приёмка и публикация, 11-20 октября
 
