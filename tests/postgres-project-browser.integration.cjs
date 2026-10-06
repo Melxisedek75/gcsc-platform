@@ -249,7 +249,11 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     await conflictForm.getByText('Title: QA_BROWSER_SERVER_TITLE', { exact: true }).waitFor();
     assert.equal(await conflictForm.getByRole('textbox', { name: 'Project title' }).inputValue(),
       'QA_BROWSER_CONFLICT_WIN_TITLE');
+    assert.equal(await conflictForm.getByRole('button', { name: 'Save changes' }).isDisabled(), true);
+    assert.deepEqual(report.apiRequests.filter(request => request.method === 'PUT').map(request => request.status),
+      [200, 409]);
     await conflictForm.getByRole('button', { name: 'Keep my edits' }).click();
+    assert.equal(await conflictForm.getByRole('button', { name: 'Save changes' }).isEnabled(), true);
     const retried = await action(ownerPage, 'PUT', `/api/projects/${id}`,
       () => conflictForm.getByRole('button', { name: 'Save changes' }).click(), 200);
     assert.equal(retried.project.title, 'QA_BROWSER_CONFLICT_WIN_TITLE');
