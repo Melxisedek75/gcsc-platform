@@ -1086,6 +1086,13 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   Build, scoped ESLint, legal-claims, локальный Edge 390 px без overflow и
   независимое Codex-ревью PASS. Не интегрирован; About и остальные claim
   проверки открыты, formal gate не пройден.
+  В design-кандидате `abf25ffd` удалены вымышленные имена/биографии команды,
+  500 проектов, $2 млн, инвестиции, партнёрства, uptime и фиктивная история
+  escrow; About показывает статус прототипа и планы без дат. Build, scoped
+  ESLint, legal-claims, Edge 320/390/768/900/1440 без overflow, видимый H1
+  и независимое Codex-ревью PASS после двух responsive-исправлений.
+  Кандидат не интегрирован; реальные сведения команды и результаты должен
+  подтвердить владелец перед любым публичным текстом.
 
 ### P0 - приёмка и публикация, 11-20 октября
 
