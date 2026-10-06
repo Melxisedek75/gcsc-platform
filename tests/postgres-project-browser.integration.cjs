@@ -289,8 +289,54 @@ test('real Edge ProjectsPanel -> API -> isolated PostgreSQL journey', { timeout:
     await reopenedEditForm.getByRole('textbox', { name: 'Project title' }).fill('QA_BROWSER_EDITED_TITLE');
     await reopenedEditForm.getByRole('textbox', { name: 'Description' }).fill('QA_BROWSER_EDITED_BRIEF');
     await reopenedEditForm.getByRole('textbox', { name: 'Location' }).fill('QA_BROWSER_EDITED_ADDRESS');
-    const edited = await action(ownerPage, 'PUT', `/api/projects/${id}`,
-      () => reopenedEditForm.getByRole('button', { name: 'Save changes' }).click(), 200);
+    let releasePut;
+    let putHeld;
+    const putGate = new Promise(resolve => { releasePut = resolve; });
+    const putIntercepted = new Promise(resolve => { putHeld = resolve; });
+    const holdPut = async route => {
+      if (route.request().method() === 'PUT') {
+        putHeld();
+        await putGate;
+      }
+      await route.continue();
+    };
+    await ownerPage.route(`${origin}/api/projects/${id}`, holdPut);
+    const editSave = action(ownerPage, 'PUT', `/api/projects/${id}`,
+      () => reopenedEditForm.getByRole('button', { name: 'Save changes' }).click(), 200)
+      .then(value => ({ value }), error => ({ error }));
+    let interceptionTimer;
+    let completedSave;
+    try {
+      await Promise.race([
+        putIntercepted,
+        editSave.then(result => { throw result.error || new Error('PUT completed before interception'); }),
+        new Promise((_, reject) => {
+          interceptionTimer = setTimeout(() => reject(new Error('Timed out waiting for draft PUT interception')), 7000);
+        }),
+      ]);
+      clearTimeout(interceptionTimer);
+      assert.equal(await reopenedEditForm.getByRole('button', { name: 'Save changes' }).isDisabled(), true);
+      const warningPromise = ownerPage.waitForEvent('dialog', { timeout: 7000 });
+      const walletClick = ownerPage.locator('nav').first().getByRole('link', { name: 'Wallet' }).first().click();
+      const warning = await warningPromise;
+      assert.equal(warning.type(), 'alert');
+      assert.equal(warning.message(), 'Wait for the draft to finish saving.');
+      await warning.accept();
+      await walletClick;
+      assert.match(ownerPage.url(), /#\/dashboard$/);
+      await reopenedEditForm.getByRole('heading', { name: 'Edit private draft' }).waitFor();
+      assert.deepEqual((await pool.query('SELECT title,description,location FROM projects WHERE id=$1', [id])).rows,
+        [{ title: 'QA_BROWSER_PRIVATE_TITLE', description: 'QA_BROWSER_PRIVATE_BRIEF',
+          location: 'QA_BROWSER_PRIVATE_ADDRESS' }]);
+    } finally {
+      clearTimeout(interceptionTimer);
+      releasePut();
+      completedSave = await editSave;
+      await ownerPage.unroute(`${origin}/api/projects/${id}`, holdPut);
+    }
+    if (completedSave.error) throw completedSave.error;
+    const edited = completedSave.value;
+    report.steps.push('Navbar navigation is blocked while a versioned draft PUT is still in flight');
     assert.equal(edited.project.id, id);
     assert.equal(edited.project.title, 'QA_BROWSER_EDITED_TITLE');
     assert.deepEqual((await pool.query('SELECT title,description,location,published FROM projects WHERE id=$1', [id])).rows,

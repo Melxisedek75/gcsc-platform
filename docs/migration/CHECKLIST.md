@@ -387,6 +387,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   `01a1101b-09dd-7df3-8d7c-4414e586e62f` APPROVED diff без P1-P3,
   сам браузер не запускал. Подтверждённый Navbar discard, Back, задержанный
   PUT и PostgreSQL-process restart остаются открыты.
+  Следующий test-only follow-up задерживает PUT локальным Playwright route:
+  до отправки в API Navbar блокируется alert, URL и редактор сохраняются,
+  строка PostgreSQL не меняется; после release PUT завершается 200.
+  `RoJrl5`/`8AW4zl` Edge/API/PG1/1 PASS, test/PG exits0, runner12/12 и
+  root check PASS. Независимый reviewer сначала нашёл P2 в cleanup теста;
+  ограниченное ожидание и обязательные release/await/unroute закрыли P2,
+  финальный вердикт APPROVED без P1-P3. Остаток L06: подтверждённый Navbar
+  discard, Back после настоящей SPA-истории и restart процесса PostgreSQL.
 - [ ] **L07 / backend + web.** Обезличенный каталог заявок с фильтрами;
   закрыть контакты, адрес и чувствительные детали в обоих GET маршрутах,
   вложениях, логах и кеше до оплаченного доступа. Приёмка: анонимный и

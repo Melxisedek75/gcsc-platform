@@ -35,8 +35,10 @@ navigation. The app retains hash URLs with a data-backed router.
 - The browser journey rejects leaving on Cancel, desktop/mobile section,
   sidebar Token and top Navbar. A follow-up test now exercises accepting
   discard on Cancel, confirms no PUT and unchanged PostgreSQL fields, then
-  reopens and saves. It does not yet exercise confirmed Navbar discard,
-  Back after real in-app history, or navigation during a delayed PUT. The
+  reopens and saves. Another follow-up holds the PUT before the API receives
+  it and confirms Navbar navigation is blocked with an alert while saving;
+  PostgreSQL remains unchanged until the request is released. It does not yet
+  exercise confirmed Navbar discard or Back after real in-app history. The
   reviewer found no source defect in those branches; add focused regressions.
 - The real PostgreSQL runner stops its disposable cluster. It has not proved
   survival of a separate PostgreSQL process restart. The local API-instance
@@ -51,5 +53,11 @@ navigation. The app retains hash URLs with a data-backed router.
   reviewer with no P1-P3. Edge/API/PG1/1 twice `e4YqVf`/`zLF67H`, test/PG
   exits 0, runner12/12 and root check PASS. Reviewer independently ran
   `node --check` and `git diff --check`, not the browser journey.
-- Remaining P3 test-coverage note: confirmed Navbar discard, browser Back
-  and navigation while save is in flight.
+- Delayed-PUT follow-up test-only diff initially had a P2 harness hang/cleanup
+  risk, then was independently APPROVED with no P1-P3 after bounded intercept
+  waiting and unconditional release/await/unroute. Edge/API/PG1/1 twice
+  `RoJrl5`/`8AW4zl`, test/PG exits 0, runner12/12 and root check PASS.
+  Reviewer independently ran syntax/diff checks and inspected saved run
+  reports, not the browser journey.
+- Remaining P3 test-coverage note: confirmed Navbar discard and browser Back
+  after real in-app history.
