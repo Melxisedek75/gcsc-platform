@@ -1084,6 +1084,18 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   что личный `/api/auth/compliance` сохраняет имя документа и заметку
   владельцу; публичные ответы их не содержат. Повтор PG49/49
   (`c6dXU4`, test/PG exits0), без изменения продуктового кода.
+  QA `890a5f74` добавил изолированный Edge154 + API + disposable
+  PostgreSQL18.4 тест публичного React-компонента с production CSS.
+  Exact backend `766faa9e` и design `675507e9`: desktop1280/mobile390
+  GET200, только три публичных verification-поля, приватные имя файла и
+  review note отсутствуют в API и DOM; после отключения подрядчика GET404
+  и экран `Profile unavailable`. Скриншоты 1280/390/disabled390 осмотрены,
+  ширина документа равна viewport, внешних запросов/page errors нет.
+  `ErM0ge` PASS1/1, test/PG exits0; runner guards23/23 и QA root check PASS.
+  Тот же тест с текущим publication API `nwK0DZ` RED1/1 на лишних полях
+  verification (PG остановлен с exit0). Это проверка компонента в
+  локальной оболочке, не полной навигации сайта; независимый review,
+  receiving и полный L07/L21 ещё открыты.
 - [ ] **L08 / backend + web.** Доступ к одному project ID: право покупателя,
   серверные состояния `unpaid/pending/paid/refunded/revoked`, уникальность
   project+contractor и проверка перед раскрытием/предложением. Приёмка:
