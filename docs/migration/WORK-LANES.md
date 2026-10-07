@@ -221,6 +221,11 @@ transaction, rechecks JSON mode after body read and returns current account
 state. Exact-source PG47/47 twice `QN9TgL`/`CfGodf`, test/PG exits0,
 API354/354, syntax/diff PASS. Root adaptation mismatch, exact-diff review,
 formal gate and integration remain open.
+L20b browser-zoom attempt: the local SmartContractor dashboard loaded in
+the in-app browser from a temporary Vite server, but `Ctrl+plus` left
+`innerWidth=1280` and `visualViewport.scale=1`; headless Edge `Ctrl+Equal`
+also left neutral-page metrics unchanged. Tab/server closed. This does not
+verify 200% browser zoom or revisit the denied marketing `file:` URL.
 Independent L21 work: October-web `79c9f3a4` clarifies current Token status
 and planned staking/rewards while retaining Token link focus state. Legal-
 claims RED before edit, then PASS; dashboard-live, build, scoped ESLint and

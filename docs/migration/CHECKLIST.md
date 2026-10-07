@@ -1779,6 +1779,12 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   screen reader, устройства и второй сайт ещё не приняты; L20b открыт.
   Browser UI не разрешил открыть локальный `file:` URL по политике безопасности;
   альтернативные browser surfaces/обходы для той же страницы не применялись.
+  7 октября отдельная локальная SmartContractor-страница открылась через
+  Vite во встроенном браузере. При viewport `innerWidth=1280` команда
+  `Ctrl+plus` не изменила `innerWidth` или `visualViewport.scale`;
+  headless Edge `Ctrl+Equal` на нейтральной странице также не изменил
+  метрики. Сервер и временная вкладка закрыты. Это не проверка 200% browser
+  zoom и не обходит прежний запрет на marketing `file:` URL; L20b открыт.
 - [ ] **L21a / product + legal / 10 октября.** Завершить тексты privacy,
   terms, consent на аудио/AI, возвраты, поддержку и точность бренда/юрлица.
   Проверка: владелец подтверждает перед публичной регистрацией и оплатой.
