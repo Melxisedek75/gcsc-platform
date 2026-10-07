@@ -985,6 +985,13 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   `mjt7iK`, test/PG exits0), API Jest354/354, syntax/diff PASS.
   Это не запуск займа или платёжной функции. Root adaptation mismatch,
   independent exact-diff review, formal gate и интеграция открыты.
+  Личный GET financing-prechecks также выдавал приватную запись после
+  отключения владельца во время чтения (QA `7dc62a9f`, RED `cdj0Nl`:
+  HTTP200 вместо 403). Backend `40272e6b` повторно проверяет активность
+  перед ответом. Exact-source PG project-publication37/37 дважды
+  (`OyfHHD`, `oWQ2ab`, test/PG exits0), API Jest354/354 и syntax/diff
+  PASS. Это защита demo-precheck данных, не реальное финансирование;
+  root adaptation mismatch, review gate и интеграция открыты.
   Read-only аудит 7 октября выявил отдельный legacy auth/privacy риск:
   `POST /api/register` и `/api/login` вызывают локальный `sendEmail`, который
   пишет OTP в server log, ничего не отправляет, но маршруты отвечают
