@@ -42,7 +42,7 @@ and backend `a1ff006f` passed separate QA Edge/API/disposable PG18.4
 with test/PG exit0 and cleanup PASS. The frontend `ca5c88ae` project
 panel mismatch still exists; these tests do not merge branches or close
 provider/review/release gates.
-2026-10-07 single-journey L05 QA follow-up: `qa` is clean at `1d378057`.
+2026-10-07 single-journey L05 QA follow-up: `qa` is clean at `20b6216b`.
 The opt-in `account-project-browser` uses clean October-web `4ec10a4c`
 and backend `a1ff006f`; Edge154/API/disposable PG18.4 `JmDmrq`
 PASS1/1 covers routed registration through owner private draft, contractor
@@ -74,6 +74,11 @@ build, scoped ESLint, built-CSS Edge154 1280/390 visual smoke and exact
 backend API/disposable PG18.4 account-project-browser `9Ap7Vg` PASS.
 The old Footer claims persist in this branch; design pilot Footer and
 auth/presentation still require reconciliation and formal review.
+QA `20b6216b` extended built-CSS registration screenshots to
+360/390/768/1280/1440px on October-web `8ea53e2a`; no page errors or
+form clipping, one-pixel document-width tolerance at 1440px. Evidence
+`qa/.tmp/account-visual-GnAnLh`. Full L20 accessibility and signed-in
+visual acceptance remain open.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role
 12/12 candidate; QA `b51453e4` owns the added regression cases. The frontend
 `docs/security/` untracked directory remains untouched. The design branch

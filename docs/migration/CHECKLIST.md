@@ -1269,6 +1269,12 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   После правки условного текста `october-web` `8ea53e2a` повторный
   built-CSS smoke Edge154 1280/390 PASS без page errors, снимки
   `C:/gcsc-platform/.worktrees/qa/.tmp/account-visual-DFbDOW`.
+  QA `20b6216b` расширил этот smoke до 360/390/768/1280/1440 CSS px:
+  формы внутри экрана, page errors нет, снимки просмотрены и лежат в
+  `C:/gcsc-platform/.worktrees/qa/.tmp/account-visual-GnAnLh`.
+  Ширина документа 360/390/768/1280/1441 px соответственно: на 1440
+  измерен допуск 1 px, не «нулевой overflow». Это не 200% zoom,
+  screen reader, клавиатура или состояние после входа; L20 открыт.
 - [ ] **L21 / продукт + QA.** Матрица публичных утверждений и политики:
   доступно сейчас / тестируется / планируется; убрать заявления о действующем
   escrow, займах, гарантиях, оценках и «тысячах клиентов» без доказательств.
