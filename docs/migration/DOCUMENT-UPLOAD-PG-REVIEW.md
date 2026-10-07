@@ -49,6 +49,19 @@ rerun the smoke. This is not formal `AI_REVIEW_GATE=PASS`. The fake database
 and header-only PDF fixture do not establish real PostgreSQL behavior or
 complete PDF validity.
 
-Remaining L05a: formal gate, receiving integration, UI
+QA test-only commits `5eff7540`, `3a624afe`, `320d346b`, and `27c0a44c`
+extend the existing real React/Edge document-review fixture. After rejection,
+the contractor selects a distinct synthetic PDF; the test checks the exact
+POST body, submitted status, visible replacement name, and downloaded
+replacement bytes. A file over 1.5 MB must show a local error without another
+POST, including during selection and a bounded two-second observation after.
+Final Edge runs at 1280 and 390 px passed twice (`documents-ui-dfLpyj`,
+`documents-ui-GMbYkB`) with no page errors; syntax and diff checks passed.
+Independent read-only review found two initial P2 gaps and a P3 timing gap;
+the reviewer confirmed each was closed in the final diffs with no new P1-P3.
+The reviewer did not rerun Edge. This is mock HTTP UI evidence, not a single
+browser/API/real-PostgreSQL journey or formal gate approval.
+
+Remaining L05a: formal gate, receiving integration, end-to-end UI/API/PG
 upload/resubmission acceptance, and a real file scanning policy. Header
 signatures do not prove files are safe.

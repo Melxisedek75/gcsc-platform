@@ -262,6 +262,11 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   Независимое read-only ревью exact commit нашло старую `hello`-PDF фикстуру
   в fake-PG smoke; QA `8d09e95f` исправил её и прогнал smoke на exact backend
   `a1ff006f` (PASS). Повторное ревью QA diff без P1-P3; формальный gate открыт.
+  QA `5eff7540`..`27c0a44c` расширил mock-HTTP Edge-приёмку UI: отдельные
+  байты повторной отправки после отказа, имя/status/скачивание нового файла,
+  и локальный отказ >1.5 MB без позднего POST. Два финальных прогона на
+  1280/390 px PASS; независимое ревью закрыло найденные P2/P3. Это не
+  сквозной UI/API/PG прогон и не формальное одобрение интеграции.
   Evidence: `DOCUMENT-UPLOAD-PG-REVIEW.md`. Проверка заголовка не заменяет
   декодирование файла или антивирус, L05a остаётся открытым.
 - [ ] **L06 / backend + web.** Создание/редактирование/публикация заявки
