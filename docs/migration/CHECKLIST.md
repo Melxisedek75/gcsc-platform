@@ -1330,6 +1330,11 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   homeowner после выхода имеют фокус на Sign in. Build, scoped ESLint,
   auth-feedback/channel и dashboard-live PASS. Token route focus,
   независимое ревью финального diff и формальный gate ещё открыты.
+  Повторное независимое Codex read-only ревью точного frontend diff
+  `f12f854b..4ebca889` не нашло новых P1-P3; reviewer не запускал
+  браузер. Parent также повторил `account-browser` `5tkXST` PASS1/1,
+  test/PG exit0. Token route focus признан прежним отдельным пробелом.
+  Это не CODEX/CLAUDE gate, не screen-reader приёмка и не интеграция.
 - [ ] **L21 / продукт + QA.** Матрица публичных утверждений и политики:
   доступно сейчас / тестируется / планируется; убрать заявления о действующем
   escrow, займах, гарантиях, оценках и «тысячах клиентов» без доказательств.

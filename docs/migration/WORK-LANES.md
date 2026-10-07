@@ -118,6 +118,10 @@ QA `364aa4df` and October-web `4ebca889` are clean: sign-out focus
 RED `GjxLXS`, then built-CSS Edge/API/disposable PG18.4 `cdOUt7`
 PASS1/1 for mobile contractor and desktop homeowner. Token route focus
 and exact-final-diff review remain open; no integration.
+Independent Codex read-only re-review of exact October-web
+`f12f854b..4ebca889` found no new P1-P3; reviewer did not run Edge.
+Parent reran nonvisual account-browser `5tkXST` PASS1/1. Token route
+focus remains pre-existing and formal CODEX/CLAUDE gate remains open.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role
 12/12 candidate; QA `b51453e4` owns the added regression cases. The frontend
 `docs/security/` untracked directory remains untouched. The design branch
