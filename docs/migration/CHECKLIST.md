@@ -354,6 +354,11 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   root check, web build и focused ESLint PASS. Это локальная fixture,
   не приёмка провайдера, 200% zoom или screen reader. Кандидаты не
   интегрированы и не прошли формальный CODEX/CLAUDE gate.
+  QA `b7e649ad` расширил тот же тест до вошедшего владельца 360 px
+  и подрядчика 768 px; `BWHTYL` PASS1/1, test/PG exit0. Все пять
+  CSS-loaded снимков имеют ширину документа, равную viewport; мобильный
+  кабинет владельца визуально проверен. 200% zoom и screen reader
+  по-прежнему не проверены.
 - [ ] **L05a / backend + web.** Быстрая загрузка документов подрядчика:
   тип, размер и формат файла, приватное хранение, антивирус/сканирование,
   повторная загрузка, удаление и статус рассмотрения без ложного бейджа

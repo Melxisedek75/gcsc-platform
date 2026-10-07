@@ -93,6 +93,10 @@ passed after a one-line frontend correction of full-width banner animation.
 Signed-in 1280/390 and private-draft 1280 screenshots and widths were checked.
 Earlier exact-source `GD5vUn`/`isakej` exposed 4-5px body overflow.
 The candidates remain separate, not formally reviewed or integrated.
+QA follow-up `b7e649ad` is clean: exact frontend/backend built-CSS
+Edge/API/disposable PG18.4 `BWHTYL` PASS1/1 at signed-in owner360 and
+contractor768 as well as the earlier 1280/390/draft widths. Browser/API/PG
+exits and cleanup passed. No integration or formal review approval.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role
 12/12 candidate; QA `b51453e4` owns the added regression cases. The frontend
 `docs/security/` untracked directory remains untouched. The design branch
