@@ -288,6 +288,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   несовпадающий MIME: API400, видимая ошибка, неизменная строка в PG;
   финальный Edge/API/PG1/1 `Lfmvwc` PASS, test/PG exit0. Это test-only,
   отдельного ревью нет.
+  L07 QA `e3336300`: текущий publication UI после отзыва admin-роли получил
+  403, но оставил имя документа на экране (RED `yhRmWf`); простая очистка
+  также проиграла гонку запоздавшему 200 (RED `aN0Xkx`). Изолированный
+  October-web `c0156070` очищает список после ошибки и игнорирует устаревшие
+  ответы. Exact committed Edge/API/PG1/1 `tVWFFa` PASS, test/PG exit0;
+  web build/lint и QA root check PASS. Независимое read-only ревью не нашло
+  оставшихся P1-P3, но не запускало финальный тест. Без нового запроса уже
+  показанные данные не исчезают мгновенно; полный Dashboard и gate открыты.
   Formal gate ещё открыт.
   Evidence: `DOCUMENT-UPLOAD-PG-REVIEW.md`. Проверка заголовка не заменяет
   декодирование файла или антивирус, L05a остаётся открытым.

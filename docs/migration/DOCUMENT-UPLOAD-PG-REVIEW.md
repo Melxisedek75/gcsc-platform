@@ -122,3 +122,23 @@ The existing >1.5 MB selection still makes no additional POST. Final
 `postgres-baseline-Lfmvwc` passed Edge/API/PG1/1 with test/PostgreSQL exits 0;
 `E8xH69` passed before the visible-error assertion. Syntax and diff checks
 passed. This narrow follow-up has no independent review or formal gate.
+
+L07 follow-up: `AdminDocumentReviewPanel` kept previously loaded document
+metadata visible after the reviewer account lost its admin role and a new
+list request returned 403. QA `e3336300` reproduced this against current
+publication web with real Edge/API/disposable PostgreSQL (`yhRmWf`, RED at
+visible filename count 1). A one-line clear-on-error candidate still let an
+older held 200 restore that metadata after the 403 (`aN0Xkx`, RED). Isolated
+October-web candidate `c0156070` clears the list on load failure and ignores
+out-of-order results using a latest-request counter. The QA fixture holds
+an authorized list response until after demotion and the newer 403, then
+releases it and waits for network idle plus two render frames. Exact committed
+QA/web source passed Edge/API/PG1/1 `tVWFFa`, test/PostgreSQL exits 0,
+cleanup errors empty; earlier candidate passes `uaMCsP`, `yddOJG`, `gG27oe`.
+October-web TypeScript/Vite build, scoped ESLint and diff check, plus QA
+runner16/16/root check/syntax/diff checks passed. Independent read-only review
+found the race, confirmed no remaining P1-P3 after the fix, and did not rerun
+the final test. This proves clearing after a fresh 403 in the isolated panel;
+without a push signal or refresh it cannot remove data already displayed at
+the exact instant a role changes. The full Dashboard route, formal gate,
+integration, push and deploy remain open.
