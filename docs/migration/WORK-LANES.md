@@ -134,8 +134,10 @@ L20 next: actual 200% browser zoom remains unverified; two headless Edge
 `Control++` inputs did not change DPR, CSS viewport or visual scale. The
 independent review dispatch failed at the unchanged agent thread limit;
 do not relabel this as PASS. L21 design reconciliation also needs to
-replace the stale `TokenRedirect.tsx` live-management/staking/rewards copy
-present in both October-web and web-design.
+reconcile design `d892515b` TokenRedirect pilot wording with the stale
+October-web copy; legal-claims RED/GREEN, web build, scoped ESLint and
+dashboard-live passed in design only. No independent final review or
+receiving integration has occurred.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role
 12/12 candidate; QA `b51453e4` owns the added regression cases. The frontend
 `docs/security/` untracked directory remains untouched. The design branch

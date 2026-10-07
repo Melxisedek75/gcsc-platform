@@ -1475,12 +1475,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   auth-вызов пока сохраняется. Перед интеграцией эти две ветки необходимо
   согласовать и повторно проверить точный объединённый diff; формальный
   review gate, browser/API/PG приёмка и полный L21 открыты.
-  Read-only L21 follow-up: `TokenRedirect.tsx` в October-web и web-design
-  всё ещё предлагает `GCSC token management, staking, and rewards` как
-  доступный переход из кабинета, хотя Token-страница называет запуск
-  будущим. Уточнить этот текст в design/presentation при согласовании
-  веток; это не подтверждение live token функций и не отдельная правка
-  публичной страницы.
+  L21 follow-up: `TokenRedirect.tsx` в October-web всё ещё предлагает
+  `GCSC token management, staking, and rewards` как доступный переход,
+  хотя Token-страница называет запуск будущим. В изолированной design
+  ветке `d892515b` заменил обещание на текущий статус и явно будущие
+  staking/rewards; legal-claims validator сначала RED, затем PASS, web
+  build, scoped ESLint, dashboard-live и diff-check PASS. Кандидат не
+  интегрирован/опубликован, итоговый diff независимо не рассмотрен;
+  основной October-web текст и полный L21 остаются открытыми.
   Дополнительная локальная браузерная проверка account-role sourceRef
   `98c3ca57` дала 5/10 (Edge154, fixture API); сравнение с родительским
   design commit `d43a9175` дало те же пять отказов, а текущая publication

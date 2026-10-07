@@ -560,8 +560,13 @@
     "review": "APPROVED: Beauvoir, independent Sol/high agent01a09e82-0111-7803-ba04-dac9514c52a5, reviewed a0834ac7..e9f954fbb105ba4f6e05ff54c860ecaffec6ff28. Independently ran guards4/4 and real PostgreSQL18.4 tests9/9, exits0; source SHA matches, canonical gcsc.db unchanged and PostgreSQL stopped. Root43/43/API159 remain parent evidence. No main integration or production approval.",
     "result": "Added native PostgreSQL runner without Docker or downloads. Real PostgreSQL18.4:9/9 including parent; runtime schema idempotency, project/bid creation, role isolation, audit, FK/UNIQUE and API module/connection restart pass. Root43/43 plus syntax/static and API159/159 pass. services/api/v3/.tmp/postgres-baseline-ZUU0yU/result.json: testExitCode0, postgresExitCode0. Missing pg_isready diagnosed and replaced by pg driver probe. No mobile, WebAuth or financial runtime edits."
   },
-  "updatedAt": "2026-10-07T11:03:16Z",
-  "latestFollowup": "L20 Token route focus candidate: QA a48719ed reproduced RED U7nB6h; October-web d940e73c focused the destination heading after Dashboard navigation. Built-CSS Edge/API/disposable PG18.4 luLWKW PASS1/1 for mobile contractor and desktop homeowner, test/PG exits0; runner19/19, build and scoped lint passed. No independent exact-diff review, integration, formal gate, screen reader, 200% browser zoom or release.",
+  "updatedAt": "2026-10-07T11:08:31Z",
+  "latestFollowup": "L21 design d892515b corrected stale TokenRedirect live-management copy to pilot/planned status. Legal-claims validator RED before and PASS after, web build, scoped ESLint and dashboard-live passed. October-web still has old copy; no independent exact-diff review, receiving integration, formal gate or publication. L20 Token route focus candidate remains in tokenRouteFocusCandidate.",
+  "tokenRedirectClaimsCandidate": {
+    "designCommit": "d892515b",
+    "status": "LOCAL_PASS_RECEIVING_AND_REVIEW_OPEN",
+    "evidence": "TokenRedirect pilot/planned wording and legal-claims regression. Validator RED on old live-management text, then PASS; web build, scoped ESLint, dashboard-live and diff-check PASS. October-web retains stale copy; no independent exact-diff review, integration or publication."
+  },
   "tokenRouteFocusCandidate": {
     "qaCommit": "a48719ed",
     "webCommit": "d940e73c",
