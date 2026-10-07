@@ -1785,6 +1785,15 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   test/PG exits0; Edge/API/PostgreSQL account-browser `zcHBpW` прошёл
   1/1, test/PG exits0. Реальной подписи и независимого ревью не было;
   L23 остаётся открытым.
+  Backend `37293163` ограничил коды ошибок обоих wallet-proof ответов:
+  искусственный сбой хранилища до правки давал HTTP400 с внутренним
+  маркером, после правки HTTP503 с фиксированным кодом; допустимая
+  ошибка пустого запроса сохранила HTTP400. Ownership-ответы отмечены
+  `private, no-store`. API365/365, backend root check и diff-check PASS.
+  QA `5b6ec93b` проверил оба сбоя на одноразовой PostgreSQL18.4:
+  exact backend `37293163`, `oseSy0` PASS49/49, test/PG exits0,
+  QA root check и diff-check PASS. Реальной подписи, независимого ревью,
+  receiving и публикации не было; L23 открыт.
 - [ ] **L24 / координатор + founder.** К 15 октября - пилотный кандидат,
   если L01-L23 проходят. К 20 октября - публичный релиз только по отдельному
   разрешению после preview, live-provider проверки, резервной копии, rollback
