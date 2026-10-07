@@ -1,7 +1,7 @@
 # Contractor document upload: isolated PostgreSQL evidence (2026-10-07 UTC)
 
-Status: QA only. Backend L05a is an unstaged candidate, not an exact committed
-source, integration approval, antivirus scan, or live-service test.
+Status: isolated backend and QA candidates only. No integration approval,
+antivirus scan, or live-service test.
 
 QA commit `a88b0003` adds an opt-in fresh PostgreSQL 18.4 suite for document
 upload and private download. Synthetic `example.invalid` contractors are used;
@@ -28,6 +28,14 @@ PostgreSQL shut down cleanly. The runner's local probe query timeout was
 increased from 3 to 15 seconds; the subsequent candidate and publication
 runs reached the suite. This is test infrastructure only.
 
-Remaining L05a: commit/isolate the backend candidate, test its exact source,
-independent review/formal gate, UI upload/resubmission acceptance, and a real
-file scanning policy. Header signatures do not prove files are safe.
+The L05a backend candidate was isolated in commit `a1ff006f` (only
+`pure-server.js` and its document tests). Its clean committed source has the
+same SHA-256 as the passing working-tree snapshot. Focused document Jest
+18/18, full API Jest 354/354 with a dummy local JWT secret, syntax and diff
+checks passed. QA reran the isolated PostgreSQL suite against this exact clean
+commit: 1/1 `postgres-baseline-sdmq62`; project-publication 33/33
+`postgres-baseline-Ydttzf`; all test/PostgreSQL exits 0.
+
+Remaining L05a: independent review/formal gate, receiving integration, UI
+upload/resubmission acceptance, and a real file scanning policy. Header
+signatures do not prove files are safe.
