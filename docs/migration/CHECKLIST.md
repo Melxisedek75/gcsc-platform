@@ -2097,6 +2097,13 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   1440 px осмотрены. Design build, профильный validator, scoped ESLint,
   QA root check и syntax/diff PASS. Настоящий zoom, screen reader,
   independent review и полная L20b приёмка остаются открытыми.
+  QA `8fcc8c3c` требует от профиля подрядчика именованный список
+  `Bid readiness checklist` с пятью пунктами. До правки браузерный
+  Edge/API/PostgreSQL18.4 `Frdi0A` RED1/1 (0 пунктов), после замены
+  visual-only `div` на `ul/li` в design `ec7c821b` финальный `CGDpZN`
+  PASS1/1, test/PG exits0. Мобильный снимок не изменился; design build,
+  профильный validator, scoped ESLint и QA root check PASS. Это проверка
+  семантики в браузере, не реальный screen reader или полная L20b приёмка.
   QA `29f89864` задержал тот же изолированный HTTP401 и проверил, что
   submit отключён во время ожидания. Финальные отчёты design
   `qa/.tmp/account-visual-2LFamY/result.json` и October-web
