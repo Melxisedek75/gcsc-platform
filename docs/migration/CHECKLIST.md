@@ -1010,6 +1010,13 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   Первый API-прогон без локального тестового JWT_SECRET завершился ошибкой
   конфигурации; повтор с одноразовым локальным значением PASS. Root adaptation
   mismatch, независимое exact-diff review, formal gate и интеграция открыты.
+  Статус compliance с документами: QA `4e01e02a` воспроизвёл HTTP200 с
+  приватным именем файла после отключения аккаунта при чтении PostgreSQL
+  (`dA9w4S`, RED). Backend `d622417b` повторно проверяет активность и роль
+  перед ответом. Exact-source PG project-publication41/41 дважды
+  (`oNYlF8`, `rjz0Fq`, test/PG exits0), API Jest354/354, syntax/diff PASS.
+  Root adaptation mismatch, независимое exact-diff review, formal gate и
+  интеграция открыты.
   Read-only аудит 7 октября выявил отдельный legacy auth/privacy риск:
   `POST /api/register` и `/api/login` вызывают локальный `sendEmail`, который
   пишет OTP в server log, ничего не отправляет, но маршруты отвечают

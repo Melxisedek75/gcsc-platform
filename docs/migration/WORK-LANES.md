@@ -190,6 +190,12 @@ account disable during SQL read; backend `2629f606` rechecks active account
 and current role before returning filenames. Exact-source PG40/40 twice
 `10ZfPL`/`e6PQnM`, test/PG exits0, API354/354, syntax/diff PASS. Root
 adaptation mismatch, exact-diff review, formal gate and integration remain open.
+Personal compliance-document follow-up: QA `4e01e02a` RED `dA9w4S`
+reproduced HTTP200 after account disable during SQL read; backend
+`d622417b` rechecks active account/current role before response. Exact-source
+PG41/41 twice `oNYlF8`/`rjz0Fq`, test/PG exits0, API354/354, syntax/diff
+PASS. Root adaptation mismatch, exact-diff review, formal gate and
+integration remain open.
 Independent L21 work: October-web `79c9f3a4` clarifies current Token status
 and planned staking/rewards while retaining Token link focus state. Legal-
 claims RED before edit, then PASS; dashboard-live, build, scoped ESLint and
