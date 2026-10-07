@@ -1607,6 +1607,12 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   `check:dashboard-live`, scoped ESLint, web build и diff-check PASS.
   Кандидат не интегрирован/опубликован; browser/API/PG приёмка, независимое
   ревью точного diff, legal/provider review и полный L21 остаются открытыми.
+  Следующий design-кандидат `07a971eb` убрал из описания четырёх будущих
+  финансовых процессов ложное впечатление о выполняемых сейчас проверках,
+  расчёте лимита и сборе документов. Узкий guard сначала RED, затем
+  `check:loans-financing`, `check:legal-claims`, `check:dashboard-live`,
+  scoped ESLint, web build и diff-check PASS. Формальный/независимый review,
+  browser/API/PG приёмка, legal/provider approval и интеграция открыты.
   Дополнительная локальная браузерная проверка account-role sourceRef
   `98c3ca57` дала 5/10 (Edge154, fixture API); сравнение с родительским
   design commit `d43a9175` дало те же пять отказов, а текущая publication
