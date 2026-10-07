@@ -259,6 +259,9 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   повтор полного API остановился на ENOSPC (244 теста PASS, 8 suites не
   запустились); позднее exact clean commit прошёл focused18/18 и API354/354,
   изолированную PG18.4 document-upload1/1 и project-publication33/33.
+  Независимое read-only ревью exact commit нашло старую `hello`-PDF фикстуру
+  в fake-PG smoke; QA `8d09e95f` исправил её и прогнал smoke на exact backend
+  `a1ff006f` (PASS). Повторное ревью QA diff без P1-P3; формальный gate открыт.
   Evidence: `DOCUMENT-UPLOAD-PG-REVIEW.md`. Проверка заголовка не заменяет
   декодирование файла или антивирус, L05a остаётся открытым.
 - [ ] **L06 / backend + web.** Создание/редактирование/публикация заявки

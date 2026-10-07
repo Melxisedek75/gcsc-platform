@@ -36,6 +36,19 @@ checks passed. QA reran the isolated PostgreSQL suite against this exact clean
 commit: 1/1 `postgres-baseline-sdmq62`; project-publication 33/33
 `postgres-baseline-Ydttzf`; all test/PostgreSQL exits 0.
 
-Remaining L05a: independent review/formal gate, receiving integration, UI
+An independent read-only review of exact `a1ff006f` found a P2 test
+regression: the older fake-PostgreSQL storage smoke submitted `hello` bytes as
+a PDF and expected HTTP 201. QA commit `8d09e95f` replaces that fixture with
+synthetic `%PDF-` bytes, teaches the fake database to accept the empty
+checkout-binding migration, and permits testing an exact external server root.
+The storage smoke passed both against QA's own source and with
+`GCSC_SMOKE_SERVER_ROOT` set to the clean backend `a1ff006f` worktree; syntax,
+diff, and API syntax checks passed. The same reviewer inspected `8d09e95f`
+without new P1-P3 findings and confirmed its P2 was addressed, but did not
+rerun the smoke. This is not formal `AI_REVIEW_GATE=PASS`. The fake database
+and header-only PDF fixture do not establish real PostgreSQL behavior or
+complete PDF validity.
+
+Remaining L05a: formal gate, receiving integration, UI
 upload/resubmission acceptance, and a real file scanning policy. Header
 signatures do not prove files are safe.
