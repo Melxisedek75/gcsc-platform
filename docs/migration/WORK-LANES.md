@@ -68,6 +68,12 @@ screenshots in `qa/.tmp/account-visual-adMIvr`. This is not signed-in
 Dashboard or combined PG visual acceptance. The selected Footer and
 AccountAccess still show unverified live escrow/verification claims;
 design Footer pilot copy exists separately and needs reconciliation/review.
+October-web is now clean at `8ea53e2a`: only AccountAccess conditional
+verification wording and its validator changed. RED/GREEN validator,
+build, scoped ESLint, built-CSS Edge154 1280/390 visual smoke and exact
+backend API/disposable PG18.4 account-project-browser `9Ap7Vg` PASS.
+The old Footer claims persist in this branch; design pilot Footer and
+auth/presentation still require reconciliation and formal review.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role
 12/12 candidate; QA `b51453e4` owns the added regression cases. The frontend
 `docs/security/` untracked directory remains untouched. The design branch

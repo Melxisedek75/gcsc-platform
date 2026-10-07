@@ -1266,6 +1266,9 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   Внешние Google Fonts заблокированы. Это только регистрационный экран,
   не подписанный Dashboard, не весь набор размеров/доступности и не
   объединённая API/PG/production-CSS приёмка; L20 открыт.
+  После правки условного текста `october-web` `8ea53e2a` повторный
+  built-CSS smoke Edge154 1280/390 PASS без page errors, снимки
+  `C:/gcsc-platform/.worktrees/qa/.tmp/account-visual-DFbDOW`.
 - [ ] **L21 / продукт + QA.** Матрица публичных утверждений и политики:
   доступно сейчас / тестируется / планируется; убрать заявления о действующем
   escrow, займах, гарантиях, оценках и «тысячах клиентов» без доказательств.
@@ -1290,6 +1293,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   верхнее обещание. Design Footer уже переписан как пилот, но обе ветки
   не совмещены и не прошли формальный gate. До публикации сверить весь
   экран с подтверждённым статусом, без обещания live-функций.
+  Узкий `october-web` кандидат `8ea53e2a` исправил именно фразы
+  AccountAccess: SMS/email доступны только при настроенном провайдере,
+  иначе аккаунт остаётся unverified без отправленного кода. Validator
+  RED до правки и GREEN после; auth-feedback, scoped ESLint, build,
+  Edge visual 1280/390 и API/изолированная PG18.4 `account-project-browser`
+  `9Ap7Vg` PASS1/1, test/PG exit0. Footer в этой ветке всё ещё обещает
+  действующие escrow/платежи/проверенных подрядчиков; design pilot-copy
+  кандидат не совмещён. Это не формальное ревью и не публикация.
   2026-10-06 UTC: отдельная design-ветка `216179bf` исправила Home и
   метаданные на статус прототипа; первое независимое ревью выявило
   завышение приватности/AI в этой ветке, повторное APPROVED после явного
