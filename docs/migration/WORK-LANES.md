@@ -25,6 +25,14 @@ and contractor compliance refresh races. Final Edge/API/isolated PostgreSQL
 the exact last diff was not re-reviewed and formal gate remains open.
 The earlier audit/demo-financing and desktop/mobile Dashboard work remains in
 those branches. None of these candidates is integrated or gate-approved.
+2026-10-07 L05 QA follow-up: `qa` is at `e3df5fca` (clean). The opt-in
+`account-browser` runner checks frontend `ca5c88ae` with backend
+`a1ff006f` in real Edge/API/disposable PostgreSQL; `h947Hw` PASS1/1
+includes actual Dashboard session reload, restored profile identity and
+cross-role duplicate denial. The fixture does not exercise App.tsx routing.
+The full `project-browser` combination remains blocked by the old
+ProjectsPanel `Create Project` versus test `Save Draft` source mismatch.
+No candidate integration or formal review approval is implied.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role
 12/12 candidate; QA `b51453e4` owns the added regression cases. The frontend
 `docs/security/` untracked directory remains untouched. The design branch
