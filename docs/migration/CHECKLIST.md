@@ -1806,6 +1806,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   diff-check PASS. Это проверка одного текста, не полный аудит контраста,
   screen reader или browser 200% zoom; кандидаты не интегрированы и
   независимо не reviewed, L20b открыт.
+  Отдельный design-кандидат `02cdcd51` применил к регистрации тот же
+  читаемый цвет статуса и `role=status`/`aria-live=polite`; focused
+  validator сначала RED, затем PASS, web build, scoped ESLint и
+  diff-check PASS. Общий QA browser visual runner не применился:
+  `.tmp/account-visual-3oVdSA/result.json` остановился на `aria-pressed`
+  роли, которого не было и в родительском design commit. Контраст этого
+  design-кандидата в браузере не засчитан; перед объединением с
+  October-web нужны reconciliation и независимое ревью.
 - [ ] **L21a / product + legal / 10 октября.** Завершить тексты privacy,
   terms, consent на аудио/AI, возвраты, поддержку и точность бренда/юрлица.
   Проверка: владелец подтверждает перед публичной регистрацией и оплатой.
