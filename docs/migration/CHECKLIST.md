@@ -2067,6 +2067,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   October-web `qa/.tmp/account-visual-0812qm/result.json` PASS5/5 каждый,
   errors0, минимум 6.47:1. QA root check, syntax и diff-check PASS.
   Это тестовый HTTP401, не реальный API/PG login; остальные L20b gates открыты.
+  QA `ad4aade4` проверил первый Tab и >=2px видимую обводку фокуса у
+  публичного профиля подрядчика (1280/390 px и 390 px unavailable).
+  Design `8be925d2` добавил явный тёмный `focus-visible` обеим ссылкам
+  возврата. До правки Edge/API/PostgreSQL18.4 `8QJruI` RED1/1, test/PG
+  exits1/0; после `vn6agL` и финальный `A5Y6ga` PASS1/1, exits0/0.
+  Design build, профильный validator, scoped ESLint, QA root check,
+  syntax/diff PASS. Screen reader, настоящий 200% zoom, независимое ревью,
+  integration и полная L20b приёмка остаются открытыми.
   QA `29f89864` задержал тот же изолированный HTTP401 и проверил, что
   submit отключён во время ожидания. Финальные отчёты design
   `qa/.tmp/account-visual-2LFamY/result.json` и October-web
