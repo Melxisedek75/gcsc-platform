@@ -1069,7 +1069,9 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   (`qa/services/api/v3/.tmp/postgres-baseline-y1KYZ2/result.json`, exit0),
   API Jest354/354, web build и точечные проверки PASS. Независимый review
   не выполнен из-за лимита agent threads; кандидаты не интегрированы,
-  не опубликованы, полный L07 остаётся открытым.
+  не опубликованы. Read-only проверка текущего publication source подтверждает,
+  что он всё ещё возвращает полный compliance через публичный профиль,
+  карточку ставки и отказ принятия; полный L07 остаётся открытым.
 - [ ] **L08 / backend + web.** Доступ к одному project ID: право покупателя,
   серверные состояния `unpaid/pending/paid/refunded/revoked`, уникальность
   project+contractor и проверка перед раскрытием/предложением. Приёмка:
