@@ -1728,6 +1728,11 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   при проверке кода; после правки focused2/2, Jest358/358 и root check PASS.
   Реальной отправки, PostgreSQL/browser QA отказа провайдера, независимого
   ревью и receiving integration не было; L23 остаётся открытым.
+  QA `d0f5bb16` затем проверил тот же синтетический отказ на одноразовой
+  PostgreSQL 18.4: backend `5e397af0` `UKOpuq` PASS1/1, текущая publication
+  `VVNc4I` RED1/1 на раскрытии маркера, test/PG exits 0/0 и 1/0.
+  HTTPS был подменён до сети; реальных SMS/email, независимого ревью,
+  интеграции и полной L23-приёмки не было.
 - [ ] **L24 / координатор + founder.** К 15 октября - пилотный кандидат,
   если L01-L23 проходят. К 20 октября - публичный релиз только по отдельному
   разрешению после preview, live-provider проверки, резервной копии, rollback
