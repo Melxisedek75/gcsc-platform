@@ -1583,6 +1583,15 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   dashboard-live, scoped ESLint, web build и diff-check PASS. Публичная
   карточка не принята отдельным браузерным/API/PG прогоном; точный diff
   независимо не reviewed, интеграция и L21 остаются открытыми.
+  QA `13684170` проверил этот design source в собранном CSS через Edge154
+  и локальный тестовый ответ `/api/contractors/7/public`: verified на
+  1280/390 px и pending_review на 390 px, PASS3/3, page errors0,
+  переполнения нет. Новая подпись и предупреждение видимы, старая
+  `Verified contractor` отсутствует; desktop/mobile скриншоты просмотрены.
+  Отчёт `qa/.tmp/public-contractor-visual-dvnAPp/result.json`;
+  QA root check, syntax и diff-check PASS. Это browser/presentation
+  acceptance с тестовым ответом, не реальный API/PG или юридическая
+  проверка статуса, не независимый review и не integration.
   Design-кандидат `98c3ca57` убрал с регистрации обещание доступной привязки
   WebAuth, уточнил отсутствие live escrow и условность email/SMS провайдера.
   API `POST /api/auth/register` проверен по коду: при preferred-режиме и
