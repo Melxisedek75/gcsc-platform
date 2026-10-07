@@ -1568,6 +1568,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   неточное название записи; повторного review итогового commit ещё нет.
   Кандидат изолирован, не интегрирован/опубликован; full L21, формальный
   CODEX/CLAUDE gate и реальная browser/API/PG приёмка открыты.
+  Design `c0f55dee` уточнил бейдж подрядчика: API-статус `verified`
+  означает завершение проверок профиля/документов/кошелька для допуска
+  к bid, но прежнее `Ready for escrow bidding` могло подразумевать
+  действующий funded escrow. Теперь показано `Pilot checks complete`
+  и `Eligible for prototype bid review; no funded escrow.` Guard был RED
+  до правки, затем contractor-verification, legal-claims, dashboard-live,
+  scoped ESLint, web build и diff-check PASS. Только изолированный текст:
+  независимый review, combined browser/API/PG и integration ещё открыты.
   Design-кандидат `98c3ca57` убрал с регистрации обещание доступной привязки
   WebAuth, уточнил отсутствие live escrow и условность email/SMS провайдера.
   API `POST /api/auth/register` проверен по коду: при preferred-режиме и
