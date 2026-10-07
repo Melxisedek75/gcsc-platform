@@ -1740,8 +1740,9 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   PASS. QA `abca86d1` проверил тот же отказ на одноразовой PostgreSQL 18.4:
   exact backend `1da734cc`, `kS1JJ0` PASS1/1, test/PG exits0, HTTP 500
   без внутреннего текста и без строки в financing_prechecks; QA root check
-  PASS. Независимое ревью и интеграция открыты; займы и платежи не
-  запускались, L23 остаётся открытым.
+  PASS. Широкий read-only повтор `project-publication` на том же backend
+  `0Mi6nA` прошёл 49/49, test/PG exits0. Независимое ревью и интеграция
+  открыты; займы и платежи не запускались, L23 остаётся открытым.
 - [ ] **L24 / координатор + founder.** К 15 октября - пилотный кандидат,
   если L01-L23 проходят. К 20 октября - публичный релиз только по отдельному
   разрешению после preview, live-provider проверки, резервной копии, rollback
