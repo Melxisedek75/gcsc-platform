@@ -1339,6 +1339,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   `9Ap7Vg` PASS1/1, test/PG exit0. Footer в этой ветке всё ещё обещает
   действующие escrow/платежи/проверенных подрядчиков; design pilot-copy
   кандидат не совмещён. Это не формальное ревью и не публикация.
+  Design `62df4ae2` расширил `check:legal-claims` на Footer и
+  MarketingFooter через TSX AST: нужны видимые статусы пилота и
+  политик на review; обещания действующего escrow/платежей/проверки
+  и ссылки `#`, `/#terms`, `/#privacy`, `/#cookies` отвергаются.
+  На design-ветке PASS, на текущей october-web source ожидаемый FAIL
+  с этими конкретными находками; Token там дополнительно не совпадает
+  с дизайн-контрактом. Это guard candidate, не интеграция текста,
+  юридическое одобрение или аудит всех страниц.
   2026-10-06 UTC: отдельная design-ветка `216179bf` исправила Home и
   метаданные на статус прототипа; первое независимое ревью выявило
   завышение приватности/AI в этой ветке, повторное APPROVED после явного

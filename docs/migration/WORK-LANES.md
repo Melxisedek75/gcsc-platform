@@ -100,6 +100,10 @@ exits and cleanup passed. No integration or formal review approval.
 QA `38dd0aef` is clean: Edge154 built-CSS registration AX-tree names
 for nine controls PASS at five widths; evidence `qa/.tmp/account-visual-McgEEr`.
 This is not screen-reader or 200% zoom acceptance.
+Web-design `62df4ae2` is clean: local legal-claims validator now guards
+both footer variants with TSX AST; design PASS, current October-web RED
+on false active-service claims and placeholder policy/social links.
+This does not integrate the design candidate or approve legal copy.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role
 12/12 candidate; QA `b51453e4` owns the added regression cases. The frontend
 `docs/security/` untracked directory remains untouched. The design branch
