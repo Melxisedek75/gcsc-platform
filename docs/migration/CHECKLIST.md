@@ -957,6 +957,10 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   JSON-хранилища до правки давал HTTP 400, после правки HTTP 500 без текста
   исключения. Jest355/355, корневой `npm run check` и diff-check PASS.
   PostgreSQL fault-injection, независимое ревью, receiving и L23 открыты.
+  Follow-up backend `0f3cac0a` применил тот же fail-closed ответ к
+  `PUT /api/auth/profile`: отдельный синтетический сбой до правки давал
+  HTTP 400 с внутренним текстом, теперь оба сценария получают общий HTTP 500.
+  Jest356/356, корневой `npm run check` и diff-check PASS; прежние gate открыты.
   2026-10-07 admin document-list role-race candidate: локальный PostgreSQL
   regression QA `3e3f389d` воспроизвёл выдачу приватного имени файла после
   отзыва admin-роли во время заблокированного чтения (`bqILek`: HTTP 200
