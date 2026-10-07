@@ -1798,6 +1798,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   headless Edge `Ctrl+Equal` на нейтральной странице также не изменил
   метрики. Сервер и временная вкладка закрыты. Это не проверка 200% browser
   zoom и не обходит прежний запрет на marketing `file:` URL; L20b открыт.
+  Контраст status-текста регистрации в built-CSS October-web был 3.76:1
+  на белом фоне (Edge154, QA `c2be891f`, RED). Узкий web-кандидат
+  `a3659f7d` затем дал 6.47:1 на 360/390/768/1280/1440 px;
+  `.tmp/account-visual-LPpqEA/result.json`: PASS5/5, page errors0.
+  QA root check, web build, focused ESLint, auth-channel validator и
+  diff-check PASS. Это проверка одного текста, не полный аудит контраста,
+  screen reader или browser 200% zoom; кандидаты не интегрированы и
+  независимо не reviewed, L20b открыт.
 - [ ] **L21a / product + legal / 10 октября.** Завершить тексты privacy,
   terms, consent на аудио/AI, возвраты, поддержку и точность бренда/юрлица.
   Проверка: владелец подтверждает перед публичной регистрацией и оплатой.
