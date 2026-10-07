@@ -1576,6 +1576,13 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   до правки, затем contractor-verification, legal-claims, dashboard-live,
   scoped ESLint, web build и diff-check PASS. Только изолированный текст:
   независимый review, combined browser/API/PG и integration ещё открыты.
+  Follow-up design `84d4a234` применил `Pilot checks complete` также к
+  публичной карточке и собственной панели подрядчика. Публичная карточка
+  поясняет, что проверки платформы не являются сертификацией лицензии или
+  страховки. Два focused guard были RED до правки и PASS после; legal-claims,
+  dashboard-live, scoped ESLint, web build и diff-check PASS. Публичная
+  карточка не принята отдельным браузерным/API/PG прогоном; точный diff
+  независимо не reviewed, интеграция и L21 остаются открытыми.
   Design-кандидат `98c3ca57` убрал с регистрации обещание доступной привязки
   WebAuth, уточнил отсутствие live escrow и условность email/SMS провайдера.
   API `POST /api/auth/register` проверен по коду: при preferred-режиме и
