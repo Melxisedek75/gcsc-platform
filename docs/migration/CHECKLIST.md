@@ -2141,6 +2141,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   Marketing `a7da45d7` обновил локальный `CLAIM-LEDGER.md` по этим
   черновым правкам и границам статического validator; diff-check PASS.
   Реестр не заменяет независимый факт-чек точного release artifact.
+  Marketing `e917a46a` исправил устаревшее утверждение реестра, будто
+  project-specific Checkout/webhook вообще не реализованы. Локальный
+  synthetic lifecycle `KFIQIH` 105/105 существует, но браузерный
+  `ibErRB` использует SQL grant fixture, а provider/payment end-to-end,
+  receiving integration и продажа не подтверждены. Реестр также ссылается
+  на точный October-web/browser evidence для owner и preview; публичный
+  purchase остаётся planned. Static validator26/26 и site check2/7 PASS.
+  Legal, независимый факт-чек и publication gate открыты.
   Marketing `ca7f72b4` добавляет узкую проверку видимого hero-текста:
   статус `SmartContractor pilot in development` и раскрытие
   AI-generated concept image должны оставаться внутри hero-секции.
