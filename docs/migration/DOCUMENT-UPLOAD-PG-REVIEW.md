@@ -242,3 +242,18 @@ ESLint and diff checks passed. Independent read-only re-review found no P1-P3
 in final diff, but did not run tests. The older getCompliance response race
 was addressed by the same access epoch but has no separate browser race test.
 No formal gate, integration, push or deployment.
+
+Compliance refresh follow-up: QA `bfebfdfc` and October-web `4ec10a4c`
+add a contractor Refresh control and deterministic browser request ordering.
+An authorized GET200 held before role revocation cannot restore document
+metadata after a later file GET403. An older GET200 cannot overwrite a newer
+POST201 result or clear the error of a newer POST400. A late GET403 clears
+metadata even after a newer POST201. A locally intercepted GET500 cannot
+replace a newer POST400 error; this 500 is browser-synthetic, unlike the
+other local API responses. Initial RED `wMckik` lacked the Refresh control.
+Earlier passing runs `xjL4iC`, `nyEO4x` and `y0X9gL` preceded successive
+read-only reviewer findings; final Edge/API/disposable PG18.4 `V1fBMK`
+passed 1/1, test/PG exits 0. Web build/scoped ESLint, QA root check and
+diff checks passed. The exact last diff was not independently re-reviewed.
+The fixture does not load production CSS; formal gate, integration, push and
+deployment remain open.
