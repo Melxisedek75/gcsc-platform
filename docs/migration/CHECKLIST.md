@@ -284,6 +284,10 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   ID reviewer и время в PostgreSQL. Финальный Edge/API/PG1/1 `KGDB1z` PASS,
   test/PG exit0; независимое ревью обнаружило P3-пробел admin list JSON,
   после его исправления финальный тест прошёл, но reviewer его не повторял.
+  QA `cdb91234` добавил в тот же браузерный путь поддельные PDF-байты и
+  несовпадающий MIME: API400, видимая ошибка, неизменная строка в PG;
+  финальный Edge/API/PG1/1 `Lfmvwc` PASS, test/PG exit0. Это test-only,
+  отдельного ревью нет.
   Formal gate ещё открыт.
   Evidence: `DOCUMENT-UPLOAD-PG-REVIEW.md`. Проверка заголовка не заменяет
   декодирование файла или антивирус, L05a остаётся открытым.

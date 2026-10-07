@@ -113,3 +113,12 @@ did not rerun that final follow-up and this is not formal gate approval.
 
 Remaining L05a: formal gate, receiving integration, removal behavior, and a
 real file scanning policy. Header signatures do not prove files are safe.
+
+QA test-only `cdb91234` adds two browser-selected invalid uploads to the
+same combined journey: HTML bytes presented as PDF and PDF bytes declared as
+PNG. Each actual API POST must return 400, the React panel must show the API
+error, and the PostgreSQL file/revision/review fields must remain unchanged.
+The existing >1.5 MB selection still makes no additional POST. Final
+`postgres-baseline-Lfmvwc` passed Edge/API/PG1/1 with test/PostgreSQL exits 0;
+`E8xH69` passed before the visible-error assertion. Syntax and diff checks
+passed. This narrow follow-up has no independent review or formal gate.
