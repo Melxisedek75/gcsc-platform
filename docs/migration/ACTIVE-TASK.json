@@ -560,8 +560,14 @@
     "review": "APPROVED: Beauvoir, independent Sol/high agent01a09e82-0111-7803-ba04-dac9514c52a5, reviewed a0834ac7..e9f954fbb105ba4f6e05ff54c860ecaffec6ff28. Independently ran guards4/4 and real PostgreSQL18.4 tests9/9, exits0; source SHA matches, canonical gcsc.db unchanged and PostgreSQL stopped. Root43/43/API159 remain parent evidence. No main integration or production approval.",
     "result": "Added native PostgreSQL runner without Docker or downloads. Real PostgreSQL18.4:9/9 including parent; runtime schema idempotency, project/bid creation, role isolation, audit, FK/UNIQUE and API module/connection restart pass. Root43/43 plus syntax/static and API159/159 pass. services/api/v3/.tmp/postgres-baseline-ZUU0yU/result.json: testExitCode0, postgresExitCode0. Missing pg_isready diagnosed and replaced by pg driver probe. No mobile, WebAuth or financial runtime edits."
   },
-  "updatedAt": "2026-10-07T11:14:53Z",
-  "latestFollowup": "L20b QA 2bb4be0e added 390px delayed registration HTTP503/retry fixture. Built-CSS Edge/API/disposable PG18.4 PE46UT PASS1/1, test/PG exit0; runner19/19. Pending button, visible error, preserved form, no pre-retry DB user, then successful single registration. Simulated failure is not real weak-network or screen-reader acceptance; no independent final test review or integration. L21 design candidate and Token focus remain isolated.",
+  "updatedAt": "2026-10-07T11:18:20Z",
+  "latestFollowup": "L20 QA 49929dc6 reproduced missing live status on registration HTTP503 (RED fIKDQ2); October-web 01dcbed3 adds persistent role=status. Exact built-CSS Edge/API/disposable PG18.4 uK7po6 PASS1/1, test/PG exit0; web build, focused lint, auth validators and runner19/19 passed. Automated AX semantics only, not human screen reader. Final independent review and integration remain open.",
+  "registrationLiveStatusCandidate": {
+    "qaCommit": "49929dc6",
+    "webCommit": "01dcbed3",
+    "status": "LOCAL_PASS_REVIEW_AND_INTEGRATION_OPEN",
+    "evidence": "QA RED fIKDQ2, then built-CSS Edge/API/disposable PostgreSQL18.4 uK7po6 PASS1/1, test/PG exit0; web build, focused ESLint, auth validators, runner19/19 and diff-check passed. Synthetic HTTP503 status has role=status; real screen reader, full L20b and formal gate remain open."
+  },
   "registrationFailureRetryQaCandidate": {
     "qaCommit": "2bb4be0e",
     "status": "LOCAL_PASS_REVIEW_AND_INTEGRATION_OPEN",

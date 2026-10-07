@@ -1356,6 +1356,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   `PE46UT` PASS1/1, test/PG exit0; runner19/19 и diff-check PASS.
   Это проверка имитированной задержки/отказа, не реального слабого канала,
   screen reader или полного L20b; тестовый diff независимо не ревьюился.
+  Следующий L20 follow-up: QA `49929dc6` подтвердил RED `fIKDQ2`:
+  видимый HTTP503 не имел доступной `status`-области. October-web
+  `01dcbed3` сохраняет пустую область `role="status"` и обновляет её
+  текстом ошибки; финальный built-CSS Edge/API/PG18.4 `uK7po6`
+  PASS1/1, test/PG exit0. Web build, focused ESLint, auth validators,
+  runner19/19 и diff-check PASS. Это автоматическая проверка семантики,
+  не реальный screen reader и не полная L20b приёмка; независимый review
+  точных diff и интеграция ещё открыты.
 - [ ] **L21 / продукт + QA.** Матрица публичных утверждений и политики:
   доступно сейчас / тестируется / планируется; убрать заявления о действующем
   escrow, займах, гарантиях, оценках и «тысячах клиентов» без доказательств.

@@ -144,6 +144,13 @@ PASS1/1 with test/PG exit0; runner19/19. It verifies pending/visible
 error/preserved inputs/no pre-retry database user, then one successful
 registration. Real weak-network conditions and screen reader remain open;
 the exact test diff has not been independently reviewed.
+October-web `01dcbed3` and QA `49929dc6` follow up the same failure path:
+visible HTTP503 lacked a live status region (RED `fIKDQ2`); the account
+form now keeps a `role=status` node mounted. Exact built-CSS Edge/API/
+disposable PG18.4 `uK7po6` PASS1/1 with test/PG exit0; web build,
+focused ESLint, auth validators and runner19/19 passed. This is AX
+semantics, not a human screen-reader run. Final independent review and
+receiving integration remain open.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role
 12/12 candidate; QA `b51453e4` owns the added regression cases. The frontend
 `docs/security/` untracked directory remains untouched. The design branch
