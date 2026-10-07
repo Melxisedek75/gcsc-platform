@@ -1722,6 +1722,12 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   подмены суммы/projectId, повторов webhook, отказа провайдера, истечения
   сессии, резервного восстановления; accessibility/performance, секреты,
   security findings, мониторинг и поддержка. Релиз блокируется High/Critical.
+  Backend `5e397af0` локально заменил сырой текст ошибки существующего
+  verification-провайдера в регистрации и проверке кода фиксированным HTTP 502.
+  Синтетический сетевой сбой до правки раскрыл маркер и дал ошибочный HTTP 400
+  при проверке кода; после правки focused2/2, Jest358/358 и root check PASS.
+  Реальной отправки, PostgreSQL/browser QA отказа провайдера, независимого
+  ревью и receiving integration не было; L23 остаётся открытым.
 - [ ] **L24 / координатор + founder.** К 15 октября - пилотный кандидат,
   если L01-L23 проходят. К 20 октября - публичный релиз только по отдельному
   разрешению после preview, live-provider проверки, резервной копии, rollback
