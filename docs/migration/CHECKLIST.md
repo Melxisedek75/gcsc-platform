@@ -1096,6 +1096,12 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   verification (PG остановлен с exit0). Это проверка компонента в
   локальной оболочке, не полной навигации сайта; независимый review,
   receiving и полный L07/L21 ещё открыты.
+  QA follow-up `1cf21da2` добавил реальный API/PG сценарий с синтетически
+  заполненными профилем, одобренными документами и wallet metadata:
+  мобильный экран показывает `Pilot checks complete` и явное предупреждение,
+  что это не сертификация лицензии/страховки. Повтор `qvkYGQ` PASS1/1,
+  test/PG exits0; скриншот проверен. Это не реальное WebAuth-подключение,
+  внешняя проверка документов или публичный релиз.
 - [ ] **L08 / backend + web.** Доступ к одному project ID: право покупателя,
   серверные состояния `unpaid/pending/paid/refunded/revoked`, уникальность
   project+contractor и проверка перед раскрытием/предложением. Приёмка:
