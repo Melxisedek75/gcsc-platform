@@ -1110,6 +1110,13 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   XPR-ресурс. Build, scoped ESLint, legal-claims, diff-check, локальный
   браузер 390 px без overflow и независимое Codex-ревью PASS. Кандидат
   остаётся вне publication; legal/founder approval и формальный gate открыты.
+  Узкий design-кандидат `fd4c7326` убрал обещание действующего escrow из
+  `HeaderBanner` alt-текста; scoped ESLint и diff-check PASS. Read-only аудит
+  выявил оставшиеся escrow/financing формулировки и действия в Dashboard
+  (`AccountAccess`, `BidsPanel`, `ProjectsPanel`, `MilestoneManager`,
+  `LoansFinancingPanel`). Их нужно сверять с реальным API и владельцами
+  frontend/October-web lane, а не объявлять L21 закрытым. Баннер не
+  интегрирован/опубликован.
 
 ### P0 - приёмка и публикация, 11-20 октября
 
