@@ -42,7 +42,7 @@ and backend `a1ff006f` passed separate QA Edge/API/disposable PG18.4
 with test/PG exit0 and cleanup PASS. The frontend `ca5c88ae` project
 panel mismatch still exists; these tests do not merge branches or close
 provider/review/release gates.
-2026-10-07 single-journey L05 QA follow-up: `qa` is clean at `826dfccf`.
+2026-10-07 single-journey L05 QA follow-up: `qa` is clean at `1d378057`.
 The opt-in `account-project-browser` uses clean October-web `4ec10a4c`
 and backend `a1ff006f`; Edge154/API/disposable PG18.4 `JmDmrq`
 PASS1/1 covers routed registration through owner private draft, contractor
@@ -62,6 +62,12 @@ Edge/API/PG18.4 `account-project-browser` `IumY6S` and `account-browser`
 `RAThP4` at 390px. The first run failed on a test-only ambiguous aside
 selector without production CSS; the scoped menu selector passed. This
 is functional mobile-menu coverage, not visual acceptance or JWT revocation.
+QA built-CSS visual smoke `08d2c44f`/`1d378057` on clean October-web
+`4ec10a4c` passed local Edge154 registration at 1280/390px, with
+screenshots in `qa/.tmp/account-visual-adMIvr`. This is not signed-in
+Dashboard or combined PG visual acceptance. The selected Footer and
+AccountAccess still show unverified live escrow/verification claims;
+design Footer pilot copy exists separately and needs reconciliation/review.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role
 12/12 candidate; QA `b51453e4` owns the added regression cases. The frontend
 `docs/security/` untracked directory remains untouched. The design branch
