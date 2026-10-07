@@ -189,6 +189,10 @@ the previous missing guard; final validator20/20 and static site check PASS.
 No full L21b claim review, independent exact-diff review or publication.
 Marketing `e4099966` updates its claim ledger to name that narrow guard;
 full claim/media review and release gates remain unchanged.
+Marketing `fd48e71e` guards development wording in homepage, Open Graph and
+Twitter descriptions. Three mutation cases exposed the old metadata gap;
+validator21/21 and static site check PASS after the copy/guard update.
+Social preview browser check, full claim/media review and release stay open.
 L20 actual browser zoom remains open: Browser UI policy denied a local
 `file:` URL, and no alternate browser surface or URL workaround was used.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role

@@ -1735,6 +1735,11 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   Два отрицательных теста сначала показали пропуск, затем 20/20 и
   static site check PASS. Это не полный claim ledger, не проверка видео,
   не независимое ревью и не разрешение на публикацию.
+  Marketing `fd48e71e` дополнительно закрепляет `pilot in development`
+  в homepage description, Open Graph и Twitter description. Три
+  отрицательных случая сначала проходили при ложном `available now`, затем
+  validator21/21 и static site check PASS. Социальный предпросмотр в
+  браузере, полный claim/media audit, независимое ревью и release открыты.
   Отдельный source-кандидат `b229fd4e` добавляет видимое пояснение, что hero
   изображение AI-сгенерировано и не является проектом клиента. Локальные
   static/browser проверки прошли; `MARKETING-CONCEPT-DISCLOSURE-REVIEW.md`.
