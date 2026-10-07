@@ -2104,6 +2104,17 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   PASS1/1, test/PG exits0. Мобильный снимок не изменился; design build,
   профильный validator, scoped ESLint и QA root check PASS. Это проверка
   семантики в браузере, не реальный screen reader или полная L20b приёмка.
+  QA `28f68167` добавил седьмой видимый случай: 390 px и локальную
+  имитацию 200% размера корневого шрифта. До исправления `GwEXaE` был
+  RED1/1: ширина документа 439 px, карточки и заголовки разрывались.
+  Design `57e9336f` ограничил мобильные отступы профиля и размер H1;
+  финальный Edge/API/изолированная PostgreSQL18.4 `KrfBXp` PASS1/1,
+  test/PG exits0, семь видимых и два недоступных состояния. Ширина
+  документа 390 px во всех семи случаях, overflow elements0; снимки
+  обычного и увеличенного 390 px осмотрены. Design build, профильный
+  validator, scoped ESLint, QA root check и diff-check PASS. Это имитация
+  размера текста, не настоящий 200% browser zoom, screen reader или
+  полная L20b приёмка; независимое ревью и интеграция открыты.
   QA `29f89864` задержал тот же изолированный HTTP401 и проверил, что
   submit отключён во время ожидания. Финальные отчёты design
   `qa/.tmp/account-visual-2LFamY/result.json` и October-web
