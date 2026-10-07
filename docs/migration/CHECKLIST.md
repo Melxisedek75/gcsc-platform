@@ -1039,6 +1039,15 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   прежним именем и revision=1. Exact backend `1cd06c76`, PG
   project-publication46/46 дважды (`ZSSM8f`, `91gnon`, test/PG exits0),
   QA syntax/diff PASS; продуктовый код не менялся. Формальные ворота открыты.
+  Обновление личного профиля: QA `447fd46e` воспроизвёл HTTP200 и запись
+  `full_name` после отключения пользователя под блокировкой строки users
+  (`GDyAvH`, RED). Backend `85fd54b6` читает текущую строку `FOR UPDATE`
+  и обновляет профиль в одной PostgreSQL-транзакции; JSON-режим перепроверяет
+  активность после чтения тела. Перед ответом повторно проверяется аккаунт,
+  клиент получает актуальную роль. Exact-source PG project-publication47/47
+  дважды (`QN9TgL`, `CfGodf`, test/PG exits0), API Jest354/354, syntax/diff
+  PASS. Root adaptation mismatch, независимое exact-diff review, formal
+  gate и интеграция открыты.
   Read-only аудит 7 октября выявил отдельный legacy auth/privacy риск:
   `POST /api/register` и `/api/login` вызывают локальный `sendEmail`, который
   пишет OTP в server log, ничего не отправляет, но маршруты отвечают

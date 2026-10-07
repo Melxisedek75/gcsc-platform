@@ -214,6 +214,13 @@ document filename and revision after account disable while a replacement
 waits on the users row. Exact backend `1cd06c76`, PG46/46 twice
 `ZSSM8f`/`91gnon`, test/PG exits0, QA syntax/diff PASS. No product change,
 review or integration.
+Profile-update follow-up: QA `447fd46e` RED `GDyAvH` reproduced HTTP200
+and persisted full_name after account disable under users row lock. Backend
+`85fd54b6` locks current user and updates profile in one PostgreSQL
+transaction, rechecks JSON mode after body read and returns current account
+state. Exact-source PG47/47 twice `QN9TgL`/`CfGodf`, test/PG exits0,
+API354/354, syntax/diff PASS. Root adaptation mismatch, exact-diff review,
+formal gate and integration remain open.
 Independent L21 work: October-web `79c9f3a4` clarifies current Token status
 and planned staking/rewards while retaining Token link focus state. Legal-
 claims RED before edit, then PASS; dashboard-live, build, scoped ESLint and
