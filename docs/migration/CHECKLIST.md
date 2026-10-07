@@ -1026,6 +1026,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   assertion был уточнён под существующий `no-store`; это не продуктовая
   правка. Root adaptation mismatch, независимое exact-diff review, formal
   gate и интеграция открыты.
+  Загрузка документа при отзыве доступа: QA `bc528d72` воспроизвёл
+  HTTP201 и сохранение файла после отключения аккаунта под блокировкой
+  `users` (`tx6dDV`, RED), затем добавил смену роли contractor->homeowner.
+  Backend `1cd06c76` проверяет текущую активность/роль и делает UPSERT
+  в одной PostgreSQL-транзакции; JSON-режим перепроверяет после чтения тела.
+  Exact-source PG project-publication45/45 дважды (`JNR16v`, `su4zEz`,
+  test/PG exits0), API Jest354/354, syntax/diff PASS. Root adaptation
+  mismatch, независимое exact-diff review, formal gate и интеграция открыты.
   Read-only аудит 7 октября выявил отдельный legacy auth/privacy риск:
   `POST /api/register` и `/api/login` вызывают локальный `sendEmail`, который
   пишет OTP в server log, ничего не отправляет, но маршруты отвечают

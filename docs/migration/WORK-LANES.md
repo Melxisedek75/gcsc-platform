@@ -202,6 +202,13 @@ admin demotion for another user's file. Backend `5c6ceb9b` rechecks access
 after read and before response. Exact-source PG43/43 twice `orykUx`/`jACiuM`,
 test/PG exits0, API354/354, syntax/diff PASS. Root adaptation mismatch,
 exact-diff review, formal gate and integration remain open.
+Document-upload follow-up: QA `bc528d72` RED `tx6dDV` reproduced HTTP201
+and persisted document after account disable while the user row was locked;
+second test covers contractor-to-homeowner role change. Backend `1cd06c76`
+locks current user and UPSERTs in one PostgreSQL transaction; JSON mode
+rechecks after body read. Exact-source PG45/45 twice `JNR16v`/`su4zEz`,
+test/PG exits0, API354/354, syntax/diff PASS. Root adaptation mismatch,
+exact-diff review, formal gate and integration remain open.
 Independent L21 work: October-web `79c9f3a4` clarifies current Token status
 and planned staking/rewards while retaining Token link focus state. Legal-
 claims RED before edit, then PASS; dashboard-live, build, scoped ESLint and

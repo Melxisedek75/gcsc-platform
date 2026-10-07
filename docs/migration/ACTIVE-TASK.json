@@ -560,8 +560,14 @@
     "review": "APPROVED: Beauvoir, independent Sol/high agent01a09e82-0111-7803-ba04-dac9514c52a5, reviewed a0834ac7..e9f954fbb105ba4f6e05ff54c860ecaffec6ff28. Independently ran guards4/4 and real PostgreSQL18.4 tests9/9, exits0; source SHA matches, canonical gcsc.db unchanged and PostgreSQL stopped. Root43/43/API159 remain parent evidence. No main integration or production approval.",
     "result": "Added native PostgreSQL runner without Docker or downloads. Real PostgreSQL18.4:9/9 including parent; runtime schema idempotency, project/bid creation, role isolation, audit, FK/UNIQUE and API module/connection restart pass. Root43/43 plus syntax/static and API159/159 pass. services/api/v3/.tmp/postgres-baseline-ZUU0yU/result.json: testExitCode0, postgresExitCode0. Missing pg_isready diagnosed and replaced by pg driver probe. No mobile, WebAuth or financial runtime edits."
   },
-  "updatedAt": "2026-10-07T12:27:57Z",
-  "latestFollowup": "Document download revocation races: QA 84134a55 RED aKTD95 reproduced HTTP200 file delivery after owner disable during SQL read and covers admin demotion for another user's file; backend 5c6ceb9b rechecks access after read and before response. Exact-source PG43/43 twice orykUx/jACiuM test/PG exits0, API354/354, syntax/diff PASS. Root adaptation mismatch, independent exact-diff review, formal gate and integration remain open.",
+  "updatedAt": "2026-10-07T12:34:50Z",
+  "latestFollowup": "Document upload revocation races: QA bc528d72 RED tx6dDV reproduced HTTP201 persisted file after account disable under users row lock, plus contractor-to-homeowner test; backend 1cd06c76 locks current user and UPSERTs in one PostgreSQL transaction, rechecks JSON mode after body read. Exact-source PG45/45 twice JNR16v/su4zEz test/PG exits0, API354/354, syntax/diff PASS. Root adaptation mismatch, independent exact-diff review, formal gate and integration remain open.",
+  "documentUploadRevocationCandidate": {
+    "qaCommit": "bc528d72",
+    "backendCommit": "1cd06c76",
+    "status": "LOCAL_PASS_ROOT_ADAPTATION_FAILURE_REVIEW_AND_INTEGRATION_OPEN",
+    "evidence": "QA RED tx6dDV returned HTTP201 and persisted user document after concurrent account disable under users row lock. Added contractor-to-homeowner revocation test. Backend locks current user and UPSERTs in same PostgreSQL transaction; JSON mode rechecks after body read. Exact-source PG project-publication45/45 twice JNR16v/su4zEz, test/PG exits0; API354/354 with disposable local test JWT_SECRET; syntax/diff PASS. Root adaptation mismatch, independent exact-diff review, formal gate and integration open."
+  },
   "documentDownloadRevocationCandidate": {
     "qaCommit": "84134a55",
     "backendCommit": "5c6ceb9b",
