@@ -62,9 +62,22 @@ project-publication suite ran against backend `pure-server.js` SHA-256
 33/33 PASS, test/PG exit 0, evidence
 `C:\gcsc-platform\.worktrees\qa\services\api\v3\.tmp\postgres-baseline-gNoZ8M\result.json`.
 That suite covers project privacy, roles, bid access and wallet identity but
-does not directly exercise the retired OTP routes in PostgreSQL mode. Targeted
-PG OTP acceptance and independent review remain open. The backend worktree was already
+does not directly exercise the retired OTP routes in PostgreSQL mode. The backend worktree was already
 dirty with the separate L05a document-size/MIME candidate in `pure-server.js`
 and `profile-documents.test.js`; these edits were preserved. Do not stage the
 whole shared source file as only this auth change or integrate it without
 isolating the diff and passing the formal gate.
+
+QA test-only commit `4cb4f1e8` adds an opt-in isolated PostgreSQL 18.4 suite
+for all four legacy routes with synthetic fixtures, confirms no persisted user
+or new OTP, no token and no OTP in captured logs. Runner option parser 13/13,
+QA root check and diff-check PASS. Against backend source SHA-256
+`554cc013e74398a19dab63d3be63baf11032d6fee2fce3a33a138cdbbbddb9bd`,
+targeted PG1/1 PASS, test/PG exit 0, result `postgres-baseline-MWIuf1`.
+Against current publication source SHA-256
+`154436a6394e851e93538e834d20841034dada529ba7a3efa1d3c871471ebf12`,
+the same opt-in suite failed as expected: `/api/register` returned 200 instead
+of 410, result `postgres-baseline-Tj56nm`, test exit 1 and PG exit 0. Both
+clusters were stopped by the runner. This distinguishes the candidate from
+the current integrated source; it is not approval to integrate. Independent
+review and formal CODEX/CLAUDE gate remain open.
