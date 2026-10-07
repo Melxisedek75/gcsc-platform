@@ -46,3 +46,12 @@ the clean detached checkout was removed again.
 Still required: authorization under concurrent role revocation, independent
 review and the formal CODEX/CLAUDE gate before any integration. No provider or
 real payment verification was performed.
+
+Read-only concurrency audit: `hasCurrentRole` reads `users` before the
+milestone/chain-evidence write, but the PostgreSQL transition helper issues a
+separate `UPDATE milestones` without a current-role predicate or a user-row
+lock held through that write. A role change committed while the update waits
+could therefore pass the earlier check. The current PG suite changes roles
+before each request; it does not test that interleaving. A bounded row-lock
+fixture and transactional authorization design are needed before claiming
+revocation is atomic across concurrent requests.
