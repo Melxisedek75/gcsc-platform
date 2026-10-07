@@ -1747,8 +1747,9 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   демозаявки с личным context. Локальный тест сначала RED на отсутствующем
   Cache-Control, затем API359/359 и root check PASS. QA `1b293c16` на
   одноразовой PostgreSQL18.4 проверил те же заголовки при ошибке записи:
-  `w9drmO` PASS1/1, test/PG exits0. Независимое ревью, receiving и полный
-  L23 открыты; финансовые операции не выполнялись.
+  `w9drmO` PASS1/1, test/PG exits0. Широкий повтор `IU6xC4` прошёл 49/49
+  на том же exact API, test/PG exits0. Независимое ревью, receiving и
+  полный L23 открыты; финансовые операции не выполнялись.
 - [ ] **L24 / координатор + founder.** К 15 октября - пилотный кандидат,
   если L01-L23 проходят. К 20 октября - публичный релиз только по отдельному
   разрешению после preview, live-provider проверки, резервной копии, rollback
