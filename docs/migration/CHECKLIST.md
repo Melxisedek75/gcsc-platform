@@ -1280,6 +1280,12 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   ширинах; Edge154 PASS, page errors нет, evidence в
   `C:/gcsc-platform/.worktrees/qa/.tmp/account-visual-JQfyPu`.
   Видимость индикатора фокуса, screen reader и 200% zoom не проверены.
+  QA `0c62a436` проверил индикатор фокуса кнопки Owner после Shift+Tab:
+  Edge154 на 360/390/768/1280/1440 px даёт `:focus-visible=true`
+  и обводку 3 px, автоматическая проверка PASS. Снимки desktop/mobile
+  просмотрены в `qa/.tmp/account-visual-DgGPYc`, финальный отчёт
+  `qa/.tmp/account-visual-qvjZsK`. Контраст, screen reader, 200% zoom
+  и подписанный Dashboard по-прежнему открыты.
 - [ ] **L21 / продукт + QA.** Матрица публичных утверждений и политики:
   доступно сейчас / тестируется / планируется; убрать заявления о действующем
   escrow, займах, гарантиях, оценках и «тысячах клиентов» без доказательств.

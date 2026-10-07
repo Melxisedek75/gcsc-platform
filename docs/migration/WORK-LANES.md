@@ -42,7 +42,7 @@ and backend `a1ff006f` passed separate QA Edge/API/disposable PG18.4
 with test/PG exit0 and cleanup PASS. The frontend `ca5c88ae` project
 panel mismatch still exists; these tests do not merge branches or close
 provider/review/release gates.
-2026-10-07 single-journey L05 QA follow-up: `qa` is clean at `70f062a7`.
+2026-10-07 single-journey L05 QA follow-up: `qa` is clean at `0c62a436`.
 The opt-in `account-project-browser` uses clean October-web `4ec10a4c`
 and backend `a1ff006f`; Edge154/API/disposable PG18.4 `JmDmrq`
 PASS1/1 covers routed registration through owner private draft, contractor
@@ -83,6 +83,10 @@ QA `70f062a7` added built-UI keyboard Tab order and Enter role-selection
 checks across those widths; Edge154 5/5 PASS, evidence
 `qa/.tmp/account-visual-JQfyPu`. Visible focus, screen reader and 200%
 zoom remain unverified.
+QA `0c62a436` then asserted `:focus-visible` and 3px outline for Owner
+on all five widths; desktop/mobile focus screenshots were inspected.
+Final evidence `qa/.tmp/account-visual-qvjZsK`. Contrast, screen reader,
+200% zoom and signed-in Dashboard remain unverified.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role
 12/12 candidate; QA `b51453e4` owns the added regression cases. The frontend
 `docs/security/` untracked directory remains untouched. The design branch
