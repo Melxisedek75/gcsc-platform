@@ -275,3 +275,12 @@ Explicit backend/October-web Edge/API/disposable PG18.4 run `JhkCIH` passed
 1/1 with test/PG exits 0; QA root check, syntax and diff checks passed. This
 does not verify production CSS layout or accessibility. The test-only follow-up
 has no independent or formal review and was not integrated, pushed or deployed.
+Read-only independent review of `a43eed60..30a1c4a2` found a P2 gap: the
+denial assertion checked only the filename, not the other document metadata
+and actions. QA `8fe05d64` now first confirms the SHA-256 text, Download
+button and Replace file action are present, then requires all three to vanish
+with the filename after GET403. Exact follow-up Edge/API/disposable PG18.4
+`aY41xU` passed 1/1, test/PG exits 0; QA root check, syntax and diff checks
+passed. The final follow-up itself was not independently re-reviewed. Formal
+CODEX/CLAUDE gate, CSS layout acceptance, integration, push and deploy remain
+open.
