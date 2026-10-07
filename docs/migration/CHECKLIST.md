@@ -958,9 +958,15 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   вместо 403). Backend `bb231c72` повторно проверяет роль перед ответом:
   exact-source PG project-publication 34/34 дважды (`DNUQgi`, `71swCU`,
   test/PG exits0), API Jest 354/354, API syntax PASS. Backend root
-  `npm test` не прошёл на существующем mismatch provenance для нетронутого
-  `services/api/API-DOCUMENTATION.md` (actual `fc7ff06d...`, manifest
-  `2d1bc7f9...`); это не зелёный root check. Исправление закрывает
+  `npm test` не прошёл на существующем mismatch imported-file adaptation
+  для нетронутого `services/api/API-DOCUMENTATION.md` (actual Git blob
+  `fc7ff06d...`, manifest `2d1bc7f9...`); это не зелёный root check.
+  Read-only SHA256 inventory уточнил три устаревшие записи backend-ветки:
+  `services/api/API-DOCUMENTATION.md`, `services/api/v3/pure-server.js`
+  и `services/api/v3/tests/escrow-milestones.test.js`. Отдельный
+  `source-provenance.test.mjs` 15/15 PASS: исходный снимок цел, но журнал
+  адаптаций не соответствует текущим кандидатам. Метаданные не менялись
+  из чужой ownership lane. Исправление закрывает
   воспроизведённое окно, но не все возможные конкурентные смены роли.
   Независимый exact-diff review, formal gate и интеграция открыты.
   Следующий audit-events admin-role race тест добавлен только в QA working
@@ -1696,6 +1702,8 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   Локальная marketing-проверка `028b0ff8` охватывает 320-1920 px, mobile menu,
   два keyboard-focus состояния и имитацию 200% размера шрифта. Настоящий zoom,
   screen reader, устройства и второй сайт ещё не приняты; L20b открыт.
+  Browser UI не разрешил открыть локальный `file:` URL по политике безопасности;
+  альтернативные browser surfaces/обходы для той же страницы не применялись.
 - [ ] **L21a / product + legal / 10 октября.** Завершить тексты privacy,
   terms, consent на аудио/AI, возвраты, поддержку и точность бренда/юрлица.
   Проверка: владелец подтверждает перед публичной регистрацией и оплатой.

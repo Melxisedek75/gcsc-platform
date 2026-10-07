@@ -155,8 +155,11 @@ receiving integration remain open.
 `3e3f389d` are isolated scoped commits. PostgreSQL RED `bqILek` returned
 200 after mid-request admin demotion; fixed-source project-publication
 34/34 twice (`DNUQgi`, `71swCU`, test/PG exits0), API354/354 and syntax
-PASS. Backend root `npm test` remains RED on pre-existing untouched
-API-DOCUMENTATION.md provenance mismatch. Exact-diff independent review,
+PASS. Backend root `npm test` remains RED on pre-existing imported-file
+adaptation mismatch. Read-only inventory found three stale entries:
+API-DOCUMENTATION.md, pure-server.js and escrow-milestones.test.js;
+source-provenance tests themselves pass 15/15. Publication owns the migration
+metadata; no cross-lane edit was made. Exact-diff independent review,
 formal gate and integration remain open; neither commit is in publication.
 2026-10-07 audit-events follow-up: QA has an uncommitted role-race regression
 draft. Runner stopped before tests: PostgreSQL binary realpath ENOENT at
@@ -171,6 +174,8 @@ Marketing `ca7f72b4` adds a narrow offline guard for the visible hero pilot
 status and AI-generated concept-image disclosure. Two mutation cases exposed
 the previous missing guard; final validator20/20 and static site check PASS.
 No full L21b claim review, independent exact-diff review or publication.
+L20 actual browser zoom remains open: Browser UI policy denied a local
+`file:` URL, and no alternate browser surface or URL workaround was used.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role
 12/12 candidate; QA `b51453e4` owns the added regression cases. The frontend
 `docs/security/` untracked directory remains untouched. The design branch
