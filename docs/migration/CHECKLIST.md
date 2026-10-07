@@ -1335,6 +1335,15 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   браузер. Parent также повторил `account-browser` `5tkXST` PASS1/1,
   test/PG exit0. Token route focus признан прежним отдельным пробелом.
   Это не CODEX/CLAUDE gate, не screen-reader приёмка и не интеграция.
+  QA `a48719ed` воспроизвёл Token route focus RED на мобильном переходе
+  (`U7nB6h`); October-web `d940e73c` передаёт намерение фокусировки
+  только из Dashboard и ставит фокус на заголовок Token после маршрутизации.
+  QA проверяет Enter из мобильного меню contractor и desktop-ссылку owner,
+  локальные изображения Token закреплены в source manifest. Финальная
+  built-CSS Edge/API/изолированная PG18.4 `luLWKW` PASS1/1,
+  test/PG exit0; runner19/19, web build, scoped ESLint и diff-check PASS.
+  Это отдельный локальный кандидат без независимого ревью финального diff,
+  интеграции, настоящего screen reader и 200% browser zoom; L20 открыт.
 - [ ] **L21 / продукт + QA.** Матрица публичных утверждений и политики:
   доступно сейчас / тестируется / планируется; убрать заявления о действующем
   escrow, займах, гарантиях, оценках и «тысячах клиентов» без доказательств.

@@ -122,6 +122,14 @@ Independent Codex read-only re-review of exact October-web
 `f12f854b..4ebca889` found no new P1-P3; reviewer did not run Edge.
 Parent reran nonvisual account-browser `5tkXST` PASS1/1. Token route
 focus remains pre-existing and formal CODEX/CLAUDE gate remains open.
+2026-10-07 L20 Token-focus follow-up: October-web `d940e73c` and QA
+`a48719ed` are clean isolated candidates. QA RED `U7nB6h` reproduced
+mobile route focus loss; built-CSS Edge/API/disposable PostgreSQL18.4
+`luLWKW` passed mobile contractor and desktop owner keyboard navigation
+to the Token heading (test/PG exit0). Runner19/19, web build and focused
+ESLint passed. The exact final diff has no independent review; neither
+candidate is integrated or published. Screen reader, 200% browser zoom,
+full L20 and formal CODEX/CLAUDE gate remain open.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role
 12/12 candidate; QA `b51453e4` owns the added regression cases. The frontend
 `docs/security/` untracked directory remains untouched. The design branch
