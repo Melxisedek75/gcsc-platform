@@ -269,3 +269,9 @@ passed. The first attempt `rb8lCQ` did not execute the scenario because of a
 duplicate test variable declaration; it was corrected before the passing run.
 The bundle omits production CSS, and the test-only diff has no independent or
 formal CODEX/CLAUDE review. No integration, push or deployment occurred.
+Follow-up QA `30a1c4a2` opens the real Dashboard at a 390x844 viewport,
+selects Compliance from the mobile menu and sees the persisted document name.
+Explicit backend/October-web Edge/API/disposable PG18.4 run `JhkCIH` passed
+1/1 with test/PG exits 0; QA root check, syntax and diff checks passed. This
+does not verify production CSS layout or accessibility. The test-only follow-up
+has no independent or formal review and was not integrated, pushed or deployed.
