@@ -296,6 +296,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   web build/lint и QA root check PASS. Независимое read-only ревью не нашло
   оставшихся P1-P3, но не запускало финальный тест. Без нового запроса уже
   показанные данные не исчезают мгновенно; полный Dashboard и gate открыты.
+  Смежные Audit Log и demo financing prechecks также оставляли приватные
+  записи после 403: RED `ZtEaoW`/`piTbfE`. QA `f2a5c97d` и изолированный
+  web `494821ac` проверяют очистку и запоздавший 200 на настоящем Edge/API/
+  локальной PG: финальный `ju3qQ7` PASS, test/PG0, cleanup errors[].
+  QA root check, runner16/16, web build/lint PASS. Независимое read-only
+  ревью нашло два пробела, исправленных до финального теста; финальный diff
+  не перепроверен. Без нового запроса мгновенный отзыв не доказан; Dashboard,
+  formal gate и интеграция остаются открытыми.
   Formal gate ещё открыт.
   Evidence: `DOCUMENT-UPLOAD-PG-REVIEW.md`. Проверка заголовка не заменяет
   декодирование файла или антивирус, L05a остаётся открытым.

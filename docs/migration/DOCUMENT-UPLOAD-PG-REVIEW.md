@@ -142,3 +142,19 @@ the final test. This proves clearing after a fresh 403 in the isolated panel;
 without a push signal or refresh it cannot remove data already displayed at
 the exact instant a role changes. The full Dashboard route, formal gate,
 integration, push and deploy remain open.
+
+L07 adjacent admin panels: QA `f2a5c97d` extended the same pinned-source
+Edge/API/disposable PostgreSQL run to Audit Log and demo financing prechecks.
+The previous October-web panels retained private event/context text after
+demotion and a fresh 403 (RED `ZtEaoW` for audit, `piTbfE` for finance).
+October-web `494821ac` clears each list on failed loads and filter changes,
+and ignores older responses. The fixture holds an authorized 200 until after
+the newer 403, then checks that private sentinels never reappear. Final exact
+QA/web candidate Edge/API/PG1/1 `ju3qQ7` PASS, test/PostgreSQL exits 0,
+cleanup errors empty. QA root check, runner16/16, source/syntax/diff checks,
+web TypeScript/Vite build and scoped ESLint passed. An independent read-only
+review found the held audit response did not initially contain the asserted
+sentinel and identified a filter-change window; both were corrected before
+the final test, but the final diff was not re-reviewed. This is isolated-panel
+acceptance only, not instant revocation without a new request, full Dashboard
+acceptance, formal CODEX/CLAUDE approval, integration, push or deployment.
