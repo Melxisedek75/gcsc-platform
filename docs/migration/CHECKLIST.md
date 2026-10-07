@@ -279,8 +279,12 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   чужому без имени/байтов и отсутствие байтов в списке/compliance. Ревью
   теста выявило P2 по приватности и P3 по provenance; проверки добавлены,
   включая последний filename assertion после review, и прошли в финальном
-  прогоне. Admin-отказ
-  задан SQL-фикстурой, не кнопкой reviewer UI; formal gate ещё открыт.
+  прогоне. QA follow-up `1544c673` заменил SQL-отказ настоящей кнопкой Reject
+  в AdminDocumentReviewPanel и проверил скачивание админом, запись причины,
+  ID reviewer и время в PostgreSQL. Финальный Edge/API/PG1/1 `KGDB1z` PASS,
+  test/PG exit0; независимое ревью обнаружило P3-пробел admin list JSON,
+  после его исправления финальный тест прошёл, но reviewer его не повторял.
+  Formal gate ещё открыт.
   Evidence: `DOCUMENT-UPLOAD-PG-REVIEW.md`. Проверка заголовка не заменяет
   декодирование файла или антивирус, L05a остаётся открытым.
 - [ ] **L06 / backend + web.** Создание/редактирование/публикация заявки

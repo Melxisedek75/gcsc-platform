@@ -99,7 +99,17 @@ compliance privacy assertions were added, including the final filename check.
 The reviewer inspected `CGIcSj` but did not rerun the final test. This is not
 formal `AI_REVIEW_GATE=PASS`.
 
-Remaining L05a: formal gate, receiving integration, real admin-review UI in
-the combined journey, removal behavior, and a real file scanning policy.
-The SQL reviewer fixture is not an admin action, and header signatures do not
-prove files are safe.
+QA follow-up `1544c673` replaces the SQL rejection fixture with the real
+`AdminDocumentReviewPanel` in a separate admin browser context. An admin
+downloads the initial file, enters a reason, and clicks Reject. The test
+requires PUT 200, persisted reviewer ID/note/time, then contractor reload,
+replacement and download as above. Admin-list JSON must contain the target
+document metadata but no file bytes. PG18.4/Edge/API 1/1 passed twice
+(`H9cr8o`, `jkabob`), test/PostgreSQL exits 0, cleanup errors empty; runner
+16/16, QA root check, syntax and diff checks passed. Independent read-only
+review found a P3 admin-list privacy assertion gap; the exact assertion was
+added and final `KGDB1z` passed 1/1 with test/PostgreSQL exits 0. Reviewer
+did not rerun that final follow-up and this is not formal gate approval.
+
+Remaining L05a: formal gate, receiving integration, removal behavior, and a
+real file scanning policy. Header signatures do not prove files are safe.
