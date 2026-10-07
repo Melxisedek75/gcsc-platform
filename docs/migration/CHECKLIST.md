@@ -1017,6 +1017,15 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   (`oNYlF8`, `rjz0Fq`, test/PG exits0), API Jest354/354, syntax/diff PASS.
   Root adaptation mismatch, независимое exact-diff review, formal gate и
   интеграция открыты.
+  Скачивание документа: QA `84134a55` воспроизвёл выдачу файла HTTP200
+  после отключения владельца во время чтения PostgreSQL (`aKTD95`, RED),
+  затем добавил проверку отзыва admin-роли при скачивании чужого файла.
+  Backend `5c6ceb9b` повторно проверяет доступ после чтения и перед ответом.
+  Exact-source PG project-publication43/43 дважды (`orykUx`, `jACiuM`,
+  test/PG exits0), API Jest354/354, syntax/diff PASS. Тестовый header
+  assertion был уточнён под существующий `no-store`; это не продуктовая
+  правка. Root adaptation mismatch, независимое exact-diff review, formal
+  gate и интеграция открыты.
   Read-only аудит 7 октября выявил отдельный legacy auth/privacy риск:
   `POST /api/register` и `/api/login` вызывают локальный `sendEmail`, который
   пишет OTP в server log, ничего не отправляет, но маршруты отвечают

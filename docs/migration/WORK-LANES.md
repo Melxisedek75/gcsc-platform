@@ -196,6 +196,12 @@ reproduced HTTP200 after account disable during SQL read; backend
 PG41/41 twice `oNYlF8`/`rjz0Fq`, test/PG exits0, API354/354, syntax/diff
 PASS. Root adaptation mismatch, exact-diff review, formal gate and
 integration remain open.
+Document-download follow-up: QA `84134a55` RED `aKTD95` reproduced HTTP200
+file delivery after owner disable during SQL read and also covers concurrent
+admin demotion for another user's file. Backend `5c6ceb9b` rechecks access
+after read and before response. Exact-source PG43/43 twice `orykUx`/`jACiuM`,
+test/PG exits0, API354/354, syntax/diff PASS. Root adaptation mismatch,
+exact-diff review, formal gate and integration remain open.
 Independent L21 work: October-web `79c9f3a4` clarifies current Token status
 and planned staking/rewards while retaining Token link focus state. Legal-
 claims RED before edit, then PASS; dashboard-live, build, scoped ESLint and
