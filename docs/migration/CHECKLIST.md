@@ -1316,6 +1316,12 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   снимок проверены; `account-browser` `5rYiNl` PASS1/1. Build,
   scoped ESLint и dashboard-live PASS. Screen reader, 200% zoom,
   независимое ревью финального diff и интеграция ещё открыты.
+  Независимый read-only reviewer нашёл P2: программный фокус мог
+  уйти на фон модального меню. QA `aa1638fb` подтвердил RED
+  `mXbdMp`; frontend `c3526ab4` удерживает `focusin` внутри меню,
+  built-CSS Edge/API/PG18.4 `vK5zRP` PASS1/1, test/PG exit0.
+  Второй P2 reviewer о фокусе после signout/Token-навигации открыт;
+  финальный follow-up отдельно не ревьюился. Gate не закрыт.
 - [ ] **L21 / продукт + QA.** Матрица публичных утверждений и политики:
   доступно сейчас / тестируется / планируется; убрать заявления о действующем
   escrow, займах, гарантиях, оценках и «тысячах клиентов» без доказательств.

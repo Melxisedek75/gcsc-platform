@@ -109,6 +109,11 @@ keyboard RED `RmaGsW`; built-CSS Edge/API/disposable PG18.4 `UV0iIj`
 and nonvisual regression `5rYiNl` PASS after focus entry, Tab trap,
 Escape and focus restoration. Final diff is not independently reviewed;
 no integration or release approval.
+Read-only review of the keyboard-menu candidate found two P2 focus gaps.
+QA `aa1638fb` reproduced background focus RED `mXbdMp`; October-web
+`c3526ab4` contained it, exact Edge/API/disposable PG18.4 `vK5zRP`
+PASS1/1. Route/signout focus remains open; the final fix was not
+independently re-reviewed or integrated.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role
 12/12 candidate; QA `b51453e4` owns the added regression cases. The frontend
 `docs/security/` untracked directory remains untouched. The design branch
