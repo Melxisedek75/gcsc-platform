@@ -1801,6 +1801,12 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   Validator 21/21, static site check и diff-check PASS. Кандидат не принят
   в publication, не прошёл founder/legal/provider и независимое ревью;
   точный release artifact и live-сайт не проверялись. L21b открыт.
+  Follow-up `afa09088` добавил проверку текста именно раздела партнёров
+  в HTML-парсере: требует proposed-only формулировку и отсутствие
+  present-tense утверждения. Две подмены сначала не ловились, после
+  исправления validator23/23, static site check и diff-check PASS.
+  Это узкий guard, не юридический аудит остальных утверждений или
+  разрешение на объединение/публикацию.
   Marketing `ca7f72b4` добавляет узкую проверку видимого hero-текста:
   статус `SmartContractor pilot in development` и раскрытие
   AI-generated concept image должны оставаться внутри hero-секции.
