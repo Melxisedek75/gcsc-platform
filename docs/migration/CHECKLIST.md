@@ -1600,6 +1600,13 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   dashboard-live, web build, scoped ESLint и diff-check PASS. Design и
   October-web ветки не интегрированы, exact-diff independent review и
   полный L21 остаются открытыми.
+  Узкий design-кандидат `23a7484b` исправил текст LoansFinancingPanel о штате:
+  демонстрационная заявка только сохраняет выбранный штат; API не определяет
+  доступность, право на финансирование или условия. Валидатор сначала RED,
+  после правки `check:loans-financing`, `check:legal-claims`,
+  `check:dashboard-live`, scoped ESLint, web build и diff-check PASS.
+  Кандидат не интегрирован/опубликован; browser/API/PG приёмка, независимое
+  ревью точного diff, legal/provider review и полный L21 остаются открытыми.
   Дополнительная локальная браузерная проверка account-role sourceRef
   `98c3ca57` дала 5/10 (Edge154, fixture API); сравнение с родительским
   design commit `d43a9175` дало те же пять отказов, а текущая publication
