@@ -62,6 +62,22 @@ the reviewer confirmed each was closed in the final diffs with no new P1-P3.
 The reviewer did not rerun Edge. This is mock HTTP UI evidence, not a single
 browser/API/real-PostgreSQL journey or formal gate approval.
 
+QA test-only commits `460fb3c8`, `fdff6b4f`, and `2b71453d` extend the
+isolated real PostgreSQL suite against exact clean backend `a1ff006f`.
+The disposable test row is marked rejected with reviewer metadata in SQL;
+its owner resubmits distinct PDF bytes through the API. Assertions cover the
+same document ID, incremented revision, new hash/bytes/name, cleared note and
+reviewer metadata, submitted status, old-revision denial, and unrelated-user
+denial on the new revision. Invalid MIME, forged bytes, and oversized requests
+must leave the stored file, MIME, size, revision, and review state unchanged.
+Final PG18.4 suite 1/1 passed twice (`postgres-baseline-tH3F0P`,
+`postgres-baseline-MWPlGG`), test/PostgreSQL exits 0; syntax/diff checks
+passed. Independent read-only review found test coverage gaps in two rounds;
+the reviewer confirmed all P2/P3 findings closed on exact `2b71453d` with
+no new P1-P3. The reviewer did not rerun PostgreSQL. Rejection is a SQL
+fixture, not an exercised admin-review UI, and this is not a combined
+browser/API/PG journey or formal gate approval.
+
 Remaining L05a: formal gate, receiving integration, end-to-end UI/API/PG
 upload/resubmission acceptance, and a real file scanning policy. Header
 signatures do not prove files are safe.
