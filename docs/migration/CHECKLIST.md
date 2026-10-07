@@ -1002,6 +1002,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   test/PG exits0), API Jest354/354, syntax/diff PASS. Это локальный
   кандидат, не подтверждение полного revocation-аудита. Root adaptation
   mismatch, независимое exact-diff review, formal gate и интеграция открыты.
+  Личный список документов: QA `eb1c75af` воспроизвёл HTTP200 с приватным
+  именем файла после отключения аккаунта во время чтения PostgreSQL (RED).
+  Backend `2629f606` повторно проверяет активность и актуальную роль перед
+  ответом. Exact-source PG project-publication40/40 дважды (`10ZfPL`,
+  `e6PQnM`, test/PG exits0), API Jest354/354, syntax/diff PASS.
+  Первый API-прогон без локального тестового JWT_SECRET завершился ошибкой
+  конфигурации; повтор с одноразовым локальным значением PASS. Root adaptation
+  mismatch, независимое exact-diff review, formal gate и интеграция открыты.
   Read-only аудит 7 октября выявил отдельный legacy auth/privacy риск:
   `POST /api/register` и `/api/login` вызывают локальный `sendEmail`, который
   пишет OTP в server log, ничего не отправляет, но маршруты отвечают

@@ -560,8 +560,14 @@
     "review": "APPROVED: Beauvoir, independent Sol/high agent01a09e82-0111-7803-ba04-dac9514c52a5, reviewed a0834ac7..e9f954fbb105ba4f6e05ff54c860ecaffec6ff28. Independently ran guards4/4 and real PostgreSQL18.4 tests9/9, exits0; source SHA matches, canonical gcsc.db unchanged and PostgreSQL stopped. Root43/43/API159 remain parent evidence. No main integration or production approval.",
     "result": "Added native PostgreSQL runner without Docker or downloads. Real PostgreSQL18.4:9/9 including parent; runtime schema idempotency, project/bid creation, role isolation, audit, FK/UNIQUE and API module/connection restart pass. Root43/43 plus syntax/static and API159/159 pass. services/api/v3/.tmp/postgres-baseline-ZUU0yU/result.json: testExitCode0, postgresExitCode0. Missing pg_isready diagnosed and replaced by pg driver probe. No mobile, WebAuth or financial runtime edits."
   },
-  "updatedAt": "2026-10-07T12:14:06Z",
-  "latestFollowup": "L07 admin document-review mutation: QA 236150b1 RED YMitZY reproduced HTTP200 approval after mid-read role revocation; backend d28c7fb8 locks current reviewer row and document update in one PG transaction, checks current role in JSON mode. A second concurrent test covers waiting on reviewer row lock. Exact-source PG39/39 twice wa1ebe/83ZPvw test/PG exits0, API354/354, syntax/diff PASS. Root adaptation mismatch, independent exact-diff review, formal gate and integration remain open.",
+  "updatedAt": "2026-10-07T12:20:10Z",
+  "latestFollowup": "Personal document-list disable race: QA eb1c75af RED reproduced HTTP200 private filename after account disable during SQL read; backend 2629f606 rechecks active account and current role before response. Exact-source PG40/40 twice 10ZfPL/e6PQnM test/PG exits0, API354/354, syntax/diff PASS. Initial API test attempt lacked local JWT_SECRET and failed config; repeat with disposable local test value passed. Root adaptation mismatch, independent exact-diff review, formal gate and integration remain open.",
+  "personalDocumentListRevocationCandidate": {
+    "qaCommit": "eb1c75af",
+    "backendCommit": "2629f606",
+    "status": "LOCAL_PASS_ROOT_ADAPTATION_FAILURE_REVIEW_AND_INTEGRATION_OPEN",
+    "evidence": "QA RED returned HTTP200 with private filename after concurrent account disable during user_documents read. Backend rechecks active account and current role before response. Exact-source PG project-publication40/40 twice 10ZfPL/e6PQnM, test/PG exits0; API354/354 with disposable local test JWT_SECRET; syntax/diff PASS. Root adaptation mismatch, independent exact-diff review, formal gate and integration open."
+  },
   "adminDocumentReviewRevocationCandidate": {
     "qaCommit": "236150b1",
     "backendCommit": "d28c7fb8",
