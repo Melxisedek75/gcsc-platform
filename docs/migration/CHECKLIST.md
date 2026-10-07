@@ -1322,6 +1322,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   built-CSS Edge/API/PG18.4 `vK5zRP` PASS1/1, test/PG exit0.
   Второй P2 reviewer о фокусе после signout/Token-навигации открыт;
   финальный follow-up отдельно не ревьюился. Gate не закрыт.
+  QA `364aa4df` подтвердил потерю фокуса после мобильного выхода
+  `GjxLXS` RED. Frontend `4ebca889` ставит фокус на вкладку Sign in
+  только после явного выхода; обычное первое открытие регистрации
+  не меняется. Built-CSS Edge/API/PG18.4 `rxJNLe` и финальный
+  `cdOUt7` PASS1/1, test/PG exit0: мобильный contractor и desktop
+  homeowner после выхода имеют фокус на Sign in. Build, scoped ESLint,
+  auth-feedback/channel и dashboard-live PASS. Token route focus,
+  независимое ревью финального diff и формальный gate ещё открыты.
 - [ ] **L21 / продукт + QA.** Матрица публичных утверждений и политики:
   доступно сейчас / тестируется / планируется; убрать заявления о действующем
   escrow, займах, гарантиях, оценках и «тысячах клиентов» без доказательств.

@@ -114,6 +114,10 @@ QA `aa1638fb` reproduced background focus RED `mXbdMp`; October-web
 `c3526ab4` contained it, exact Edge/API/disposable PG18.4 `vK5zRP`
 PASS1/1. Route/signout focus remains open; the final fix was not
 independently re-reviewed or integrated.
+QA `364aa4df` and October-web `4ebca889` are clean: sign-out focus
+RED `GjxLXS`, then built-CSS Edge/API/disposable PG18.4 `cdOUt7`
+PASS1/1 for mobile contractor and desktop homeowner. Token route focus
+and exact-final-diff review remain open; no integration.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role
 12/12 candidate; QA `b51453e4` owns the added regression cases. The frontend
 `docs/security/` untracked directory remains untouched. The design branch
