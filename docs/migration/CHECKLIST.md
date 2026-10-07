@@ -2149,6 +2149,20 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   Edge/API/изолированная PostgreSQL18.4 `5Jjp1P` PASS1/1, test/PG exits0,
   390 px/увеличенный текст, снимок осмотрен. Design build/validator/ESLint,
   QA root check и diff-check PASS. Независимое ревью и интеграция открыты.
+  Следующий QA-кандидат расширяет публичный профиль до `documents_missing`
+  (два отсутствующих документа) и `wallet_missing` при 390 px и
+  имитации 200% текста. До UI-правки `Hsrony` RED0/2 `Not submitted`;
+  после замены сырого `missing` на читаемую подпись Edge/API/изолированная
+  PG18.4 `4bTgh4` PASS1/1, снимки двух состояний осмотрены. Отдельное
+  измерение вторичных подписей `SuaThV` RED: контраст 2.56:1 на белом.
+  Design-кандидат сменил цвет на `#475569`; build, профильный validator,
+  scoped ESLint и QA syntax/diff-check PASS. Финальная PG/browser-проверка
+  `BvYF8r` не началась: `initdb.exe` завершился `No space left on device`
+  при записи `pg_wal/xlogtemp.30940`; на C: осталось около 0.02 GB.
+  Изменения QA/design не считать принятыми до повторного точного прогона;
+  сохранённые тестовые артефакты не удалялись. Для продолжения нужно
+  освободить место согласованным способом или выбрать достаточный локальный
+  диск для изолированной PG, затем повторить браузерный тест и осмотр снимков.
   QA `29f89864` задержал тот же изолированный HTTP401 и проверил, что
   submit отключён во время ожидания. Финальные отчёты design
   `qa/.tmp/account-visual-2LFamY/result.json` и October-web
