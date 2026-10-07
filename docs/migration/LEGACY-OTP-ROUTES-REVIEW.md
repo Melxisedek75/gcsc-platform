@@ -46,6 +46,10 @@ real user data. No production/integration decision follows from this note.
 
 ## Local backend candidate (2026-10-07 UTC)
 
+Backend commit `1bcd16b0` contains only the OTP-route change, focused
+`security-boundaries.test.js` regression, and API auth documentation. Its
+source hunk was staged separately from the preexisting L05a document-upload
+changes; after the commit, only L05a source/test edits remain unstaged.
 In `C:\gcsc-platform\.worktrees\backend`, the four legacy routes now return
 HTTP 410 before parsing input, OTP creation, token issuance, or user mutation.
 The log-only `sendEmail()` helper was removed. The current web client uses
@@ -56,17 +60,19 @@ external clients may need migration and must not be assumed compatible.
 over local HTTP with synthetic `example.invalid` data, including preexisting
 legacy OTP fixtures. It checks HTTP 410, no token, unchanged users/OTP count,
 and no OTP in console output. Focused 9/9 PASS, full API Jest 341/341 PASS,
-`node --check` and `git diff --check` PASS. The QA isolated PostgreSQL 18.4
+`node --check`, `git diff --check`, and staged diff-check PASS. Full Jest and
+PostgreSQL checks used the combined working-tree snapshot, not the isolated
+commit blob. The QA isolated PostgreSQL 18.4
 project-publication suite ran against backend `pure-server.js` SHA-256
 `554cc013e74398a19dab63d3be63baf11032d6fee2fce3a33a138cdbbbddb9bd`:
 33/33 PASS, test/PG exit 0, evidence
 `C:\gcsc-platform\.worktrees\qa\services\api\v3\.tmp\postgres-baseline-gNoZ8M\result.json`.
 That suite covers project privacy, roles, bid access and wallet identity but
-does not directly exercise the retired OTP routes in PostgreSQL mode. The backend worktree was already
-dirty with the separate L05a document-size/MIME candidate in `pure-server.js`
-and `profile-documents.test.js`; these edits were preserved. Do not stage the
-whole shared source file as only this auth change or integrate it without
-isolating the diff and passing the formal gate.
+does not directly exercise the retired OTP routes in PostgreSQL mode. The
+backend worktree was already dirty with the separate L05a document-size/MIME
+candidate in `pure-server.js`
+and `profile-documents.test.js`; these edits were preserved. The isolated auth
+commit is not integrated and has not passed the formal gate.
 
 QA test-only commit `4cb4f1e8` adds an opt-in isolated PostgreSQL 18.4 suite
 for all four legacy routes with synthetic fixtures, confirms no persisted user
