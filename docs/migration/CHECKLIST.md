@@ -961,6 +961,10 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   `PUT /api/auth/profile`: отдельный синтетический сбой до правки давал
   HTTP 400 с внутренним текстом, теперь оба сценария получают общий HTTP 500.
   Jest356/356, корневой `npm run check` и diff-check PASS; прежние gate открыты.
+  QA `518a809c` добавил проверку этих ошибок на одноразовой PostgreSQL 18.4:
+  `SzQOHJ` PASS1/1, test/PG exits0; HTTP 500 без внутреннего текста, строки
+  документа и профиля не изменились. QA root/syntax/diff checks PASS.
+  Изолированный тест не заменяет независимое ревью и receiving integration.
   2026-10-07 admin document-list role-race candidate: локальный PostgreSQL
   regression QA `3e3f389d` воспроизвёл выдачу приватного имени файла после
   отзыва admin-роли во время заблокированного чтения (`bqILek`: HTTP 200
