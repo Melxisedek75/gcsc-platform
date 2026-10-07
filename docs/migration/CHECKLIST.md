@@ -1127,6 +1127,25 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   неточное название записи; повторного review итогового commit ещё нет.
   Кандидат изолирован, не интегрирован/опубликован; full L21, формальный
   CODEX/CLAUDE gate и реальная browser/API/PG приёмка открыты.
+  Design-кандидат `98c3ca57` убрал с регистрации обещание доступной привязки
+  WebAuth, уточнил отсутствие live escrow и условность email/SMS провайдера.
+  API `POST /api/auth/register` проверен по коду: при preferred-режиме и
+  неготовом провайдере создаётся активный, но неподтверждённый аккаунт.
+  Scoped ESLint, web build, dashboard-live, legal-claims, diff-check PASS.
+  Независимый Codex reviewer нашёл несогласованные WalletPanel/Wallet и
+  баннер после регистрации; кандидат не интегрирован.
+  Frontend wallet-auth кандидаты `a207c14a` и `494e7e2e` убрали неподписанный
+  `api.connectWallet` из Dashboard и публичной Wallet-страницы, оставив
+  WebAuth-сессию только локальной, и отличают сохранённые metadata от
+  подтверждённой сессии. Баннер после регистрации теперь называет OTP
+  подтверждением канала связи, а не личности. Scoped ESLint, web build,
+  dashboard-live и diff-check PASS; focused independent Codex re-review
+  закрыл находки P2/P3 по статусу кошелька, без реального WebAuth.
+  Frontend Wallet-страница всё ещё содержит старые маркетинговые обещания;
+  их исправляет отдельный design-кандидат `ec4c4a9e`, где старый
+  auth-вызов пока сохраняется. Перед интеграцией эти две ветки необходимо
+  согласовать и повторно проверить точный объединённый diff; формальный
+  review gate, browser/API/PG приёмка и полный L21 открыты.
 
 ### P0 - приёмка и публикация, 11-20 октября
 
