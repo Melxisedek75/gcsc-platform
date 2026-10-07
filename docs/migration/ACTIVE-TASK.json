@@ -560,8 +560,14 @@
     "review": "APPROVED: Beauvoir, independent Sol/high agent01a09e82-0111-7803-ba04-dac9514c52a5, reviewed a0834ac7..e9f954fbb105ba4f6e05ff54c860ecaffec6ff28. Independently ran guards4/4 and real PostgreSQL18.4 tests9/9, exits0; source SHA matches, canonical gcsc.db unchanged and PostgreSQL stopped. Root43/43/API159 remain parent evidence. No main integration or production approval.",
     "result": "Added native PostgreSQL runner without Docker or downloads. Real PostgreSQL18.4:9/9 including parent; runtime schema idempotency, project/bid creation, role isolation, audit, FK/UNIQUE and API module/connection restart pass. Root43/43 plus syntax/static and API159/159 pass. services/api/v3/.tmp/postgres-baseline-ZUU0yU/result.json: testExitCode0, postgresExitCode0. Missing pg_isready diagnosed and replaced by pg driver probe. No mobile, WebAuth or financial runtime edits."
   },
-  "updatedAt": "2026-10-07T11:56:28Z",
-  "latestFollowup": "L07 admin audit-events role race: earlier PostgreSQL ENOENT was a guessed-path error; saved postmaster.opts identified installed embedded PG18.4. QA 7936a940 RED iIdq6E reproduced HTTP200 after admin demotion; backend d1cde459 rechecks role. Exact-source project-publication35/35 twice LJ6o1E/smAhNJ test/PG exits0, API354/354, syntax/diff PASS. Root adaptation mismatch, independent review, formal gate and integration remain open.",
+  "updatedAt": "2026-10-07T11:59:35Z",
+  "latestFollowup": "L07 admin financing-prechecks role race: QA f908093b RED YGXsRc reproduced HTTP200 after concurrent admin demotion; backend e65f6a49 rechecks role before response. Exact-source PG project-publication36/36 twice tGTwCf/mjt7iK test/PG exits0, API354/354, syntax/diff PASS. No live loan/payment; root adaptation mismatch, independent review, formal gate and integration remain open.",
+  "adminFinancingPrecheckRoleRaceCandidate": {
+    "qaCommit": "f908093b",
+    "backendCommit": "e65f6a49",
+    "status": "LOCAL_PASS_ROOT_ADAPTATION_FAILURE_REVIEW_AND_INTEGRATION_OPEN",
+    "evidence": "QA RED YGXsRc returned HTTP200 after admin demotion during blocked financing-prechecks read; fixed-source PostgreSQL project-publication36/36 twice tGTwCf/mjt7iK with test/PG exits0, API354/354, syntax/diff PASS. Privacy guard only; no loan/payment activation. Root imported-file adaptation mismatch, independent exact-diff review and integration remain open."
+  },
   "backendRootProvenanceReconciliation": {
     "status": "BLOCKED_BY_STALE_ADAPTATION_METADATA_AND_OWNERSHIP",
     "evidence": "Backend source-provenance.test.mjs15/15 PASS. import-manifest adaptation SHA256 mismatch for services/api/API-DOCUMENTATION.md, services/api/v3/pure-server.js, services/api/v3/tests/escrow-milestones.test.js; first root npm test failure is the doc Git blob fc7ff06d vs original 2d1bc7f9. Reconcile adaptations only with exact candidate receipt in publication lane, then rerun root check. No test relaxation or metadata edit in backend lane."

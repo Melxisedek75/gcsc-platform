@@ -978,6 +978,13 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   project-publication35/35 дважды (`LJ6o1E`, `smAhNJ`, test/PG exits0),
   API Jest354/354, syntax/diff checks PASS. Root adaptation mismatch,
   independent exact-diff review, formal gate и интеграция открыты.
+  Admin financing-prechecks role race: QA `f908093b` RED `YGXsRc`
+  воспроизвёл HTTP200 после отзыва admin-роли во время чтения приватных
+  precheck данных. Backend `e65f6a49` повторно проверяет роль перед
+  ответом; exact-source PG project-publication36/36 дважды (`tGTwCf`,
+  `mjt7iK`, test/PG exits0), API Jest354/354, syntax/diff PASS.
+  Это не запуск займа или платёжной функции. Root adaptation mismatch,
+  independent exact-diff review, formal gate и интеграция открыты.
   Read-only аудит 7 октября выявил отдельный legacy auth/privacy риск:
   `POST /api/register` и `/api/login` вызывают локальный `sendEmail`, который
   пишет OTP в server log, ничего не отправляет, но маршруты отвечают

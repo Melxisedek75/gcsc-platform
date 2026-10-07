@@ -167,6 +167,12 @@ QA `7936a940` RED `iIdq6E` reproduced HTTP200 after admin demotion;
 backend `d1cde459` rechecks role before response. Exact-source PG35/35 twice
 `LJ6o1E`/`smAhNJ` with test/PG exits0, API354/354, syntax/diff checks PASS.
 Root adaptation mismatch, independent review and integration remain open.
+Admin financing-prechecks follow-up: QA `f908093b` RED `YGXsRc` reproduced
+HTTP200 after mid-read admin demotion; backend `e65f6a49` rechecks role
+before response. Exact-source PG36/36 twice `tGTwCf`/`mjt7iK`, test/PG
+exits0, API354/354, syntax/diff PASS. This is a privacy guard, not a live
+loan/payment. Root adaptation mismatch, exact-diff review, formal gate and
+integration remain open.
 Independent L21 work: October-web `79c9f3a4` clarifies current Token status
 and planned staking/rewards while retaining Token link focus state. Legal-
 claims RED before edit, then PASS; dashboard-live, build, scoped ESLint and
