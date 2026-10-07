@@ -1791,6 +1791,15 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
 - [ ] **L21b / QA / 15 октября.** Проверить весь публичный текст и видео на
   статусы `available now`/`pilot`/`planned`; ни одна функция будущего whitepaper
   не описана как уже работающая. Проверка: claim ledger и независимое ревью.
+  7 октября read-only аудит локального `apps/marketing/whitepaper.html` выявил
+  противоречие: раздел `Licensed Partner Model` утверждает `GCSC uses licensed
+  partners` для escrow, платежей и займов, а раздел о Web3 ниже прямо говорит,
+  что документ не заявляет партнёрство или live-интеграцию. Этот v1.3 draft
+  помечен `noindex`, но остаётся доступной страницей, не закрытой для чтения.
+  До какой-либо публикации исправить present-tense утверждение на условный
+  будущий статус после founder/legal/provider review и повторно проверить
+  точный release artifact. Локальный источник не менялся; live-сайт не
+  проверялся, партнёры не подтверждены. L21b открыт.
   Marketing `ca7f72b4` добавляет узкую проверку видимого hero-текста:
   статус `SmartContractor pilot in development` и раскрытие
   AI-generated concept image должны оставаться внутри hero-секции.
