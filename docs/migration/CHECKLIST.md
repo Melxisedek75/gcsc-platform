@@ -1801,6 +1801,12 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   `account_key_unverified`. Focused41/41, API366/366, backend root check
   и diff-check PASS. Реальной подписи, независимого ревью, receiving и
   публикации не было; L23 остаётся открытым.
+  Backend `9016c796` отдельно пометил ответы старых `/api/wallet/challenge`
+  и `/api/wallet/connect` как `private, no-store` с `Vary: Origin,
+  Authorization`, включая ошибки. Проверка была RED на обоих маршрутах до
+  правки; focused41/41, API366/366, backend root check и diff-check PASS.
+  PostgreSQL/браузер на этом exact commit не повторялись; независимого
+  ревью, receiving и публикации не было.
 - [ ] **L24 / координатор + founder.** К 15 октября - пилотный кандидат,
   если L01-L23 проходят. К 20 октября - публичный релиз только по отдельному
   разрешению после preview, live-provider проверки, резервной копии, rollback
