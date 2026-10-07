@@ -151,6 +151,13 @@ disposable PG18.4 `uK7po6` PASS1/1 with test/PG exit0; web build,
 focused ESLint, auth validators and runner19/19 passed. This is AX
 semantics, not a human screen-reader run. Final independent review and
 receiving integration remain open.
+2026-10-07 L07 admin document-list role race: backend `bb231c72` and QA
+`3e3f389d` are isolated scoped commits. PostgreSQL RED `bqILek` returned
+200 after mid-request admin demotion; fixed-source project-publication
+34/34 twice (`DNUQgi`, `71swCU`, test/PG exits0), API354/354 and syntax
+PASS. Backend root `npm test` remains RED on pre-existing untouched
+API-DOCUMENTATION.md provenance mismatch. Exact-diff independent review,
+formal gate and integration remain open; neither commit is in publication.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role
 12/12 candidate; QA `b51453e4` owns the added regression cases. The frontend
 `docs/security/` untracked directory remains untouched. The design branch

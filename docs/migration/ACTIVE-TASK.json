@@ -560,8 +560,14 @@
     "review": "APPROVED: Beauvoir, independent Sol/high agent01a09e82-0111-7803-ba04-dac9514c52a5, reviewed a0834ac7..e9f954fbb105ba4f6e05ff54c860ecaffec6ff28. Independently ran guards4/4 and real PostgreSQL18.4 tests9/9, exits0; source SHA matches, canonical gcsc.db unchanged and PostgreSQL stopped. Root43/43/API159 remain parent evidence. No main integration or production approval.",
     "result": "Added native PostgreSQL runner without Docker or downloads. Real PostgreSQL18.4:9/9 including parent; runtime schema idempotency, project/bid creation, role isolation, audit, FK/UNIQUE and API module/connection restart pass. Root43/43 plus syntax/static and API159/159 pass. services/api/v3/.tmp/postgres-baseline-ZUU0yU/result.json: testExitCode0, postgresExitCode0. Missing pg_isready diagnosed and replaced by pg driver probe. No mobile, WebAuth or financial runtime edits."
   },
-  "updatedAt": "2026-10-07T11:18:20Z",
-  "latestFollowup": "L20 QA 49929dc6 reproduced missing live status on registration HTTP503 (RED fIKDQ2); October-web 01dcbed3 adds persistent role=status. Exact built-CSS Edge/API/disposable PG18.4 uK7po6 PASS1/1, test/PG exit0; web build, focused lint, auth validators and runner19/19 passed. Automated AX semantics only, not human screen reader. Final independent review and integration remain open.",
+  "updatedAt": "2026-10-07T11:30:49Z",
+  "latestFollowup": "L07 admin document-list role race: QA 3e3f389d RED bqILek (200 after concurrent admin demotion); backend bb231c72 rechecks role before response. Exact PG project-publication34/34 twice DNUQgi/71swCU test/PG exits0, API354/354, syntax PASS. Backend root npm test RED on pre-existing untouched API-DOCUMENTATION.md provenance mismatch. Independent exact-diff review, formal gate and integration remain open.",
+  "adminDocumentRoleRaceCandidate": {
+    "qaCommit": "3e3f389d",
+    "backendCommit": "bb231c72",
+    "status": "LOCAL_PASS_ROOT_PROVENANCE_FAILURE_REVIEW_AND_INTEGRATION_OPEN",
+    "evidence": "PostgreSQL RED bqILek returned HTTP200 after admin demotion during document-list read; fixed-source project-publication34/34 twice DNUQgi/71swCU with test/PG exits0, API Jest354/354 and API syntax PASS. Backend root npm test failed on unchanged API-DOCUMENTATION.md provenance hash mismatch fc7ff06d versus manifest 2d1bc7f9. No exact-diff independent review or integration; remaining role races not ruled out."
+  },
   "registrationLiveStatusCandidate": {
     "qaCommit": "49929dc6",
     "webCommit": "01dcbed3",

@@ -952,6 +952,17 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   `ai-review/records/2026-10-06-public-category-browser.md`. Это локальная
   браузерная QA, без изменения runtime.
   L07 остаётся открыт до полного privacy и browser/API/DB acceptance.
+  2026-10-07 admin document-list role-race candidate: локальный PostgreSQL
+  regression QA `3e3f389d` воспроизвёл выдачу приватного имени файла после
+  отзыва admin-роли во время заблокированного чтения (`bqILek`: HTTP 200
+  вместо 403). Backend `bb231c72` повторно проверяет роль перед ответом:
+  exact-source PG project-publication 34/34 дважды (`DNUQgi`, `71swCU`,
+  test/PG exits0), API Jest 354/354, API syntax PASS. Backend root
+  `npm test` не прошёл на существующем mismatch provenance для нетронутого
+  `services/api/API-DOCUMENTATION.md` (actual `fc7ff06d...`, manifest
+  `2d1bc7f9...`); это не зелёный root check. Исправление закрывает
+  воспроизведённое окно, но не все возможные конкурентные смены роли.
+  Независимый exact-diff review, formal gate и интеграция открыты.
   Read-only аудит 7 октября выявил отдельный legacy auth/privacy риск:
   `POST /api/register` и `/api/login` вызывают локальный `sendEmail`, который
   пишет OTP в server log, ничего не отправляет, но маршруты отвечают
