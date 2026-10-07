@@ -1825,6 +1825,13 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   конфигурации, поэтому реальный login/API не проверен. Это не screen reader,
   200% browser zoom или полная L20b приёмка. Ветки не объединены,
   независимый review точного diff и formal gate открыты.
+  QA follow-up `697bb244` требует именно перехваченный ответ входа,
+  а не ошибку конфигурации: обе ветки локально собраны с loopback API URL,
+  каждый из пяти случаев делает ровно один изолированный login-запрос.
+  Edge154: design `qa/.tmp/account-visual-1P4kR2/result.json` и
+  October-web `qa/.tmp/account-visual-0812qm/result.json` PASS5/5 каждый,
+  errors0, минимум 6.47:1. QA root check, syntax и diff-check PASS.
+  Это тестовый HTTP401, не реальный API/PG login; остальные L20b gates открыты.
 - [ ] **L21a / product + legal / 10 октября.** Завершить тексты privacy,
   terms, consent на аудио/AI, возвраты, поддержку и точность бренда/юрлица.
   Проверка: владелец подтверждает перед публичной регистрацией и оплатой.
