@@ -1058,6 +1058,18 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   само значение не выводилось. Backend `pure-server.js` в своей lane уже
   dirty L05a; этот риск не исправлялся и не проверялся live-запросом. Не
   объявлять privacy или auth готовыми до узкого исправления и ревью.
+  Отдельный privacy-риск публичной карточки подрядчика обнаружен 7 октября:
+  `publicContractorDetails`, `enrichBidWithContractor` и отказ при принятии
+  ставки передавали полный объект compliance, включая имя загруженного
+  документа и заметку проверки. QA `d2ffa4b4` воспроизвёл утечку на
+  disposable PostgreSQL18.4 (RED 46/48). Изолированный backend `8f0622b6`
+  ограничивает публичную verification тремя полями: `checklist`,
+  `overall_status`, `ready_for_bids`; личный маршрут сохраняет подробности.
+  Design `675507e9` согласует типы клиента. Exact-source PG48/48
+  (`qa/services/api/v3/.tmp/postgres-baseline-y1KYZ2/result.json`, exit0),
+  API Jest354/354, web build и точечные проверки PASS. Независимый review
+  не выполнен из-за лимита agent threads; кандидаты не интегрированы,
+  не опубликованы, полный L07 остаётся открытым.
 - [ ] **L08 / backend + web.** Доступ к одному project ID: право покупателя,
   серверные состояния `unpaid/pending/paid/refunded/revoked`, уникальность
   project+contractor и проверка перед раскрытием/предложением. Приёмка:
