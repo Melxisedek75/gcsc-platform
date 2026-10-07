@@ -969,10 +969,15 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   из чужой ownership lane. Исправление закрывает
   воспроизведённое окно, но не все возможные конкурентные смены роли.
   Независимый exact-diff review, formal gate и интеграция открыты.
-  Следующий audit-events admin-role race тест добавлен только в QA working
-  tree, без коммита и без утверждения PASS/RED: запуск runner остановился до
-  тестов с ENOENT для локального PostgreSQL bin. Backend audit-events не
-  менялся; после восстановления среды нужен RED/GREEN прогон и review.
+  Следующий audit-events admin-role race: первоначальный ENOENT был ошибкой
+  выбора каталога, а не отсутствием PostgreSQL. Из сохранённого
+  `postmaster.opts` найден локальный embedded PostgreSQL18.4. QA
+  `7936a940` после исправления числового fixture ID воспроизвёл HTTP200
+  после отзыва роли вместо 403 (`iIdq6E`, RED). Backend `d1cde459`
+  повторно проверяет admin перед отправкой журнала. Exact-source PG
+  project-publication35/35 дважды (`LJ6o1E`, `smAhNJ`, test/PG exits0),
+  API Jest354/354, syntax/diff checks PASS. Root adaptation mismatch,
+  independent exact-diff review, formal gate и интеграция открыты.
   Read-only аудит 7 октября выявил отдельный legacy auth/privacy риск:
   `POST /api/register` и `/api/login` вызывают локальный `sendEmail`, который
   пишет OTP в server log, ничего не отправляет, но маршруты отвечают

@@ -161,10 +161,12 @@ API-DOCUMENTATION.md, pure-server.js and escrow-milestones.test.js;
 source-provenance tests themselves pass 15/15. Publication owns the migration
 metadata; no cross-lane edit was made. Exact-diff independent review,
 formal gate and integration remain open; neither commit is in publication.
-2026-10-07 audit-events follow-up: QA has an uncommitted role-race regression
-draft. Runner stopped before tests: PostgreSQL binary realpath ENOENT at
-`C:\Program Files\PostgreSQL\18\bin`; no RED/GREEN or backend fix claimed.
-The affected backend lane remains unverified, not a whole-project blocker.
+2026-10-07 audit-events follow-up: prior PostgreSQL ENOENT was a wrong guessed
+path, corrected from saved `postmaster.opts` to the installed embedded PG18.4.
+QA `7936a940` RED `iIdq6E` reproduced HTTP200 after admin demotion;
+backend `d1cde459` rechecks role before response. Exact-source PG35/35 twice
+`LJ6o1E`/`smAhNJ` with test/PG exits0, API354/354, syntax/diff checks PASS.
+Root adaptation mismatch, independent review and integration remain open.
 Independent L21 work: October-web `79c9f3a4` clarifies current Token status
 and planned staking/rewards while retaining Token link focus state. Legal-
 claims RED before edit, then PASS; dashboard-live, build, scoped ESLint and
@@ -174,6 +176,8 @@ Marketing `ca7f72b4` adds a narrow offline guard for the visible hero pilot
 status and AI-generated concept-image disclosure. Two mutation cases exposed
 the previous missing guard; final validator20/20 and static site check PASS.
 No full L21b claim review, independent exact-diff review or publication.
+Marketing `e4099966` updates its claim ledger to name that narrow guard;
+full claim/media review and release gates remain unchanged.
 L20 actual browser zoom remains open: Browser UI policy denied a local
 `file:` URL, and no alternate browser surface or URL workaround was used.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role
