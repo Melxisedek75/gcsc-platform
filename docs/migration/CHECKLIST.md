@@ -470,6 +470,12 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   exact final diff не перепроверен. Formal gate и интеграция открыты.
   Evidence: `DOCUMENT-UPLOAD-PG-REVIEW.md`. Проверка заголовка не заменяет
   декодирование файла или антивирус, L05a остаётся открытым.
+  Повтор на exact backend `bc957ad3` 7 октября: document-browser с
+  October-web `a3659f7d` и QA `5b6ec93b`, Edge154/API/одноразовая
+  PostgreSQL18.4 `UG7xkf` PASS1/1, 21 шаг/83 запроса, page/blocked/
+  cleanup errors0, test/PG exits0. Загрузка, замена, отказ reviewer,
+  отключение пользователя и гонки старых UI-ответов проверены локально;
+  антивирус, полная L05a, review и integration остаются открытыми.
 - [ ] **L06 / backend + web.** Создание/редактирование/публикация заявки
   владельцем, обязательные поля, черновик, ошибки, повтор после сбоя.
   Приёмка: запись переживает рестарт API/DB; только её владелец меняет её.
@@ -1649,6 +1655,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   QA root check, syntax и diff-check PASS. Это browser/presentation
   acceptance с тестовым ответом, не реальный API/PG или юридическая
   проверка статуса, не независимый review и не integration.
+  Public-contractor-browser с тем же October-web `UeOuYo` RED1/1:
+  тест ожидал подпись `Platform pilot checks...`, отсутствующую в этой
+  ветке; test exit1, PG exit0. Это неверная пара теста и web source,
+  не доказательство регрессии API. С предназначенной design-веткой
+  `2ac4cb86` повтор `baC1jg` PASS1/1, test/PG exits0: Edge154,
+  3 видимые карточки, 2 скрытые после отзыва роли/отключения, 8 запросов,
+  page/external errors0. Design-кандидат не интегрирован и формальный
+  review gate открыт.
   Design-кандидат `98c3ca57` убрал с регистрации обещание доступной привязки
   WebAuth, уточнил отсутствие live escrow и условность email/SMS провайдера.
   API `POST /api/auth/register` проверен по коду: при preferred-режиме и
