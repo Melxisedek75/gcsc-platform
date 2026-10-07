@@ -158,3 +158,18 @@ sentinel and identified a filter-change window; both were corrected before
 the final test, but the final diff was not re-reviewed. This is isolated-panel
 acceptance only, not instant revocation without a new request, full Dashboard
 acceptance, formal CODEX/CLAUDE approval, integration, push or deployment.
+
+QA `76bb4487` adds the real `Dashboard`/`HashRouter` route to the same
+explicit-source browser bundle. The admin navigates to Audit Log and Financing
+Review and sees SQL-backed synthetic records. After PostgreSQL demotion, the
+still-mounted financing panel refreshes, receives 403 and clears its private
+context before navigation; Audit Log also receives 403. A page reload fetches
+the current role from `/api/auth/profile` and hides all three admin navigation
+buttons. Final Edge/API/PG18.4 run `9kDBZR` passed 1/1 with test/PG exits 0,
+no blocked requests, page errors or cleanup errors. Earlier route runs
+`ZfPoEL` and `MFe5kN` passed before a reviewer identified a false-pass risk:
+the financing data was previously checked only after leaving its panel. The
+final test fixes that assertion; QA root check, runner16/16, syntax and diff
+checks passed. The reviewer did not rerun or re-review the final diff. This
+proves a fresh 403 and a reload path, not instant revocation without a request,
+all Dashboard journeys, formal gate approval, integration or deployment.

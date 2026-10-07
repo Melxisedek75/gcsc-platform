@@ -304,6 +304,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   ревью нашло два пробела, исправленных до финального теста; финальный diff
   не перепроверен. Без нового запроса мгновенный отзыв не доказан; Dashboard,
   formal gate и интеграция остаются открытыми.
+  QA `76bb4487` проверил настоящий Dashboard/HashRouter в том же Edge/API/PG:
+  admin видит SQL-записи, после отзыва роли открытая Financing Review получает
+  403 и очищает запись до навигации; Audit Log получает 403, после reload все
+  три admin-пункта меню скрыты. Финальный `9kDBZR` PASS1/1, test/PG0,
+  network/page/cleanup errors пусты; root check, runner16/16, syntax/diff
+  PASS. Reviewer нашёл и исправленный затем ложный PASS на размонтированной
+  финансовой панели; финальный diff он не перепроверял. Это не все сценарии
+  Dashboard и не мгновенное удаление данных без нового запроса.
   Formal gate ещё открыт.
   Evidence: `DOCUMENT-UPLOAD-PG-REVIEW.md`. Проверка заголовка не заменяет
   декодирование файла или антивирус, L05a остаётся открытым.
