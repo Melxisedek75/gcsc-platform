@@ -1307,6 +1307,15 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   360/390/768/1280/1440, `qa/.tmp/account-visual-McgEEr` PASS;
   page errors 0. Это автоматический AX-tree smoke, не настоящий
   screen reader, contrast audit или 200% browser zoom.
+  QA `330fdf5b` воспроизвёл дефект клавиатуры в мобильном Dashboard:
+  Edge/API/изолированная PG18.4 `RmaGsW` RED, после Enter фокус
+  оставался за открытым меню. Frontend `ea42be88` переводит фокус
+  на Close menu, удерживает Tab/Shift+Tab, закрывает по Escape и
+  возвращает фокус на Open menu. Финальный built-CSS сценарий
+  `UV0iIj` PASS1/1, test/PG exit0, видимый 1px focus outline и
+  снимок проверены; `account-browser` `5rYiNl` PASS1/1. Build,
+  scoped ESLint и dashboard-live PASS. Screen reader, 200% zoom,
+  независимое ревью финального diff и интеграция ещё открыты.
 - [ ] **L21 / продукт + QA.** Матрица публичных утверждений и политики:
   доступно сейчас / тестируется / планируется; убрать заявления о действующем
   escrow, займах, гарантиях, оценках и «тысячах клиентов» без доказательств.

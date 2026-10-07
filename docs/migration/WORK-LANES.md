@@ -104,6 +104,11 @@ Web-design `62df4ae2` is clean: local legal-claims validator now guards
 both footer variants with TSX AST; design PASS, current October-web RED
 on false active-service claims and placeholder policy/social links.
 This does not integrate the design candidate or approve legal copy.
+QA `330fdf5b` and October-web `ea42be88` are clean. Pre-fix mobile menu
+keyboard RED `RmaGsW`; built-CSS Edge/API/disposable PG18.4 `UV0iIj`
+and nonvisual regression `5rYiNl` PASS after focus entry, Tab trap,
+Escape and focus restoration. Final diff is not independently reviewed;
+no integration or release approval.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role
 12/12 candidate; QA `b51453e4` owns the added regression cases. The frontend
 `docs/security/` untracked directory remains untouched. The design branch
