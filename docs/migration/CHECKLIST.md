@@ -1812,6 +1812,12 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   отрицательных случая сначала проходили при ложном `available now`, затем
   validator21/21 и static site check PASS. Социальный предпросмотр в
   браузере, полный claim/media audit, независимое ревью и release открыты.
+  Marketing `43ad0635` добавляет для Open Graph и Twitter image alt явное
+  `AI-generated concept` / `not a customer project` и статический guard.
+  До правки оба отрицательных случая не ловились (Open Graph не
+  проверялся, Twitter alt отсутствовал); после правки validator22/22,
+  static site check и diff-check PASS. Реальный social preview в браузере,
+  права на изображение, независимое ревью и публикация не подтверждены.
   Отдельный source-кандидат `b229fd4e` добавляет видимое пояснение, что hero
   изображение AI-сгенерировано и не является проектом клиента. Локальные
   static/browser проверки прошли; `MARKETING-CONCEPT-DISCLOSURE-REVIEW.md`.
