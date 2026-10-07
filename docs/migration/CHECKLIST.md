@@ -269,6 +269,10 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   unverified; ожидаемые SMS/email каналы, test/PG exit0 и cleanup PASS.
   Runner17/17 и root check PASS. Это только регистрация, не полный путь
   проекта, доставка кода, вход существующего аккаунта или review gate.
+  QA follow-up `4cf4afcd` проверил вход уже созданного homeowner из
+  отдельного contractor-окна: Edge/API/PG18.4 `nDwgnL` PASS1/1,
+  POST login200 вернул исходные id/role, новый токен сохранён;
+  test/PG exit0. Это не восстановление сессии после перезапуска.
   L05 остаётся открытым до сквозной проверки API/DB/провайдера.
 - [ ] **L05a / backend + web.** Быстрая загрузка документов подрядчика:
   тип, размер и формат файла, приватное хранение, антивирус/сканирование,
