@@ -1932,6 +1932,12 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   снимки осмотрены. Статический validator25/25 и site check2 страницы/7 CTA
   PASS. Это повтор текущего локального кандидата, не проверка live-домена,
   прав на изображение, legal/support, аналитики или release gate.
+  Точный marketing `3558406b` после уточнения metadata повторно проверен
+  локально: Edge154 без JavaScript/внешней сети, 8 размеров и 2 клавиатурных
+  сценария, `failures=[]`, `errors=[]`; static site check2 страницы/7 CTA
+  PASS. Evidence: `marketing-october/.tmp/marketing-browser/result.json`.
+  Это не просмотр social preview внешним сервисом и не проверка live-домена,
+  прав, юридических ссылок, аналитики или release gate.
 - [x] **L19a / creative / 29 сентября.** Написать две версии сценария hero loop
   (без звука) и 45-90-секундного объясняющего ролика: реальная проблема,
   работающий MVP, один понятный следующий шаг. Отделить уже доступное от
