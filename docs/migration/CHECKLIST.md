@@ -1750,6 +1750,12 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   `w9drmO` PASS1/1, test/PG exits0. Широкий повтор `IU6xC4` прошёл 49/49
   на том же exact API, test/PG exits0. Независимое ревью, receiving и
   полный L23 открыты; финансовые операции не выполнялись.
+  Backend `c2bbfe32` добавил `private, no-store` и Vary к ответам регистрации,
+  email-входа, проверки кода и wallet-proof. Узкий тест был RED на отсутствии
+  заголовка, затем API361/361 и root check PASS. QA `f77e74e5` проверил
+  успешную регистрацию и вход в реальном Edge/API/одноразовой PostgreSQL18.4:
+  `9RwiwG` PASS1/1, test/PG exits0. Это не реальная подпись кошелька или
+  доставка кода; независимое ревью, интеграция и L23 остаются открытыми.
 - [ ] **L24 / координатор + founder.** К 15 октября - пилотный кандидат,
   если L01-L23 проходят. К 20 октября - публичный релиз только по отдельному
   разрешению после preview, live-provider проверки, резервной копии, rollback
