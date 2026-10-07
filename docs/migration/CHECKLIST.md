@@ -1813,6 +1813,11 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   backend root check и diff-check PASS. Это локальная проверка, не
   доказательство реальной подписи; exact-commit PostgreSQL/браузер,
   независимое ревью и receiving остаются открытыми.
+  QA read-only повтор на точном backend `bc957ad3` и SHA-256
+  `ad64014a3faf4259235c18167ef956310692854f45c69f46dfebf9b190b5cf95`:
+  одноразовая PostgreSQL18.4, project-publication `IlgPRb` PASS49/49,
+  test/PG exits0. Это широкий регрессионный прогон, не отдельная проверка
+  реальной подписи или браузерной приёмки старого маршрута.
 - [ ] **L24 / координатор + founder.** К 15 октября - пилотный кандидат,
   если L01-L23 проходят. К 20 октября - публичный релиз только по отдельному
   разрешению после preview, live-provider проверки, резервной копии, rollback
