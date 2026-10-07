@@ -213,3 +213,15 @@ and diff checks passed. Independent read-only review found the missing
 loading reset and race coverage; both were addressed, but the exact final
 diff was not re-reviewed. This is isolated local acceptance, not instant
 revocation without a request, formal gate approval, integration or release.
+
+Denied-download follow-up: QA `847d057f` and October-web `674c0812` cover
+an admin who is demoted while the document list remains open. The exact API
+returns a deliberately opaque 404 for the subsequent file GET; prior UI kept
+the private filename and draft rejection note visible. After the change, the
+admin panel clears both and displays the error. The delayed-GET race fixture
+also asserts its held 200 JSON contains the target document, closing a gap
+identified in read-only review of QA `c406a993`. Initial `MKdWU4` failed on
+the incorrect 403 expectation and exposed the backend's 404 contract; final
+Edge/API/disposable PG18.4 `PWiGnJ` passed 1/1, test/PG exits 0. QA root check,
+web build/scoped ESLint and diff checks passed. No independent review of the
+exact final follow-up, formal gate, integration, push or deployment.

@@ -331,6 +331,13 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   Read-only reviewer нашёл два P2-пробела, исправленных до финального теста;
   exact final diff не перепроверен. Нет мгновенного отзыва без нового запроса,
   формального gate, интеграции или deploy.
+  QA `847d057f` и web `674c0812`: отзыв admin-роли при открытом списке
+  приводит к скрывающему файл GET404 на Download; экран очищает прежнее имя
+  документа и черновик заметки. Дополненный тест задержанного GET200 проверяет,
+  что в удержанном JSON был именно этот документ. Финальный Edge/API/PG18.4
+  `PWiGnJ` PASS1/1; QA root check, web build/lint и diff-check PASS. Read-only
+  ревью выявило пробел JSON assertion, исправленный до прогона; последнюю
+  пару коммитов reviewer не проверял. Gate и интеграция открыты.
   Evidence: `DOCUMENT-UPLOAD-PG-REVIEW.md`. Проверка заголовка не заменяет
   декодирование файла или антивирус, L05a остаётся открытым.
 - [ ] **L06 / backend + web.** Создание/редактирование/публикация заявки
