@@ -1302,6 +1302,11 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   просмотрены в `qa/.tmp/account-visual-DgGPYc`, финальный отчёт
   `qa/.tmp/account-visual-qvjZsK`. Контраст, screen reader, 200% zoom
   и подписанный Dashboard по-прежнему открыты.
+  QA `38dd0aef` добавил проверку девяти доступных имён элементов формы
+  по дереву доступности Edge154. Собранный CSS, пять размеров
+  360/390/768/1280/1440, `qa/.tmp/account-visual-McgEEr` PASS;
+  page errors 0. Это автоматический AX-tree smoke, не настоящий
+  screen reader, contrast audit или 200% browser zoom.
 - [ ] **L21 / продукт + QA.** Матрица публичных утверждений и политики:
   доступно сейчас / тестируется / планируется; убрать заявления о действующем
   escrow, займах, гарантиях, оценках и «тысячах клиентов» без доказательств.

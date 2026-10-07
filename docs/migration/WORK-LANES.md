@@ -97,6 +97,9 @@ QA follow-up `b7e649ad` is clean: exact frontend/backend built-CSS
 Edge/API/disposable PG18.4 `BWHTYL` PASS1/1 at signed-in owner360 and
 contractor768 as well as the earlier 1280/390/draft widths. Browser/API/PG
 exits and cleanup passed. No integration or formal review approval.
+QA `38dd0aef` is clean: Edge154 built-CSS registration AX-tree names
+for nine controls PASS at five widths; evidence `qa/.tmp/account-visual-McgEEr`.
+This is not screen-reader or 200% zoom acceptance.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role
 12/12 candidate; QA `b51453e4` owns the added regression cases. The frontend
 `docs/security/` untracked directory remains untouched. The design branch
