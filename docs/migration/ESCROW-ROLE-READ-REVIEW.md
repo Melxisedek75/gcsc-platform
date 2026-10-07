@@ -23,9 +23,20 @@ regression, separated from preexisting unstaged L05a document-upload changes.
 
 Focused RED: 200 instead of 404 before the change. After the change, focused
 regression 1/1, escrow lifecycle suite 54/54, full API Jest 342/342 PASS with
-a dummy local JWT secret. QA isolated PostgreSQL 18.4 project-publication
-33/33 PASS on the combined backend working-tree snapshot; test/PG exit 0,
-evidence `postgres-baseline-4VLwrn`. This PG suite does not directly assert
-the escrow stale-role read behavior. The exact isolated commit has not been
-tested separately, and no independent review has approved it. Keep the
+a dummy local JWT secret on the combined backend working-tree snapshot. Its
+isolated PostgreSQL 18.4 project-publication suite passed 33/33, test/PG exit
+0, evidence `postgres-baseline-4VLwrn`.
+
+QA commit `a9e4e783` adds an opt-in PostgreSQL stale-role escrow suite. Against
+the combined backend working-tree source it passed 1/1 (`postgres-baseline-oAs5He`);
+against current publication source it failed as expected (HTTP 200 rather
+than 404, `postgres-baseline-nERkfy`). Against an isolated detached checkout
+of exact backend commit `30288eae`, the targeted suite passed 1/1
+(`postgres-baseline-b2FMhw`) and project-publication passed 33/33
+(`postgres-baseline-1bYN1M`), all with test/PG exit 0. The exact committed
+source SHA-256 was
+`97800cd4dc4ad706e1c34f0d58ee3815d169cb94bbd2b961de3f4f9785ccd819`.
+The disposable checkout was clean and removed after validation.
+
+No independent review has approved the backend candidate. Keep the
 CODEX/CLAUDE gate and broader payment/milestone role audit open.
