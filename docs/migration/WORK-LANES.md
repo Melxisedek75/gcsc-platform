@@ -167,6 +167,10 @@ and planned staking/rewards while retaining Token link focus state. Legal-
 claims RED before edit, then PASS; dashboard-live, build, scoped ESLint and
 diff-check PASS. Design `d892515b` remains separate; no exact-diff review,
 receiving integration or public release.
+Marketing `ca7f72b4` adds a narrow offline guard for the visible hero pilot
+status and AI-generated concept-image disclosure. Two mutation cases exposed
+the previous missing guard; final validator20/20 and static site check PASS.
+No full L21b claim review, independent exact-diff review or publication.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role
 12/12 candidate; QA `b51453e4` owns the added regression cases. The frontend
 `docs/security/` untracked directory remains untouched. The design branch

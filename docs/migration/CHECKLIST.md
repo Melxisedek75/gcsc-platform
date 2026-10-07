@@ -1702,6 +1702,12 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
 - [ ] **L21b / QA / 15 октября.** Проверить весь публичный текст и видео на
   статусы `available now`/`pilot`/`planned`; ни одна функция будущего whitepaper
   не описана как уже работающая. Проверка: claim ledger и независимое ревью.
+  Marketing `ca7f72b4` добавляет узкую проверку видимого hero-текста:
+  статус `SmartContractor pilot in development` и раскрытие
+  AI-generated concept image должны оставаться внутри hero-секции.
+  Два отрицательных теста сначала показали пропуск, затем 20/20 и
+  static site check PASS. Это не полный claim ledger, не проверка видео,
+  не независимое ревью и не разрешение на публикацию.
   Отдельный source-кандидат `b229fd4e` добавляет видимое пояснение, что hero
   изображение AI-сгенерировано и не является проектом клиента. Локальные
   static/browser проверки прошли; `MARKETING-CONCEPT-DISCLOSURE-REVIEW.md`.

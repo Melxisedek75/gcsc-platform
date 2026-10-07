@@ -560,8 +560,13 @@
     "review": "APPROVED: Beauvoir, independent Sol/high agent01a09e82-0111-7803-ba04-dac9514c52a5, reviewed a0834ac7..e9f954fbb105ba4f6e05ff54c860ecaffec6ff28. Independently ran guards4/4 and real PostgreSQL18.4 tests9/9, exits0; source SHA matches, canonical gcsc.db unchanged and PostgreSQL stopped. Root43/43/API159 remain parent evidence. No main integration or production approval.",
     "result": "Added native PostgreSQL runner without Docker or downloads. Real PostgreSQL18.4:9/9 including parent; runtime schema idempotency, project/bid creation, role isolation, audit, FK/UNIQUE and API module/connection restart pass. Root43/43 plus syntax/static and API159/159 pass. services/api/v3/.tmp/postgres-baseline-ZUU0yU/result.json: testExitCode0, postgresExitCode0. Missing pg_isready diagnosed and replaced by pg driver probe. No mobile, WebAuth or financial runtime edits."
   },
-  "updatedAt": "2026-10-07T11:36:24Z",
-  "latestFollowup": "L21 October-web 79c9f3a4 clarifies current Token status and planned staking/rewards, retaining link focus state. Legal-claims RED before edit then PASS, dashboard-live, build, scoped ESLint and diff-check PASS. Independent review/integration open. Separate L07 audit-events role-race QA draft is uncommitted and unverified: local PostgreSQL runner exited before tests with binary realpath ENOENT; no backend fix claimed.",
+  "updatedAt": "2026-10-07T11:46:03Z",
+  "latestFollowup": "L21b marketing ca7f72b4 guards visible homepage hero pilot status and AI-generated concept-image disclosure. Two negative cases exposed previous missing checks; final offline validator20/20 and static site check PASS. Full claim ledger/video, independent exact-diff review, integration and publication remain open.",
+  "marketingHeroDisclosureGuardCandidate": {
+    "marketingCommit": "ca7f72b4",
+    "status": "LOCAL_PASS_REVIEW_AND_INTEGRATION_OPEN",
+    "evidence": "Two negative hero-text mutations failed before guard; after parser-backed check, validator20/20 and static site check PASS, diff-check clean. Guards only visible hero pilot status and AI concept-image disclosure in the local candidate. Full L21b, video, independent review and release remain open."
+  },
   "adminAuditRoleRaceDraft": {
     "status": "UNCOMMITTED_TEST_DRAFT_POSTGRES_BINARY_UNAVAILABLE",
     "evidence": "QA tests/postgres-project-publication.integration.cjs has a draft concurrent admin-demotion audit-events check. Runner could not start: ENOENT realpath C:\\Program Files\\PostgreSQL\\18\\bin; bounded local lookup did not find postgres.exe. No RED/GREEN result, no backend edit, no commit. Resume only when local PostgreSQL binary is available; no production database used."
