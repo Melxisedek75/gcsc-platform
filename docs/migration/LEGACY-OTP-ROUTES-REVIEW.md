@@ -1,8 +1,8 @@
 # Legacy OTP routes: local source finding (2026-10-07 UTC)
 
-Status: OPEN, source review only. No live provider, user account, OTP, or external
-request was used. This is not an independently validated security finding or a
-release-gate approval.
+Status: OPEN, source review plus synthetic local HTTP reproduction. No live
+provider, real user account, external request, or actual email was used. This
+is not an independently reviewed fix or a release-gate approval.
 
 ## Evidence
 
@@ -18,6 +18,20 @@ release-gate approval.
 - The newer `/api/auth/register` checks provider readiness and, for the web
   client's `preferred` mode, creates an unverified account when unavailable.
   The legacy routes do not share that readiness gate.
+
+## Local reproduction
+
+With `DATABASE_URL` cleared, a dummy test JWT secret, intercepted `gcsc.db`
+reads/writes, and captured console output, a synthetic POST to the active
+server on `127.0.0.1` returned:
+
+```json
+{"status":200,"message":"OTP sent","otpLogged":true,"recordCreated":true}
+```
+
+The six-digit value was deliberately not printed or retained in this evidence.
+The process exited successfully and no provider request occurred. This proves
+the local route behavior, not production reachability or external log access.
 
 ## Risk and next step
 

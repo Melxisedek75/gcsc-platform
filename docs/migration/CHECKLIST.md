@@ -746,8 +746,10 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   пишет OTP в server log, ничего не отправляет, но маршруты отвечают
   `OTP sent`; legacy `/api/verify` может пометить аккаунт проверенным.
   `docs/migration/LEGACY-OTP-ROUTES-REVIEW.md` фиксирует source evidence и
-  план теста. Backend `pure-server.js` в своей lane уже dirty L05a; этот
-  независимый риск не исправлялся и не проверялся live-запросом. Не
+  план теста. Локальный synthetic HTTP POST с отключёнными DB-записями
+  подтвердил `200 / OTP sent`, созданную OTP-запись и логирование кода;
+  само значение не выводилось. Backend `pure-server.js` в своей lane уже
+  dirty L05a; этот риск не исправлялся и не проверялся live-запросом. Не
   объявлять privacy или auth готовыми до узкого исправления и ревью.
 - [ ] **L08 / backend + web.** Доступ к одному project ID: право покупателя,
   серверные состояния `unpaid/pending/paid/refunded/revoked`, уникальность
