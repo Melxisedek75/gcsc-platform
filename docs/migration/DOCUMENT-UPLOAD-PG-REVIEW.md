@@ -78,6 +78,28 @@ no new P1-P3. The reviewer did not rerun PostgreSQL. Rejection is a SQL
 fixture, not an exercised admin-review UI, and this is not a combined
 browser/API/PG journey or formal gate approval.
 
-Remaining L05a: formal gate, receiving integration, end-to-end UI/API/PG
-upload/resubmission acceptance, and a real file scanning policy. Header
-signatures do not prove files are safe.
+QA test-only `bcbdba3c` adds an opt-in real Edge `CompliancePanel` -> exact
+backend `a1ff006f` API -> disposable PostgreSQL 18.4 journey. Source roots
+for API and web are explicitly selected and hashed; the runner strips ambient
+provider/database settings. A synthetic contractor uploads PDF-signature bytes
+through the actual React form, then a SQL reviewer fixture rejects the row.
+The contractor reloads the panel, submits distinct replacement bytes, sees
+the new name and submitted status, and downloads those exact bytes. The test
+checks persisted owner, revision, hash, bytes, cleared review fields, old
+revision 409, unrelated contractor 404 without filename/bytes, and no bytes
+in list/compliance responses. Selecting >1.5 MB remains client-side and
+leaves the row unchanged. Final `postgres-baseline-fr51XW` passed 1/1,
+test/PostgreSQL exits 0 and cleanup errors empty; earlier passing runs were
+`sdfHka`, `wBg2UU`, `1lE0r1`, and `CGIcSj`. Runner parser 16/16 and QA root
+check passed. Root check first exposed a stale provenance adaptation SHA for
+the prior fake-PG fixture; this commit corrected that record, then root check
+passed. Independent read-only reviewer found a response-privacy gap and an
+overstated transitive-source hash report. The latter was removed; 404/list/
+compliance privacy assertions were added, including the final filename check.
+The reviewer inspected `CGIcSj` but did not rerun the final test. This is not
+formal `AI_REVIEW_GATE=PASS`.
+
+Remaining L05a: formal gate, receiving integration, real admin-review UI in
+the combined journey, removal behavior, and a real file scanning policy.
+The SQL reviewer fixture is not an admin action, and header signatures do not
+prove files are safe.

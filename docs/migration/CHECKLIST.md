@@ -272,6 +272,15 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   старой ревизии, отсутствие изменения записи после невалидных загрузок.
   Exact backend `a1ff006f`, финальные PG1/1 дважды PASS; независимое ревью
   закрыло P2/P3. SQL-фикстура отказа не заменяет admin UI или общий E2E.
+  QA test-only `bcbdba3c`: реальный Edge CompliancePanel -> exact backend
+  `a1ff006f` -> изолированная PostgreSQL загрузка и повторная отправка.
+  Последний PG1/1 `fr51XW` PASS, test/PG exit0, cleanup errors[]; runner16/16
+  и QA root check PASS. Проверены новая ревизия/байты/скачивание, отказ
+  чужому без имени/байтов и отсутствие байтов в списке/compliance. Ревью
+  теста выявило P2 по приватности и P3 по provenance; проверки добавлены,
+  включая последний filename assertion после review, и прошли в финальном
+  прогоне. Admin-отказ
+  задан SQL-фикстурой, не кнопкой reviewer UI; formal gate ещё открыт.
   Evidence: `DOCUMENT-UPLOAD-PG-REVIEW.md`. Проверка заголовка не заменяет
   декодирование файла или антивирус, L05a остаётся открытым.
 - [ ] **L06 / backend + web.** Создание/редактирование/публикация заявки
