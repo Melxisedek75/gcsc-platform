@@ -741,6 +741,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   `ai-review/records/2026-10-06-public-category-browser.md`. Это локальная
   браузерная QA, без изменения runtime.
   L07 остаётся открыт до полного privacy и browser/API/DB acceptance.
+  Read-only аудит 7 октября выявил отдельный legacy auth/privacy риск:
+  `POST /api/register` и `/api/login` вызывают локальный `sendEmail`, который
+  пишет OTP в server log, ничего не отправляет, но маршруты отвечают
+  `OTP sent`; legacy `/api/verify` может пометить аккаунт проверенным.
+  `docs/migration/LEGACY-OTP-ROUTES-REVIEW.md` фиксирует source evidence и
+  план теста. Backend `pure-server.js` в своей lane уже dirty L05a; этот
+  независимый риск не исправлялся и не проверялся live-запросом. Не
+  объявлять privacy или auth готовыми до узкого исправления и ревью.
 - [ ] **L08 / backend + web.** Доступ к одному project ID: право покупателя,
   серверные состояния `unpaid/pending/paid/refunded/revoked`, уникальность
   project+contractor и проверка перед раскрытием/предложением. Приёмка:
