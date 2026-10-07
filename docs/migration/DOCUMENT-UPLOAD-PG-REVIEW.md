@@ -225,3 +225,20 @@ the incorrect 403 expectation and exposed the backend's 404 contract; final
 Edge/API/disposable PG18.4 `PWiGnJ` passed 1/1, test/PG exits 0. QA root check,
 web build/scoped ESLint and diff checks passed. No independent review of the
 exact final follow-up, formal gate, integration, push or deployment.
+
+Contractor revocation follow-up: QA `f85a2738` and October-web `0f4c7e63`
+clear previously displayed compliance/document metadata when a disabled
+contractor receives POST or file GET403. The test checks the denial bodies
+contain only `{ error: 'Account is inactive' }` and a denied upload leaves
+the PostgreSQL revision unchanged. A second browser scenario holds a real
+authorized POST201 response containing a new filename, disables the account,
+gets a later file GET403, then releases the old 201; neither old nor new
+filename reappears. The initial UI was RED `iA7WtR`; `JozgyY` and `WElHuU`
+passed before read-only review found a stale-success race and denial-body
+assertion gap. First race attempt `2RVYDK` failed because the test expected
+200 instead of the API's 201; `lTYD24` and exact final Edge/API/disposable
+PG18.4 `CGto0q` passed 1/1, test/PG exits 0. QA root check, web build/scoped
+ESLint and diff checks passed. Independent read-only re-review found no P1-P3
+in final diff, but did not run tests. The older getCompliance response race
+was addressed by the same access epoch but has no separate browser race test.
+No formal gate, integration, push or deployment.

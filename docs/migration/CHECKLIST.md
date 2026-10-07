@@ -338,6 +338,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   `PWiGnJ` PASS1/1; QA root check, web build/lint и diff-check PASS. Read-only
   ревью выявило пробел JSON assertion, исправленный до прогона; последнюю
   пару коммитов reviewer не проверял. Gate и интеграция открыты.
+  QA `f85a2738` и web `0f4c7e63`: при отключении подрядчика POST загрузки и
+  GET скачивания получают 403 с одним полем error, а CompliancePanel убирает
+  прежнее имя и статус документа. После позднего разрешённого POST201 эти данные
+  не возвращаются. Финальный Edge/API/PG18.4 `CGto0q` PASS1/1, test/PG0;
+  отклонённая загрузка не изменила ревизию в БД. Web build/lint, QA root check,
+  diff-check PASS; read-only повторное ревью без P1-P3, но без запуска тестов.
+  Отдельная гонка старого getCompliance не воспроизведена браузером; формальный
+  gate и интеграция остаются открытыми.
   Evidence: `DOCUMENT-UPLOAD-PG-REVIEW.md`. Проверка заголовка не заменяет
   декодирование файла или антивирус, L05a остаётся открытым.
 - [ ] **L06 / backend + web.** Создание/редактирование/публикация заявки
