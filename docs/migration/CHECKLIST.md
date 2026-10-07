@@ -2115,6 +2115,13 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   validator, scoped ESLint, QA root check и diff-check PASS. Это имитация
   размера текста, не настоящий 200% browser zoom, screen reader или
   полная L20b приёмка; независимое ревью и интеграция открыты.
+  Follow-up QA `f5b45463` проверил тот же 390 px/увеличенный текст после
+  отзыва роли: API404, отсутствие закрытых данных и ширина <=391 px.
+  Снимок `sElnzv` выявил разрыв слова в заголовке; design `a35a6c04`
+  применил мобильные отступы и к недоступному состоянию. Повторный
+  Edge/API/PostgreSQL18.4 `z4DCFe` PASS1/1, test/PG exits0; снимок осмотрен,
+  design build/validator/ESLint и QA root check PASS. Реальный zoom и
+  screen reader по-прежнему не проверены.
   QA `29f89864` задержал тот же изолированный HTTP401 и проверил, что
   submit отключён во время ожидания. Финальные отчёты design
   `qa/.tmp/account-visual-2LFamY/result.json` и October-web
