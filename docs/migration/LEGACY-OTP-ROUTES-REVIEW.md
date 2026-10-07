@@ -87,3 +87,17 @@ of 410, result `postgres-baseline-Tj56nm`, test exit 1 and PG exit 0. Both
 clusters were stopped by the runner. This distinguishes the candidate from
 the current integrated source; it is not approval to integrate. Independent
 review and formal CODEX/CLAUDE gate remain open.
+
+## Exact committed source acceptance
+
+A disposable detached worktree at backend commit `1bcd16b0` was used only for
+read-only QA and then removed after confirming it was clean. Against its
+`pure-server.js` SHA-256
+`4c02c10232292fcd0bb3f12e15b192633944505338eb0bdf9c75e619690e670e`,
+the opt-in local PostgreSQL 18.4 legacy OTP suite passed 1/1
+(`postgres-baseline-8u1V28`) and project-publication/privacy suite passed
+33/33 (`postgres-baseline-OGMyBg`); test and PostgreSQL process exit codes
+were zero in both result files. Neither fixture database was live or retained
+as a running server. The separate full Jest 341/341 result still refers to
+the backend working tree with unstaged L05a upload changes. Independent review
+and formal gate remain open; no integration, push, or deployment followed.
