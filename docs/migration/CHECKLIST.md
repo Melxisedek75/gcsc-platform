@@ -952,6 +952,11 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   `ai-review/records/2026-10-06-public-category-browser.md`. Это локальная
   браузерная QA, без изменения runtime.
   L07 остаётся открыт до полного privacy и browser/API/DB acceptance.
+  7 октября backend `8c193f1c` отдельно закрывает раскрытие внутреннего
+  исключения при ошибке записи `POST /api/auth/documents`: синтетический сбой
+  JSON-хранилища до правки давал HTTP 400, после правки HTTP 500 без текста
+  исключения. Jest355/355, корневой `npm run check` и diff-check PASS.
+  PostgreSQL fault-injection, независимое ревью, receiving и L23 открыты.
   2026-10-07 admin document-list role-race candidate: локальный PostgreSQL
   regression QA `3e3f389d` воспроизвёл выдачу приватного имени файла после
   отзыва admin-роли во время заблокированного чтения (`bqILek`: HTTP 200
