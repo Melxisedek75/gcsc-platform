@@ -284,3 +284,10 @@ with the filename after GET403. Exact follow-up Edge/API/disposable PG18.4
 passed. The final follow-up itself was not independently re-reviewed. Formal
 CODEX/CLAUDE gate, CSS layout acceptance, integration, push and deploy remain
 open.
+Follow-up QA `2cdbfff9` reloads the same disabled contractor Dashboard.
+The current-profile API responds 403; the browser shows AccountAccess, hides
+Compliance navigation and the prior filename, and clears the local auth token.
+Explicit backend/October-web Edge/API/disposable PG18.4 `4GuUV0` passed 1/1
+with test/PG exits 0; QA root check, syntax and diff checks passed. The
+test-only follow-up was not independently reviewed, and no production CSS,
+formal gate, integration, push or deploy was exercised.
