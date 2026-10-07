@@ -2122,6 +2122,12 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   Edge/API/PostgreSQL18.4 `z4DCFe` PASS1/1, test/PG exits0; снимок осмотрен,
   design build/validator/ESLint и QA root check PASS. Реальный zoom и
   screen reader по-прежнему не проверены.
+  QA `60750cc5` расширил этот локальный text-size случай до 360 px.
+  Первый `o9JxMs` остановился на порядке тестовой фикстуры; после
+  перестановки статусов Edge/API/изолированная PostgreSQL18.4 `DRuiKC`
+  PASS1/1, test/PG exits0. Ширина документа и body 360 px,
+  overflow elements0; снимок проверен, QA root check и diff-check PASS.
+  Это не настоящий browser zoom и не полная L20b приёмка.
   QA `29f89864` задержал тот же изолированный HTTP401 и проверил, что
   submit отключён во время ожидания. Финальные отчёты design
   `qa/.tmp/account-visual-2LFamY/result.json` и October-web
