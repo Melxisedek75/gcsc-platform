@@ -30,6 +30,19 @@ test and PostgreSQL exit 0. The exact committed `pure-server.js` SHA-256 was
 QA runner parser 14/14 and root check passed. The clean disposable checkout
 was removed afterward.
 
-Still required: broader PostgreSQL mutation-path coverage, authorization under
-concurrent role revocation, independent review and the formal CODEX/CLAUDE gate
-before any integration. No provider or real payment verification was performed.
+QA follow-up `12a2f526` covers all seven mutation routes on isolated
+PostgreSQL: disabled owner create/approve/release/dispute/chain record/verify,
+and demoted contractor submit/dispute/chain record/verify. Every denial is 403;
+persisted milestone, escrow and chain-evidence state remains unchanged. A
+first run `postgres-baseline-l9pI1S` failed during database probe with a read
+timeout before test execution; PostgreSQL stopped normally. The next run
+`postgres-baseline-S8nv0T` reached the test and exposed a fixture assumption:
+new escrows start `pending`, not `active`. The assertion now captures the
+initial stored status. Revised suite passed 1/1 on combined backend source
+(`postgres-baseline-Cwi9Zy`) and exact detached `feb2bf95`
+(`postgres-baseline-ArwKZJ`), test/PostgreSQL exits 0. QA root check passed;
+the clean detached checkout was removed again.
+
+Still required: authorization under concurrent role revocation, independent
+review and the formal CODEX/CLAUDE gate before any integration. No provider or
+real payment verification was performed.
