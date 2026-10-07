@@ -130,6 +130,12 @@ to the Token heading (test/PG exit0). Runner19/19, web build and focused
 ESLint passed. The exact final diff has no independent review; neither
 candidate is integrated or published. Screen reader, 200% browser zoom,
 full L20 and formal CODEX/CLAUDE gate remain open.
+L20 next: actual 200% browser zoom remains unverified; two headless Edge
+`Control++` inputs did not change DPR, CSS viewport or visual scale. The
+independent review dispatch failed at the unchanged agent thread limit;
+do not relabel this as PASS. L21 design reconciliation also needs to
+replace the stale `TokenRedirect.tsx` live-management/staking/rewards copy
+present in both October-web and web-design.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role
 12/12 candidate; QA `b51453e4` owns the added regression cases. The frontend
 `docs/security/` untracked directory remains untouched. The design branch

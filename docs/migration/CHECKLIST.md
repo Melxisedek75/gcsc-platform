@@ -1344,6 +1344,10 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   test/PG exit0; runner19/19, web build, scoped ESLint и diff-check PASS.
   Это отдельный локальный кандидат без независимого ревью финального diff,
   интеграции, настоящего screen reader и 200% browser zoom; L20 открыт.
+  Отдельная headless Edge154 проба `Control++` дважды оставила
+  `devicePixelRatio=1`, `innerWidth=1200` и `visualViewport.scale=1`;
+  её нельзя выдавать за 200% browser zoom. Независимый review dispatch
+  упёрся в agent thread limit; повтор без изменения лимита не нужен.
 - [ ] **L21 / продукт + QA.** Матрица публичных утверждений и политики:
   доступно сейчас / тестируется / планируется; убрать заявления о действующем
   escrow, займах, гарантиях, оценках и «тысячах клиентов» без доказательств.
@@ -1471,6 +1475,12 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   auth-вызов пока сохраняется. Перед интеграцией эти две ветки необходимо
   согласовать и повторно проверить точный объединённый diff; формальный
   review gate, browser/API/PG приёмка и полный L21 открыты.
+  Read-only L21 follow-up: `TokenRedirect.tsx` в October-web и web-design
+  всё ещё предлагает `GCSC token management, staking, and rewards` как
+  доступный переход из кабинета, хотя Token-страница называет запуск
+  будущим. Уточнить этот текст в design/presentation при согласовании
+  веток; это не подтверждение live token функций и не отдельная правка
+  публичной страницы.
   Дополнительная локальная браузерная проверка account-role sourceRef
   `98c3ca57` дала 5/10 (Edge154, fixture API); сравнение с родительским
   design commit `d43a9175` дало те же пять отказов, а текущая publication

@@ -566,7 +566,7 @@
     "qaCommit": "a48719ed",
     "webCommit": "d940e73c",
     "status": "LOCAL_PASS_REVIEW_AND_INTEGRATION_OPEN",
-    "evidence": "QA RED U7nB6h; built-CSS Edge154/API/disposable PostgreSQL18.4 luLWKW PASS1/1, test/PG exit0. Mobile contractor and desktop homeowner keyboard Token links focus destination heading. Runner19/19, web build and scoped ESLint passed. No independent exact-diff review, formal CODEX/CLAUDE gate, integration or publication; L20 screen reader and real browser zoom remain open."
+    "evidence": "QA RED U7nB6h; built-CSS Edge154/API/disposable PostgreSQL18.4 luLWKW PASS1/1, test/PG exit0. Mobile contractor and desktop homeowner keyboard Token links focus destination heading. Runner19/19, web build and scoped ESLint passed. Independent review dispatch hit agent thread limit; no exact-diff review, formal gate, integration or publication. Headless Control++ twice did not change DPR/viewport/scale, so L20 real browser zoom remains open. TokenRedirect stale live-management copy in October-web and design remains L21 reconciliation work."
   },
   "previousMigrationTask": {
     "task": "canonical-postgres-migrations",
