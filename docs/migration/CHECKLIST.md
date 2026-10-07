@@ -1663,6 +1663,18 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   3 видимые карточки, 2 скрытые после отзыва роли/отключения, 8 запросов,
   page/external errors0. Design-кандидат не интегрирован и формальный
   review gate открыт.
+  Backend `2c0b1d3c` устранил вводящие в заблуждение подписи публичного
+  checklist: отсутствующий документ больше не назван «submitted», а
+  «Profile 100%» и «WebAuth wallet connected» заменены нейтральными
+  названиями, поскольку статус Needed/Complete показан отдельно. Тест
+  сначала RED1/33, после правки focused33/33, полный API368/368 PASS.
+  QA `66a25152` с exact design `74833cce`/backend `2c0b1d3c` прошёл
+  Edge/API/PostgreSQL18.4 `oxRR9C` PASS1/1, test/PG exits0; мобильный
+  снимок осмотрен. QA root check и backend syntax/diff PASS. Backend root
+  provenance остаётся RED: adaptation manifest ожидает прежний API SHA
+  `ad64014a...`, кандидат имеет `eac016eb...`; metadata нужно согласовать
+  только в publication lane до receiving integration. Независимое ревью
+  точного diff и formal gate открыты.
   QA-only `68c19d2f` добавил раннюю проверку правильной web-ветки:
   design `x4HE01` PASS1/1, October-web `FrOcPD` ожидаемый RED за 6.7 ms
   с явным source-mismatch вместо 30-секундного ожидания. QA `b21d9632`
