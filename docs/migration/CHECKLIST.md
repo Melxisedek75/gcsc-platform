@@ -317,6 +317,18 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   В обоих прогонах test/PG exit0, blocked/page/request errors пусты и
   cleanup PASS. Это отдельные базы/сессии, не один непрерывный путь;
   несовпадение панели в ветке frontend `ca5c88ae` остаётся.
+  QA `e8ba1039` добавил opt-in `account-project-browser` для одной
+  непрерывной локальной сессии на чистой паре `october-web` `4ec10a4c` +
+  backend `a1ff006f`. Edge154/API/изолированная PG18.4 `JmDmrq`
+  PASS1/1: выбор роли и обе регистрации, создание приватного draft через
+  экран owner, `published=false` в БД, отсутствие draft в двух успешно
+  загруженных списках contractor и прямой GET404, повторный вход owner
+  с сохранёнными профилем/draft, отказ cross-role POST409. Test/PG exit0,
+  blocked/page/request errors пусты, cleanup PASS. Runner18/18,
+  `npm run check` и повторный `account-browser` `weiAeQ` PASS.
+  Это функциональная локальная fixture без доставки подтверждений,
+  production CSS/визуальной мобильной приёмки и формального ревью;
+  финальная правка QA отдельно не ревьюилась.
   L05 остаётся открытым до сквозной проверки API/DB/провайдера.
 - [ ] **L05a / backend + web.** Быстрая загрузка документов подрядчика:
   тип, размер и формат файла, приватное хранение, антивирус/сканирование,
