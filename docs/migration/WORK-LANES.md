@@ -209,6 +209,11 @@ locks current user and UPSERTs in one PostgreSQL transaction; JSON mode
 rechecks after body read. Exact-source PG45/45 twice `JNR16v`/`su4zEz`,
 test/PG exits0, API354/354, syntax/diff PASS. Root adaptation mismatch,
 exact-diff review, formal gate and integration remain open.
+QA-only upload replacement follow-up `61843001` preserves the original
+document filename and revision after account disable while a replacement
+waits on the users row. Exact backend `1cd06c76`, PG46/46 twice
+`ZSSM8f`/`91gnon`, test/PG exits0, QA syntax/diff PASS. No product change,
+review or integration.
 Independent L21 work: October-web `79c9f3a4` clarifies current Token status
 and planned staking/rewards while retaining Token link focus state. Legal-
 claims RED before edit, then PASS; dashboard-live, build, scoped ESLint and
