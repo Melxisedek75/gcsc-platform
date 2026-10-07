@@ -1,8 +1,8 @@
 # Legacy OTP routes: local source finding (2026-10-07 UTC)
 
-Status: OPEN, source review plus synthetic local HTTP reproduction. No live
-provider, real user account, external request, or actual email was used. This
-is not an independently reviewed fix or a release-gate approval.
+Status: OPEN, backend-only remediation candidate plus synthetic local HTTP
+checks. No live provider, real user account, external request, or actual email
+was used. This is not an independently reviewed fix or a release-gate approval.
 
 ## Evidence
 
@@ -43,3 +43,22 @@ not create a verified account. Then make the narrow backend change, run full
 API and local PostgreSQL checks, and request independent review. Keep existing
 API clients and migrations under review; do not enable a new provider or send
 real user data. No production/integration decision follows from this note.
+
+## Local backend candidate (2026-10-07 UTC)
+
+In `C:\gcsc-platform\.worktrees\backend`, the four legacy routes now return
+HTTP 410 before parsing input, OTP creation, token issuance, or user mutation.
+The log-only `sendEmail()` helper was removed. The current web client uses
+`/api/auth/*`; API documentation in the backend candidate was updated. Older
+external clients may need migration and must not be assumed compatible.
+
+`services/api/v3/tests/security-boundaries.test.js` exercises all four routes
+over local HTTP with synthetic `example.invalid` data, including preexisting
+legacy OTP fixtures. It checks HTTP 410, no token, unchanged users/OTP count,
+and no OTP in console output. Focused 9/9 PASS, full API Jest 341/341 PASS,
+`node --check` and `git diff --check` PASS. No real PostgreSQL acceptance or
+independent review has run for this candidate. The backend worktree was already
+dirty with the separate L05a document-size/MIME candidate in `pure-server.js`
+and `profile-documents.test.js`; these edits were preserved. Do not stage the
+whole shared source file as only this auth change or integrate it without
+isolating the diff and passing the formal gate.
