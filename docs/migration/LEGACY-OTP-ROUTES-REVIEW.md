@@ -56,8 +56,14 @@ external clients may need migration and must not be assumed compatible.
 over local HTTP with synthetic `example.invalid` data, including preexisting
 legacy OTP fixtures. It checks HTTP 410, no token, unchanged users/OTP count,
 and no OTP in console output. Focused 9/9 PASS, full API Jest 341/341 PASS,
-`node --check` and `git diff --check` PASS. No real PostgreSQL acceptance or
-independent review has run for this candidate. The backend worktree was already
+`node --check` and `git diff --check` PASS. The QA isolated PostgreSQL 18.4
+project-publication suite ran against backend `pure-server.js` SHA-256
+`554cc013e74398a19dab63d3be63baf11032d6fee2fce3a33a138cdbbbddb9bd`:
+33/33 PASS, test/PG exit 0, evidence
+`C:\gcsc-platform\.worktrees\qa\services\api\v3\.tmp\postgres-baseline-gNoZ8M\result.json`.
+That suite covers project privacy, roles, bid access and wallet identity but
+does not directly exercise the retired OTP routes in PostgreSQL mode. Targeted
+PG OTP acceptance and independent review remain open. The backend worktree was already
 dirty with the separate L05a document-size/MIME candidate in `pure-server.js`
 and `profile-documents.test.js`; these edits were preserved. Do not stage the
 whole shared source file as only this auth change or integrate it without
