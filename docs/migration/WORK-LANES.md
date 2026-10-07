@@ -42,7 +42,7 @@ and backend `a1ff006f` passed separate QA Edge/API/disposable PG18.4
 with test/PG exit0 and cleanup PASS. The frontend `ca5c88ae` project
 panel mismatch still exists; these tests do not merge branches or close
 provider/review/release gates.
-2026-10-07 single-journey L05 QA follow-up: `qa` is clean at `e8ba1039`.
+2026-10-07 single-journey L05 QA follow-up: `qa` is clean at `40e1ae81`.
 The opt-in `account-project-browser` uses clean October-web `4ec10a4c`
 and backend `a1ff006f`; Edge154/API/disposable PG18.4 `JmDmrq`
 PASS1/1 covers routed registration through owner private draft, contractor
@@ -51,6 +51,12 @@ cross-role duplicate 409 in one local fixture. Runner18/18, root check,
 and account-browser regression `weiAeQ` passed. The exact final QA diff
 was not independently re-reviewed; provider delivery, production mobile
 visuals, formal gate, integration and release remain open.
+QA sign-out follow-up `40e1ae81` verifies Dashboard Sign out, absent
+browser token and hidden owner draft after reload. Exact-source local
+Edge/API/PG18.4 `account-project-browser` `dcLfFU` and `account-browser`
+`ZTsNJB` passed 1/1 each, plus root check and runner18/18. This does not
+prove server-side JWT revocation; the final test diff was not independently
+re-reviewed.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role
 12/12 candidate; QA `b51453e4` owns the added regression cases. The frontend
 `docs/security/` untracked directory remains untouched. The design branch
