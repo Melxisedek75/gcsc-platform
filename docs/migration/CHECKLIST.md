@@ -1765,7 +1765,11 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   wallet challenge ответах и отметил их `private, no-store`. Искусственный
   локальный сбой сначала раскрыл маркер в обоих ответах; после правки
   focused9/9, API363/363, root check и diff-check PASS. Реальной подписи,
-  PostgreSQL fault injection, независимого ревью и receiving не было;
+  независимого ревью и receiving не было. QA `d1cedeec` затем проверил оба
+  ответа при искусственном отказе `wallet_challenges` на одноразовой
+  PostgreSQL18.4: exact backend `c14bcf1e`, `ILTHNi` PASS1/1,
+  test/PG exits0, QA root check и diff-check PASS; после ошибки строк нет.
+  Реальной подписи и независимого ревью не было;
   L23 остаётся открытым.
 - [ ] **L24 / координатор + founder.** К 15 октября - пилотный кандидат,
   если L01-L23 проходят. К 20 октября - публичный релиз только по отдельному
