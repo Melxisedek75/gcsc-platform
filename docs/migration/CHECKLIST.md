@@ -963,6 +963,10 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   `2d1bc7f9...`); это не зелёный root check. Исправление закрывает
   воспроизведённое окно, но не все возможные конкурентные смены роли.
   Независимый exact-diff review, formal gate и интеграция открыты.
+  Следующий audit-events admin-role race тест добавлен только в QA working
+  tree, без коммита и без утверждения PASS/RED: запуск runner остановился до
+  тестов с ENOENT для локального PostgreSQL bin. Backend audit-events не
+  менялся; после восстановления среды нужен RED/GREEN прогон и review.
   Read-only аудит 7 октября выявил отдельный legacy auth/privacy риск:
   `POST /api/register` и `/api/login` вызывают локальный `sendEmail`, который
   пишет OTP в server log, ничего не отправляет, но маршруты отвечают
@@ -1509,7 +1513,12 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   staking/rewards; legal-claims validator сначала RED, затем PASS, web
   build, scoped ESLint, dashboard-live и diff-check PASS. Кандидат не
   интегрирован/опубликован, итоговый diff независимо не рассмотрен;
-  основной October-web текст и полный L21 остаются открытыми.
+  October-web `79c9f3a4` отдельно сохранил keyboard focus state при
+  переходе, но заменил обещание на текущий статус и будущие функции.
+  Legal-claims validator показал RED на старом тексте, затем PASS;
+  dashboard-live, web build, scoped ESLint и diff-check PASS. Design и
+  October-web ветки не интегрированы, exact-diff independent review и
+  полный L21 остаются открытыми.
   Дополнительная локальная браузерная проверка account-role sourceRef
   `98c3ca57` дала 5/10 (Edge154, fixture API); сравнение с родительским
   design commit `d43a9175` дало те же пять отказов, а текущая publication

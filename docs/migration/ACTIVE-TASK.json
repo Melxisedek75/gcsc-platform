@@ -560,8 +560,17 @@
     "review": "APPROVED: Beauvoir, independent Sol/high agent01a09e82-0111-7803-ba04-dac9514c52a5, reviewed a0834ac7..e9f954fbb105ba4f6e05ff54c860ecaffec6ff28. Independently ran guards4/4 and real PostgreSQL18.4 tests9/9, exits0; source SHA matches, canonical gcsc.db unchanged and PostgreSQL stopped. Root43/43/API159 remain parent evidence. No main integration or production approval.",
     "result": "Added native PostgreSQL runner without Docker or downloads. Real PostgreSQL18.4:9/9 including parent; runtime schema idempotency, project/bid creation, role isolation, audit, FK/UNIQUE and API module/connection restart pass. Root43/43 plus syntax/static and API159/159 pass. services/api/v3/.tmp/postgres-baseline-ZUU0yU/result.json: testExitCode0, postgresExitCode0. Missing pg_isready diagnosed and replaced by pg driver probe. No mobile, WebAuth or financial runtime edits."
   },
-  "updatedAt": "2026-10-07T11:30:49Z",
-  "latestFollowup": "L07 admin document-list role race: QA 3e3f389d RED bqILek (200 after concurrent admin demotion); backend bb231c72 rechecks role before response. Exact PG project-publication34/34 twice DNUQgi/71swCU test/PG exits0, API354/354, syntax PASS. Backend root npm test RED on pre-existing untouched API-DOCUMENTATION.md provenance mismatch. Independent exact-diff review, formal gate and integration remain open.",
+  "updatedAt": "2026-10-07T11:36:24Z",
+  "latestFollowup": "L21 October-web 79c9f3a4 clarifies current Token status and planned staking/rewards, retaining link focus state. Legal-claims RED before edit then PASS, dashboard-live, build, scoped ESLint and diff-check PASS. Independent review/integration open. Separate L07 audit-events role-race QA draft is uncommitted and unverified: local PostgreSQL runner exited before tests with binary realpath ENOENT; no backend fix claimed.",
+  "adminAuditRoleRaceDraft": {
+    "status": "UNCOMMITTED_TEST_DRAFT_POSTGRES_BINARY_UNAVAILABLE",
+    "evidence": "QA tests/postgres-project-publication.integration.cjs has a draft concurrent admin-demotion audit-events check. Runner could not start: ENOENT realpath C:\\Program Files\\PostgreSQL\\18\\bin; bounded local lookup did not find postgres.exe. No RED/GREEN result, no backend edit, no commit. Resume only when local PostgreSQL binary is available; no production database used."
+  },
+  "tokenRedirectPilotCopyCandidate": {
+    "webCommit": "79c9f3a4",
+    "status": "LOCAL_PASS_REVIEW_AND_INTEGRATION_OPEN",
+    "evidence": "Legal-claims validator RED on prior copy then PASS after pilot/planned wording; dashboard-live, web build, scoped ESLint and diff-check PASS. Existing focusHeading route state preserved. Separate design d892515b was not merged. No independent exact-diff review, browser acceptance or public release."
+  },
   "adminDocumentRoleRaceCandidate": {
     "qaCommit": "3e3f389d",
     "backendCommit": "bb231c72",

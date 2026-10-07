@@ -158,6 +158,15 @@ receiving integration remain open.
 PASS. Backend root `npm test` remains RED on pre-existing untouched
 API-DOCUMENTATION.md provenance mismatch. Exact-diff independent review,
 formal gate and integration remain open; neither commit is in publication.
+2026-10-07 audit-events follow-up: QA has an uncommitted role-race regression
+draft. Runner stopped before tests: PostgreSQL binary realpath ENOENT at
+`C:\Program Files\PostgreSQL\18\bin`; no RED/GREEN or backend fix claimed.
+The affected backend lane remains unverified, not a whole-project blocker.
+Independent L21 work: October-web `79c9f3a4` clarifies current Token status
+and planned staking/rewards while retaining Token link focus state. Legal-
+claims RED before edit, then PASS; dashboard-live, build, scoped ESLint and
+diff-check PASS. Design `d892515b` remains separate; no exact-diff review,
+receiving integration or public release.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role
 12/12 candidate; QA `b51453e4` owns the added regression cases. The frontend
 `docs/security/` untracked directory remains untouched. The design branch
