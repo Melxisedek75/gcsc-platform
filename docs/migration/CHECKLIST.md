@@ -336,6 +336,12 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   PASS1/1, test/PG exit0; root check и runner18/18 PASS. Это только
   клиентский выход: серверный отзыв JWT не подтверждён. Финальный тест
   отдельно не ревьюился.
+  QA `826dfccf` проверил отдельно кнопку выхода в мобильном меню
+  contractor при 390 px. После reload токен отсутствует. Локальные
+  Edge/API/PG18.4 `account-project-browser` `IumY6S` и
+  `account-browser` `RAThP4` PASS1/1, test/PG exit0, runner18/18 и
+  root check PASS. Это функциональная fixture без production CSS;
+  визуальный мобильный PASS и серверный отзыв JWT не заявлены.
   L05 остаётся открытым до сквозной проверки API/DB/провайдера.
 - [ ] **L05a / backend + web.** Быстрая загрузка документов подрядчика:
   тип, размер и формат файла, приватное хранение, антивирус/сканирование,
