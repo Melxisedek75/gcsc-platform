@@ -87,6 +87,12 @@ QA `0c62a436` then asserted `:focus-visible` and 3px outline for Owner
 on all five widths; desktop/mobile focus screenshots were inspected.
 Final evidence `qa/.tmp/account-visual-qvjZsK`. Contrast, screen reader,
 200% zoom and signed-in Dashboard remain unverified.
+QA is now clean at `8d3adb62`; October-web is clean at `f12f854b`.
+The opt-in built-CSS account-project Edge/API/disposable PG18.4 run `MLheXt`
+passed after a one-line frontend correction of full-width banner animation.
+Signed-in 1280/390 and private-draft 1280 screenshots and widths were checked.
+Earlier exact-source `GD5vUn`/`isakej` exposed 4-5px body overflow.
+The candidates remain separate, not formally reviewed or integrated.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role
 12/12 candidate; QA `b51453e4` owns the added regression cases. The frontend
 `docs/security/` untracked directory remains untouched. The design branch
