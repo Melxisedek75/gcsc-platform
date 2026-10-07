@@ -196,3 +196,20 @@ syntax/diff, web TypeScript/Vite build and scoped ESLint passed. The browser
 fixture bundles React without the production stylesheet, so the 390 px run
 checks drawer behavior, not responsive layout or visual polish. No instant
 revocation without a request, formal gate, integration, push or deployment.
+
+Document-review action revocation follow-up: QA `c406a993` and October-web
+`51753f2d` cover a demoted admin whose pending Reject reaches PUT403. The
+panel clears private document metadata and the unsaved rejection note, ends
+loading even when a filter GET is pending, and invalidates a delayed GET200
+that was authorized before demotion. The browser test holds both requests,
+checks the visible 403 and absent data before and after releasing GET200,
+checks that PostgreSQL status/revision/reviewer/note are unchanged, then
+re-promotes and verifies a fresh list has no stale draft note. Original UI
+failed the simpler privacy assertion (`y5ZtmX`). The first race run `MPi3n8`
+passed revoked-state assertions but failed at the test's same-filter reload;
+after fixing that transition, Edge/API/disposable PG18.4 `Vh6TsE` passed
+1/1, test/PG exits 0. QA root check, runner16/16, web build/scoped ESLint
+and diff checks passed. Independent read-only review found the missing
+loading reset and race coverage; both were addressed, but the exact final
+diff was not re-reviewed. This is isolated local acceptance, not instant
+revocation without a request, formal gate approval, integration or release.

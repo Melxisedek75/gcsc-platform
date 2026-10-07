@@ -323,6 +323,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   финальный diff не перепроверялся. Bundle без production CSS: адаптивная
   вёрстка и визуальная приёмка остаются открытыми.
   Formal gate ещё открыт.
+  QA `c406a993` и web `51753f2d`: после отзыва admin-роли действие Reject
+  получает PUT403; экран убирает имя документа и черновик причины, завершает
+  загрузку и не восстанавливает их после задержанного GET200. Локальный
+  Edge/API/PG18.4 `Vh6TsE` PASS1/1; БД сохранила submitted/revision без reviewer
+  и note. QA root check, runner16/16, web build/lint и diff-check PASS.
+  Read-only reviewer нашёл два P2-пробела, исправленных до финального теста;
+  exact final diff не перепроверен. Нет мгновенного отзыва без нового запроса,
+  формального gate, интеграции или deploy.
   Evidence: `DOCUMENT-UPLOAD-PG-REVIEW.md`. Проверка заголовка не заменяет
   декодирование файла или антивирус, L05a остаётся открытым.
 - [ ] **L06 / backend + web.** Создание/редактирование/публикация заявки
