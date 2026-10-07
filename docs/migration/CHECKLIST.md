@@ -1820,6 +1820,12 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   исправления validator23/23, static site check и diff-check PASS.
   Это узкий guard, не юридический аудит остальных утверждений или
   разрешение на объединение/публикацию.
+  Follow-up `32584b0d` уточнил черновой раздел Security And Audit Trail:
+  сохранение audit logs, role boundaries и rollback теперь требование к
+  будущим чувствительным процессам, а не заявление о готовой платформе.
+  Узкий отрицательный тест сначала RED; после правки static fixtures24/24,
+  static site (2 страницы, 7 account CTA) и diff-check PASS. Кандидат
+  изолирован; полный аудит утверждений, независимое ревью и релиз открыты.
   Marketing `ca7f72b4` добавляет узкую проверку видимого hero-текста:
   статус `SmartContractor pilot in development` и раскрытие
   AI-generated concept image должны оставаться внутри hero-секции.
