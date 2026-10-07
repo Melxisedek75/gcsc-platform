@@ -301,6 +301,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   повторной cross-role регистрации; blocked/page/request errors пусты,
   test/PG exit0. Runner18/18, root check и diff PASS. Финальная правка
   отдельно не ревьюилась; provider и полный путь проектов остаются open.
+  QA `0888e2fc` проверил регистрацию contractor через этот маршрут
+  в Edge 390x844: функциональный Edge/API/PG18.4 `xf45RO` PASS1/1.
+  Попытка проверить overflow `jnxSC9` RED из-за отсутствия production CSS
+  в fixture, поэтому визуальный мобильный PASS не заявлен. По итогам
+  неформального ревью в SHA-манифест добавлены Layout/HeaderBanner/Navbar/
+  Footer; Edge ждёт декодирования локальных баннера и логотипа.
+  Финальный `FwgJVx` PASS1/1, test/PG exit0, runner18/18 и root check
+  PASS. Финальная правка не перепроверена независимым reviewer.
   L05 остаётся открытым до сквозной проверки API/DB/провайдера.
 - [ ] **L05a / backend + web.** Быстрая загрузка документов подрядчика:
   тип, размер и формат файла, приватное хранение, антивирус/сканирование,
