@@ -1348,6 +1348,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   `devicePixelRatio=1`, `innerWidth=1200` и `visualViewport.scale=1`;
   её нельзя выдавать за 200% browser zoom. Независимый review dispatch
   упёрся в agent thread limit; повтор без изменения лимита не нужен.
+  QA `2bb4be0e` добавил отдельный локальный сценарий задержанного
+  `POST /auth/register` -> synthetic HTTP503 -> повтор. На 390px Edge
+  кнопка остаётся disabled до ответа, видна ошибка, email/password не
+  теряются, в изолированной PG до повторной отправки нет пользователя;
+  после повтора создан один аккаунт. Финальный built-CSS Edge/API/PG18.4
+  `PE46UT` PASS1/1, test/PG exit0; runner19/19 и diff-check PASS.
+  Это проверка имитированной задержки/отказа, не реального слабого канала,
+  screen reader или полного L20b; тестовый diff независимо не ревьюился.
 - [ ] **L21 / продукт + QA.** Матрица публичных утверждений и политики:
   доступно сейчас / тестируется / планируется; убрать заявления о действующем
   escrow, займах, гарантиях, оценках и «тысячах клиентов» без доказательств.
