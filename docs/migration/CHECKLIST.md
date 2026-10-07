@@ -1142,6 +1142,16 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   `ai-review/records/2026-10-06-about-splittext-candidate.md`. Кандидат
   не интегрирован в publication, не является полной L20/сайт-приёмкой
   и не опубликован.
+  2026-10-07 read-only reconciliation: текущая publication About в локальном
+  Edge по-прежнему показывает `SplitText is not defined`, тогда как чистая
+  design-ветка открывает `#/about` с заголовком без ошибки React; оба Vite
+  процесса остановлены. Это подтверждение кандидата, не интеграция. Отдельный
+  блокер дизайн-приёмки регистрации: design Dashboard не читает query role,
+  а AccountAccess не принимает initialRole и всегда начинает с contractor.
+  Publication уже сохраняет `?role=homeowner` в начальном выборе. Прежде чем
+  принимать дизайн-кандидат, совместить представление с текущей auth-логикой
+  и повторить точный account-role браузерный тест; никаких UI-файлов здесь
+  не менялось.
   Marketing test-only candidate `1c0c6127` проверяет реальный Tab-порядок
   desktop/384 px, скрытые ссылки закрытого mobile menu, открытие Enter и
   доступность первой ссылки с клавиатуры. Edge 154: восемь viewport-кейсов,
