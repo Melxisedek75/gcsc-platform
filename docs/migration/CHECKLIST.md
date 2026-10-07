@@ -1833,6 +1833,9 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   mutation guard8 случаев, static fixtures25/25, static site2/7 и
   diff-check PASS. Это локальный черновик, не полный claim ledger или
   юридическое заключение; независимое ревью и publication gate открыты.
+  Marketing `a7da45d7` обновил локальный `CLAIM-LEDGER.md` по этим
+  черновым правкам и границам статического validator; diff-check PASS.
+  Реестр не заменяет независимый факт-чек точного release artifact.
   Marketing `ca7f72b4` добавляет узкую проверку видимого hero-текста:
   статус `SmartContractor pilot in development` и раскрытие
   AI-generated concept image должны оставаться внутри hero-секции.
