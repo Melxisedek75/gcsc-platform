@@ -1668,6 +1668,18 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   auth-вызов пока сохраняется. Перед интеграцией эти две ветки необходимо
   согласовать и повторно проверить точный объединённый diff; формальный
   review gate, browser/API/PG приёмка и полный L21 открыты.
+  Локальный frontend-кандидат `1eb3b56d` согласовал публичную Wallet-страницу
+  с безопасным local-only WebAuth: убраны фиктивное подключение Metal Pay,
+  текущие обещания покупки токена/депозитов/escrow и неподтверждённые
+  contract details, сохранены connect/restore без `api.connectWallet`.
+  Legal-claims guard был RED до правки и PASS после; WebAuth guard,
+  wallet-restore10/10, dashboard-live, check:web, build, scoped ESLint и
+  diff-check PASS. Edge на 390/1280 px показал errors0, без значимого
+  переполнения и с читаемым CTA; снимки в frontend `.tmp/wallet-acceptance`.
+  Общий root check остаётся RED на ранее изменённом `Dashboard.tsx` в
+  frontend manifest, не объявлен PASS. Общий Footer этой ветки всё ещё
+  обещает действующие escrow/payments/verification; отдельный design-кандидат
+  требует reconciliation и независимого exact-diff review. Не интегрировано.
   L21 follow-up: `TokenRedirect.tsx` в October-web всё ещё предлагает
   `GCSC token management, staking, and rewards` как доступный переход,
   хотя Token-страница называет запуск будущим. В изолированной design
