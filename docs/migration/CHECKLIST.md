@@ -1275,6 +1275,11 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   Ширина документа 360/390/768/1280/1441 px соответственно: на 1440
   измерен допуск 1 px, не «нулевой overflow». Это не 200% zoom,
   screen reader, клавиатура или состояние после входа; L20 открыт.
+  QA `70f062a7` дополнительно проверил Tab-порядок пяти элементов формы
+  и выбор роли Owner клавишей Enter (`aria-pressed=true`) на всех пяти
+  ширинах; Edge154 PASS, page errors нет, evidence в
+  `C:/gcsc-platform/.worktrees/qa/.tmp/account-visual-JQfyPu`.
+  Видимость индикатора фокуса, screen reader и 200% zoom не проверены.
 - [ ] **L21 / продукт + QA.** Матрица публичных утверждений и политики:
   доступно сейчас / тестируется / планируется; убрать заявления о действующем
   escrow, займах, гарантиях, оценках и «тысячах клиентов» без доказательств.
