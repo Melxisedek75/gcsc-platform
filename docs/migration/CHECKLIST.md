@@ -992,6 +992,16 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   (`OyfHHD`, `oWQ2ab`, test/PG exits0), API Jest354/354 и syntax/diff
   PASS. Это защита demo-precheck данных, не реальное финансирование;
   root adaptation mismatch, review gate и интеграция открыты.
+  Admin document-review mutation: QA `236150b1` воспроизвёл утверждение
+  документа с HTTP200 после отзыва admin-роли во время чтения (`YMitZY`,
+  RED). Backend `d28c7fb8` удерживает текущую роль reviewer через
+  PostgreSQL `FOR UPDATE` и меняет документ в той же транзакции;
+  JSON-режим также повторно проверяет reviewer. Второй конкурентный тест
+  подтверждает ожидание role-row lock и отказ после commit смены роли.
+  Exact-source PG project-publication39/39 дважды (`wa1ebe`, `83ZPvw`,
+  test/PG exits0), API Jest354/354, syntax/diff PASS. Это локальный
+  кандидат, не подтверждение полного revocation-аудита. Root adaptation
+  mismatch, независимое exact-diff review, formal gate и интеграция открыты.
   Read-only аудит 7 октября выявил отдельный legacy auth/privacy риск:
   `POST /api/register` и `/api/login` вызывают локальный `sendEmail`, который
   пишет OTP в server log, ничего не отправляет, но маршруты отвечают

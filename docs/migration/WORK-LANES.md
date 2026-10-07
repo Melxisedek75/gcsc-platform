@@ -178,6 +178,13 @@ reproduced HTTP200 after concurrent account disable; backend `40272e6b`
 rechecks active account before response. Exact-source PG37/37 twice
 `OyfHHD`/`oWQ2ab`, test/PG exits0, API354/354, syntax/diff PASS.
 Demo-precheck privacy only; no live financing, review or integration.
+Admin document-review mutation follow-up: QA `236150b1` RED `YMitZY`
+reproduced approval after mid-read role revocation; backend `d28c7fb8`
+locks current reviewer row and updates the document in one PG transaction,
+with a current-role check in JSON mode. A second test waits on the reviewer
+row lock. Exact-source PG39/39 twice `wa1ebe`/`83ZPvw`, test/PG exits0,
+API354/354, syntax/diff PASS. Root adaptation mismatch, exact-diff review,
+formal gate and integration remain open.
 Independent L21 work: October-web `79c9f3a4` clarifies current Token status
 and planned staking/rewards while retaining Token link focus state. Legal-
 claims RED before edit, then PASS; dashboard-live, build, scoped ESLint and
