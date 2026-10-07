@@ -1807,6 +1807,12 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   правки; focused41/41, API366/366, backend root check и diff-check PASS.
   PostgreSQL/браузер на этом exact commit не повторялись; независимого
   ревью, receiving и публикации не было.
+  Backend `bc957ad3` включил старую выдачу nonce в существующий wallet
+  rate limit: до правки второй запрос при локальном лимите 1 возвращал
+  HTTP200, после правки HTTP429 с `Retry-After`. Focused16/16, API367/367,
+  backend root check и diff-check PASS. Это локальная проверка, не
+  доказательство реальной подписи; exact-commit PostgreSQL/браузер,
+  независимое ревью и receiving остаются открытыми.
 - [ ] **L24 / координатор + founder.** К 15 октября - пилотный кандидат,
   если L01-L23 проходят. К 20 октября - публичный релиз только по отдельному
   разрешению после preview, live-provider проверки, резервной копии, rollback
