@@ -1769,7 +1769,9 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   ответа при искусственном отказе `wallet_challenges` на одноразовой
   PostgreSQL18.4: exact backend `c14bcf1e`, `ILTHNi` PASS1/1,
   test/PG exits0, QA root check и diff-check PASS; после ошибки строк нет.
-  Реальной подписи и независимого ревью не было;
+  Широкий локальный повтор `z8gwX2` на том же API прошёл 49/49,
+  test/PG exits0; Edge/API/PostgreSQL account-browser `zcHBpW` прошёл
+  1/1, test/PG exits0. Реальной подписи и независимого ревью не было;
   L23 остаётся открытым.
 - [ ] **L24 / координатор + founder.** К 15 октября - пилотный кандидат,
   если L01-L23 проходят. К 20 октября - публичный релиз только по отдельному
