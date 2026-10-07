@@ -1730,6 +1730,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   регистрируется -> видит только preview -> test-mode оплата -> доступ ->
   AI proposal -> ручная отправка -> owner читает. Повторить без AI и без
   кошелька; web desktop и Android Chrome. Зафиксировать SHA, логи, скриншоты.
+  Локальный частичный повтор `iGJcKm` 7 октября: exact backend `bc957ad3`
+  (API SHA `ad64014a3faf4259235c18167ef956310692854f45c69f46dfebf9b190b5cf95`),
+  October-web `a3659f7d`, QA `5b6ec93b`, Edge154 и одноразовая PostgreSQL18.4.
+  Account/project browser PASS1/1, 7 шагов, 16 API-запросов, page/request/
+  cleanup errors0, Edge/test/PG exits0. Проверены регистрация двух ролей,
+  приватный черновик, 404 для подрядчика, выход/повторный вход и запрет
+  смены роли повторной регистрацией. Голос, AI, публикация, test-mode покупка,
+  proposal, Android и полный L22 этим прогоном не подтверждены.
 - [ ] **L23 / QA + независимый reviewer.** Негативные тесты ролей/PII,
   подмены суммы/projectId, повторов webhook, отказа провайдера, истечения
   сессии, резервного восстановления; accessibility/performance, секреты,
