@@ -1826,6 +1826,13 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   Узкий отрицательный тест сначала RED; после правки static fixtures24/24,
   static site (2 страницы, 7 account CTA) и diff-check PASS. Кандидат
   изолирован; полный аудит утверждений, независимое ревью и релиз открыты.
+  Follow-up `f904bd3b` согласовал ещё восемь present-tense утверждений
+  исторического whitepaper с будущим статусом: contractor verification,
+  milestone/escrow records, working-capital data, disputes и reputation.
+  HTML-parser теперь проверяет видимый текст; RED на прежнем тексте,
+  mutation guard8 случаев, static fixtures25/25, static site2/7 и
+  diff-check PASS. Это локальный черновик, не полный claim ledger или
+  юридическое заключение; независимое ревью и publication gate открыты.
   Marketing `ca7f72b4` добавляет узкую проверку видимого hero-текста:
   статус `SmartContractor pilot in development` и раскрытие
   AI-generated concept image должны оставаться внутри hero-секции.
