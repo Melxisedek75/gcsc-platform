@@ -1814,6 +1814,17 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   роли, которого не было и в родительском design commit. Контраст этого
   design-кандидата в браузере не засчитан; перед объединением с
   October-web нужны reconciliation и независимое ревью.
+  Design `cdbed514` добавил `aria-pressed` выбранной роли и статический
+  guard (RED до правки, PASS после); scoped ESLint и web build PASS.
+  QA `ea18e199` измеряет контраст после появления видимого статуса,
+  а не на пустом условном элементе. Built-CSS Edge154 на design и
+  October-web: PASS5/5 для каждого, errors0, 6.47:1 на всех пяти ширинах;
+  отчёты `qa/.tmp/account-visual-G0bIDj/result.json` и
+  `qa/.tmp/account-visual-6dFlDz/result.json`. Внешние шрифты заблокированы.
+  Ответ входа тестовый; при отсутствии `VITE_API_URL` видна ошибка
+  конфигурации, поэтому реальный login/API не проверен. Это не screen reader,
+  200% browser zoom или полная L20b приёмка. Ветки не объединены,
+  независимый review точного diff и formal gate открыты.
 - [ ] **L21a / product + legal / 10 октября.** Завершить тексты privacy,
   terms, consent на аудио/AI, возвраты, поддержку и точность бренда/юрлица.
   Проверка: владелец подтверждает перед публичной регистрацией и оплатой.
