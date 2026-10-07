@@ -1080,6 +1080,10 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   принятия ставки. Exact-source PG49/49 (`XE6kMV`, test/PG exits0),
   API Jest354/354 и QA root check PASS. Независимый review и receiving
   не выполнены; publication по-прежнему на старом коде.
+  QA `9eb55d47` дополнительно подтвердил в том же disposable PG-наборе,
+  что личный `/api/auth/compliance` сохраняет имя документа и заметку
+  владельцу; публичные ответы их не содержат. Повтор PG49/49
+  (`c6dXU4`, test/PG exits0), без изменения продуктового кода.
 - [ ] **L08 / backend + web.** Доступ к одному project ID: право покупателя,
   серверные состояния `unpaid/pending/paid/refunded/revoked`, уникальность
   project+contractor и проверка перед раскрытием/предложением. Приёмка:
