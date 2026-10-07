@@ -19,7 +19,17 @@ and API Jest 354/354 passed with a dummy local JWT secret. These runs used the
 combined backend working-tree source; preexisting unstaged L05a document-upload
 changes were excluded from this commit and preserved.
 
-Still required: test the exact isolated commit and local PostgreSQL mutation
-paths, check authorization under concurrent role revocation, obtain independent
-review and the formal CODEX/CLAUDE gate before any integration. No provider or
-real payment verification was performed.
+QA commit `40284a8c` extends the opt-in isolated PostgreSQL 18.4 escrow-role
+suite with disabled-owner milestone creation and demoted-contractor submission.
+Against the combined backend working-tree source it passed 1/1
+(`postgres-baseline-Di1XIM`). Against an isolated detached checkout of exact
+backend commit `feb2bf95`, it passed 1/1 (`postgres-baseline-wt8Nqa`), and the
+project-publication suite passed 33/33 (`postgres-baseline-4To6rj`). Each had
+test and PostgreSQL exit 0. The exact committed `pure-server.js` SHA-256 was
+`6298f2a3ab4a9ad74d49b1d2bdc8131ad2ea2dc0bf49a72041d375b3a3716007`.
+QA runner parser 14/14 and root check passed. The clean disposable checkout
+was removed afterward.
+
+Still required: broader PostgreSQL mutation-path coverage, authorization under
+concurrent role revocation, independent review and the formal CODEX/CLAUDE gate
+before any integration. No provider or real payment verification was performed.
