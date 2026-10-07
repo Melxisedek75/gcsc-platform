@@ -305,13 +305,23 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   не перепроверен. Без нового запроса мгновенный отзыв не доказан; Dashboard,
   formal gate и интеграция остаются открытыми.
   QA `76bb4487` проверил настоящий Dashboard/HashRouter в том же Edge/API/PG:
-  admin видит SQL-записи, после отзыва роли открытая Financing Review получает
-  403 и очищает запись до навигации; Audit Log получает 403, после reload все
+  admin видит SQL-записи, после отзыва роли смена фильтра Financing Review
+  получает 403; Audit Log получает 403, после reload все
   три admin-пункта меню скрыты. Финальный `9kDBZR` PASS1/1, test/PG0,
   network/page/cleanup errors пусты; root check, runner16/16, syntax/diff
   PASS. Reviewer нашёл и исправленный затем ложный PASS на размонтированной
-  финансовой панели; финальный diff он не перепроверял. Это не все сценарии
+  финансовой панели; финальный diff он не перепроверял. Смена фильтра сама
+  очистила запись, поэтому только Refresh follow-up ниже проверяет состояние
+  после отказа. Это не все сценарии
   Dashboard и не мгновенное удаление данных без нового запроса.
+  QA `29c01349` и web `e792c9e8`: мобильный Dashboard при 390 px проходит
+  открытие меню, audit/financing переходы и отзыв роли. Refresh на открытых
+  панелях позволяет проверить состояние после 403 без ухода и смены фильтра;
+  финальный Edge/API/PG `pHHYxY` PASS1/1, test/PG0, errors пусты. Web build,
+  lint, QA root check, runner16/16 PASS. Read-only ревью нашло ложный PASS
+  мобильного financing assertion, исправленный ожиданием видимой ошибки;
+  финальный diff не перепроверялся. Bundle без production CSS: адаптивная
+  вёрстка и визуальная приёмка остаются открытыми.
   Formal gate ещё открыт.
   Evidence: `DOCUMENT-UPLOAD-PG-REVIEW.md`. Проверка заголовка не заменяет
   декодирование файла или антивирус, L05a остаётся открытым.

@@ -162,14 +162,37 @@ acceptance, formal CODEX/CLAUDE approval, integration, push or deployment.
 QA `76bb4487` adds the real `Dashboard`/`HashRouter` route to the same
 explicit-source browser bundle. The admin navigates to Audit Log and Financing
 Review and sees SQL-backed synthetic records. After PostgreSQL demotion, the
-still-mounted financing panel refreshes, receives 403 and clears its private
-context before navigation; Audit Log also receives 403. A page reload fetches
+financing filter change receives 403 before navigation; Audit Log also
+receives 403. The filter change itself clears old context, so this run alone
+did not prove 403-triggered clearing. A page reload fetches
 the current role from `/api/auth/profile` and hides all three admin navigation
 buttons. Final Edge/API/PG18.4 run `9kDBZR` passed 1/1 with test/PG exits 0,
 no blocked requests, page errors or cleanup errors. Earlier route runs
 `ZfPoEL` and `MFe5kN` passed before a reviewer identified a false-pass risk:
 the financing data was previously checked only after leaving its panel. The
-final test fixes that assertion; QA root check, runner16/16, syntax and diff
-checks passed. The reviewer did not rerun or re-review the final diff. This
+final test fixed that assertion, but a later review found the filter-change
+false-pass risk, addressed by the Refresh follow-up below. QA root check,
+runner16/16, syntax and diff checks passed. The reviewer did not rerun the
+final diff. This
 proves a fresh 403 and a reload path, not instant revocation without a request,
 all Dashboard journeys, formal gate approval, integration or deployment.
+
+Mobile follow-up: QA `29c01349` exercises the real Dashboard mobile drawer
+at a 390 px viewport with the same local Edge/API/PostgreSQL source. The old
+drawer controls lacked accessible names: first run `Klmbo1` timed out on
+"Open menu". October-web `e792c9e8` names Open/Close menu and adds icon
+refresh controls to Audit Log and Financing Review. The refresh controls
+make a role-revocation request possible while keeping the same panel mounted;
+on 403 the panels show "Admin only" and the prior sentinel stays absent
+after loading ends. Mobile audit refresh is checked while mounted; a later
+mobile financing navigation gets 403; reload hides all admin drawer items.
+Final Edge/API/PG18.4 `pHHYxY` passed 1/1, test/PG exits 0, no blocked/page/
+cleanup errors. Prior mobile attempts `5JWku0`, `pVoqOG`, `Ke4unU` exposed
+unnamed or ambiguous test locators; `tOcyXu` and `mnpY8y` passed before
+read-only review found a false-pass risk in the mobile financing assertion.
+The final assertion waits for visible 403 error before checking absence;
+the reviewer did not rerun/re-review it. QA root check, runner16/16,
+syntax/diff, web TypeScript/Vite build and scoped ESLint passed. The browser
+fixture bundles React without the production stylesheet, so the 390 px run
+checks drawer behavior, not responsive layout or visual polish. No instant
+revocation without a request, formal gate, integration, push or deployment.
