@@ -17,7 +17,7 @@ the 2026-10-20 launch checkpoint remains a gate, not release authority.
 | October web MVP | C:\gcsc-platform\.worktrees\october-web | codex/october-web-20260928 @ c0156070, clean | apps/web October owner/contractor flow; no active separate writer | L06 source 65312daa was received in publication as 7103e902 with reviewed navigation follow-up 979130af. This lane remains clean; further UI edits belong in coordinated follow-up. Local Edge/API/PG receiving passed twice, but full L06 and release remain open |
 | October marketing | C:\gcsc-platform\.worktrees\marketing-october | codex/marketing-concept-disclosure-20261001 @ 1c0c6127, clean | Isolated marketing source and test-only accessibility candidate; no active writer | Visible AI-generated hero-image disclosure locally received earlier. New keyboard validator candidate: Edge154 eight cases failures[]/errors[] locally and independently, actual Tab/Enter mobile navigation. No site/CSS change or candidate integration; rights, video and live deploy open. Claude OAuth401 attempt is not PASS |
 
-2026-10-07 coordination update: QA is clean at `bfebfdfc`; October-web is
+2026-10-07 coordination update: QA is clean at `30a1c4a2`; October-web is
 clean at `4ec10a4c`. Isolated follow-ups cover admin document-review action
 403, hidden denied download 404, disabled contractor upload/download 403,
 and contractor compliance refresh races. Final Edge/API/isolated PostgreSQL
