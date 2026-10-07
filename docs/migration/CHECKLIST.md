@@ -1738,6 +1738,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   приватный черновик, 404 для подрядчика, выход/повторный вход и запрет
   смены роли повторной регистрацией. Голос, AI, публикация, test-mode покупка,
   proposal, Android и полный L22 этим прогоном не подтверждены.
+  Более длинный Edge/API/PostgreSQL повтор `ibErRB` на тех же exact source
+  (`bc957ad3`/`a3659f7d`/`5b6ec93b`) PASS1/1: 10 шагов, 55 API-запросов,
+  page/request/blocked/cleanup errors0, Edge/test/PG exits0. Проверены
+  правка и публикация черновика, обезличенный preview, отказ без доступа,
+  синтетический SQL grant только для одной пары contractor/project,
+  предложение и чтение владельцем, отзыв доступа и повторный отказ.
+  Grant был вставлен тестом в локальную базу, а не получен через Checkout;
+  голос, AI, реальный платёж, Android и полный L22 остаются открытыми.
 - [ ] **L23 / QA + независимый reviewer.** Негативные тесты ролей/PII,
   подмены суммы/projectId, повторов webhook, отказа провайдера, истечения
   сессии, резервного восстановления; accessibility/performance, секреты,
