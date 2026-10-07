@@ -257,3 +257,15 @@ passed 1/1, test/PG exits 0. Web build/scoped ESLint, QA root check and
 diff checks passed. The exact last diff was not independently re-reviewed.
 The fixture does not load production CSS; formal gate, integration, push and
 deployment remain open.
+
+Contractor Dashboard navigation QA: test-only QA commit `a43eed60` mounts the
+real Dashboard under HashRouter, loads the current contractor profile, opens
+Compliance from desktop navigation and confirms the persisted document name.
+After disabling the contractor in the disposable PostgreSQL database, a
+Compliance refresh receives API GET403, displays `Account is inactive` and
+removes the filename. Explicit backend/October-web source run `2593Wp` passed
+Edge/API/PG 1/1 with test/PG exits 0; QA root check, syntax and diff checks
+passed. The first attempt `rb8lCQ` did not execute the scenario because of a
+duplicate test variable declaration; it was corrected before the passing run.
+The bundle omits production CSS, and the test-only diff has no independent or
+formal CODEX/CLAUDE review. No integration, push or deployment occurred.
