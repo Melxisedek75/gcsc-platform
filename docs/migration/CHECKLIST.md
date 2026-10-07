@@ -2128,6 +2128,17 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   PASS1/1, test/PG exits0. Ширина документа и body 360 px,
   overflow elements0; снимок проверен, QA root check и diff-check PASS.
   Это не настоящий browser zoom и не полная L20b приёмка.
+  Следующий QA `3e10b72d` добавил публичный `pending_review` при 390 px
+  и увеличенном тексте с тремя `submitted` документами в изолированной PG.
+  Фикстура сначала RED на недопустимом статусе `pending` (`R8p2cl`), затем
+  браузерный снимок `MaEh0G` показал ошибочное `Complete` для не одобренных
+  документов. Точное утверждение `N69Nar` RED0/3 `Under review`.
+  Design `756319ea` показывает `Under review` и значок ожидания для
+  `submitted`, сохраняя API-статус и `ready_for_bids=false`. Финальный
+  Edge/API/изолированная PostgreSQL18.4 `YgTmbf` PASS1/1, test/PG exits0;
+  исправленный снимок осмотрен. Design build/validator/ESLint, QA root
+  check и diff-check PASS. Независимое ревью, интеграция и полный L20b
+  по-прежнему открыты.
   QA `29f89864` задержал тот же изолированный HTTP401 и проверил, что
   submit отключён во время ожидания. Финальные отчёты design
   `qa/.tmp/account-visual-2LFamY/result.json` и October-web
