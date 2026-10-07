@@ -1117,6 +1117,16 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   `LoansFinancingPanel`). Их нужно сверять с реальным API и владельцами
   frontend/October-web lane, а не объявлять L21 закрытым. Баннер не
   интегрирован/опубликован.
+  Design-кандидат `d43a9175` уточнил dashboard acceptance: принятие bid
+  создаёт только прототипную escrow-запись и само по себе не вносит/не
+  удерживает средства. Проверка API `acceptStoredBid` подтвердила создание
+  записи в `escrow_contracts` без платежа; сообщение об успехе теперь
+  показывается после обновления деталей и объявляется через `role="status"`.
+  Scoped ESLint, web build, dashboard-live, legal-claims и diff-check PASS.
+  Независимый Codex reviewer нашёл и помог закрыть сброс сообщения и
+  неточное название записи; повторного review итогового commit ещё нет.
+  Кандидат изолирован, не интегрирован/опубликован; full L21, формальный
+  CODEX/CLAUDE gate и реальная browser/API/PG приёмка открыты.
 
 ### P0 - приёмка и публикация, 11-20 октября
 
