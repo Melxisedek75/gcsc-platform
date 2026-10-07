@@ -1102,6 +1102,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   Codex-ревью PASS после исправления двух найденных дефектов. Реальная
   привязка к профилю по-прежнему отклоняется API v3 без signed challenge;
   WebAuth/подпись не запускались, кандидат не интегрирован и не опубликован.
+  Design-кандидат `684d3484` исправил Token: вместо предложения покупки через
+  Metal Pay страница сообщает об отсутствии одобренной продажи, провайдера,
+  даты запуска и платёжного потока; CTA ведёт в прототип Dashboard.
+  Валидатор legal-claims теперь проверяет явные JSX `href` через TypeScript
+  AST и отклоняет динамические ссылки/spread, оставляя только официальный
+  XPR-ресурс. Build, scoped ESLint, legal-claims, diff-check, локальный
+  браузер 390 px без overflow и независимое Codex-ревью PASS. Кандидат
+  остаётся вне publication; legal/founder approval и формальный gate открыты.
 
 ### P0 - приёмка и публикация, 11-20 октября
 
