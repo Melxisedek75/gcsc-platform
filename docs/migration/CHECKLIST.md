@@ -1832,6 +1832,12 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   October-web `qa/.tmp/account-visual-0812qm/result.json` PASS5/5 каждый,
   errors0, минимум 6.47:1. QA root check, syntax и diff-check PASS.
   Это тестовый HTTP401, не реальный API/PG login; остальные L20b gates открыты.
+  QA `29f89864` задержал тот же изолированный HTTP401 и проверил, что
+  submit отключён во время ожидания. Финальные отчёты design
+  `qa/.tmp/account-visual-2LFamY/result.json` и October-web
+  `qa/.tmp/account-visual-7q67Li/result.json`: PASS5/5 каждый,
+  pending5/5, errors0; syntax/root/diff checks PASS. Слабая сеть с
+  реальным API и полный набор pending/error состояний ещё не приняты.
 - [ ] **L21a / product + legal / 10 октября.** Завершить тексты privacy,
   terms, consent на аудио/AI, возвраты, поддержку и точность бренда/юрлица.
   Проверка: владелец подтверждает перед публичной регистрацией и оплатой.
