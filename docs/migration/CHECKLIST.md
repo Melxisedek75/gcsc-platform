@@ -1072,6 +1072,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   не опубликованы. Read-only проверка текущего publication source подтверждает,
   что он всё ещё возвращает полный compliance через публичный профиль,
   карточку ставки и отказ принятия; полный L07 остаётся открытым.
+  Следующий изолированный role follow-up: QA `bd19fea7` показал, что
+  карточка ранее поданной ставки продолжала отдавать шаги проверки после
+  отключения подрядчика или смены его роли (PG47/49, RED). Backend
+  `766faa9e` повторно читает состояние подрядчика и возвращает null вместо
+  verification для неактивного/не-contractor аккаунта, включая отказ
+  принятия ставки. Exact-source PG49/49 (`XE6kMV`, test/PG exits0),
+  API Jest354/354 и QA root check PASS. Независимый review и receiving
+  не выполнены; publication по-прежнему на старом коде.
 - [ ] **L08 / backend + web.** Доступ к одному project ID: право покупателя,
   серверные состояния `unpaid/pending/paid/refunded/revoked`, уникальность
   project+contractor и проверка перед раскрытием/предложением. Приёмка:
