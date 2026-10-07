@@ -2139,6 +2139,16 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   исправленный снимок осмотрен. Design build/validator/ESLint, QA root
   check и diff-check PASS. Независимое ревью, интеграция и полный L20b
   по-прежнему открыты.
+  QA `232a950c` добавил отклонённый contractor-license после проверенного
+  профиля: публичный `Needs correction`, API `ready_for_bids=false`, один
+  `rejected` в checklist и отсутствие закрытой review-note. До UI-правки
+  Edge/API/PG `xP115p` RED0/1 читаемой подписи: список показывал сырой
+  `rejected`. Design `b5de8944` дал строке `Needs correction` и отдельный
+  значок. Первая проверка `Z4cxD2` нашла только неоднозначный тестовый
+  locator общего статуса; QA ограничил его блоком профиля. Финальный
+  Edge/API/изолированная PostgreSQL18.4 `5Jjp1P` PASS1/1, test/PG exits0,
+  390 px/увеличенный текст, снимок осмотрен. Design build/validator/ESLint,
+  QA root check и diff-check PASS. Независимое ревью и интеграция открыты.
   QA `29f89864` задержал тот же изолированный HTTP401 и проверил, что
   submit отключён во время ожидания. Финальные отчёты design
   `qa/.tmp/account-visual-2LFamY/result.json` и October-web
