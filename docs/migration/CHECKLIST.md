@@ -1794,6 +1794,13 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   exact backend `37293163`, `oseSy0` PASS49/49, test/PG exits0,
   QA root check и diff-check PASS. Реальной подписи, независимого ревью,
   receiving и публикации не было; L23 открыт.
+  Backend `33005717` закрыл отдельную утечку через старый подписываемый
+  `/api/wallet/connect`: произвольный `verifyAccountKey.error` раньше
+  попадал в публичный `code`. Синтетический локальный тест был RED до
+  правки; теперь сохраняются только фиксированные коды, остальные дают
+  `account_key_unverified`. Focused41/41, API366/366, backend root check
+  и diff-check PASS. Реальной подписи, независимого ревью, receiving и
+  публикации не было; L23 остаётся открытым.
 - [ ] **L24 / координатор + founder.** К 15 октября - пилотный кандидат,
   если L01-L23 проходят. К 20 октября - публичный релиз только по отдельному
   разрешению после preview, live-provider проверки, резервной копии, rollback
