@@ -36,6 +36,12 @@ independently re-reviewed; no visual mobile acceptance is claimed.
 The full `project-browser` combination remains blocked by the old
 ProjectsPanel `Create Project` versus test `Save Draft` source mismatch.
 No candidate integration or formal review approval is implied.
+2026-10-07 cross-lane read-only receiving: clean October-web `4ec10a4c`
+and backend `a1ff006f` passed separate QA Edge/API/disposable PG18.4
+`project-browser` `LtDglM` and `account-browser` `TyiaF0`, each PASS1/1
+with test/PG exit0 and cleanup PASS. The frontend `ca5c88ae` project
+panel mismatch still exists; these tests do not merge branches or close
+provider/review/release gates.
 Frontend auth lane is at `ca5c88ae` with a pinned Edge154 account-role
 12/12 candidate; QA `b51453e4` owns the added regression cases. The frontend
 `docs/security/` untracked directory remains untouched. The design branch

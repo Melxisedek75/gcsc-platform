@@ -309,6 +309,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   Footer; Edge ждёт декодирования локальных баннера и логотипа.
   Финальный `FwgJVx` PASS1/1, test/PG exit0, runner18/18 и root check
   PASS. Финальная правка не перепроверена независимым reviewer.
+  Альтернативная чистая пара источников `october-web` `4ec10a4c` +
+  backend `a1ff006f` прошла оба QA opt-in теста на Edge/API/
+  изолированной PG18.4: `project-browser` `LtDglM` PASS1/1 для draft,
+  publication, privacy, bid, revocation и регистрации; `account-browser`
+  `TyiaF0` PASS1/1 для App route, ролей, входа, reload профиля и 409.
+  В обоих прогонах test/PG exit0, blocked/page/request errors пусты и
+  cleanup PASS. Это отдельные базы/сессии, не один непрерывный путь;
+  несовпадение панели в ветке frontend `ca5c88ae` остаётся.
   L05 остаётся открытым до сквозной проверки API/DB/провайдера.
 - [ ] **L05a / backend + web.** Быстрая загрузка документов подрядчика:
   тип, размер и формат файла, приватное хранение, антивирус/сканирование,
