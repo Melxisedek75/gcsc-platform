@@ -1663,6 +1663,14 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   3 видимые карточки, 2 скрытые после отзыва роли/отключения, 8 запросов,
   page/external errors0. Design-кандидат не интегрирован и формальный
   review gate открыт.
+  QA-only `68c19d2f` добавил раннюю проверку правильной web-ветки:
+  design `x4HE01` PASS1/1, October-web `FrOcPD` ожидаемый RED за 6.7 ms
+  с явным source-mismatch вместо 30-секундного ожидания. QA `b21d9632`
+  дополнительно требует после отзыва роли/отключения только общий 404
+  без данных профиля в API и браузере. Exact design/backend Edge/API/
+  PostgreSQL18.4 `CpxAvS` PASS1/1, test/PG exits0; QA root check,
+  syntax/diff PASS. Оба изменения только в тесте, без интеграции или
+  независимого ревью текущего diff.
   Design-кандидат `98c3ca57` убрал с регистрации обещание доступной привязки
   WebAuth, уточнил отсутствие live escrow и условность email/SMS провайдера.
   API `POST /api/auth/register` проверен по коду: при preferred-режиме и
