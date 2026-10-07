@@ -2075,6 +2075,16 @@ https://winners.webbyawards.com/winners/websites-and-mobile-sites/features-desig
   Design build, профильный validator, scoped ESLint, QA root check,
   syntax/diff PASS. Screen reader, настоящий 200% zoom, независимое ревью,
   integration и полная L20b приёмка остаются открытыми.
+  QA `32b98da3` расширил профиль подрядчика до 360/390/768/1280/1440 px:
+  шесть видимых и два недоступных состояния. Тестовый fixture сначала
+  повторно вставил документ (`rJYMoG` FAIL), затем исправлен (`DJbo2F`
+  PASS), но скриншот 360 px выявил обрезание EIN-label. Точная проверка
+  `QexsUd` RED1/1 при 360 px; design `74833cce` разрешил перенос строки.
+  Финальный Edge/API/PostgreSQL18.4 `RQPG9Y` PASS1/1, test/PG exits0,
+  page/external errors0, без горизонтального переполнения; снимки 360 и
+  1440 px осмотрены. Design build, профильный validator, scoped ESLint,
+  QA root check и syntax/diff PASS. Настоящий zoom, screen reader,
+  independent review и полная L20b приёмка остаются открытыми.
   QA `29f89864` задержал тот же изолированный HTTP401 и проверил, что
   submit отключён во время ожидания. Финальные отчёты design
   `qa/.tmp/account-visual-2LFamY/result.json` и October-web
