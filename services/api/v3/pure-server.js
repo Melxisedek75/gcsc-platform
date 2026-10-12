@@ -33,10 +33,12 @@ function resolveJwtSecret() {
 const JWT_SECRET = resolveJwtSecret();
 const DB_FILE = path.join(__dirname, 'gcsc.db');
 const USE_POSTGRES = !!process.env.DATABASE_URL;
-if (process.env.NODE_ENV === 'production' && !USE_POSTGRES) {
-  throw new Error('DATABASE_URL is required for production account storage');
-}
 const TEST_MODE = process.env.NODE_ENV === 'test';
+const LOCAL_JSON_DB_ALLOWED = process.env.NODE_ENV === 'development'
+  && process.env.GCSC_ALLOW_LOCAL_JSON_DB === 'true';
+if (!USE_POSTGRES && !TEST_MODE && !LOCAL_JSON_DB_ALLOWED) {
+  throw new Error('DATABASE_URL is required unless local JSON storage is explicitly enabled for development');
+}
 const LEGACY_XPR_JOB_POSTING_ENABLED = process.env.ENABLE_LEGACY_XPR_JOB_POSTING === 'true';
 const XPR_TESTNET_CHAIN_ID = '71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd';
 const WALLET_PROOF_AUDIENCE = process.env.WALLET_PROOF_AUDIENCE || `http://127.0.0.1:${PORT}`;
