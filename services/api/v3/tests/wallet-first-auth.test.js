@@ -2,6 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { Key, Numeric, digestFromSerializedData } = require('@proton/js');
+const crypto = require('crypto');
 
 const exists = fs.existsSync;
 const write = fs.writeFileSync;
@@ -15,12 +16,13 @@ const server = require('../pure-server');
 const { db, _hooks } = server;
 let port;
 
-function request(route, body = {}) {
-  const payload = JSON.stringify(body);
+function request(route, body = {}, { method = 'POST', token } = {}) {
+  const payload = method === 'GET' ? null : JSON.stringify(body);
   return new Promise((resolve, reject) => {
     const req = http.request({
-      hostname: '127.0.0.1', port, path: route, method: 'POST', agent: false,
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload), Connection: 'close' },
+      hostname: '127.0.0.1', port, path: route, method, agent: false,
+      headers: { ...(payload ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}), Connection: 'close' },
     }, res => {
       let data = '';
       res.on('data', chunk => { data += chunk; });
@@ -28,7 +30,7 @@ function request(route, body = {}) {
       res.on('end', () => resolve({ status: res.statusCode, body: JSON.parse(data) }));
     });
     req.on('error', reject);
-    req.end(payload);
+    req.end(payload ?? undefined);
   });
 }
 
@@ -157,4 +159,29 @@ test('a valid signature cannot log in an unbound application user', async () => 
   expect(result.status).toBe(401);
   expect(result.body.code).toBe('wallet_login_unavailable');
   expect(result.body.token).toBeUndefined();
+});
+
+test('email login restores an application profile without a wallet binding', async () => {
+  const password = 'local-email-test-password';
+  const salt = 'local-email-fixture';
+  db.users[0].wallet = null;
+  db.users[0].password_hash = `${salt}:${crypto.scryptSync(password, salt, 64).toString('hex')}`;
+
+  const rejected = await request('/api/auth/login', {
+    email: db.users[0].email, password: 'wrong-password',
+  });
+  expect(rejected.status).toBe(401);
+  expect(rejected.body.token).toBeUndefined();
+
+  const login = await request('/api/auth/login', {
+    email: db.users[0].email.toUpperCase(), password,
+  });
+  expect(login.status).toBe(200);
+  expect(login.body.token).toEqual(expect.any(String));
+  expect(login.body.user.wallet).toBeNull();
+
+  const restored = await request('/api/auth/profile', {}, { method: 'GET', token: login.body.token });
+  expect(restored.status).toBe(200);
+  expect(restored.body.user).toMatchObject({ id: 31, email: 'wallet-user@example.invalid' });
+  expect(restored.body.user.wallet).toBeNull();
 });

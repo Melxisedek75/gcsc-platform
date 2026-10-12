@@ -110,6 +110,14 @@ test('Android version can update installed code 4 and USB mode is explicit', () 
   }
 });
 
+test('APK verifier reads its package and version from the candidate app config', () => {
+  const source = fs.readFileSync(new URL('../scripts/verify-mobile-apk.ps1', import.meta.url), 'utf8');
+  assert.match(source, /apps\\mobile\\app\.json/);
+  assert.match(source, /\$config\.expo\.android\.versionCode/);
+  assert.match(source, /\$config\.expo\.version/);
+  assert.doesNotMatch(source, /VersionCode=6|Version='0\.1\.4'/);
+});
+
 test('USB network policy is scoped, idempotent, and removed from normal builds', async () => {
   let manifestMod;
   let fileMod;

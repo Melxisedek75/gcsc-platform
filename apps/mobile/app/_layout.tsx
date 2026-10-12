@@ -1,12 +1,14 @@
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { PaperProvider } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import * as Linking from 'expo-linking';
 import { isWalletProbeLink } from '../../../packages/wallet-proof/probe-support.mjs';
+import { shouldClearAppSession } from '../../../packages/wallet-proof/session-restore.mjs';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { Button } from '../components/Button';
 import { fetchProfile } from '../lib/auth';
 import { AuthUser, clearSession, loadSession } from '../lib/api';
 import { initI18n } from '../lib/i18n';
@@ -15,14 +17,16 @@ import { loadWebauthSession, primeSessionFromBackend } from '../lib/webauth';
 import { colors } from '../lib/tokens';
 import { paperTheme } from '../lib/paperTheme';
 
-type HydrationState = 'pending' | 'ready';
+type HydrationState = 'pending' | 'ready' | 'retry';
 
 export default function RootLayout() {
   const router = useRouter();
   const [state, setState] = useState<HydrationState>('pending');
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
+    let retryNeeded = false;
 
     async function hydrate() {
       try {
@@ -40,8 +44,10 @@ export default function RootLayout() {
         let profile: AuthUser;
         try {
           profile = await fetchProfile();
-        } catch {
-          await clearSession();
+        } catch (error) {
+          if (cancelled) return;
+          if (shouldClearAppSession(error)) await clearSession();
+          else retryNeeded = true;
           return;
         }
         const local = await loadWebauthSession();
@@ -59,15 +65,13 @@ export default function RootLayout() {
         const target = profile.role === 'contractor' ? '/(contractor)/jobs' : '/(homeowner)/jobs';
         router.replace(target);
       } finally {
-        if (!cancelled) setState('ready');
+        if (!cancelled) setState(retryNeeded ? 'retry' : 'ready');
       }
     }
 
-    // Failsafe: never let a slow/hanging storage or network call trap the app
-    // on the loading spinner. If bootstrap has not finished in time, render the
-    // app anyway (the user lands on the role-select / onboarding entry).
+    // A stalled profile request must leave credentials intact and expose retry.
     const failsafe = setTimeout(() => {
-      if (!cancelled) setState('ready');
+      if (!cancelled) setState('retry');
     }, 4000);
 
     hydrate();
@@ -75,7 +79,7 @@ export default function RootLayout() {
       cancelled = true;
       clearTimeout(failsafe);
     };
-  }, [router]);
+  }, [router, retryKey]);
 
   return (
     <PaperProvider theme={paperTheme} settings={{
@@ -102,6 +106,17 @@ export default function RootLayout() {
             <ActivityIndicator color={colors.brand} />
           </View>
         ) : null}
+        {state === 'retry' ? (
+          <View pointerEvents="auto" style={styles.retryOverlay}>
+            <Text style={{ color: colors.text, textAlign: 'center' }}>
+              Could not restore your session. Check your connection and try again.
+            </Text>
+            <Button label="Retry" onPress={() => {
+              setState('pending');
+              setRetryKey(value => value + 1);
+            }} />
+          </View>
+        ) : null}
       </View>
     </ErrorBoundary>
     </PaperProvider>
@@ -118,5 +133,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.bg,
     justifyContent: 'center',
+  },
+  retryOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    backgroundColor: colors.bg,
+    justifyContent: 'center',
+    gap: 16,
+    paddingHorizontal: 24,
   },
 });

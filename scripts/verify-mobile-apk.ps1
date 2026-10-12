@@ -6,10 +6,15 @@ param(
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $apk = (Resolve-Path -LiteralPath $ApkPath).Path
+$config = Get-Content -LiteralPath (Join-Path $PSScriptRoot '..\apps\mobile\app.json') -Raw | ConvertFrom-Json
+$package = [regex]::Escape([string]$config.expo.android.package)
+$versionCode = [int]$config.expo.android.versionCode
+$version = [string]$config.expo.version
+$versionPattern = [regex]::Escape($version)
 $aapt = Join-Path $SdkPath 'build-tools\36.0.0\aapt.exe'
 $badging = & $aapt dump badging $apk
 if ($LASTEXITCODE -ne 0) { throw 'APK manifest verification failed.' }
-if (-not ($badging -match "package: name='com.gcsc.smartcontractor' versionCode='6' versionName='0.1.4'")) {
+if (-not ($badging -match "package: name='$package' versionCode='$versionCode' versionName='$versionPattern'")) {
     throw 'Unexpected APK package/version; do not install.'
 }
 if ($badging -match '^application-debuggable') { throw 'APK still requires developer-mode acceptance.' }
@@ -30,7 +35,7 @@ try {
 & (Join-Path $SdkPath 'build-tools\36.0.0\apksigner.bat') verify $apk
 if ($LASTEXITCODE -ne 0) { throw 'APK signature verification failed.' }
 [pscustomobject]@{
-    Apk=$apk; Version='0.1.4'; VersionCode=6; ApiOrigin=$ApiOrigin
+    Apk=$apk; Version=$version; VersionCode=$versionCode; ApiOrigin=$ApiOrigin
     Bytes=(Get-Item -LiteralPath $apk).Length
     SHA256=(Get-FileHash -LiteralPath $apk -Algorithm SHA256).Hash.ToLowerInvariant()
     Scope='Local USB test APK. Not wallet/payment/device acceptance.'
