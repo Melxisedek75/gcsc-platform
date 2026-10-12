@@ -268,7 +268,7 @@
   {
     "path": "apps/mobile/app/_layout.tsx",
     "sourceBlob": "41af3e10e5fe6a1cb594a835e297ee3332c30f77",
-    "sha256": "d1804aee89672ee0a61cf50a2a676664aa61787cd41ae32a61bfb040e6587178",
+    "sha256": "63097a2338605bb96072b143e2d4bb50ab6c01af5d54bf41a237842ba559c91e",
     "reason": "Retain diagnostic hydration guard while clearing saved app credentials only for confirmed profile authorization failures; show retry on transient network, server, or timeout errors.",
     "test": "node --test tests/mobile-session-restore.test.mjs; npm run check:mobile-types; npm run check"
   },

@@ -65,6 +65,7 @@ export default function RootLayout() {
         const target = profile.role === 'contractor' ? '/(contractor)/jobs' : '/(homeowner)/jobs';
         router.replace(target);
       } finally {
+        clearTimeout(failsafe);
         if (!cancelled) setState(retryNeeded ? 'retry' : 'ready');
       }
     }
@@ -74,7 +75,7 @@ export default function RootLayout() {
       if (!cancelled) setState('retry');
     }, 4000);
 
-    hydrate();
+    void hydrate();
     return () => {
       cancelled = true;
       clearTimeout(failsafe);
