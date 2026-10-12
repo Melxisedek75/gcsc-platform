@@ -98,11 +98,22 @@ export async function apiRequest<T>(path: string, opts: RequestOptions = {}): Pr
     headers.Authorization = `Bearer ${cachedToken}`;
   }
 
-  const res = await fetch(url, {
-    method: opts.method ?? 'GET',
-    headers,
-    body: opts.body != null ? JSON.stringify(opts.body) : undefined,
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: opts.method ?? 'GET',
+      headers,
+      body: opts.body != null ? JSON.stringify(opts.body) : undefined,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') throw error;
+    const networkError: ApiError = {
+      status: 0,
+      code: 'NETWORK_UNAVAILABLE',
+      message: 'Cannot reach the server. Check your connection and try again.',
+    };
+    throw networkError;
+  }
 
   const text = await res.text();
   const parsed = text ? safeParse<unknown>(text) : null;

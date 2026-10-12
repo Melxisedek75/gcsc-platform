@@ -93,9 +93,16 @@
   {
     "path": "apps/mobile/lib/api.ts",
     "sourceBlob": "58ac59c3eb9eb9e959a463f7ffb173999ff62b12",
-    "sha256": "6418ac17b050e9cf9b5336150f3e0bc44b97b734506480609b9639775e099a5a",
-    "reason": "Resolve explicit API origin independently of payments/SDK; remove circular dependency.",
-    "test": "npm run test:api-config; witnessed unsafe no-env fetch before correction"
+    "sha256": "9aebfc16a9792559771da5e526449af34f4fb0db91b2b183fa483dd8d2886ad7",
+    "reason": "Resolve explicit API origin independently of payments/SDK; remove circular dependency. Distinguish transport failures from HTTP account rejection without exposing raw platform network errors.",
+    "test": "npm run test:api-config; node --test tests/mobile-auth-transport.test.mjs; witnessed unsafe no-env fetch before correction"
+  },
+  {
+    "path": "apps/mobile/app/(auth)/sign-up.tsx",
+    "sourceBlob": "ed7076e0df9519ab83e441083401bcd7b950ee19",
+    "sha256": "057437ec1b669f0a977a3d12a408222fce0e990b4fe98a29f76449cb87b201d8",
+    "reason": "Enter the selected role after successful email registration without requiring optional wallet binding; explain uncertain registration outcome when the server cannot be reached.",
+    "test": "node --test tests/mobile-auth-transport.test.mjs; npm run check:mobile-types; physical device registration pending"
   },
   {
     "path": "apps/mobile/lib/payments.ts",
