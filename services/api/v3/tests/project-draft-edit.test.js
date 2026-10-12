@@ -204,7 +204,7 @@ test('legacy JSON projects acquire their original creation version on load', () 
     const db = require(${JSON.stringify(modulePath)}).db;
     process.stdout.write(JSON.stringify(db.projects[0]));
   `;
-  const env = { ...process.env, NODE_ENV: 'development' };
+  const env = { ...process.env, NODE_ENV: 'development', GCSC_ALLOW_LOCAL_JSON_DB: 'true' };
   delete env.DATABASE_URL;
   const loaded = JSON.parse(execFileSync(process.execPath, ['-e', child], {
     env, encoding: 'utf8', timeout: 5000,
