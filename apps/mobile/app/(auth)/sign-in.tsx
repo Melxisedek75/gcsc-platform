@@ -27,14 +27,9 @@ export default function SignIn() {
     setSubmitting(true);
     try {
       const user = await login(email, password);
-      // Payments require a bound wallet — if none yet, go connect one first.
-      if (!user.wallet?.account) {
-        router.replace('/(auth)/connect-wallet');
-        return;
+      if (user.wallet?.account) {
+        await primeSessionFromBackend(user.wallet.account, user.wallet.permission ?? 'active');
       }
-      // Fresh installs have no local WebAuth session; without priming it from
-      // the profile wallet the first payment fails with "No WebAuth session".
-      await primeSessionFromBackend(user.wallet.account, user.wallet.permission ?? 'active');
       const target = user.role === 'contractor' ? '/(contractor)/jobs' : '/(homeowner)/jobs';
       router.replace(target);
     } catch (err) {

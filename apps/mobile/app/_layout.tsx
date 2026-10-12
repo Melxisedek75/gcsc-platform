@@ -50,17 +50,16 @@ export default function RootLayout() {
           else retryNeeded = true;
           return;
         }
-        const local = await loadWebauthSession();
         if (cancelled) return;
-        if (!profile.wallet?.account) {
-          router.replace('/(auth)/connect-wallet');
-          return;
-        }
-        if (!local || local.account !== profile.wallet.account) {
-          await primeSessionFromBackend(
-            profile.wallet.account,
-            profile.wallet.permission ?? 'active',
-          );
+        if (profile.wallet?.account) {
+          const local = await loadWebauthSession();
+          if (cancelled) return;
+          if (!local || local.account !== profile.wallet.account) {
+            await primeSessionFromBackend(
+              profile.wallet.account,
+              profile.wallet.permission ?? 'active',
+            );
+          }
         }
         const target = profile.role === 'contractor' ? '/(contractor)/jobs' : '/(homeowner)/jobs';
         router.replace(target);

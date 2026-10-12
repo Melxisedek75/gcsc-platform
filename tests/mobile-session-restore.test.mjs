@@ -22,7 +22,7 @@ test('mobile hydration uses the authorization classifier before clearing storage
   assert.match(layout, /setRetryKey\(value => value \+ 1\)/);
 });
 
-test('completed profile restoration cancels the timeout before it can show Retry', async () => {
+for (const wallet of [{ account: 'fixture' }, null]) test(`profile restoration keeps email access with wallet ${wallet ? 'bound' : 'skipped'}`, async () => {
   const source = fs.readFileSync(new URL('../apps/mobile/app/_layout.tsx', import.meta.url), 'utf8');
   const file = ts.createSourceFile('_layout.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   let effect;
@@ -42,8 +42,8 @@ test('completed profile restoration cancels the timeout before it can show Retry
     isWalletProbeLink: () => false,
     initI18n: async () => undefined,
     loadSession: async () => ({ token: 'fixture-token' }),
-    fetchProfile: async () => ({ role: 'contractor', wallet: { account: 'fixture' } }),
-    loadWebauthSession: async () => ({ account: 'fixture' }),
+    fetchProfile: async () => ({ role: 'contractor', wallet }),
+    loadWebauthSession: async () => wallet ? { account: 'fixture' } : null,
     hasCompletedOnboarding: async () => true,
     primeSessionFromBackend: async () => undefined,
     clearSession: async () => { throw new Error('must keep app session'); },
