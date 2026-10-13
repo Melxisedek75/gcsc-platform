@@ -39,7 +39,8 @@ in shared RN components. Build a local test APK, not a release.
 | Repository baseline | `npm run check` | PASS | migration 37/37, APK plan 13/13, wallet restore 11/11, API syntax and web validators |
 | API regression | `npm run test:api` | PASS 335/335 | 16 Jest suites; local test mode only |
 | Local APK | `npm run build:apk:local` | PASS | 488 tasks; 0.1.7/code 9; local loopback API; SHA-256 `aeecacbc6c28a78697d822d5a785a5d2a795a63d814d6720066ba7b2796ab20f` |
-| Device E2E | manual Pixel 8 | NOT_RUN | no installation of this candidate authorized |
+| Samsung install | `adb -s R3CMB0JDFAR install -r <validated APK>` | PASS | Samsung SM-N976U reports 0.1.7/code 9; app process starts; USB reverse to local API active |
+| Device E2E | manual homeowner + contractor | NOT_RUN | registration, bids, chat, theme and cross-role flows await user acceptance; no real payments |
 
 ## Findings
 
