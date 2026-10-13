@@ -4,11 +4,13 @@ import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { roleNavigation } from '../lib/navigation';
 import { colors, control, radius } from '../lib/tokens';
+import { useAppTheme } from '../lib/theme';
 
 export function RoleTabs({ role }: { role: keyof typeof roleNavigation }) {
   const navigation = roleNavigation[role];
   const insets = useSafeAreaInsets();
   const { fontScale } = useWindowDimensions();
+  useAppTheme();
   const activeColor = colors[role];
   return (
     <Tabs screenOptions={{
@@ -18,7 +20,8 @@ export function RoleTabs({ role }: { role: keyof typeof roleNavigation }) {
       tabBarInactiveTintColor: colors.textMuted,
       tabBarLabelPosition: 'below-icon',
       tabBarItemStyle: styles.item,
-      tabBarStyle: [styles.bar, { height: 48 + Math.ceil(18 * fontScale) + insets.bottom }],
+      tabBarStyle: [styles.bar, { backgroundColor: colors.surface, borderTopColor: colors.border,
+        height: 48 + Math.ceil(18 * fontScale) + insets.bottom }],
     }}>
       {navigation.tabs.map((tab) => (
         <Tabs.Screen key={tab.name} name={tab.name} options={{

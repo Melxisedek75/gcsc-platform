@@ -12,6 +12,7 @@ import { clearLeads } from '../lib/leads';
 import { resetOnboarding } from '../lib/onboarding';
 import { DEFAULT_SETTINGS, UserSettings, loadSettings, saveSettings } from '../lib/settings';
 import { colors, radius, spacing, typography } from '../lib/tokens';
+import { applyThemePreference, useAppTheme } from '../lib/theme';
 
 const NOTIF_ROWS: { key: keyof UserSettings; label: string; help: string }[] = [
   { key: 'notifyJobUpdates', label: 'Job updates', help: 'New bids on your jobs, status changes.' },
@@ -33,6 +34,7 @@ const THEME_OPTIONS: { value: UserSettings['theme']; label: string }[] = [
 ];
 
 export default function Settings() {
+  useAppTheme();
   const router = useRouter();
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
   const [busy, setBusy] = useState(false);
@@ -53,6 +55,7 @@ export default function Settings() {
     const next: UserSettings = { ...settings, [key]: value };
     setSettings(next);
     await saveSettings(next);
+    if (key === 'theme') applyThemePreference(value as UserSettings['theme']);
   }
 
   function handleResetOnboarding() {
@@ -183,9 +186,6 @@ export default function Settings() {
             );
           })}
         </View>
-        <Text style={[typography.micro, { color: colors.textDim, marginTop: spacing.sm }]}>
-          Theme switching wires up in the next release.
-        </Text>
       </Card>
 
       <Card>

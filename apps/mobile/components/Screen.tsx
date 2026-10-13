@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, control, spacing } from '../lib/tokens';
+import { useAppTheme } from '../lib/theme';
 
 type Props = {
   children: ReactNode;
@@ -10,9 +11,10 @@ type Props = {
 };
 
 export function Screen({ children, scroll = true, padded = true }: Props) {
+  const theme = useAppTheme();
   const inner = padded ? <View style={styles.padded}>{children}</View> : children;
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       {scroll ? (
         <ScrollView
@@ -21,7 +23,7 @@ export function Screen({ children, scroll = true, padded = true }: Props) {
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
         >
-          {inner}
+          <View>{inner}</View>
         </ScrollView>
       ) : (
         <View style={styles.flex}>{inner}</View>

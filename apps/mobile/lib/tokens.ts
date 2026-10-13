@@ -1,4 +1,4 @@
-export const colors = {
+export const lightColors = {
   bg: '#F6F8F8',
   surface: '#FFFFFF',
   surfaceAlt: '#EDF1F1',
@@ -15,6 +15,36 @@ export const colors = {
   homeowner: '#005B9A',
   contractor: '#A64200',
 } as const;
+
+export const darkColors: Record<keyof typeof lightColors, string> = {
+  bg: '#090E19',
+  surface: '#141D2B',
+  surfaceAlt: '#1C2940',
+  border: '#34435B',
+  text: '#F3F7FF',
+  textMuted: '#B5C4D8',
+  textDim: '#92A6C1',
+  brand: '#5B84EF',
+  brandDark: '#315BCE',
+  onBrand: '#09111D',
+  accent: '#61B996',
+  warning: '#E9C06E',
+  danger: '#FF827D',
+  homeowner: '#83A6FF',
+  contractor: '#EFAC78',
+};
+
+let activeColors: Record<keyof typeof lightColors, string> = lightColors;
+
+export function setActiveColors(dark: boolean): void {
+  activeColors = dark ? darkColors : lightColors;
+}
+
+export const colors = new Proxy({} as Record<keyof typeof lightColors, string>, {
+  get(_target, key: keyof typeof lightColors) {
+    return activeColors[key];
+  },
+});
 
 export const radius = {
   sm: 8,

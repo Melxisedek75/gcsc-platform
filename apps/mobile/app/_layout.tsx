@@ -15,7 +15,8 @@ import { initI18n } from '../lib/i18n';
 import { hasCompletedOnboarding } from '../lib/onboarding';
 import { loadWebauthSession, primeSessionFromBackend } from '../lib/webauth';
 import { colors } from '../lib/tokens';
-import { paperTheme } from '../lib/paperTheme';
+import { paperThemeFor } from '../lib/paperTheme';
+import { initializeTheme, useAppTheme } from '../lib/theme';
 
 type HydrationState = 'pending' | 'ready' | 'retry';
 
@@ -23,6 +24,9 @@ export default function RootLayout() {
   const router = useRouter();
   const [state, setState] = useState<HydrationState>('pending');
   const [retryKey, setRetryKey] = useState(0);
+  const theme = useAppTheme();
+
+  useEffect(() => { void initializeTheme(); }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -82,11 +86,11 @@ export default function RootLayout() {
   }, [router, retryKey]);
 
   return (
-    <PaperProvider theme={paperTheme} settings={{
+    <PaperProvider theme={paperThemeFor(theme.dark)} settings={{
       icon: ({ name, color, size }) => <MaterialCommunityIcons name={name as keyof typeof MaterialCommunityIcons.glyphMap} color={color} size={size} />,
     }}>
     <ErrorBoundary>
-      <StatusBar style="dark" />
+      <StatusBar style={theme.dark ? 'light' : 'dark'} />
       <View style={styles.root}>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />

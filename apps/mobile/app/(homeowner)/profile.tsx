@@ -10,8 +10,10 @@ import { getCurrentUser, saveSession, getToken } from '../../lib/api';
 import { logout, updateProfile } from '../../lib/auth';
 import { clearSession as clearWebauthSession } from '../../lib/webauth';
 import { colors, spacing, typography } from '../../lib/tokens';
+import { useAppTheme } from '../../lib/theme';
 
 export default function HomeownerProfile() {
+  useAppTheme();
   const router = useRouter();
   const user = getCurrentUser();
   const [busy, setBusy] = useState(false);

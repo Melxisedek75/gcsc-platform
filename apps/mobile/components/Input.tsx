@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { HelperText, TextInput, TextInputProps } from 'react-native-paper';
 import { colors, control, radius, typography } from '../lib/tokens';
+import { useAppTheme } from '../lib/theme';
 
 type Props = Omit<TextInputProps, 'label'> & {
   label?: string;
@@ -10,6 +11,7 @@ type Props = Omit<TextInputProps, 'label'> & {
 };
 
 export function Input({ label, helper, error = false, style, secureTextEntry, accessibilityLabel, ...rest }: Props) {
+  useAppTheme();
   const [passwordVisible, setPasswordVisible] = useState(false);
   return (
     <View style={styles.wrap}>
@@ -19,9 +21,9 @@ export function Input({ label, helper, error = false, style, secureTextEntry, ac
         accessibilityLabel={accessibilityLabel ?? label}
         error={error}
         placeholderTextColor={colors.textDim}
-        style={[styles.input, style]}
+        style={[styles.input, { backgroundColor: colors.surface }, style]}
         outlineStyle={styles.outline}
-        contentStyle={styles.content}
+        contentStyle={[styles.content, { color: colors.text }]}
         secureTextEntry={Boolean(secureTextEntry && !passwordVisible)}
         right={secureTextEntry ? (
           <TextInput.Icon

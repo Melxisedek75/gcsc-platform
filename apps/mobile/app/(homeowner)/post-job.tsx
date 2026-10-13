@@ -9,10 +9,12 @@ import { Screen } from '../../components/Screen';
 import { JOB_TEMPLATES, JobTemplate } from '../../lib/job-templates';
 import { createBackendProject, parseBudgetRange, publishBackendProject } from '../../lib/jobs';
 import { colors, radius, spacing, typography } from '../../lib/tokens';
+import { useAppTheme } from '../../lib/theme';
 
 const CATEGORIES = ['Renovation', 'Exterior', 'Repair', 'New build', 'Plumbing', 'Electrical'];
 
 export default function PostJob() {
+  useAppTheme();
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('Renovation');

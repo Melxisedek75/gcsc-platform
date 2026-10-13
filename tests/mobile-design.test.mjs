@@ -38,13 +38,15 @@ function contrast(a, b) {
 }
 
 test('working palette maintains ordinary-text contrast on both surfaces', () => {
-  const { colors } = loadData('lib/tokens.ts');
-  for (const fg of ['text', 'textMuted', 'textDim', 'brand', 'danger', 'homeowner', 'contractor']) {
-    for (const bg of ['bg', 'surface']) {
-      assert(contrast(colors[fg], colors[bg]) >= 4.5, `${fg}/${bg} contrast`);
+  const { lightColors, darkColors } = loadData('lib/tokens.ts');
+  for (const [mode, colors] of Object.entries({ light: lightColors, dark: darkColors })) {
+    for (const fg of ['text', 'textMuted', 'textDim', 'brand', 'danger', 'homeowner', 'contractor']) {
+      for (const bg of ['bg', 'surface']) {
+        assert(contrast(colors[fg], colors[bg]) >= 4.5, `${mode} ${fg}/${bg} contrast`);
+      }
     }
+    assert(contrast(colors.onBrand, colors.brand) >= 4.5, `${mode} primary button label contrast`);
   }
-  assert(contrast(colors.onBrand, colors.brand) >= 4.5, 'primary button label contrast');
 });
 
 test('all touch targets and text spacing have explicit accessible defaults', () => {
@@ -125,6 +127,7 @@ test('soft status badges use readable text on pale custom status backgrounds', (
     'react/jsx-runtime': require('react/jsx-runtime'),
     'react-native': { View: 'View', Text: 'Text', StyleSheet: { create: (styles) => styles } },
     '../lib/tokens': tokens,
+    '../lib/theme': { useAppTheme: () => ({ dark: false }) },
   });
   const consumers = fs.readdirSync(path.join(mobile, 'app'), { recursive: true })
     .filter((name) => name.endsWith('.tsx'));

@@ -233,9 +233,9 @@
   {
     "path": "apps/mobile/app.json",
     "sourceBlob": "34e7fb48f1cefe1fffbda1c5ffd28b33a80c5699",
-    "sha256": "cffeaa26fa0cf4dff8f3838de38ce65faa2f5e60ade7c57efa8aa4866d9dd86e",
-    "reason": "Advance the local free-publication candidate to 0.1.6/versionCode 8 so its APK can update code 7 without uninstalling user data. No device acceptance implied.",
-    "test": "node --test tests/mobile-apk.test.mjs; npm run check"
+    "sha256": "2d7eb2eb57be9f0e4f63ac08a7b423225f448cb138354339e7c84c05f8bbf33a",
+    "reason": "Advance the local free-publication candidate to 0.1.6/versionCode 8 so its APK can update code 7 without uninstalling user data. No device acceptance implied. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
+    "test": "node --test tests/mobile-apk.test.mjs; npm run check; npm run test:mobile-design"
   },
   {
     "path": "apps/mobile/package.json",
@@ -275,15 +275,15 @@
   {
     "path": "apps/mobile/app/_layout.tsx",
     "sourceBlob": "41af3e10e5fe6a1cb594a835e297ee3332c30f77",
-    "sha256": "abc049adb3aad381aac09b5973a4014480c4461a54ae3fd5551fb08649c3d4b5",
-    "reason": "Retain diagnostic hydration guard while clearing saved app credentials only for confirmed profile authorization failures; show retry on transient network, server, or timeout errors. Restore email-only users to role jobs after wallet setup was skipped.",
-    "test": "node --test tests/mobile-session-restore.test.mjs; npm run check:mobile-types; npm run check"
+    "sha256": "38b39166a9b8259caa3b9a58a0e5ac1344f970767ccc1d92c1f812ee9e7dad34",
+    "reason": "Retain diagnostic hydration guard while clearing saved app credentials only for confirmed profile authorization failures; show retry on transient network, server, or timeout errors. Restore email-only users to role jobs after wallet setup was skipped. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
+    "test": "node --test tests/mobile-session-restore.test.mjs; npm run check:mobile-types; npm run check; npm run test:mobile-design"
   },
   {
     "path": "apps/mobile/app/(contractor)/profile.tsx",
     "sourceBlob": "7c2445c10ba77a8aae3422be637b52983832e509",
-    "sha256": "1cb78861c3ab338b500412d1c6b39726dbc68afddf204bdcc0b062db8e5382c1",
-    "reason": "Remove the fictional shared review score and show unavailable reviews honestly; wrap selectable account/profile values without changing account actions.",
+    "sha256": "ea7778899d152d0e0813992d6d502167ca4b4dff745ee95adec344a1fa728b47",
+    "reason": "Remove the fictional shared review score and show unavailable reviews honestly; wrap selectable account/profile values without changing account actions. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
     "test": "npm run test:mobile-design; npm run check:mobile-types"
   },
   {
@@ -296,43 +296,43 @@
   {
     "path": "apps/mobile/components/Badge.tsx",
     "sourceBlob": "1ea8668dacadf45537fd0637ad00ea3701177309",
-    "sha256": "2783209e3871063b212866da7d7f33b0346098a3b539a5d7f62f857318fffd53",
-    "reason": "Use contrasting badge text and normal letter spacing with the shared light palette.",
+    "sha256": "eff29d5710353c6ffecff5f113d2a794eb54c0351f0d6adc3e0a1565efce12f0",
+    "reason": "Use contrasting badge text and normal letter spacing with the shared light palette. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
     "test": "npm run test:mobile-design; npm run check:mobile-types"
   },
   {
     "path": "apps/mobile/components/Button.tsx",
     "sourceBlob": "0184a22a2c72e0961289f981c51a7d05843141c5",
-    "sha256": "3947efb8d6ba35b831e1e990b2bf77e2cd204b786e77769008e27cb2d397c473",
-    "reason": "Use Material ripple/loading primitives, accessible disabled/busy state, a 56dp minimum and wrapping labels without changing consumers' callbacks.",
+    "sha256": "8630980d812e2ee971b723b5525402b65ec7858681a34aa198c6f6c03b6e91cf",
+    "reason": "Use Material ripple/loading primitives, accessible disabled/busy state, a 56dp minimum and wrapping labels without changing consumers' callbacks. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
     "test": "npm run test:mobile-design; npm run check:mobile-types"
   },
   {
     "path": "apps/mobile/components/Input.tsx",
     "sourceBlob": "e0ad54bc96bab1726d6cda1d5fea6d6e6454fd79",
-    "sha256": "f1e33a119adf2fc464430e7f9c5613fc0ad806e067cbeac2021a3e2ab34e2f19",
-    "reason": "Adopt outlined Material input with labels, helper state, focus and explicit password visibility; preserve controlled value callbacks.",
+    "sha256": "3d2d00b251a787897b7e53f8dc5aa35f0b8ef72e98f953a5c173eee1fd207bd3",
+    "reason": "Adopt outlined Material input with labels, helper state, focus and explicit password visibility; preserve controlled value callbacks. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
     "test": "npm run test:mobile-design; npm run check:mobile-types; browser UI verification in MOBILE-DESIGN.md"
   },
   {
     "path": "apps/mobile/components/Screen.tsx",
     "sourceBlob": "39271b0a6db5042e7afd9e4eb02e04adbded2b85",
-    "sha256": "dc730daaa39be9df686fe35dc81f09fde371094c5f3a130cc6fd2a17b957ef3c",
-    "reason": "Constrain wide content and provide keyboard-aware scroll/forms with handled taps.",
+    "sha256": "5845a706b95eeba2c09c0d5384573983d01e7c36b4d08fa38e8fb8be720d7299",
+    "reason": "Constrain wide content and provide keyboard-aware scroll/forms with handled taps. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
     "test": "npm run test:mobile-design; npm run check:mobile-types; native keyboard acceptance remains open"
   },
   {
     "path": "apps/mobile/lib/tokens.ts",
     "sourceBlob": "136d415e5244d0211deb1a09be9de7b5efbf2810",
-    "sha256": "9a75644ba24c893808eaae2ea2ba67d1a6bf867adf44daf2f7927e7bc8280e20",
-    "reason": "Define a neutral light work-focused palette, contrasting semantic colors, readable typography, compact corners and minimum touch dimensions.",
+    "sha256": "997ea706d1cdc3df01e77ec82e676381b07f04488e7d04a108f809879f64b086",
+    "reason": "Define a neutral light work-focused palette, contrasting semantic colors, readable typography, compact corners and minimum touch dimensions. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
     "test": "npm run test:mobile-design; npm run check:mobile-types"
   },
   {
     "path": "apps/mobile/app/(homeowner)/profile.tsx",
     "sourceBlob": "2d7664da35e4e1e5ec49c0af70e4bc92702b7975",
-    "sha256": "b4e5135ad1c7d1b798efce860aa01ab062d0f23169a4cad49e5f3185f2f41970",
-    "reason": "Wrap selectable full account values consistently for both roles; no change to profile or wallet actions.",
+    "sha256": "5d73f863655ad4e0db65cfa34e636e0c822ee002917acf613df351a5c6731e6f",
+    "reason": "Wrap selectable full account values consistently for both roles; no change to profile or wallet actions. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
     "test": "npm run test:mobile-design; npm run check:mobile-types; browser UI verification in MOBILE-DESIGN.md"
   },
   {
@@ -408,16 +408,16 @@
   {
     "path": "apps/mobile/app/(homeowner)/jobs.tsx",
     "sourceBlob": "d26651966511e2fae12d3e5d9aa278a629e4aeb5",
-    "sha256": "9ce2de22e35695c1abc96dfec84d7afcaed9a31965475d43d995dedc731e8799",
-    "reason": "Load owner drafts and published projects from the authenticated API instead of local-only storage.",
-    "test": "node --test tests/mobile-job-publication.test.mjs; npm run check:mobile-types"
+    "sha256": "8fbef045ae2e41e1358094090975416603bd923fb9ed5df55ea762e4775208c8",
+    "reason": "Load owner drafts and published projects from the authenticated API instead of local-only storage. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
+    "test": "node --test tests/mobile-job-publication.test.mjs; npm run check:mobile-types; npm run test:mobile-design"
   },
   {
     "path": "apps/mobile/app/(homeowner)/post-job.tsx",
     "sourceBlob": "df0e20bf695f3d030c0aa4267f52454c045b7067",
-    "sha256": "f9d9845790d3ad20eda75edaa2d3fc94ab65e0d7989b8fa916ae0ff1eb48c528",
-    "reason": "Create and publish owner jobs through the free server workflow; remove the obsolete 25 XPR wallet charge.",
-    "test": "node --test tests/mobile-job-publication.test.mjs; npm run check:mobile-types"
+    "sha256": "6f74902a612b0daf82ba2dd74e16df08a4b86e29ac315aafc76f42b49a723eb9",
+    "reason": "Create and publish owner jobs through the free server workflow; remove the obsolete 25 XPR wallet charge. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
+    "test": "node --test tests/mobile-job-publication.test.mjs; npm run check:mobile-types; npm run test:mobile-design"
   },
   {
     "path": "apps/mobile/lib/jobs.ts",
@@ -425,5 +425,47 @@
     "sha256": "45e25d42187fbf45e184050ab251adf743404908a94ec394a79240a4f41e0b31",
     "reason": "Map budget ranges to numeric API fields and expose explicit project publication without payment calls.",
     "test": "node --test tests/mobile-job-publication.test.mjs; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/app/(contractor)/jobs.tsx",
+    "sourceBlob": "191f4362fcd9aeb89d5a5311cb5afc7cac411f9f",
+    "sha256": "004b1b7ca206961268fcf085e6facc7dee2f88a7a9a61e8f39ae605868e7f4dc",
+    "reason": "Adapt prototype theme and workspace UI without changing server behavior or wallet proof.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; npm run check"
+  },
+  {
+    "path": "apps/mobile/app/(contractor)/milestones.tsx",
+    "sourceBlob": "b900bab5a30cd2b0c299713e5f2810f360e2a15a",
+    "sha256": "1fdea859487f10d9715514ea65392598fc0a3ffeb49eddffa7ad94781b02e480",
+    "reason": "Adapt prototype theme and workspace UI without changing server behavior or wallet proof.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; npm run check"
+  },
+  {
+    "path": "apps/mobile/app/(homeowner)/milestones.tsx",
+    "sourceBlob": "b18eeb86ab7f41d2aac7f8b550bd067df0a2efd1",
+    "sha256": "5f86d072a44d1ed877354df3c8d515e051eba7635d2bde75a38be48ad902f0ca",
+    "reason": "Adapt prototype theme and workspace UI without changing server behavior or wallet proof.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; npm run check"
+  },
+  {
+    "path": "apps/mobile/app/settings.tsx",
+    "sourceBlob": "9b73c67fd050c6a077daa029adfe1358a94ae0a0",
+    "sha256": "dfd9b877708a4eb78312d702a143243855097f51b686af51f7e0dfd8b930a5c1",
+    "reason": "Adapt prototype theme and workspace UI without changing server behavior or wallet proof.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; npm run check"
+  },
+  {
+    "path": "apps/mobile/components/Card.tsx",
+    "sourceBlob": "9e45358ae0bdb482d7e7b159c55687a193293974",
+    "sha256": "bb414463f43fbe9afbc55fd2ea9280a8acd3a5b40829781a4abdac086b4dfeb6",
+    "reason": "Adapt prototype theme and workspace UI without changing server behavior or wallet proof.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; npm run check"
+  },
+  {
+    "path": "apps/mobile/components/Header.tsx",
+    "sourceBlob": "369c05d79fa4bb5e0a8d0eb16954c68aeeea71cd",
+    "sha256": "883a473e14dc20ac2eb2ebbf2c8974fb1509f6cfc879f76be8f85b2c1005d5f6",
+    "reason": "Adapt prototype theme and workspace UI without changing server behavior or wallet proof.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; npm run check"
   }
 ]

@@ -1,14 +1,17 @@
-import { MD3LightTheme, MD3Theme } from 'react-native-paper';
-import { colors } from './tokens';
+import { MD3DarkTheme, MD3LightTheme, MD3Theme } from 'react-native-paper';
+import { darkColors, lightColors } from './tokens';
 
-export const paperTheme: MD3Theme = {
-  ...MD3LightTheme,
+export function paperThemeFor(dark: boolean): MD3Theme {
+  const base = dark ? MD3DarkTheme : MD3LightTheme;
+  const colors = dark ? darkColors : lightColors;
+  return {
+  ...base,
   roundness: 2,
   colors: {
-    ...MD3LightTheme.colors,
+    ...base.colors,
     primary: colors.brand,
     onPrimary: colors.onBrand,
-    primaryContainer: '#FFEADA',
+    primaryContainer: dark ? '#263D72' : '#FFEADA',
     onPrimaryContainer: colors.brandDark,
     secondary: colors.accent,
     onSecondary: colors.onBrand,
@@ -24,6 +27,7 @@ export const paperTheme: MD3Theme = {
     onError: colors.onBrand,
   },
   fonts: Object.fromEntries(
-    Object.entries(MD3LightTheme.fonts).map(([key, value]) => [key, { ...value, letterSpacing: 0 }]),
+    Object.entries(base.fonts).map(([key, value]) => [key, { ...value, letterSpacing: 0 }]),
   ) as MD3Theme['fonts'],
-};
+  };
+}

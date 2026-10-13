@@ -6,8 +6,10 @@ import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Header } from '../../components/Header';
 import { Screen } from '../../components/Screen';
+import { WorkspaceBanner } from '../../components/WorkspaceBanner';
 import { BackendProject, formatBudget, listMyBackendProjects, timeAgoIso } from '../../lib/jobs';
 import { colors, spacing, typography } from '../../lib/tokens';
+import { useAppTheme } from '../../lib/theme';
 
 function statusLabel(project: BackendProject): string {
   if (!project.published) return 'Draft';
@@ -17,6 +19,7 @@ function statusLabel(project: BackendProject): string {
 }
 
 export default function HomeownerJobs() {
+  useAppTheme();
   const router = useRouter();
   const [jobs, setJobs] = useState<BackendProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,6 +52,7 @@ export default function HomeownerJobs() {
 
   return (
     <Screen>
+      <WorkspaceBanner role="homeowner" />
       <Header title="My jobs" subtitle="Track posted projects and contractor activity" />
 
       <View style={styles.summary}>

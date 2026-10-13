@@ -1,6 +1,7 @@
 import { StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { ActivityIndicator, TouchableRipple } from 'react-native-paper';
 import { colors, control, radius, spacing, typography } from '../lib/tokens';
+import { useAppTheme } from '../lib/theme';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
@@ -16,6 +17,7 @@ type Props = {
 };
 
 export function Button({ label, onPress, variant = 'primary', fullWidth, disabled, loading = false, accessibilityLabel, style }: Props) {
+  useAppTheme();
   const palette = paletteFor(variant);
   const inactive = Boolean(disabled || loading || !onPress);
   return (
