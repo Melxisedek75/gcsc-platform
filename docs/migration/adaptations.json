@@ -51,8 +51,8 @@
   {
     "path": "services/api/v3/pure-server.js",
     "sourceBlob": "952128e9316fe78bef42dba8ddc7b04eb09e29e5",
-    "sha256": "1d8f82ed38247816f8178ba349897d57c5578b4ee3694bc68e273cc12fbe1d24",
-    "reason": "Require verified wallet ownership before payment challenges and bid readiness; preserve wallet-first login plus authenticated sign-only binding, single-use challenges and strict XPR Testnet authority checks. Fail closed on JWT configuration, isolate test storage and bind auth limits to the direct peer. Preserve fresh admin ACL, revision-bound document review and PostgreSQL participant chat. Merge October private drafts, free publication, redacted previews, project-specific paid details and transactional bid/accept checks through the canonical shared schema including paid entitlements. Reject malformed legacy project IDs before detail reads or owner publication. Keep personal project, bid-list, escrow-read, document, compliance, profile, wallet, admin review/audit, current-user and financing-precheck responses private and uncacheable, varying by Authorization. Require a currently active account for /api/me and a current contractor role before listing personal bids or issuing a legacy lead-token payment challenge. Bind personal project and bid list SQL to the account's current active role in the same statement as each private read. Recheck and lock the active owner row inside draft creation so a revoked role cannot persist a new project. Keep legacy posting opt-in and replay-safe without publishing pending receipts. Prevent public contractor profiles from being cached after role revocation. Add owner-only full replacement of open private drafts with current-role validation, expected_updated_at conflict guard and transactional PostgreSQL audit; version new and legacy JSON drafts. Require PostgreSQL by default for account storage, allowing JSON only with explicit local development opt-in.",
+    "sha256": "68307cd2a1c6cdd2766ce485197137d565419ac0cfa5830f43d82186bd4d3c44",
+    "reason": "Require verified wallet ownership before payment challenges and bid readiness; preserve wallet-first login plus authenticated sign-only binding, single-use challenges and strict XPR Testnet authority checks. Fail closed on JWT configuration, isolate test storage and bind auth limits to the direct peer. Preserve fresh admin ACL, revision-bound document review and PostgreSQL participant chat. Merge October private drafts, free publication, redacted previews, project-specific paid details and transactional bid/accept checks through the canonical shared schema including paid entitlements. Reject malformed legacy project IDs before detail reads or owner publication. Keep personal project, bid-list, escrow-read, document, compliance, profile, wallet, admin review/audit, current-user and financing-precheck responses private and uncacheable, varying by Authorization. Require a currently active account for /api/me and a current contractor role before listing personal bids or issuing a legacy lead-token payment challenge. Bind personal project and bid list SQL to the account's current active role in the same statement as each private read. Recheck and lock the active owner row inside draft creation so a revoked role cannot persist a new project. Keep legacy posting opt-in and replay-safe without publishing pending receipts. Prevent public contractor profiles from being cached after role revocation. Add owner-only full replacement of open private drafts with current-role validation, expected_updated_at conflict guard and transactional PostgreSQL audit; version new and legacy JSON drafts. Require PostgreSQL by default for account storage, allowing JSON only with explicit local development opt-in. Allow explicit loopback bind for local mobile API testing.",
     "test": "npm run check; npm run test:api; npm run check:integration-contracts; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm run test:postgres:local -- --postgres-bin <installed-bin> --project-draft-edit --api-root <receiving-api-root>; npm --prefix services/api/v3 run test:pg-storage; npm --prefix services/api/v3 run test:pg-workflow; focused project-preview-privacy and project-paid-details Jest tests; isolated project-publication and project-browser PostgreSQL acceptance"
   },
   {
@@ -233,8 +233,8 @@
   {
     "path": "apps/mobile/app.json",
     "sourceBlob": "34e7fb48f1cefe1fffbda1c5ffd28b33a80c5699",
-    "sha256": "89c4ba3bb9979b36e1c8503db0edc651335f9b6c1bad6895228e7a0210100b7b",
-    "reason": "Advance local wallet-auth candidate to 0.1.5/versionCode 7 so its APK can update code 6 without uninstalling user data. No device acceptance implied.",
+    "sha256": "cffeaa26fa0cf4dff8f3838de38ce65faa2f5e60ade7c57efa8aa4866d9dd86e",
+    "reason": "Advance the local free-publication candidate to 0.1.6/versionCode 8 so its APK can update code 7 without uninstalling user data. No device acceptance implied.",
     "test": "node --test tests/mobile-apk.test.mjs; npm run check"
   },
   {
@@ -397,5 +397,33 @@
     "sha256": "ddb9007cea89bfc91879de117f73208c1dc02e94919df42defef28d4d3b68682",
     "reason": "Add the chat dashboard destination to the existing typed navigation union.",
     "test": "npm --prefix apps/web run build; node scripts/check-chat-ui.mjs --playwright-dir <installed node_modules>"
+  },
+  {
+    "path": "apps/mobile/app/(homeowner)/job/[id].tsx",
+    "sourceBlob": "c306e7b79c271bd2dd4893e4831fae3b4c7a15a8",
+    "sha256": "46f1b13c18a491498691f41a5ffe9d0999606548663a9d609104710d04334c30",
+    "reason": "Show server-backed owner project details and allow explicit free publication of saved drafts; remove unverified on-chain milestones.",
+    "test": "node --test tests/mobile-job-publication.test.mjs; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/app/(homeowner)/jobs.tsx",
+    "sourceBlob": "d26651966511e2fae12d3e5d9aa278a629e4aeb5",
+    "sha256": "9ce2de22e35695c1abc96dfec84d7afcaed9a31965475d43d995dedc731e8799",
+    "reason": "Load owner drafts and published projects from the authenticated API instead of local-only storage.",
+    "test": "node --test tests/mobile-job-publication.test.mjs; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/app/(homeowner)/post-job.tsx",
+    "sourceBlob": "df0e20bf695f3d030c0aa4267f52454c045b7067",
+    "sha256": "f9d9845790d3ad20eda75edaa2d3fc94ab65e0d7989b8fa916ae0ff1eb48c528",
+    "reason": "Create and publish owner jobs through the free server workflow; remove the obsolete 25 XPR wallet charge.",
+    "test": "node --test tests/mobile-job-publication.test.mjs; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/lib/jobs.ts",
+    "sourceBlob": "985d7501e70812fa300dd80bf72e8f03e8a12d35",
+    "sha256": "45e25d42187fbf45e184050ab251adf743404908a94ec394a79240a4f41e0b31",
+    "reason": "Map budget ranges to numeric API fields and expose explicit project publication without payment calls.",
+    "test": "node --test tests/mobile-job-publication.test.mjs; npm run check:mobile-types"
   }
 ]

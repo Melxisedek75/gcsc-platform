@@ -1,5 +1,5 @@
-// Local jobs store — persists user's posted jobs in AsyncStorage until backend
-// has a real /api/jobs feed. Each job carries the txHash of the publish payment.
+// Server-backed projects are the source of truth for new jobs. The older local
+// store remains readable for existing on-device data but is not used to publish.
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiRequest } from './api';
@@ -14,6 +14,19 @@ export interface CreateProjectInput {
   description: string;
   category?: string;
   location?: string;
+  budget_min: number;
+  budget_max: number;
+}
+
+export function parseBudgetRange(input: string): { budget_min: number; budget_max: number } {
+  const match = /^\s*\$?\s*(\d[\d,]*)\s*(?:[-–—]\s*\$?\s*(\d[\d,]*))?\s*$/.exec(input);
+  if (!match) throw new Error('Enter a budget in dollars, such as $3,000 - $6,000');
+  const min = Number(match[1].replaceAll(',', ''));
+  const max = Number((match[2] || match[1]).replaceAll(',', ''));
+  if (!Number.isSafeInteger(min) || !Number.isSafeInteger(max) || min <= 0 || max < min) {
+    throw new Error('Enter a valid budget range in dollars');
+  }
+  return { budget_min: min, budget_max: max };
 }
 
 export async function createBackendProject(input: CreateProjectInput): Promise<number> {
@@ -24,6 +37,8 @@ export async function createBackendProject(input: CreateProjectInput): Promise<n
       description: input.description,
       category: input.category,
       location: input.location,
+      budget_min: input.budget_min,
+      budget_max: input.budget_max,
     },
   });
   const id = res.project?.id;
@@ -31,6 +46,13 @@ export async function createBackendProject(input: CreateProjectInput): Promise<n
     throw new Error('Backend did not return a project id');
   }
   return id;
+}
+
+export async function publishBackendProject(id: number): Promise<BackendProject> {
+  const res = await apiRequest<{ project: BackendProject }>(`/api/projects/${id}/publish`, {
+    method: 'POST',
+  });
+  return res.project;
 }
 
 // ---- Backend project feed (the contractor's job board) ----
@@ -46,6 +68,8 @@ export interface BackendProject {
   location: string;
   timeline_days: number;
   status: string;
+  published: boolean;
+  published_at: string | null;
   escrow_id: number | null;
   created_at: string;
   updated_at: string;
