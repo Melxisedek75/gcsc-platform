@@ -37,6 +37,7 @@ in shared RN components. Build a local test APK, not a release.
 | Mobile typecheck | `npm run check:mobile-types` | PASS | no TypeScript errors |
 | Mobile design | `npm run test:mobile-design` | PASS 11/11 | light/dark contrast and preference switching |
 | Repository baseline | `npm run check` | PASS | migration 37/37, APK plan 13/13, wallet restore 11/11, API syntax and web validators |
+| API regression | `npm run test:api` | PASS 335/335 | 16 Jest suites; local test mode only |
 | Local APK | `npm run build:apk:local` | PASS | 488 tasks; 0.1.7/code 9; local loopback API; SHA-256 `aeecacbc6c28a78697d822d5a785a5d2a795a63d814d6720066ba7b2796ab20f` |
 | Device E2E | manual Pixel 8 | NOT_RUN | no installation of this candidate authorized |
 
