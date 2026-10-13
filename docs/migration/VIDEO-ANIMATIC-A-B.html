@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="robots" content="noindex,nofollow">
+  <title>GCSC | October film animatic</title>
+  <style>
+    :root { font-family: Arial, Helvetica, sans-serif; color: #f5f7f5; background: #111a18; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .shell { max-width: 1440px; margin: auto; }
+    header { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; }
+    .brand { font-size: 1.25rem; font-weight: 800; }
+    .brand span { color: #86dfbe; }
+    .selectors { display: flex; flex-wrap: wrap; gap: .65rem; }
+    .segmented { display: inline-flex; padding: 3px; border: 1px solid #61726a; border-radius: 4px; }
+    .segmented button { border: 0; border-radius: 2px; padding: .55rem .8rem; color: #e5ede8; background: transparent; min-width: 6rem; }
+    .segmented button[aria-pressed="true"] { background: #e4f4ed; color: #14231c; font-weight: 700; }
+    .stage { position: relative; min-height: min(67vw, 650px); overflow: hidden; display: flex; align-items: center; background: #172a25; }
+    .scene-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; opacity: .58; transform: scale(1.04); transition: transform 1.4s ease, object-position 1.4s ease; }
+    .stage[data-scene="1"] .scene-image, .stage[data-scene="3"] .scene-image { transform: scale(1.12); object-position: 58% center; }
+    .stage[data-scene="2"] .scene-image, .stage[data-scene="4"] .scene-image { transform: scale(1.06); object-position: 42% center; }
+    .veil { position: absolute; inset: 0; background: linear-gradient(90deg, #0a1210ed 0%, #0a1210bc 45%, #0a121033 100%); }
+    .stage-inner { position: relative; z-index: 1; width: 100%; padding: clamp(1.5rem, 5vw, 5rem); }
+    .status { display: inline-block; padding: .35rem .55rem; border: 1px solid #a8ddc5; color: #c6f2d9; font-size: .72rem; font-weight: 800; text-transform: uppercase; }
+    .scene-no { margin-top: 1.5rem; color: #f1b58b; font-size: .8rem; font-weight: 800; text-transform: uppercase; }
+    h1 { font-size: clamp(2rem, 5vw, 4.8rem); line-height: 1.05; max-width: 13ch; margin: .55rem 0; }
+    .shot { max-width: 48rem; font-size: clamp(1rem, 1.7vw, 1.3rem); line-height: 1.45; color: #e6efea; }
+    .end-slate { margin-top: 1.8rem; font-size: 1rem; color: #a6e4c5; font-weight: 700; }
+    .controls { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 1rem; align-items: center; padding: 1rem 1.5rem; background: #22352d; }
+    .play { border: 1px solid #b5e0c7; color: #10231a; background: #a5e4c2; min-width: 5rem; min-height: 2.6rem; border-radius: 4px; font-weight: 800; }
+    input[type="range"] { width: 100%; accent-color: #f1b58b; }
+    .time { min-width: 5.5rem; text-align: right; font-variant-numeric: tabular-nums; font-size: .9rem; }
+    .notes { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 2rem; padding: 1.25rem 1.5rem 2rem; border-top: 1px solid #455d51; }
+    .notes h2 { margin: 0 0 .45rem; font-size: .85rem; color: #f1b58b; text-transform: uppercase; }
+    .notes p { margin: 0; line-height: 1.5; color: #d3dfd8; }
+    .timeline { display: flex; gap: 3px; padding: 0 1.5rem 1.5rem; }
+    .timeline button { min-width: 0; flex-basis: 0; padding: .55rem .2rem; border: 0; border-top: 4px solid #607a6a; background: #294138; color: #ebf5ee; font-size: .75rem; }
+    .timeline button[aria-current="true"] { border-top-color: #f1b58b; background: #3b594b; }
+    @media (max-width: 700px) {
+      header { padding: .9rem 1rem; }
+      .selectors { width: 100%; }
+      .segmented { flex: 1; }
+      .segmented button { flex: 1; min-width: 0; }
+      .stage { min-height: 60vh; }
+      .veil { background: linear-gradient(0deg, #0a1210f2 0%, #0a1210a8 65%, #0a121055 100%); }
+      .stage-inner { align-self: end; }
+      h1 { max-width: 100%; }
+      .notes { display: block; padding: 1rem; }
+      .notes > div + div { margin-top: 1.25rem; }
+      .controls { padding: 1rem; gap: .55rem; }
+      .timeline { padding: 0 1rem 1rem; }
+      .timeline button { font-size: .65rem; }
+    }
+    @media (prefers-reduced-motion: reduce) { .scene-image { transition: none; transform: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand">G<span>C</span>SC <small>Film animatic</small></div>
+      <div class="selectors" aria-label="Animatic selection">
+        <div class="segmented" role="group" aria-label="Direction">
+          <button type="button" data-direction="A" aria-pressed="true">A: The brief</button>
+          <button type="button" data-direction="B" aria-pressed="false">B: The response</button>
+        </div>
+        <div class="segmented" role="group" aria-label="Format">
+          <button type="button" data-format="explainer" aria-pressed="true">Explainer</button>
+          <button type="button" data-format="hero" aria-pressed="false">Hero loop</button>
+        </div>
+      </div>
+    </header>
+    <main>
+      <section class="stage" data-scene="0" aria-label="Concept storyboard">
+        <img class="scene-image" src="../../apps/marketing/assets/renovation-hero-v1.png" alt="">
+        <div class="veil" aria-hidden="true"></div>
+        <div class="stage-inner">
+          <div class="status">Concept storyboard, not product footage</div>
+          <div id="scene-number" class="scene-no"></div>
+          <h1 id="scene-title"></h1>
+          <p id="scene-shot" class="shot"></p>
+          <p id="end-slate" class="end-slate"></p>
+        </div>
+      </section>
+      <div class="controls">
+        <button class="play" id="play" type="button">Play</button>
+        <input id="scrub" type="range" min="0" max="67" step="0.1" value="0" aria-label="Scrub animatic">
+        <div class="time" id="time">0:00 / 1:07</div>
+      </div>
+      <section class="notes" aria-label="Scene notes">
+        <div><h2>Narration draft</h2><p id="narration"></p></div>
+        <div><h2>Production note</h2><p id="production"></p></div>
+      </section>
+      <nav class="timeline" id="timeline" aria-label="Scenes"></nav>
+    </main>
+  </div>
+  <script>
+    const films = {
+      A: {
+        explainer: [
+          [9, 'A better starting point', 'Owner with a rough sketch in an unfinished room.', 'Most home projects begin with a clear need, but not yet a clear description of the work.', 'Staged location and performer; no real customer claim.'],
+          [19, 'Context matters', 'Contractor compares incomplete notes with the space.', 'And a contractor needs enough context before deciding how to respond.', 'Show observation, not an estimate or certification.'],
+          [34, 'A request you control', 'Storyboard of a homeowner describing and revising a request.', 'We are building SmartContractor to help turn that first description into a request the homeowner can review before sharing.', 'Concept only until exact-build owner create/edit/publish acceptance.'],
+          [46, 'Preview before details', 'Privacy-safe opportunity preview, shown as a concept frame.', 'Contractors would see a useful preview without exposing private project details to everyone.', 'No paid badge, contact or fabricated receipt.'],
+          [58, 'A considered proposal', 'Contractor drafts a response on paper.', 'From there, the next step is a proposal shaped by the actual scope, and a decision made by people.', 'No fabricated in-app submission.'],
+          [67, 'GCSC', 'Return to the room and a restrained end slate.', 'Global Construction Smart Contract. Building a clearer start for construction projects.', 'SmartContractor pilot in development / gcsc.store']
+        ],
+        hero: [
+          [3, 'An unfinished room', 'Owner looks from the room to a rough sketch.', '', 'Staged footage required; left side remains clear for HTML headline.'],
+          [6, 'One clear change', 'Owner circles a problem area on a synthetic plan.', '', 'No name, address or price on paper.'],
+          [9, 'A considered response', 'Contractor measures and adds one note.', '', 'Do not imply an accepted job.'],
+          [12, 'Back to the room', 'Return to the same wide angle and light.', '', 'Muted seamless loop; poster on reduced-motion/low-data.']
+        ]
+      },
+      B: {
+        explainer: [
+          [8, 'Less guessing', 'Contractor receives vague notes at an unfinished site.', 'A request without context can leave both sides guessing.', 'Staged scene, not a customer testimonial.'],
+          [18, 'Start with the work', 'Owner identifies one desired change on a synthetic plan.', 'The homeowner knows what needs to change. The first challenge is explaining it clearly.', 'No private project details in frame.'],
+          [31, 'Review before sharing', 'Concept storyboard of a request being revised.', 'SmartContractor is being built to make that first request easier to prepare and review.', 'Replace only after exact-build acceptance.'],
+          [43, 'Useful, privacy-safe context', 'Concept-labeled opportunity preview.', 'A contractor should be able to understand the opportunity before asking for more detail.', 'No paid badge or fabricated account state.'],
+          [54, 'A proposal to consider', 'Contractor writes a proposed scope, schedule and questions.', 'A useful response is not just a number. It is a plan people can discuss.', 'Paper draft, not a fake in-app success state.'],
+          [63, 'GCSC', 'Return to the bright worksite and end slate.', 'GCSC. Building a clearer path from project idea to proposal.', 'SmartContractor pilot in development / gcsc.store']
+        ],
+        hero: [
+          [2.5, 'The worksite', 'Contractor enters and pauses at an unfinished opening.', '', 'Stage bright, right-weighted footage.'],
+          [5, 'The brief', 'Synthetic brief: trade, broad scope and timing only.', '', 'No contact, address, price or wallet.'],
+          [7.5, 'One measurement', 'Contractor checks the opening with a tape.', '', 'No implied inspection certificate.'],
+          [10, 'Back to the opening', 'Return to the opening and camera move.', '', 'Muted loop; use poster if portrait crop fails.']
+        ]
+      }
+    };
+    let direction = 'A';
+    let format = 'explainer';
+    let position = 0;
+    let playing = false;
+    let lastFrame = 0;
+    let frameHandle = null;
+    const $ = id => document.getElementById(id);
+    const film = () => films[direction][format];
+    const duration = () => film().at(-1)[0];
+    const clock = value => `${Math.floor(value / 60)}:${String(Math.floor(value % 60)).padStart(2, '0')}`;
+    function sceneIndex() {
+      const index = film().findIndex(scene => position < scene[0]);
+      return index < 0 ? film().length - 1 : index;
+    }
+    function render() {
+      const scenes = film(); const index = sceneIndex(); const scene = scenes[index];
+      document.querySelector('.stage').dataset.scene = String(index);
+      $('scene-number').textContent = `${format === 'hero' ? 'Hero loop' : 'Explainer'} / Scene ${index + 1} of ${scenes.length}`;
+      $('scene-title').textContent = scene[1]; $('scene-shot').textContent = scene[2];
+      $('narration').textContent = scene[3] || 'Silent loop. No voice or embedded title.';
+      $('production').textContent = scene[4];
+      $('end-slate').textContent = index === scenes.length - 1 && format === 'explainer'
+        ? 'SmartContractor pilot in development / gcsc.store' : '';
+      $('scrub').max = String(duration()); $('scrub').value = String(position);
+      $('time').textContent = `${clock(position)} / ${clock(duration())}`;
+      $('play').textContent = playing ? 'Pause' : 'Play';
+      document.querySelectorAll('#timeline button').forEach((button, i) => button.setAttribute('aria-current', String(i === index)));
+    }
+    function reset() {
+      playing = false; position = 0; lastFrame = 0;
+      if (frameHandle !== null) cancelAnimationFrame(frameHandle);
+      frameHandle = null;
+      document.querySelectorAll('[data-direction]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.direction === direction)));
+      document.querySelectorAll('[data-format]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.format === format)));
+      $('timeline').replaceChildren(...film().map((scene, index) => {
+        const button = document.createElement('button');
+        button.type = 'button'; button.style.flexGrow = String(scene[0] - (film()[index - 1]?.[0] || 0));
+        button.textContent = String(index + 1); button.title = scene[1];
+        button.addEventListener('click', () => { position = film()[index - 1]?.[0] || 0; render(); });
+        return button;
+      }));
+      render();
+    }
+    function frame(now) {
+      frameHandle = null;
+      if (!playing) return;
+      if (lastFrame) position += (now - lastFrame) / 1000;
+      if (position >= duration()) {
+        position = format === 'hero' ? 0 : duration();
+        if (format !== 'hero') playing = false;
+      }
+      render();
+      lastFrame = now;
+      if (playing) frameHandle = requestAnimationFrame(frame);
+    }
+    document.querySelectorAll('[data-direction]').forEach(button => button.addEventListener('click', () => { direction = button.dataset.direction; reset(); }));
+    document.querySelectorAll('[data-format]').forEach(button => button.addEventListener('click', () => { format = button.dataset.format; reset(); }));
+    $('play').addEventListener('click', () => {
+      if (!playing && position >= duration()) position = 0;
+      playing = !playing; lastFrame = 0;
+      if (!playing && frameHandle !== null) { cancelAnimationFrame(frameHandle); frameHandle = null; }
+      if (playing && frameHandle === null) frameHandle = requestAnimationFrame(frame);
+      render();
+    });
+    $('scrub').addEventListener('input', event => { position = Number(event.target.value); render(); });
+    reset();
+  </script>
+</body>
+</html>

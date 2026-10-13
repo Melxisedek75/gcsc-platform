@@ -53,10 +53,15 @@ function normalize(text) {
 }
 
 class Pool {
+  async connect() { return { query: this.query.bind(this), release() {} }; }
   async query(text, params = []) {
     const sql = normalize(text);
 
     if (
+      ['begin', 'commit', 'rollback'].includes(sql) ||
+      sql.startsWith('set local ') ||
+      sql.startsWith('select pg_advisory_xact_lock(') ||
+      sql.startsWith('do $gcsc$') ||
       sql.startsWith('create table') ||
       sql.startsWith('alter table') ||
       sql.startsWith('create index') ||
@@ -66,6 +71,19 @@ class Pool {
     }
 
     if (sql.startsWith('update milestone_chain_txs set action = case')) {
+      return { rows: [], rowCount: 0 };
+    }
+
+    if (sql === 'delete from wallet_challenges where expires_at <= now()') {
+      return { rows: [], rowCount: 0 };
+    }
+
+    if (sql.startsWith('insert into project_access_checkout_bindings')
+      && sql.includes('select provider_checkout_id,id from project_access_purchases')) {
+      return { rows: [], rowCount: 0 };
+    }
+
+    if (sql.startsWith('do $$ begin') && sql.includes('conflicting stored checkout bindings')) {
       return { rows: [], rowCount: 0 };
     }
 
@@ -87,6 +105,15 @@ class Pool {
       const id = Number(params[0]);
       const user = users.find((row) => row.id === id);
       return { rows: user ? [user] : [], rowCount: user ? 1 : 0 };
+    }
+
+    if (sql.includes("select * from users where is_active = true and wallet->>'accountname' = $1")) {
+      const rows = users.filter(row => {
+        const wallet = typeof row.wallet === 'string' ? JSON.parse(row.wallet) : row.wallet;
+        return row.is_active && wallet?.accountName === params[0]
+          && (wallet.permission || 'active') === params[1] && wallet.verified === true;
+      }).sort((a, b) => a.id - b.id).slice(0, sql.endsWith('limit 2') ? 2 : 1);
+      return { rows, rowCount: rows.length };
     }
 
     if (sql.startsWith('insert into users')) {
@@ -131,8 +158,10 @@ class Pool {
 
     if (sql.startsWith('insert into user_documents')) {
       const [userId, documentType, fileName, mimeType, fileDataUrl, fileSize, fileSha256, status, reviewNote] = params;
+      const previous = userDocuments.find((item) => item.user_id === Number(userId) && item.document_type === documentType);
       const document = {
-        id: nextDocumentId++,
+        id: previous?.id || nextDocumentId++,
+        revision: (previous?.revision || 0) + 1,
         user_id: Number(userId),
         document_type: documentType,
         file_name: fileName,
@@ -176,9 +205,9 @@ class Pool {
     }
 
     if (sql.startsWith('update user_documents set status')) {
-      const [status, reviewNote, reviewedBy, id] = params;
+      const [status, reviewNote, reviewedBy, id, revision] = params;
       const document = userDocuments.find((row) => row.id === Number(id));
-      if (!document) return { rows: [], rowCount: 0 };
+      if (!document || document.revision !== revision) return { rows: [], rowCount: 0 };
       document.status = status;
       document.review_note = reviewNote || '';
       document.reviewed_by = reviewedBy;
@@ -258,6 +287,12 @@ Module._load = function patchedLoad(request, parent, isMain) {
 };
 // Fixture-only RPC: never call a real node and never authorize an arbitrary key.
 global.fetch = async (url, options = {}) => {
+  if (url === 'http://127.0.0.1:9/v1/chain/get_info' && options.method === 'POST'
+      && options.body === '{}') {
+    return { ok: true, json: async () => ({
+      chain_id: '71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd',
+    }) };
+  }
   if (url !== 'http://127.0.0.1:9/v1/chain/get_account' || options.method !== 'POST'
       || JSON.parse(options.body || '{}').account_name !== 'gcscacct111') {
     throw new Error('Unexpected RPC request in fake-PG fixture');
@@ -398,9 +433,10 @@ async function waitForServer(child) {
     const rateLimitedLogin = await request('POST', '/api/auth/login', {
       email: 'missing@gcsc.store',
       password: 'WrongPass123',
-    });
+    }, 'untrusted-smoke-token', { 'X-Forwarded-For': '203.0.113.11' });
     assert.strictEqual(firstBadLogin.status, 401);
-    assert.strictEqual(secondBadLogin.status, 401);
+    // The successful admin login and first failure consumed this peer's two slots.
+    assert.strictEqual(secondBadLogin.status, 429);
     assert.strictEqual(rateLimitedLogin.status, 429);
     assert.match(rateLimitedLogin.data.error, /too many/i);
 
@@ -484,14 +520,7 @@ async function waitForServer(child) {
     assert.strictEqual(documents.status, 200);
     assert.strictEqual(documents.data.documents.length, 3);
 
-    const adminToken = (() => {
-      const crypto = require('crypto');
-      const base64Url = (value) => Buffer.from(value).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-      const header = base64Url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-      const body = base64Url(JSON.stringify({ userId: 999, email: 'admin@gcsc.store', role: 'admin', iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 3600 }));
-      const sig = crypto.createHmac('sha256', 'test-secret-minimum-length-for-hs256').update(header + '.' + body).digest('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-      return header + '.' + body + '.' + sig;
-    })();
+    const adminToken = adminLogin.data.token;
 
     const unauthAdminDocuments = await request('GET', '/api/admin/documents?status=submitted');
     assert.strictEqual(unauthAdminDocuments.status, 401);
@@ -528,6 +557,7 @@ async function waitForServer(child) {
     const rejected = await request('PUT', `/api/admin/documents/${licenseForRejection.id}/review`, {
       status: 'rejected',
       reviewNote: rejectionNote,
+      expectedRevision: licenseForRejection.revision,
     }, adminToken);
     assert.strictEqual(rejected.status, 200);
     assert.strictEqual(rejected.data.document.status, 'rejected');
@@ -565,7 +595,7 @@ async function waitForServer(child) {
       publicKey: walletKeypair.pub,
       signature: walletSignature,
     }, token);
-    assert.strictEqual(wallet.status, 200);
+    assert.strictEqual(wallet.status, 200, JSON.stringify(wallet.data));
     assert.strictEqual(wallet.data.wallet.accountName, 'gcscacct111');
     assert.strictEqual(wallet.data.wallet.verified, true);
 
@@ -577,6 +607,7 @@ async function waitForServer(child) {
       const reviewed = await request('PUT', `/api/admin/documents/${doc.id}/review`, {
         status: 'approved',
         reviewNote: 'Approved in smoke test',
+        expectedRevision: doc.revision,
       }, adminToken);
       assert.strictEqual(reviewed.status, 200);
       assert.strictEqual(reviewed.data.document.status, 'approved');

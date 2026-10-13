@@ -2,6 +2,9 @@
 // Saves JWT + user to AsyncStorage on success via api.saveSession.
 
 import { apiRequest, AuthUser, clearSession, normalizeUser, saveSession, UserRole } from './api';
+import { connectWallet, signWalletOwnershipChallenge } from './webauth';
+import { createWalletFirstLogin } from '../../../packages/wallet-proof/login-client.mjs';
+import { createWalletBinding } from '../../../packages/wallet-proof/binding-client.mjs';
 
 interface AuthResponse {
   message?: string;
@@ -33,6 +36,43 @@ export async function login(email: string, password: string): Promise<AuthUser> 
   });
   await saveSession(res.token, res.user);
   return normalizeUser(res.user);
+}
+
+const walletFirstLogin = createWalletFirstLogin<AuthUser>({
+  connect: connectWallet,
+  issueChallenge: body => apiRequest('/api/auth/wallet/challenge', {
+    method: 'POST',
+    auth: false,
+    body,
+  }),
+  sign: signWalletOwnershipChallenge,
+  verify: body => apiRequest<AuthResponse>('/api/auth/wallet/verify', {
+    method: 'POST',
+    auth: false,
+    body,
+  }),
+  save: saveSession,
+});
+
+export async function loginWithWallet(signal?: AbortSignal): Promise<AuthUser> {
+  return normalizeUser(await walletFirstLogin({ signal }));
+}
+
+const walletBinding = createWalletBinding<AuthUser>({
+  connect: connectWallet,
+  issueChallenge: body => apiRequest('/api/wallet/ownership/challenge', {
+    method: 'POST',
+    body,
+  }),
+  sign: signWalletOwnershipChallenge,
+  verify: body => apiRequest<{ user: AuthUser }>('/api/wallet/ownership/verify', {
+    method: 'POST',
+    body,
+  }),
+});
+
+export async function bindWallet(signal?: AbortSignal): Promise<AuthUser> {
+  return normalizeUser(await walletBinding({ signal }));
 }
 
 interface RegisterArgs {

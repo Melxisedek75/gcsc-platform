@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
-import { Link } from 'react-router';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { Link, useBlocker, useSearchParams } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api, type GcscUser } from '../services/api';
 import {
@@ -18,9 +18,10 @@ import {
   Loader2,
   ShieldCheck,
   Activity,
+  MessageCircle,
 } from 'lucide-react';
 import { getProfile, initials } from './dashboard/format';
-import type { Section } from './dashboard/types';
+import type { AccountRole, Section } from './dashboard/types';
 import { AccountAccess } from './dashboard/AccountAccess';
 
 // Authenticated panels are code-split so each dashboard section loads on demand.
@@ -28,6 +29,7 @@ import { AccountAccess } from './dashboard/AccountAccess';
 const ProjectsPanel = lazy(() => import('./dashboard/ProjectsPanel').then((m) => ({ default: m.ProjectsPanel })));
 const EstimatorPanel = lazy(() => import('./dashboard/EstimatorPanel').then((m) => ({ default: m.EstimatorPanel })));
 const BidsPanel = lazy(() => import('./dashboard/BidsPanel').then((m) => ({ default: m.BidsPanel })));
+const ChatPanel = lazy(() => import('./dashboard/ChatPanel').then((m) => ({ default: m.ChatPanel })));
 const LoansFinancingPanel = lazy(() => import('./dashboard/LoansFinancingPanel').then((m) => ({ default: m.LoansFinancingPanel })));
 const ProfilePanel = lazy(() => import('./dashboard/ProfilePanel').then((m) => ({ default: m.ProfilePanel })));
 const CompliancePanel = lazy(() => import('./dashboard/CompliancePanel').then((m) => ({ default: m.CompliancePanel })));
@@ -37,10 +39,11 @@ const AdminAuditLogPanel = lazy(() => import('./dashboard/AdminAuditLogPanel').t
 const WalletPanel = lazy(() => import('./dashboard/WalletPanel').then((m) => ({ default: m.WalletPanel })));
 const TokenRedirect = lazy(() => import('./dashboard/TokenRedirect').then((m) => ({ default: m.TokenRedirect })));
 
-const navItems: { key: Section; label: string; icon: typeof LayoutDashboard; adminOnly?: boolean }[] = [
+const navItems: { key: Section; label: string; icon: typeof LayoutDashboard; adminOnly?: boolean; participantOnly?: boolean }[] = [
   { key: 'projects', label: 'Projects', icon: LayoutDashboard },
   { key: 'estimator', label: 'Estimator', icon: Calculator },
   { key: 'bids', label: 'My Bids', icon: ClipboardList },
+  { key: 'chat', label: 'Chat', icon: MessageCircle, participantOnly: true },
   { key: 'loans', label: 'Loans', icon: DollarSign },
   { key: 'profile', label: 'Profile', icon: UserCircle },
   { key: 'compliance', label: 'Compliance', icon: ShieldCheck },
@@ -51,11 +54,65 @@ const navItems: { key: Section; label: string; icon: typeof LayoutDashboard; adm
 ];
 
 export default function Dashboard() {
+  const [searchParams] = useSearchParams();
+  const requestedRole = searchParams.get('role');
+  const initialRole: AccountRole = requestedRole === 'homeowner' ? 'homeowner' : 'contractor';
   const [activeSection, setActiveSection] = useState<Section>('projects');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<GcscUser | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [registrationNotice, setRegistrationNotice] = useState<{ email?: string; phone?: string } | null>(null);
+  const [chatBidId, setChatBidId] = useState<number | null>(null);
+  const [draftEditState, setDraftEditState] = useState({ dirty: false, saving: false });
+
+  const canLeaveProjects = useCallback(() => {
+    if (draftEditState.saving) {
+      window.alert('Wait for the draft to finish saving.');
+      return false;
+    }
+    return !draftEditState.dirty || window.confirm('Discard unsaved project changes?');
+  }, [draftEditState]);
+
+  const navigateSection = (section: Section) => {
+    if (section === activeSection) return true;
+    if (!canLeaveProjects()) return false;
+    setActiveSection(section);
+    return true;
+  };
+
+  const openChatForBid = useCallback((bidId: number) => {
+    if (!canLeaveProjects()) return;
+    setChatBidId(bidId);
+    setActiveSection('chat');
+    setMobileMenuOpen(false);
+  }, [canLeaveProjects]);
+  const consumeChatBid = useCallback(() => setChatBidId(null), []);
+
+  useEffect(() => {
+    if (!draftEditState.dirty && !draftEditState.saving) return;
+    const preventUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', preventUnload);
+    return () => window.removeEventListener('beforeunload', preventUnload);
+  }, [draftEditState]);
+
+  const routeBlocker = useBlocker(({ currentLocation, nextLocation }) =>
+    (draftEditState.dirty || draftEditState.saving)
+    && (currentLocation.pathname !== nextLocation.pathname
+      || currentLocation.search !== nextLocation.search));
+  useEffect(() => {
+    if (routeBlocker.state !== 'blocked') return;
+    if (draftEditState.saving) {
+      window.alert('Wait for the draft to finish saving.');
+      routeBlocker.reset();
+    } else if (window.confirm('Discard unsaved project changes?')) {
+      routeBlocker.proceed();
+    } else {
+      routeBlocker.reset();
+    }
+  }, [routeBlocker, draftEditState.saving]);
 
   useEffect(() => {
     let mounted = true;
@@ -95,9 +152,11 @@ export default function Dashboard() {
   }, [user]);
 
   const logout = () => {
+    if (!canLeaveProjects()) return false;
     api.logout();
     setUser(null);
     setActiveSection('projects');
+    return true;
   };
 
   const renderPanel = () => {
@@ -105,11 +164,13 @@ export default function Dashboard() {
 
     switch (activeSection) {
       case 'projects':
-        return <ProjectsPanel user={user} />;
+        return <ProjectsPanel user={user} onOpenChat={openChatForBid} onEditStateChange={setDraftEditState} />;
       case 'estimator':
         return <EstimatorPanel />;
       case 'bids':
-        return <BidsPanel user={user} />;
+        return <BidsPanel user={user} onOpenChat={openChatForBid} />;
+      case 'chat':
+        return <ChatPanel user={user} initialBidId={chatBidId} onBidConsumed={consumeChatBid} />;
       case 'loans':
         return <LoansFinancingPanel user={user} />;
       case 'profile':
@@ -117,17 +178,17 @@ export default function Dashboard() {
       case 'compliance':
         return <CompliancePanel user={user} />;
       case 'admin-review':
-        return user.role === 'admin' ? <AdminDocumentReviewPanel /> : <ProjectsPanel user={user} />;
+        return user.role === 'admin' ? <AdminDocumentReviewPanel /> : <ProjectsPanel user={user} onOpenChat={openChatForBid} onEditStateChange={setDraftEditState} />;
       case 'admin-financing':
-        return user.role === 'admin' ? <AdminFinancingPrechecksPanel /> : <ProjectsPanel user={user} />;
+        return user.role === 'admin' ? <AdminFinancingPrechecksPanel /> : <ProjectsPanel user={user} onOpenChat={openChatForBid} onEditStateChange={setDraftEditState} />;
       case 'admin-audit':
-        return user.role === 'admin' ? <AdminAuditLogPanel /> : <ProjectsPanel user={user} />;
+        return user.role === 'admin' ? <AdminAuditLogPanel /> : <ProjectsPanel user={user} onOpenChat={openChatForBid} onEditStateChange={setDraftEditState} />;
       case 'wallet':
         return user ? <WalletPanel user={user} onUserChange={setUser} /> : null;
       case 'token':
         return <TokenRedirect />;
       default:
-        return <ProjectsPanel user={user} />;
+        return <ProjectsPanel user={user} onOpenChat={openChatForBid} onEditStateChange={setDraftEditState} />;
     }
   };
 
@@ -143,11 +204,12 @@ export default function Dashboard() {
   }
 
   if (!user) {
-    return <AccountAccess onAuthenticated={setUser} />;
+    return <AccountAccess initialRole={initialRole} onAuthenticated={setUser} />;
   }
 
   const profile = getProfile(user);
-  const visibleNavItems = navItems.filter((item) => !item.adminOnly || user.role === 'admin');
+  const visibleNavItems = navItems.filter((item) =>
+    (!item.adminOnly || user.role === 'admin') && (!item.participantOnly || user.role === 'homeowner' || user.role === 'contractor'));
 
   return (
     <div className="min-h-[100dvh] bg-white flex">
@@ -162,7 +224,7 @@ export default function Dashboard() {
             return (
               <button
                 key={item.key}
-                onClick={() => setActiveSection(item.key)}
+                onClick={() => { void navigateSection(item.key); }}
                 className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200"
                 style={{
                   backgroundColor: isActive ? 'rgba(123,47,247,0.08)' : 'transparent',
@@ -253,8 +315,7 @@ export default function Dashboard() {
                     <button
                       key={item.key}
                       onClick={() => {
-                        setActiveSection(item.key);
-                        setMobileMenuOpen(false);
+                        if (navigateSection(item.key)) setMobileMenuOpen(false);
                       }}
                       className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all duration-200"
                       style={{
@@ -279,8 +340,7 @@ export default function Dashboard() {
                 </Link>
                 <button
                   onClick={() => {
-                    logout();
-                    setMobileMenuOpen(false);
+                    if (logout()) setMobileMenuOpen(false);
                   }}
                   className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium text-[#475569] hover:bg-[rgba(123,47,247,0.06)] hover:text-[#7B2FF7] transition-all duration-200"
                 >

@@ -1,5 +1,6 @@
 // GCSC API Client
 import { resolveApiUrl } from '../../../../packages/api-config/index.mjs'
+import type { OwnershipChallenge, OwnershipProof } from '../../../../packages/wallet-proof/request-proof.mjs'
 
 export interface GcscProfile {
   accountType: 'homeowner' | 'contractor'
@@ -40,6 +41,7 @@ export interface GcscUserDocument {
   mime_type: string
   file_size: number
   file_sha256: string
+  revision: number
   status: 'submitted' | 'approved' | 'rejected' | 'missing'
   review_note?: string
   submitted_at?: string
@@ -143,17 +145,33 @@ export interface GcscUser {
 
 export interface GcscProject {
   id: number
-  homeowner_id: number
+  homeowner_id?: number
+  title: string
+  description?: string
+  category: string
+  budget_min: number
+  budget_max: number
+  location?: string
+  timeline_days: number
+  status: string
+  published?: boolean
+  published_at?: string | null
+  updated_at?: string
+  access_status?: 'unpaid' | 'pending' | 'paid' | 'refunded' | 'revoked'
+  escrow_id?: number | null
+  created_at?: string
+}
+
+export interface GcscPaidProjectBrief {
+  id: number
   title: string
   description: string
   category: string
   budget_min: number
   budget_max: number
-  location: string
   timeline_days: number
-  status: string
-  escrow_id?: number | null
-  created_at: string
+  status: 'open'
+  published_at: string | null
 }
 
 export interface GcscBidContractor {
@@ -183,6 +201,48 @@ export interface GcscBid {
   contractor?: GcscBidContractor | null
   contractor_verification?: GcscCompliance | null
   created_at: string
+}
+
+export interface GcscChatCounterparty {
+  id: number
+  full_name: string
+  role: 'homeowner' | 'contractor'
+}
+
+export interface GcscChatThread {
+  id: number
+  project_id: number
+  homeowner_id: number
+  contractor_id: number
+  title: string
+  counterparty: GcscChatCounterparty
+  can_send: boolean
+  last_sequence: number
+  created_at: string
+  updated_at: string
+}
+
+export interface GcscChatMessage {
+  id: number
+  thread_id: number
+  sequence: number
+  sender_id: number
+  client_message_id: string
+  text: string
+  created_at: string
+}
+
+export interface GcscChatThreadList {
+  threads: GcscChatThread[]
+  next_before: number | null
+  has_more: boolean
+}
+
+export interface GcscChatMessageList {
+  thread: GcscChatThread
+  messages: GcscChatMessage[]
+  next_after: number
+  has_more: boolean
 }
 
 export interface GcscEscrow {
@@ -253,13 +313,13 @@ class ApiClient {
     localStorage.removeItem('gcsc_auth_token')
   }
 
-  private async request(path: string, options: RequestInit = {}) {
+  private async request(path: string, options: RequestInit = {}, useAuth = true) {
     const url = resolveApiUrl(import.meta.env.VITE_API_URL, `/api${path}`, 'VITE_API_URL')
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...options.headers as Record<string, string>
     }
-    if (this.token) headers['Authorization'] = `Bearer ${this.token}`
+    if (useAuth && this.token) headers['Authorization'] = `Bearer ${this.token}`
 
     const res = await fetch(url, { ...options, headers })
     const data = await res.json().catch(() => ({}))
@@ -277,6 +337,17 @@ class ApiClient {
   login(body: { email: string; password: string }) {
     return this.request('/auth/login', { method: 'POST', body: JSON.stringify(body) })
   }
+  walletLoginChallenge(body: { accountName: string; permission: string }): Promise<OwnershipChallenge> {
+    return this.request('/auth/wallet/challenge', { method: 'POST', body: JSON.stringify(body) }, false)
+  }
+  walletLoginVerify(body: {
+    accountName: string
+    permission: string
+    sessionBinding: string
+    proof: OwnershipProof
+  }): Promise<{ message?: string; token: string; user: GcscUser }> {
+    return this.request('/auth/wallet/verify', { method: 'POST', body: JSON.stringify(body) }, false)
+  }
   getProfile() {
     return this.request('/auth/profile')
   }
@@ -286,13 +357,16 @@ class ApiClient {
   getDocuments() {
     return this.request('/auth/documents')
   }
+  getDocumentFile(document: GcscUserDocument) {
+    return this.request(`/auth/documents/${document.id}/file?revision=${document.revision}`)
+  }
   submitDocument(body: { documentType: string; fileName: string; mimeType: string; fileDataUrl: string; reviewNote?: string }) {
     return this.request('/auth/documents', { method: 'POST', body: JSON.stringify(body) })
   }
   getCompliance() {
     return this.request('/auth/compliance')
   }
-  reviewDocument(id: number, body: { status: 'approved' | 'rejected'; reviewNote?: string }) {
+  reviewDocument(id: number, body: { status: 'approved' | 'rejected'; reviewNote?: string; expectedRevision: number }) {
     return this.request(`/admin/documents/${id}/review`, { method: 'PUT', body: JSON.stringify(body) })
   }
   getAdminDocuments(status?: string) {
@@ -335,6 +409,24 @@ class ApiClient {
   getProject(id: number) {
     return this.request(`/projects/${id}`)
   }
+  async getProjectDetails(id: number): Promise<{ project: GcscPaidProjectBrief }> {
+    if (!Number.isSafeInteger(id) || id <= 0 || id > 2147483647) {
+      throw new ApiError('Invalid project ID', 400)
+    }
+    const { project } = await this.request(`/projects/${id}/details`, { cache: 'no-store' })
+    if (!project || project.id !== id || project.status !== 'open'
+      || !['title', 'description', 'category'].every(key => typeof project[key] === 'string')
+      || !['budget_min', 'budget_max', 'timeline_days'].every(key => typeof project[key] === 'number' && Number.isFinite(project[key]))
+      || !(project.published_at === null || typeof project.published_at === 'string')) {
+      throw new ApiError('Could not verify project details. Please try again.', 502)
+    }
+    // Only the paid-brief contract is consumed here, never owner/contact or grant metadata.
+    return { project: {
+      id: project.id, title: project.title, description: project.description,
+      category: project.category, budget_min: project.budget_min, budget_max: project.budget_max,
+      timeline_days: project.timeline_days, status: project.status, published_at: project.published_at,
+    } }
+  }
   getPublicContractorProfile(id: number | string) {
     return this.request(`/contractors/${id}/public`)
   }
@@ -352,6 +444,21 @@ class ApiClient {
   }) {
     return this.request('/projects', { method: 'POST', body: JSON.stringify(body) })
   }
+  publishProject(id: number): Promise<{ project: GcscProject }> {
+    return this.request(`/projects/${id}/publish`, { method: 'POST' })
+  }
+  updateProjectDraft(id: number, body: {
+    title: string
+    description: string
+    category: string
+    budget_min: number
+    budget_max: number
+    location: string
+    timeline_days: number
+    expected_updated_at: string
+  }): Promise<{ project: GcscProject }> {
+    return this.request(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(body) })
+  }
 
   // BIDS
   getMyBids() {
@@ -362,6 +469,23 @@ class ApiClient {
   }
   acceptBid(id: number) {
     return this.request(`/bids/${id}/accept`, { method: 'POST' })
+  }
+
+  // CHAT
+  openChatThread(bidId: number): Promise<{ thread: GcscChatThread }> {
+    return this.request('/chat/threads', { method: 'POST', body: JSON.stringify({ bid_id: bidId }) })
+  }
+  getChatThreads(before?: number, limit = 50): Promise<GcscChatThreadList> {
+    const params = new URLSearchParams({ limit: String(limit) })
+    if (before !== undefined) params.set('before', String(before))
+    return this.request(`/chat/threads?${params.toString()}`)
+  }
+  getChatMessages(threadId: number, after = 0, limit = 50): Promise<GcscChatMessageList> {
+    const params = new URLSearchParams({ after: String(after), limit: String(limit) })
+    return this.request(`/chat/threads/${threadId}/messages?${params.toString()}`)
+  }
+  sendChatMessage(threadId: number, body: { text: string; client_message_id: string }): Promise<{ message: GcscChatMessage; duplicate: boolean }> {
+    return this.request(`/chat/threads/${threadId}/messages`, { method: 'POST', body: JSON.stringify(body) })
   }
 
   // ESCROW

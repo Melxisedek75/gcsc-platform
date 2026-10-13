@@ -6,11 +6,14 @@ import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Header } from '../../components/Header';
 import { Screen } from '../../components/Screen';
+import { WorkspaceBanner } from '../../components/WorkspaceBanner';
 import { BackendProject, formatBudget, listBackendProjects, timeAgoIso } from '../../lib/jobs';
 import { listSavedJobIds, toggleSaved } from '../../lib/saved';
 import { colors, radius, spacing, typography } from '../../lib/tokens';
+import { useAppTheme } from '../../lib/theme';
 
 export default function ContractorJobs() {
+  useAppTheme();
   const router = useRouter();
   const [filter, setFilter] = useState<string>('All');
   const [savedIds, setSavedIds] = useState<string[]>([]);
@@ -72,6 +75,7 @@ export default function ContractorJobs() {
 
   return (
     <Screen>
+      <WorkspaceBanner role="contractor" />
       <Header
         title="Available jobs"
         subtitle={`${visibleJobs.length} matching · ${savedIds.length} saved`}

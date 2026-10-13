@@ -1,0 +1,116 @@
+[
+  {
+    "source": "C:/gcsc/AGENTS.md",
+    "archive": "gcsc/AGENTS.md.txt",
+    "sha256": "E90BD426C36F55A69D2567A4A627DBDF4F1F79909262BDA398A470448FE71352",
+    "bytes": 27620
+  },
+  {
+    "source": "C:/gcsc/GEMINI.md",
+    "archive": "gcsc/GEMINI.md.txt",
+    "sha256": "E90BD426C36F55A69D2567A4A627DBDF4F1F79909262BDA398A470448FE71352",
+    "bytes": 27620
+  },
+  {
+    "source": "C:/gcsc/.claude/CLAUDE.md",
+    "archive": "gcsc/.claude/CLAUDE.md.txt",
+    "sha256": "E90BD426C36F55A69D2567A4A627DBDF4F1F79909262BDA398A470448FE71352",
+    "bytes": 27620
+  },
+  {
+    "source": "C:/gcsc/AI-REVIEW-GATE.md",
+    "archive": "gcsc/AI-REVIEW-GATE.md.txt",
+    "sha256": "9CBBCDC9DF71CD0AA2D2379146BAC7E71777C12D5456E0EC2318E93B0A50078D",
+    "bytes": 5275
+  },
+  {
+    "source": "C:/gcsc/AUTONOMOUS-MODE.md",
+    "archive": "gcsc/AUTONOMOUS-MODE.md.txt",
+    "sha256": "FABE7B8F363D1E9E58BC624A6328A13F1035B33F48B275026DCE6A786EABCA29",
+    "bytes": 4603
+  },
+  {
+    "source": "C:/gcsc/docs/codex-nonstop-execution-hook.md",
+    "archive": "gcsc/docs/codex-nonstop-execution-hook.md.txt",
+    "sha256": "0B77832A4ECEB76CD8A0713F8C9133716B36A32B3DE20AA55B46AA9AA6CD2EA6",
+    "bytes": 9949
+  },
+  {
+    "source": "C:/gcsc/docs/gcsc-daily-work-mode-hook.md",
+    "archive": "gcsc/docs/gcsc-daily-work-mode-hook.md.txt",
+    "sha256": "4C508D469A532726460D53C43EBEB22B3B747DEADBC187F7207681DD07E495A8",
+    "bytes": 6982
+  },
+  {
+    "source": "C:/gcsc/docs/claude-code-global-nonstop-prompt.md",
+    "archive": "gcsc/docs/claude-code-global-nonstop-prompt.md.txt",
+    "sha256": "13EEBAA3744128C1595AF1FD125EF1DF69F1487184AC831B4E08EB35669C24D2",
+    "bytes": 8797
+  },
+  {
+    "source": "C:/gcsc/docs/codex-operating-system.md",
+    "archive": "gcsc/docs/codex-operating-system.md.txt",
+    "sha256": "20B1914BF361AB9CA284CE9A98FA1797B05ECCD9EDA4D6933907EA3ABF0B931D",
+    "bytes": 3854
+  },
+  {
+    "source": "C:/gcsc/ai-review/CLAUDE-REVIEW-PROMPT.md",
+    "archive": "gcsc/ai-review/CLAUDE-REVIEW-PROMPT.md.txt",
+    "sha256": "0E65DC6D3C87B72C4D87E3C076F494D692DF4EF3683A296459522158ACE78778",
+    "bytes": 2158
+  },
+  {
+    "source": "C:/gcsc/ai-review/coordination/PROTOCOL.md",
+    "archive": "gcsc/ai-review/coordination/PROTOCOL.md.txt",
+    "sha256": "DD71081F01FFD364BA6262813221C88D43F525FACCE0D48452CCF85D40D2E8C6",
+    "bytes": 3844
+  },
+  {
+    "source": "C:/gcsc/ai-review/coordination/CODEX-AUTOMATION.md",
+    "archive": "gcsc/ai-review/coordination/CODEX-AUTOMATION.md.txt",
+    "sha256": "9E2581790FAB96B174C5F325F58784B92BD4AF3A12EFB3B44773F07CF347FDA3",
+    "bytes": 1735
+  },
+  {
+    "source": "C:/gcsc/.claude/skills/autonomous-builder/SKILL.md",
+    "archive": "gcsc/.claude/skills/autonomous-builder/SKILL.md.txt",
+    "sha256": "813CEAC65866EEBEE2E6BA1B93F5A9B6118A2EB37ACFF502BE8131513C270009",
+    "bytes": 3863
+  },
+  {
+    "source": "C:/gcsc/.claude/skills/smartcontractor-daily-build/SKILL.md",
+    "archive": "gcsc/.claude/skills/smartcontractor-daily-build/SKILL.md.txt",
+    "sha256": "2C85D3A8DBBD7815617B9B1EC239E5AFFE80957C924DF8FAB4F0C88566E2EF78",
+    "bytes": 2481
+  },
+  {
+    "source": "C:/gcsc-platform/AGENTS.md",
+    "archive": "platform/AGENTS.md.txt",
+    "sha256": "F6928A76BD9279BF1BB5AD5BDB3BA1453D23266F8E51B2939120482C1F03149B",
+    "bytes": 2468
+  },
+  {
+    "source": "C:/gcsc-platform/.worktrees/backend/AGENTS.md",
+    "archive": "platform/lanes/backend/AGENTS.md.txt",
+    "sha256": "F6928A76BD9279BF1BB5AD5BDB3BA1453D23266F8E51B2939120482C1F03149B",
+    "bytes": 2468
+  },
+  {
+    "source": "C:/gcsc-platform/.worktrees/frontend/AGENTS.md",
+    "archive": "platform/lanes/frontend/AGENTS.md.txt",
+    "sha256": "F6928A76BD9279BF1BB5AD5BDB3BA1453D23266F8E51B2939120482C1F03149B",
+    "bytes": 2468
+  },
+  {
+    "source": "C:/gcsc-platform/.worktrees/qa/AGENTS.md",
+    "archive": "platform/lanes/qa/AGENTS.md.txt",
+    "sha256": "F6928A76BD9279BF1BB5AD5BDB3BA1453D23266F8E51B2939120482C1F03149B",
+    "bytes": 2468
+  },
+  {
+    "source": "C:/gcsc-platform/docs/migration/WORK-LANES.md",
+    "archive": "platform/WORK-LANES.md.txt",
+    "sha256": "7D899D2C7D69807364A5BE224815E9C5DE4516BF9B1C1AA2F29A8DAE17DDA450",
+    "bytes": 1711
+  }
+]

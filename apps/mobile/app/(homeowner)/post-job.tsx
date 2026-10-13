@@ -1,50 +1,52 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Header } from '../../components/Header';
 import { Input } from '../../components/Input';
-import { PaymentSheet } from '../../components/PaymentSheet';
 import { Screen } from '../../components/Screen';
-import { Alert } from 'react-native';
 import { JOB_TEMPLATES, JobTemplate } from '../../lib/job-templates';
-import { addJob, createBackendProject } from '../../lib/jobs';
-import { ApiError } from '../../lib/api';
-import { PAYMENT_CONFIG } from '../../lib/payments';
+import { createBackendProject, parseBudgetRange, publishBackendProject } from '../../lib/jobs';
 import { colors, radius, spacing, typography } from '../../lib/tokens';
+import { useAppTheme } from '../../lib/theme';
 
 const CATEGORIES = ['Renovation', 'Exterior', 'Repair', 'New build', 'Plumbing', 'Electrical'];
 
 export default function PostJob() {
+  useAppTheme();
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('Renovation');
   const [zip, setZip] = useState('');
   const [budget, setBudget] = useState('');
   const [description, setDescription] = useState('');
-  const [sheetVisible, setSheetVisible] = useState(false);
-  const [published, setPublished] = useState(false);
   const [preparing, setPreparing] = useState(false);
-  const [projectId, setProjectId] = useState<number | null>(null);
 
   async function handlePublish() {
     if (preparing) return;
     setPreparing(true);
+    let savedProjectId: number | null = null;
     try {
-      // P0-2: create the backend project first so the job-posting payment can
-      // send its project_id on the verification retry.
-      const id = await createBackendProject({
+      const budgetRange = parseBudgetRange(budget.trim());
+      savedProjectId = await createBackendProject({
         title: title.trim(),
         description: description.trim() || title.trim(),
         category,
         location: zip.trim(),
+        ...budgetRange,
       });
-      setProjectId(id);
-      setSheetVisible(true);
+      await publishBackendProject(savedProjectId);
+      router.replace('/(homeowner)/jobs');
     } catch (err) {
-      const apiErr = err as ApiError | Error;
-      Alert.alert('Could not start', apiErr.message ?? 'Failed to create project');
+      const message = err instanceof Error ? err.message : 'Could not publish job';
+      if (savedProjectId !== null) {
+        Alert.alert('Draft saved', `${message}\n\nNo payment was made. You can publish this draft from My jobs.`, [
+          { text: 'View draft', onPress: () => router.replace(`/(homeowner)/job/${savedProjectId}` as never) },
+        ]);
+      } else {
+        Alert.alert('Could not save job', message);
+      }
     } finally {
       setPreparing(false);
     }
@@ -62,18 +64,7 @@ export default function PostJob() {
 
   return (
     <Screen>
-      <Header title="Post a new job" subtitle="Verified contractors will be invited to bid" />
-
-      {published && (
-        <Card style={{ borderColor: colors.accent }}>
-          <Text style={[typography.bodyStrong, { color: colors.accent }]}>
-            ✓ Job published & escrow funded
-          </Text>
-          <Text style={[typography.caption, { color: colors.textMuted }]}>
-            See it in My jobs. Verified contractors will be invited within 12h.
-          </Text>
-        </Card>
-      )}
+      <Header title="Post a new job" subtitle="Share a project with contractors" />
 
       <View style={{ gap: spacing.sm }}>
         <Text style={[typography.caption, { color: colors.textMuted }]}>
@@ -162,50 +153,19 @@ export default function PostJob() {
       />
 
       <Card variant="alt">
-        <Text style={[typography.bodyStrong, { color: colors.text }]}>How payments work</Text>
+        <Text style={[typography.bodyStrong, { color: colors.text }]}>Publishing</Text>
         <Text style={[typography.caption, { color: colors.textMuted }]}>
-          You release funds milestone by milestone. Contractor uploads proof, AI compliance verifies,
-          you approve. A small 25 XPR verification fee covers AI compliance + dispute coverage.
+          Publishing a job is free. No wallet connection or XPR transfer is required.
         </Text>
       </Card>
 
       <Button
-        label={preparing ? 'Preparing…' : 'Publish & fund — 25 XPR'}
+        label={preparing ? 'Publishing…' : 'Publish job'}
         fullWidth
         onPress={handlePublish}
         disabled={!canPublish || preparing}
       />
 
-      <PaymentSheet
-        visible={sheetVisible}
-        title="Publish your job"
-        subtitle="Verification fee covers AI compliance check and dispute coverage on first milestone."
-        request={{
-          mode: 'charge',
-          amount: '25.0000 XPR',
-          recipient: PAYMENT_CONFIG.ESCROW_RECIPIENT,
-          memo: 'gcsc:job-posting',
-          endpoint: PAYMENT_CONFIG.JOB_POSTING_ENDPOINT,
-          meta: projectId ? { project_id: projectId } : undefined,
-        }}
-        onClose={() => setSheetVisible(false)}
-        onSuccess={async (receipt) => {
-          await addJob({
-            title: title.trim(),
-            category,
-            zip: zip.trim(),
-            budget: budget.trim(),
-            description: description.trim(),
-            publishTxHash: receipt.txHash ?? '',
-          });
-          setPublished(true);
-          setTitle('');
-          setBudget('');
-          setDescription('');
-          setZip('');
-          setTimeout(() => router.replace('/(homeowner)/jobs'), 1200);
-        }}
-      />
     </Screen>
   );
 }

@@ -1,0 +1,64 @@
+{
+  "contractVersion": "october-project-v1",
+  "status": "local-candidate-not-release-approved",
+  "syntheticDataOnly": true,
+  "publicPreviewKeys": [
+    "id",
+    "title",
+    "category",
+    "budget_min",
+    "budget_max",
+    "timeline_days",
+    "status",
+    "published_at"
+  ],
+  "forbiddenPublicKeys": [
+    "homeowner_id",
+    "description",
+    "location",
+    "contact",
+    "attachments",
+    "bids",
+    "escrow_id",
+    "created_at"
+  ],
+  "examples": {
+    "ownerDraft": {
+      "id": 1001,
+      "homeowner_id": 2001,
+      "title": "Bathroom repair at 123 Example Lane",
+      "description": "Replace damaged tile and inspect the shower valve.",
+      "category": "bathroom",
+      "budget_min": 1000,
+      "budget_max": 5000,
+      "location": "123 Example Lane, Seattle, WA",
+      "timeline_days": 30,
+      "status": "open",
+      "published": false,
+      "published_at": null,
+      "created_at": "2026-09-29T12:00:00.000Z"
+    },
+    "publicPreview": {
+      "id": 1001,
+      "title": "Bathroom project",
+      "category": "Bathroom",
+      "budget_min": 1000,
+      "budget_max": 5000,
+      "timeline_days": 30,
+      "status": "open",
+      "published_at": "2026-09-29T12:30:00.000Z"
+    },
+    "unpublishedStrangerResponse": {
+      "status": 404,
+      "body": {
+        "error": "Project not found"
+      }
+    }
+  },
+  "notYetDefined": [
+    "project-specific paid entitlement response",
+    "safe broad service-area field",
+    "contact and attachment disclosure policy",
+    "proposal and refund response shapes"
+  ]
+}

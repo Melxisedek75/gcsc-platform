@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { Pressable, StyleSheet, View, ViewStyle } from 'react-native';
 import { colors, radius, spacing } from '../lib/tokens';
+import { useAppTheme } from '../lib/theme';
 
 type Props = {
   children: ReactNode;
@@ -10,9 +11,10 @@ type Props = {
 };
 
 export function Card({ children, onPress, variant = 'default', style }: Props) {
+  useAppTheme();
   const bg = variant === 'alt' ? colors.surfaceAlt : colors.surface;
   const body = (
-    <View style={[styles.card, { backgroundColor: bg }, style]}>{children}</View>
+    <View style={[styles.card, { backgroundColor: bg, borderColor: colors.border }, style]}>{children}</View>
   );
   if (!onPress) return body;
   return (

@@ -5,8 +5,7 @@ import { Button } from '../../components/Button';
 import { Header } from '../../components/Header';
 import { Screen } from '../../components/Screen';
 import { ApiError, getCurrentUser, saveSession, getToken } from '../../lib/api';
-import { updateProfile } from '../../lib/auth';
-import { connectWallet } from '../../lib/webauth';
+import { bindWallet } from '../../lib/auth';
 import { colors, spacing, typography } from '../../lib/tokens';
 
 export default function ConnectWallet() {
@@ -19,10 +18,7 @@ export default function ConnectWallet() {
     setError(null);
     setSubmitting(true);
     try {
-      const ws = await connectWallet();
-      const updated = await updateProfile({
-        wallet: { account: ws.account, permission: ws.permission },
-      });
+      const updated = await bindWallet();
       const token = getToken();
       if (token) {
         await saveSession(token, updated);

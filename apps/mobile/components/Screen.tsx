@@ -1,7 +1,8 @@
 import { ReactNode } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, spacing } from '../lib/tokens';
+import { colors, control, spacing } from '../lib/tokens';
+import { useAppTheme } from '../lib/theme';
 
 type Props = {
   children: ReactNode;
@@ -10,19 +11,24 @@ type Props = {
 };
 
 export function Screen({ children, scroll = true, padded = true }: Props) {
+  const theme = useAppTheme();
   const inner = padded ? <View style={styles.padded}>{children}</View> : children;
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       {scroll ? (
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         >
-          {inner}
+          <View>{inner}</View>
         </ScrollView>
       ) : (
         <View style={styles.flex}>{inner}</View>
       )}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -31,5 +37,5 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
   scrollContent: { paddingBottom: spacing.xxl * 2 },
-  padded: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, gap: spacing.lg },
+  padded: { width: '100%', maxWidth: control.contentMaxWidth, alignSelf: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.lg, gap: spacing.lg },
 });

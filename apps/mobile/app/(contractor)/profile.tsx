@@ -8,11 +8,12 @@ import { Header } from '../../components/Header';
 import { Screen } from '../../components/Screen';
 import { getCurrentUser, saveSession, getToken } from '../../lib/api';
 import { logout, updateProfile } from '../../lib/auth';
-import { MOCK_REVIEWS, summarize } from '../../lib/reviews';
 import { clearSession as clearWebauthSession } from '../../lib/webauth';
-import { colors, radius, spacing, typography } from '../../lib/tokens';
+import { colors, spacing, typography } from '../../lib/tokens';
+import { useAppTheme } from '../../lib/theme';
 
 export default function ContractorProfile() {
+  useAppTheme();
   const router = useRouter();
   const user = getCurrentUser();
   const [busy, setBusy] = useState(false);
@@ -60,7 +61,7 @@ export default function ContractorProfile() {
 
   return (
     <Screen>
-      <Header title="Profile" subtitle="Verification, reputation, payouts" />
+      <Header title="Profile" subtitle="Account and wallet" />
 
       <Card>
         <View style={styles.heroRow}>
@@ -79,14 +80,17 @@ export default function ContractorProfile() {
         {rows.map((r, i) => (
           <View key={r.label} style={[styles.row, i < rows.length - 1 && styles.divider]}>
             <Text style={[typography.body, { color: colors.text }]}>{r.label}</Text>
-            <Text style={[typography.caption, { color: colors.textMuted }]} numberOfLines={1}>
+            <Text selectable style={[typography.caption, { color: colors.textMuted }]}>
               {r.value}
             </Text>
           </View>
         ))}
       </Card>
 
-      <ReviewsBlock />
+      <View style={{ gap: spacing.xs }}>
+        <Text style={[typography.h3, { color: colors.text }]}>Reviews</Text>
+        <Text style={[typography.body, { color: colors.textMuted }]}>Reviews unavailable</Text>
+      </View>
 
       <View style={{ gap: spacing.sm }}>
         <Button
@@ -129,72 +133,8 @@ export default function ContractorProfile() {
   );
 }
 
-function ReviewsBlock() {
-  const summary = summarize(MOCK_REVIEWS);
-  const max = Math.max(...Object.values(summary.distribution));
-  return (
-    <Card>
-      <View style={styles.reviewsHeader}>
-        <View>
-          <Text style={[typography.h2, { color: colors.text }]}>{summary.average.toFixed(1)}</Text>
-          <Text style={[typography.caption, { color: colors.textMuted }]}>
-            {summary.count} reviews
-          </Text>
-        </View>
-        <View style={{ flex: 1, gap: 4, marginLeft: spacing.lg }}>
-          {([5, 4, 3, 2, 1] as const).map((star) => {
-            const count = summary.distribution[star];
-            const pct = max === 0 ? 0 : (count / max) * 100;
-            return (
-              <View key={star} style={styles.barRow}>
-                <Text style={[typography.micro, { color: colors.textMuted, width: 16 }]}>{star}★</Text>
-                <View style={styles.barTrack}>
-                  <View style={[styles.barFill, { width: `${pct}%` }]} />
-                </View>
-                <Text style={[typography.micro, { color: colors.textDim, width: 20, textAlign: 'right' }]}>
-                  {count}
-                </Text>
-              </View>
-            );
-          })}
-        </View>
-      </View>
-
-      <View style={{ gap: spacing.md, marginTop: spacing.md }}>
-        {MOCK_REVIEWS.slice(0, 3).map((r) => (
-          <View key={r.id} style={styles.reviewItem}>
-            <View style={styles.row}>
-              <Text style={[typography.bodyStrong, { color: colors.text }]}>{r.reviewer}</Text>
-              <Text style={[typography.micro, { color: colors.textDim }]}>{r.daysAgo}d ago</Text>
-            </View>
-            <Text style={[typography.micro, { color: colors.warning }]}>{'★'.repeat(r.rating)}</Text>
-            <Text style={[typography.caption, { color: colors.textMuted }]}>{r.jobTitle}</Text>
-            <Text style={[typography.body, { color: colors.text }]}>{r.body}</Text>
-          </View>
-        ))}
-      </View>
-    </Card>
-  );
-}
-
 const styles = StyleSheet.create({
   heroRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'center' },
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.md, gap: spacing.md },
+  row: { paddingVertical: spacing.md, gap: spacing.xs },
   divider: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  reviewsHeader: { flexDirection: 'row', alignItems: 'center' },
-  barRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  barTrack: {
-    flex: 1,
-    height: 6,
-    backgroundColor: colors.border,
-    borderRadius: radius.pill,
-    overflow: 'hidden',
-  },
-  barFill: { height: '100%', backgroundColor: colors.warning, borderRadius: radius.pill },
-  reviewItem: {
-    gap: spacing.xs,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
 });

@@ -89,3 +89,31 @@ other dependency-ready checklist items, preserving the unresolved protocol task.
 2026-09-13 rerun: 43/43 SDK characterization/payload tests PASS, zero skipped,
 network entrypoints denied. Static route inventory still FAILS at 5/7. The runtime
 and both client implementations were unchanged by this diagnostic/preservation work.
+
+## 2026-10-07 candidate reconciliation (not integrated)
+
+The current frontend `494e7e2e` and design `d892515b` branches change the
+same public `apps/web/src/pages/Wallet.tsx`. The frontend branch treats a
+restored WebAuth session as local only, labels persisted profile wallet data
+as metadata, and has no `api.connectWallet` call in that page. The design
+branch removes public Metal Pay/purchase/deposit/fee claims, but still calls
+`api.connectWallet(restored)` after restore and
+`api.connectWallet(connected)` after pairing, then reports the wallet saved
+to the GCSC account. The backend linking route requires a signed ownership
+proof, so taking the design page wholesale would restore an invalid request
+and a false success path. The current publication page also retains these
+unsigned calls and financial claims; neither candidate has been received.
+
+For a reviewed combined candidate, preserve the frontend branch's local
+session/profile-metadata distinction and its removal of unsigned profile
+linking. Carry over only the design branch's truthful presentation: no live
+Metal Pay connection, token purchase, USD deposit, zero-fee or escrow claim.
+Keep a saved profile wallet distinct from a current SDK session. Reconcile
+the Dashboard wallet panel and AccountAccess copy in the same exact source
+snapshot so another route cannot reintroduce the same claim or call.
+
+Before any receiving integration, run the focused wallet/UI assertions,
+scoped lint, web build, legal-claims guard, and local browser checks on the
+combined diff; independently review that exact diff under the project gate.
+Do not invoke real WebAuth/signing or payment for this reconciliation. The
+signed-challenge protocol and live/provider/legal approvals remain separate.

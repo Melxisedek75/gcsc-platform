@@ -28,6 +28,16 @@ blocker summary and pause this heartbeat through automation_update; do not keep
 waking every two minutes. Resume only on owner instruction or an explicitly
 authorized event-driven recovery. Do not silently drop blocked tasks.
 
+Pause guard (2026-09-28): before pausing an automation, scan the active checklist
+for a genuinely independent, low-resource task. ENOSPC blocks large builds and
+browser runs, not automatically all code review, small tests or documentation.
+If such a task is available, keep the heartbeat active and do it; do not spend a
+wake merely reporting the blocker. If none is safe, record the pause reason,
+observed free disk/other evidence, remaining blocked tasks and exact resume
+condition in ACTIVE-TASK.json before pausing. Distinguish agent environmental
+pause from an owner pause. A Markdown file cannot run while its heartbeat is
+paused; never override an owner pause or quota pause with an automatic restart.
+
 Quota pause (owner requested 2026-09-09): on explicit usage exhaustion, checkpoint
 and pause the heartbeat while tools remain available. Never poll quota every two
 minutes or emit repeated continuation messages. A prompt cannot stop the scheduler

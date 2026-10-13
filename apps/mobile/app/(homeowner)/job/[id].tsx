@@ -1,74 +1,61 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
 import { Badge } from '../../../components/Badge';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { Header } from '../../../components/Header';
 import { Screen } from '../../../components/Screen';
-import { LocalJob, getJob } from '../../../lib/jobs';
+import { BackendProject, formatBudget, getBackendProject, publishBackendProject } from '../../../lib/jobs';
 import { colors, spacing, typography } from '../../../lib/tokens';
 
-const STATUS_LABEL: Record<LocalJob['status'], string> = {
-  published: 'Published — waiting for bids',
-  bidding: 'In bidding',
-  in_progress: 'In progress',
-  completed: 'Completed',
-};
-
-const STATUS_COLOR: Record<LocalJob['status'], string> = {
-  published: '#7CA0FF',
-  bidding: '#E0B341',
-  in_progress: '#3FB97A',
-  completed: '#7A8499',
-};
-
-type Milestone = {
-  label: string;
-  pctOfBudget: number;
-  state: 'pending' | 'active' | 'done';
-};
-
-const DEFAULT_MILESTONES: Milestone[] = [
-  { label: 'Materials & site prep', pctOfBudget: 30, state: 'pending' },
-  { label: 'Rough work complete', pctOfBudget: 35, state: 'pending' },
-  { label: 'Finish & sign-off', pctOfBudget: 35, state: 'pending' },
-];
-
-function explorerUrl(tx: string): string {
-  return `https://testnet.explorer.xprnetwork.org/transaction/${tx}`;
-}
-
-function shortTx(tx: string): string {
-  return tx ? `${tx.slice(0, 10)}…${tx.slice(-8)}` : '—';
-}
-
-function formatDate(ts: number): string {
-  return new Date(ts).toLocaleString();
+function statusLabel(project: BackendProject): string {
+  if (!project.published) return 'Private draft';
+  if (project.status === 'in_progress') return 'In progress';
+  if (project.status === 'completed') return 'Completed';
+  return 'Published';
 }
 
 export default function JobDetail() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [job, setJob] = useState<LocalJob | null>(null);
+  const [job, setJob] = useState<BackendProject | null>(null);
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+    try {
+      const result = await getBackendProject(id);
+      setJob(result?.project ?? null);
+      setLoadError(null);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'Could not load job');
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  async function handlePublish() {
+    if (!job || busy) return;
+    setBusy(true);
+    try {
+      setJob(await publishBackendProject(job.id));
+    } catch (err) {
+      Alert.alert('Could not publish job', err instanceof Error ? err.message : 'Try again later');
+    } finally {
+      setBusy(false);
+    }
+  }
 
   useFocusEffect(
     useCallback(() => {
-      let cancelled = false;
-      if (!id) {
-        setLoading(false);
-        return;
-      }
-      getJob(id).then((result) => {
-        if (cancelled) return;
-        setJob(result);
-        setLoading(false);
-      });
-      return () => {
-        cancelled = true;
-      };
-    }, [id]),
+      load();
+    }, [load]),
   );
 
   if (loading) {
@@ -84,7 +71,8 @@ export default function JobDetail() {
   if (!job) {
     return (
       <Screen>
-        <Header title="Job not found" subtitle="This job may have been removed." />
+        <Header title={loadError ? 'Could not load job' : 'Job not found'} subtitle={loadError || 'This job may have been removed.'} />
+        {loadError ? <Button label="Retry" fullWidth onPress={load} /> : null}
         <Button label="Back to my jobs" fullWidth onPress={() => router.replace('/(homeowner)/jobs')} />
       </Screen>
     );
@@ -92,30 +80,32 @@ export default function JobDetail() {
 
   return (
     <Screen>
-      <Header title={job.title} subtitle={STATUS_LABEL[job.status]} />
+      <Header title={job.title} subtitle={statusLabel(job)} />
+
+      {loadError ? <Text style={[typography.body, { color: colors.danger }]}>{loadError}</Text> : null}
 
       <Card>
         <View style={styles.row}>
           <Badge label={job.category.toUpperCase()} color={colors.homeowner} />
-          <Badge label={STATUS_LABEL[job.status]} color={STATUS_COLOR[job.status]} />
+          <Badge label={statusLabel(job)} color={job.published ? colors.accent : colors.textMuted} />
         </View>
 
         <View style={styles.detail}>
           <Text style={[typography.micro, { color: colors.textDim }]}>Budget</Text>
-          <Text style={[typography.h3, { color: colors.text }]}>{job.budget || '—'}</Text>
+          <Text style={[typography.h3, { color: colors.text }]}>{formatBudget(job)}</Text>
         </View>
 
-        {job.zip ? (
+        {job.location ? (
           <View style={styles.detail}>
             <Text style={[typography.micro, { color: colors.textDim }]}>Location</Text>
-            <Text style={[typography.body, { color: colors.text }]}>ZIP {job.zip}</Text>
+            <Text style={[typography.body, { color: colors.text }]}>{job.location}</Text>
           </View>
         ) : null}
 
         <View style={styles.detail}>
-          <Text style={[typography.micro, { color: colors.textDim }]}>Published</Text>
+          <Text style={[typography.micro, { color: colors.textDim }]}>{job.published ? 'Published' : 'Created'}</Text>
           <Text style={[typography.caption, { color: colors.textMuted }]}>
-            {formatDate(job.publishedAt)}
+            {new Date(job.published_at || job.created_at).toLocaleString()}
           </Text>
         </View>
 
@@ -127,48 +117,12 @@ export default function JobDetail() {
         ) : null}
       </Card>
 
-      <Card>
-        <Text style={[typography.bodyStrong, { color: colors.text }]}>Milestones</Text>
-        <Text style={[typography.caption, { color: colors.textMuted }]}>
-          Released to contractor only after your approval at each step.
-        </Text>
-        <View style={styles.milestoneList}>
-          {DEFAULT_MILESTONES.map((m, i) => (
-            <View key={m.label} style={styles.milestoneRow}>
-              <View style={[styles.dot, { backgroundColor: colors.border }]}>
-                <Text style={[typography.micro, { color: colors.textMuted }]}>{i + 1}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[typography.body, { color: colors.text }]}>{m.label}</Text>
-                <Text style={[typography.caption, { color: colors.textMuted }]}>
-                  {m.pctOfBudget}% of budget
-                </Text>
-              </View>
-            </View>
-          ))}
-        </View>
-      </Card>
-
-      {job.publishTxHash ? (
-        <Card variant="alt">
-          <Text style={[typography.bodyStrong, { color: colors.text }]}>On-chain proof</Text>
-          <Text style={[typography.caption, { color: colors.textMuted }]}>
-            Publish fee transaction on XPR Network testnet.
-          </Text>
-          <Pressable onPress={() => Linking.openURL(explorerUrl(job.publishTxHash))}>
-            <Text style={[typography.caption, { color: colors.brand }]}>
-              tx {shortTx(job.publishTxHash)} ↗
-            </Text>
-          </Pressable>
-        </Card>
-      ) : null}
-
       <View style={{ gap: spacing.sm }}>
-        <Button
-          label="View bids"
-          fullWidth
-          onPress={() => router.push(`/(homeowner)/job/${job.id}/bids` as never)}
-        />
+        {!job.published ? (
+          <Button label={busy ? 'Publishing…' : 'Publish job'} fullWidth disabled={busy} onPress={handlePublish} />
+        ) : (
+          <Button label="View bids" fullWidth onPress={() => router.push(`/(homeowner)/job/${job.id}/bids` as never)} />
+        )}
         <Button
           label="Back to my jobs"
           fullWidth
@@ -184,7 +138,4 @@ const styles = StyleSheet.create({
   loader: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 200 },
   row: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
   detail: { gap: spacing.xs, marginTop: spacing.md },
-  milestoneList: { gap: spacing.md, marginTop: spacing.sm },
-  milestoneRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'center' },
-  dot: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
 });

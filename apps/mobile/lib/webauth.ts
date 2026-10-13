@@ -22,6 +22,10 @@ import ProtonRNSDK, {
 import {
   type LinkStorage,
 } from '@proton/link';
+import {
+  createOwnershipProofRequester,
+  type OwnershipChallenge,
+} from '../../../packages/wallet-proof/request-proof.mjs';
 
 const WEBAUTH_SESSION_KEY = '@gcsc/webauth/session';
 const PROTON_LINK_STORAGE_PREFIX = '@gcsc/proton-link/';
@@ -76,11 +80,36 @@ export interface SignResult {
 let currentSession: WebAuthSession | null = null;
 let protonLink: ProtonLink | null = null;
 let protonSession: LinkSession | null = null;
+const ownershipRequests = new WeakMap<LinkSession, ReturnType<typeof createOwnershipProofRequester>>();
 const callbackHandlers = new Set<(url: string) => boolean>();
 const pendingCallbackUrls: string[] = [];
 
 export function getSession(): WebAuthSession | null {
   return currentSession;
+}
+
+// Sign-only adapter. API binding/login stays disabled until the candidate protocol is accepted.
+export async function signWalletOwnershipChallenge(challenge: OwnershipChallenge, signal?: AbortSignal) {
+  const session = protonSession;
+  const link = protonLink;
+  if (!session || !link) throw new Error('Connect WebAuth before requesting an ownership proof.');
+  let request = ownershipRequests.get(session);
+  if (!request) {
+    request = createOwnershipProofRequester({
+      getIdentity: () => protonSession === session && protonLink === link ? {
+        actor: session.auth.actor, permission: session.auth.permission, chainId: session.chainId,
+      } : null,
+      // The paired session channel opens only `proton-dev://link` and depends on
+      // push delivery. The parent transport sends the complete sign-only ESR,
+      // which is the path verified against Android WebAuth on XPR Testnet.
+      transact: (args, options) => link.transact(
+        args as Parameters<typeof link.transact>[0],
+        { ...options, chain: session.chainId },
+      ),
+    });
+    ownershipRequests.set(session, request);
+  }
+  return request(challenge, { signal });
 }
 
 export async function loadWebauthSession(): Promise<WebAuthSession | null> {

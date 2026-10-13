@@ -19,6 +19,7 @@ import {
 } from '../../lib/escrows';
 import { listBackendProjects } from '../../lib/jobs';
 import { colors, radius, spacing, typography } from '../../lib/tokens';
+import { useAppTheme } from '../../lib/theme';
 
 const STATUS: Record<MilestoneStatus, { label: string; color: string }> = {
   pending: { label: 'Awaiting work', color: colors.textMuted },
@@ -80,6 +81,7 @@ function AddMilestoneForm({ onAdd }: AddMilestoneFormProps) {
 }
 
 export default function HomeownerMilestones() {
+  useAppTheme();
   const router = useRouter();
   const [sections, setSections] = useState<EscrowSection[]>([]);
   const [isLoading, setIsLoading] = useState(true);

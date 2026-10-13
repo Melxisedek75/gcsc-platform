@@ -15,6 +15,7 @@ import {
 } from '../../lib/escrows';
 import { listBackendProjects } from '../../lib/jobs';
 import { colors, radius, spacing, typography } from '../../lib/tokens';
+import { useAppTheme } from '../../lib/theme';
 
 const STATUS: Record<MilestoneStatus, { label: string; color: string }> = {
   pending: { label: 'Submit work', color: colors.warning },
@@ -30,6 +31,7 @@ interface MilestoneRow extends BackendMilestone {
 }
 
 export default function ContractorMilestones() {
+  useAppTheme();
   const [rows, setRows] = useState<MilestoneRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isBusy, setIsBusy] = useState(false);

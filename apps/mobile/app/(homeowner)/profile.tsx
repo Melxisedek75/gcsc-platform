@@ -10,8 +10,10 @@ import { getCurrentUser, saveSession, getToken } from '../../lib/api';
 import { logout, updateProfile } from '../../lib/auth';
 import { clearSession as clearWebauthSession } from '../../lib/webauth';
 import { colors, spacing, typography } from '../../lib/tokens';
+import { useAppTheme } from '../../lib/theme';
 
 export default function HomeownerProfile() {
+  useAppTheme();
   const router = useRouter();
   const user = getCurrentUser();
   const [busy, setBusy] = useState(false);
@@ -78,7 +80,7 @@ export default function HomeownerProfile() {
         {rows.map((r, i) => (
           <View key={r.label} style={[styles.row, i < rows.length - 1 && styles.divider]}>
             <Text style={[typography.body, { color: colors.text }]}>{r.label}</Text>
-            <Text style={[typography.caption, { color: colors.textMuted }]} numberOfLines={1}>
+            <Text selectable style={[typography.caption, { color: colors.textMuted }]}>
               {r.value}
             </Text>
           </View>
@@ -128,6 +130,6 @@ export default function HomeownerProfile() {
 
 const styles = StyleSheet.create({
   heroRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'center' },
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.md, gap: spacing.md },
+  row: { paddingVertical: spacing.md, gap: spacing.xs },
   divider: { borderBottomWidth: 1, borderBottomColor: colors.border },
 });

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Loader2, ShieldCheck, Building2, CheckCircle2, XCircle } from 'lucide-react';
-import { api, type GcscUserDocument } from '../../services/api';
+import { api, ApiError, type GcscUserDocument } from '../../services/api';
+import { DocumentDownloadButton } from './DocumentDownloadButton';
 import { complianceStatusCopy, documentTypeLabel, formatDate, formatFileSize } from './format';
 
 type DocumentReviewFilter = '' | 'submitted' | 'approved' | 'rejected';
@@ -13,6 +14,7 @@ export function AdminDocumentReviewPanel() {
   const [reviewingId, setReviewingId] = useState<number | null>(null);
   const [reviewNotes, setReviewNotes] = useState<Record<number, string>>({});
   const [status, setStatus] = useState('');
+  const [statusIsError, setStatusIsError] = useState(false);
 
   const loadDocuments = useCallback(async () => {
     setLoading(true);
@@ -21,6 +23,7 @@ export function AdminDocumentReviewPanel() {
       setDocuments(response.documents || []);
       setStatus('');
     } catch (err) {
+      setStatusIsError(true);
       setStatus(err instanceof Error ? err.message : 'Could not load submitted documents');
     } finally {
       setLoading(false);
@@ -34,21 +37,29 @@ export function AdminDocumentReviewPanel() {
   const reviewDocument = async (document: GcscUserDocument, reviewStatus: 'approved' | 'rejected') => {
     const manualNote = (reviewNotes[document.id] || '').trim();
     if (reviewStatus === 'rejected' && !manualNote) {
+      setStatusIsError(true);
       setStatus('Manual note required when rejecting a document.');
       return;
     }
 
     setReviewingId(document.id);
     setStatus('');
+    setStatusIsError(false);
     try {
       await api.reviewDocument(document.id, {
         status: reviewStatus,
         reviewNote: manualNote || 'Approved by admin review.',
+        expectedRevision: document.revision,
       });
       await loadDocuments();
       setReviewNotes((current) => ({ ...current, [document.id]: '' }));
       setStatus(`${documentTypeLabel(document.document_type)} ${reviewStatus}.`);
     } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        await loadDocuments();
+        setReviewNotes((current) => ({ ...current, [document.id]: '' }));
+      }
+      setStatusIsError(true);
       setStatus(err instanceof Error ? err.message : 'Could not save document review');
     } finally {
       setReviewingId(null);
@@ -155,6 +166,7 @@ export function AdminDocumentReviewPanel() {
                     {document.review_note && (
                       <p className="mt-3 text-xs text-[#64748B]">Review note: {document.review_note}</p>
                     )}
+                    <DocumentDownloadButton document={document} />
                   </div>
 
                   <label className="block">
@@ -193,7 +205,7 @@ export function AdminDocumentReviewPanel() {
             })}
           </div>
         )}
-        {status && <p className={`text-sm mt-4 ${status.includes('Could') || status.includes('Unauthorized') ? 'text-[#EF4444]' : 'text-[#10B981]'}`}>{status}</p>}
+        {status && <p role={statusIsError ? 'alert' : 'status'} className={`text-sm mt-4 ${statusIsError ? 'text-[#EF4444]' : 'text-[#10B981]'}`}>{status}</p>}
       </div>
     </motion.div>
   );

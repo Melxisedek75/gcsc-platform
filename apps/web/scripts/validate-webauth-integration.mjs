@@ -1,8 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { readDashboardSource } from './lib/dashboard-source.mjs';
 
-const root = process.cwd();
+const root = fileURLToPath(new URL('../', import.meta.url));
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 const packageJson = JSON.parse(read('package.json'));

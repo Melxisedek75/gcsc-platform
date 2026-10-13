@@ -2,6 +2,73 @@
 
 ## Current review records
 
+Local receiving backend merge445a54b4 passed independent review of tree2c6e986a;
+API f24fdd7d preserves receiving migrations/profile/chat plus backend security and
+private project access. Independent301/301 and guard16/16, parent PG39/39 and
+project16/16 passed. Receiving web merge874153d9 preserves RIVIERA-approved
+tree85957258; full apps/web/src equals b1cda59b and QA equals2e6fc4fa.
+Independent31/31,4/4,selected6/6,2/2, types/lint/static passed. Parent actual
+API/UI/PG FuE0Vg passes five checkpoints with clean exits; reviewer checked
+saved manifests/results, not an independent PG/browser rerun. Two Low provenance
+descriptions were corrected in docs-only8165a19f, with runtime/hash unchanged.
+
+Marketing733e5fda receiving integration tree9d89cb68ddba3cd366fd0b9b3e9ad355baf94cc0
+passed independent RIVIERA review and is preserved exactly in merge d613c440.
+Prior High disclosure and Medium owner-CTA mismatch closed for this local tree.
+Independent parser18/18, static2pages7CTA, provenance22/22 and positive/negative
+source/harness probes pass; parent anchor/role fixtures12/12 and viewport/text8/8
+verified from saved evidence, not independently rerun. Publication fast-forwarded
+locally to d613c440; remote main/live sites untouched. Reviewers and test processes
+closed. Source review does not approve production or real payment.
+Details: BACKEND-RECEIVING-INTEGRATION-REVIEW.md, PAID-PROJECT-DETAILS-REVIEW.md,
+and RIVIERA-MARKETING-REVIEW.md in the receiving checkout.
+
+## Historical source reviews before receiving integration
+
+Marketing candidate `89e7607f` and repair `028b0ff8` have independent RIVIERA
+evidence in `RIVIERA-MARKETING-REVIEW.md` (2026-09-30). Whole integration remains
+CHANGES_REQUIRED against publication code `5166e59f`: inherited privacy disclosure
+and owner-role CTA mismatch remain. Contrast and original validator gaps were
+independently closed; follow-up `733e5fda` independently closed the additional
+Low robots gap (18/18 tests, static/diff exit 0; no new findings in that diff).
+This is not whole-MVP approval, a merge or a deployment.
+
+October-web role candidate `2409c780` received independent RIVIERA
+CHANGES_REQUIRED for two Medium registration identity findings (one new,
+one inherited). Repair `74e5618d` has parent browser10/10 on real components
+with a synthetic API, plus TypeScript/lint/validators exit 0. RIVIERA independently
+approved the exact source repair: both findings closed, probes13/13 and
+TypeScript/auth/diff exit 0. Evidence: `ACCOUNT-ROLE-REVIEW.md`; the receiving
+publication role/privacy blockers remain open until reviewed integration.
+
+Paid-project brief endpoint on backend source SHA-256
+`6e7396beedee0d9d6604b3818eff8ae0b0600f75d6ffd59fe409dc4b5c314653` has
+independent source/local JSON PASS for its 66-line delta only. Reviewer ran31/31;
+parent full Jest285/285 passed. This does not review the entire pre-existing
+dirty backend candidate. Separate QA `011f30c9` confirmed real PostgreSQL18.4:
+14/14 on the same source, test and shutdown exit0; no live payment. Evidence:
+`PAID-PROJECT-DETAILS-REVIEW.md`; checkout/webhook/production remain open.
+
+October-web initial `1f68f2e9` had a confirmed Medium accepted-project read
+regression. Repair `b1cda59b` independently passes RIVIERA source/DOM review,
+including22/22 synthetic HTTP cases and types/lint/static/diff0. Parent final
+build passes. QA `f345b2fd` also proves the scoped actual Edge/ApiClient/API/PG
+journey in `wZruXv`: five checkpoints, synthetic paid grant, real proposal
+persistence/owner read and revoked403/404, clean shutdown. Test-mode loopback
+permission/CORS were explicit; no provider or production acceptance is implied.
+Whole dirty backend review on6e7396be found one Medium legacy posting replay
+regression, not double credit; independent full285/285 passed. Parent added7
+regressions and repaired it, and fixed baseline PostgreSQL wallet-login's missing
+normalizer. Frozen API01613262aaac5529cd11abfe298f9a399c2bd93fe52d22a45becda4973a3dd9a
+passes parent292/292, realPG16/16 (`GkZJSQ`) and final actualbrowser/API/PG1/1,
+five checkpoints (`X3EAmR`), all exit0 and stopped0. Local proof and authority
+fixtures are not actualwallet evidence. Independent final review returned PASS
+for the accumulated backend delta: focused33/33 and exact manifest verified,
+baseline hardening limits retained. Local commits backend`c46bd1b4`, QA`1bceb8f5`
+preserve these hashes. Reviewer context closed. Receiving-tree dry-run identified
+five conflicts, including API code; this is the next integration task, not an
+approval of the combined tree. No merge or release occurred.
+
 The historical import-only status below is preserved as a dated record, not the
 current consolidation decision. Local consolidation/private publication approval
 is in CONSOLIDATION-REVIEW.md. The 2026-09-13 archive/diagnostic successor e8188048

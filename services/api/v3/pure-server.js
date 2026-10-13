@@ -9,16 +9,40 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { parse } = require('url');
+const { TextDecoder } = require('util');
 // P1-2/P1-4: XPR (Antelope/EOSIO) K1 signature verification for wallet ownership proof.
 const { ec: EllipticEC } = require('elliptic');
 const { Numeric: XprNumeric } = require('@proton/js');
 const xprSecp256k1 = new EllipticEC('secp256k1');
+const { createOwnershipChallenge, createOwnershipVerifier } = require('./wallet-ownership-proof.cjs');
+const { createJsonChallengeStore, createPostgresChallengeStore } = require('./wallet-challenge-store.cjs');
 
 const PORT = process.env.PORT || 10000;
-const JWT_SECRET = process.env.JWT_SECRET || 'gcsc-dev-secret-256-bits-minimum-length';
+const BIND_HOST = process.env.BIND_HOST || '0.0.0.0';
+const DEV_JWT_SECRET = 'gcsc-dev-secret-256-bits-minimum-length';
+const UNSAFE_JWT_SECRETS = new Set([
+  'secret', 'changeme', 'password', 'gcsc-dev-secret', DEV_JWT_SECRET,
+  'your-super-secret-jwt-key-min-256-bits',
+]);
+function resolveJwtSecret() {
+  const configured = String(process.env.JWT_SECRET || '').trim();
+  if (configured.length < 32 || UNSAFE_JWT_SECRETS.has(configured.toLowerCase())) {
+    throw new Error('Unsafe JWT_SECRET configuration');
+  }
+  return configured;
+}
+const JWT_SECRET = resolveJwtSecret();
 const DB_FILE = path.join(__dirname, 'gcsc.db');
 const USE_POSTGRES = !!process.env.DATABASE_URL;
+const TEST_MODE = process.env.NODE_ENV === 'test';
+const LOCAL_JSON_DB_ALLOWED = process.env.NODE_ENV === 'development'
+  && process.env.GCSC_ALLOW_LOCAL_JSON_DB === 'true';
+if (!USE_POSTGRES && !TEST_MODE && !LOCAL_JSON_DB_ALLOWED) {
+  throw new Error('DATABASE_URL is required unless local JSON storage is explicitly enabled for development');
+}
+const LEGACY_XPR_JOB_POSTING_ENABLED = process.env.ENABLE_LEGACY_XPR_JOB_POSTING === 'true';
 const XPR_TESTNET_CHAIN_ID = '71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd';
+const WALLET_PROOF_AUDIENCE = process.env.WALLET_PROOF_AUDIENCE || `http://127.0.0.1:${PORT}`;
 const XPR_TX_VERIFIER_ENABLED = process.env.XPR_TX_VERIFIER_ENABLED !== 'false';
 const XPR_TX_VERIFIER_INTERVAL_MS = parseInt(process.env.XPR_TX_VERIFIER_INTERVAL_MS || '300000', 10);
 // Verified 2026-07-15 against the live testnet. Health-checked by real tx lookup,
@@ -220,7 +244,9 @@ function createEmptyDatabase() {
     reviews: [],
     payment_receipts: [],
     lead_tokens: [],
+    project_access_entitlements: [],
     job_posting_payments: [],
+    wallet_challenges: [],
   };
 }
 
@@ -233,12 +259,16 @@ function attachDbHelpers(database) {
 
 function loadDatabase() {
   const database = createEmptyDatabase();
+  if (TEST_MODE) return database;
   if (!fs.existsSync(DB_FILE)) return database;
 
   try {
     const saved = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
     for (const key of Object.keys(database)) {
       if (Array.isArray(saved[key])) database[key] = saved[key];
+    }
+    for (const project of database.projects) {
+      if (!project.updated_at && project.created_at) project.updated_at = project.created_at;
     }
   } catch (err) {
     console.error('[DB] Failed to load database, starting clean:', err.message);
@@ -247,6 +277,7 @@ function loadDatabase() {
 }
 
 function saveDatabase() {
+  if (TEST_MODE) return;
   const plain = {};
   for (const key of Object.keys(createEmptyDatabase())) {
     plain[key] = Array.isArray(db[key]) ? db[key] : [];
@@ -299,300 +330,8 @@ async function withPostgresTransaction(work) {
 
 async function initStorage() {
   if (!USE_POSTGRES) return;
-
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS users (
-      id SERIAL PRIMARY KEY,
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      role TEXT NOT NULL CHECK (role IN ('homeowner', 'contractor', 'admin')),
-      full_name TEXT NOT NULL DEFAULT '',
-      phone TEXT NOT NULL DEFAULT '',
-      profile JSONB NOT NULL DEFAULT '{}'::jsonb,
-      wallet JSONB,
-      is_verified BOOLEAN NOT NULL DEFAULT TRUE,
-      is_active BOOLEAN NOT NULL DEFAULT TRUE,
-      email_verified BOOLEAN NOT NULL DEFAULT FALSE,
-      phone_verified BOOLEAN NOT NULL DEFAULT FALSE,
-      verification_status TEXT NOT NULL DEFAULT 'legacy_unverified',
-      verification_channel TEXT NOT NULL DEFAULT '',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-
-  await queryPostgres(`ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name TEXT NOT NULL DEFAULT ''`);
-  await queryPostgres(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT NOT NULL DEFAULT ''`);
-  await queryPostgres(`ALTER TABLE users ADD COLUMN IF NOT EXISTS profile JSONB NOT NULL DEFAULT '{}'::jsonb`);
-  await queryPostgres(`ALTER TABLE users ADD COLUMN IF NOT EXISTS wallet JSONB`);
-  await queryPostgres(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT TRUE`);
-  await queryPostgres(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE`);
-  await queryPostgres(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT FALSE`);
-  await queryPostgres(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_verified BOOLEAN NOT NULL DEFAULT FALSE`);
-  await queryPostgres(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_status TEXT NOT NULL DEFAULT 'legacy_unverified'`);
-  await queryPostgres(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_channel TEXT NOT NULL DEFAULT ''`);
-  await queryPostgres(`ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_users_email_lower ON users (LOWER(email))`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_users_role ON users (role)`);
-
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS user_documents (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      document_type TEXT NOT NULL,
-      file_name TEXT NOT NULL DEFAULT '',
-      mime_type TEXT NOT NULL DEFAULT '',
-      file_data_url TEXT NOT NULL DEFAULT '',
-      file_size INTEGER NOT NULL DEFAULT 0,
-      file_sha256 TEXT NOT NULL DEFAULT '',
-      status TEXT NOT NULL DEFAULT 'submitted' CHECK (status IN ('submitted', 'approved', 'rejected')),
-      review_note TEXT NOT NULL DEFAULT '',
-      submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      reviewed_at TIMESTAMPTZ,
-      reviewed_by INTEGER,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-
-  await queryPostgres(`ALTER TABLE user_documents ADD COLUMN IF NOT EXISTS file_data_url TEXT NOT NULL DEFAULT ''`);
-  await queryPostgres(`ALTER TABLE user_documents ADD COLUMN IF NOT EXISTS file_size INTEGER NOT NULL DEFAULT 0`);
-  await queryPostgres(`ALTER TABLE user_documents ADD COLUMN IF NOT EXISTS file_sha256 TEXT NOT NULL DEFAULT ''`);
-  await queryPostgres(`ALTER TABLE user_documents ADD COLUMN IF NOT EXISTS review_note TEXT NOT NULL DEFAULT ''`);
-  await queryPostgres(`ALTER TABLE user_documents ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
-  await queryPostgres(`ALTER TABLE user_documents ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ`);
-  await queryPostgres(`ALTER TABLE user_documents ADD COLUMN IF NOT EXISTS reviewed_by INTEGER`);
-  await queryPostgres(`ALTER TABLE user_documents ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
-  await queryPostgres(`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_documents_user_type ON user_documents (user_id, document_type)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_user_documents_status ON user_documents (status)`);
-
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS projects (
-      id SERIAL PRIMARY KEY,
-      homeowner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      title TEXT NOT NULL,
-      description TEXT NOT NULL DEFAULT '',
-      category TEXT NOT NULL DEFAULT 'general',
-      budget_min INTEGER NOT NULL DEFAULT 0,
-      budget_max INTEGER NOT NULL DEFAULT 0,
-      location TEXT NOT NULL DEFAULT '',
-      timeline_days INTEGER NOT NULL DEFAULT 30,
-      status TEXT NOT NULL DEFAULT 'open',
-      escrow_id INTEGER,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS bids (
-      id SERIAL PRIMARY KEY,
-      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-      contractor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      amount INTEGER NOT NULL,
-      proposed_timeline_days INTEGER NOT NULL DEFAULT 30,
-      message TEXT NOT NULL DEFAULT '',
-      status TEXT NOT NULL DEFAULT 'pending',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS escrow_contracts (
-      id SERIAL PRIMARY KEY,
-      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-      homeowner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      contractor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      total_amount INTEGER NOT NULL,
-      status TEXT NOT NULL DEFAULT 'pending',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS milestones (
-      id SERIAL PRIMARY KEY,
-      escrow_id INTEGER NOT NULL REFERENCES escrow_contracts(id) ON DELETE CASCADE,
-      title TEXT NOT NULL DEFAULT '',
-      description TEXT NOT NULL DEFAULT '',
-      amount INTEGER NOT NULL DEFAULT 0,
-      status TEXT NOT NULL DEFAULT 'pending',
-      verified_by TEXT,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS milestone_chain_txs (
-      id SERIAL PRIMARY KEY,
-      milestone_id INTEGER NOT NULL REFERENCES milestones(id) ON DELETE CASCADE,
-      escrow_id INTEGER NOT NULL REFERENCES escrow_contracts(id) ON DELETE CASCADE,
-      action TEXT NOT NULL CHECK (action IN ('submitms', 'approvems', 'releasems', 'disputems')),
-      tx_id TEXT UNIQUE NOT NULL,
-      chain_id TEXT NOT NULL DEFAULT '',
-      contract_account TEXT NOT NULL DEFAULT 'gcscrow1111',
-      actor TEXT NOT NULL DEFAULT '',
-      status TEXT NOT NULL DEFAULT 'broadcast',
-      created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      verified_at TIMESTAMPTZ,
-      verification_error TEXT
-    )
-  `);
-
-  await queryPostgres(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS escrow_id INTEGER`);
-  await queryPostgres(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS published BOOLEAN NOT NULL DEFAULT FALSE`);
-  await queryPostgres(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ`);
-  await queryPostgres(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
-  await queryPostgres(`ALTER TABLE bids ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
-  await queryPostgres(`ALTER TABLE escrow_contracts ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
-  await queryPostgres(`ALTER TABLE milestones ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
-  await queryPostgres(`ALTER TABLE milestone_chain_txs ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'broadcast'`);
-  await queryPostgres(`ALTER TABLE milestone_chain_txs ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ`);
-  await queryPostgres(`ALTER TABLE milestone_chain_txs ADD COLUMN IF NOT EXISTS verification_error TEXT`);
-  await queryPostgres(`
-    UPDATE milestone_chain_txs
-    SET action = CASE action
-      WHEN 'submitmilestone' THEN 'submitms'
-      WHEN 'approvemilestone' THEN 'approvems'
-      WHEN 'releasemilestone' THEN 'releasems'
-      WHEN 'disputemilestone' THEN 'disputems'
-      ELSE action
-    END
-    WHERE action IN ('submitmilestone', 'approvemilestone', 'releasemilestone', 'disputemilestone')
-  `);
-  await queryPostgres(`ALTER TABLE milestone_chain_txs DROP CONSTRAINT IF EXISTS milestone_chain_txs_action_check`);
-  await queryPostgres(`
-    ALTER TABLE milestone_chain_txs
-    ADD CONSTRAINT milestone_chain_txs_action_check
-    CHECK (action IN ('submitms', 'approvems', 'releasems', 'disputems'))
-  `);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_projects_homeowner ON projects (homeowner_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_projects_status ON projects (status)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_bids_project ON bids (project_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_bids_contractor ON bids (contractor_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_escrow_homeowner ON escrow_contracts (homeowner_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_escrow_contractor ON escrow_contracts (contractor_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_milestones_escrow ON milestones (escrow_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_milestone_chain_txs_milestone ON milestone_chain_txs (milestone_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_milestone_chain_txs_escrow ON milestone_chain_txs (escrow_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_milestone_chain_txs_status ON milestone_chain_txs (status)`);
-
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS payment_receipts (
-      id SERIAL PRIMARY KEY,
-      tx_hash TEXT UNIQUE NOT NULL,
-      kind TEXT NOT NULL,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-      from_account TEXT NOT NULL DEFAULT '',
-      amount TEXT NOT NULL,
-      block_num BIGINT,
-      project_id INTEGER REFERENCES projects(id) ON DELETE RESTRICT,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS lead_tokens (
-      id TEXT PRIMARY KEY,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-      tx_hash TEXT UNIQUE NOT NULL,
-      status TEXT NOT NULL DEFAULT 'active',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS job_posting_payments (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE RESTRICT,
-      tx_hash TEXT UNIQUE NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-  // Verification state lives on the receipt so a payment accepted during a history
-  // outage stays visibly unproven until the reconciler settles it.
-  await queryPostgres(`ALTER TABLE payment_receipts ADD COLUMN IF NOT EXISTS verification_status TEXT NOT NULL DEFAULT 'confirmed'`);
-  await queryPostgres(`ALTER TABLE payment_receipts ADD COLUMN IF NOT EXISTS verify_error TEXT NOT NULL DEFAULT ''`);
-  await queryPostgres(`ALTER TABLE payment_receipts ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_payment_receipts_verification ON payment_receipts (verification_status)`);
-  await queryPostgres(`CREATE UNIQUE INDEX IF NOT EXISTS idx_payment_receipts_tx_hash ON payment_receipts (tx_hash)`);
-  await queryPostgres(`CREATE UNIQUE INDEX IF NOT EXISTS idx_lead_tokens_tx_hash ON lead_tokens (tx_hash)`);
-  await queryPostgres(`CREATE UNIQUE INDEX IF NOT EXISTS idx_job_posting_payments_tx_hash ON job_posting_payments (tx_hash)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_payment_receipts_user ON payment_receipts (user_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_job_posting_payments_project ON job_posting_payments (project_id)`);
-
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS stripe_payment_intents (
-      id SERIAL PRIMARY KEY,
-      project_id INTEGER,
-      user_id INTEGER,
-      payment_intent_id TEXT UNIQUE NOT NULL,
-      amount_cents INTEGER NOT NULL DEFAULT 0,
-      currency TEXT NOT NULL DEFAULT 'usd',
-      status TEXT NOT NULL DEFAULT 'requires_payment_method',
-      stripe_mode TEXT NOT NULL DEFAULT 'test',
-      client_secret TEXT NOT NULL DEFAULT '',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-  await queryPostgres(`ALTER TABLE stripe_payment_intents ADD COLUMN IF NOT EXISTS project_id INTEGER`);
-  await queryPostgres(`ALTER TABLE stripe_payment_intents ADD COLUMN IF NOT EXISTS user_id INTEGER`);
-  await queryPostgres(`ALTER TABLE stripe_payment_intents ADD COLUMN IF NOT EXISTS amount_cents INTEGER NOT NULL DEFAULT 0`);
-  await queryPostgres(`ALTER TABLE stripe_payment_intents ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'usd'`);
-  await queryPostgres(`ALTER TABLE stripe_payment_intents ADD COLUMN IF NOT EXISTS stripe_mode TEXT NOT NULL DEFAULT 'test'`);
-  await queryPostgres(`ALTER TABLE stripe_payment_intents ADD COLUMN IF NOT EXISTS client_secret TEXT NOT NULL DEFAULT ''`);
-  await queryPostgres(`ALTER TABLE stripe_payment_intents ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_stripe_payment_intents_project ON stripe_payment_intents (project_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_stripe_payment_intents_user ON stripe_payment_intents (user_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_stripe_payment_intents_status ON stripe_payment_intents (status)`);
-
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS audit_events (
-      id SERIAL PRIMARY KEY,
-      actor_id INTEGER,
-      target_user_id INTEGER,
-      action TEXT NOT NULL,
-      entity_type TEXT NOT NULL DEFAULT '',
-      entity_id INTEGER,
-      metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-      ip_address TEXT NOT NULL DEFAULT '',
-      user_agent TEXT NOT NULL DEFAULT '',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_audit_events_action ON audit_events (action)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_audit_events_actor ON audit_events (actor_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_audit_events_target ON audit_events (target_user_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_audit_events_created ON audit_events (created_at DESC)`);
-
-  await queryPostgres(`
-    CREATE TABLE IF NOT EXISTS financing_prechecks (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      role TEXT NOT NULL CHECK (role IN ('homeowner', 'contractor', 'admin')),
-      product_type TEXT NOT NULL,
-      state TEXT NOT NULL DEFAULT '',
-      context JSONB NOT NULL DEFAULT '{}'::jsonb,
-      safety_acknowledged BOOLEAN NOT NULL DEFAULT FALSE,
-      status TEXT NOT NULL DEFAULT 'demo_precheck',
-      admin_note TEXT NOT NULL DEFAULT '',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-  await queryPostgres(`ALTER TABLE financing_prechecks ADD COLUMN IF NOT EXISTS state TEXT NOT NULL DEFAULT ''`);
-  await queryPostgres(`ALTER TABLE financing_prechecks ADD COLUMN IF NOT EXISTS context JSONB NOT NULL DEFAULT '{}'::jsonb`);
-  await queryPostgres(`ALTER TABLE financing_prechecks ADD COLUMN IF NOT EXISTS safety_acknowledged BOOLEAN NOT NULL DEFAULT FALSE`);
-  await queryPostgres(`ALTER TABLE financing_prechecks ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'demo_precheck'`);
-  await queryPostgres(`ALTER TABLE financing_prechecks ADD COLUMN IF NOT EXISTS admin_note TEXT NOT NULL DEFAULT ''`);
-  await queryPostgres(`ALTER TABLE financing_prechecks ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_financing_prechecks_user ON financing_prechecks (user_id)`);
-  await queryPostgres(`CREATE INDEX IF NOT EXISTS idx_financing_prechecks_status ON financing_prechecks (status)`);
-
+  const { migrateSchema } = require('./database/migrate-schema.cjs');
+  await migrateSchema(getPgPool());
   await ensureBootstrapAdmin();
 }
 
@@ -625,9 +364,9 @@ async function findUserByEmail(email) {
   return db.users.find(u => u.email.toLowerCase() === String(email).toLowerCase()) || null;
 }
 
-async function findUserById(id) {
+async function findUserById(id, query = queryPostgres) {
   if (USE_POSTGRES) {
-    const result = await queryPostgres('SELECT * FROM users WHERE id = $1 LIMIT 1', [id]);
+    const result = await query('SELECT * FROM users WHERE id = $1 LIMIT 1', [id]);
     return normalizeStoredUser(result.rows[0]);
   }
 
@@ -758,6 +497,7 @@ function normalizeDocument(row) {
     mime_type: row.mime_type || '',
     file_size: Number(row.file_size) || 0,
     file_sha256: row.file_sha256 || '',
+    revision: Number(row.revision) || 1,
     status: row.status || 'submitted',
     review_note: row.review_note || '',
     submitted_at: row.submitted_at,
@@ -785,13 +525,17 @@ async function listStoredUserDocuments(userId) {
     .map(normalizeDocument);
 }
 
-async function findStoredUserDocumentById(id) {
+async function findStoredUserDocumentById(id, includeFile = false) {
+  let row;
   if (USE_POSTGRES) {
     const result = await queryPostgres('SELECT * FROM user_documents WHERE id = $1 LIMIT 1', [id]);
-    return normalizeDocument(result.rows[0]);
+    row = result.rows[0];
+  } else {
+    row = db.user_documents.find((doc) => doc.id === Number(id));
   }
-
-  return normalizeDocument(db.user_documents.find((doc) => doc.id === Number(id)));
+  const document = normalizeDocument(row);
+  if (document && includeFile) document.file_data_url = row.file_data_url || '';
+  return document;
 }
 
 async function listStoredDocumentsForReview(status = '') {
@@ -830,6 +574,7 @@ async function upsertStoredUserDocument(user, body) {
         file_data_url = EXCLUDED.file_data_url,
         file_size = EXCLUDED.file_size,
         file_sha256 = EXCLUDED.file_sha256,
+        revision = user_documents.revision + 1,
         status = EXCLUDED.status,
         review_note = EXCLUDED.review_note,
         submitted_at = NOW(),
@@ -857,6 +602,7 @@ async function upsertStoredUserDocument(user, body) {
     Object.assign(existing, {
       ...document,
       id: existing.id,
+      revision: (Number(existing.revision) || 1) + 1,
       submitted_at: new Date().toISOString(),
       reviewed_at: null,
       reviewed_by: null,
@@ -869,6 +615,7 @@ async function upsertStoredUserDocument(user, body) {
   const stored = {
     id: db.nextId('user_documents'),
     ...document,
+    revision: 1,
     submitted_at: new Date().toISOString(),
     reviewed_at: null,
     reviewed_by: null,
@@ -884,15 +631,15 @@ async function reviewStoredUserDocument(document, status, reviewNote, reviewedBy
   if (USE_POSTGRES) {
     const result = await queryPostgres(
       `UPDATE user_documents SET status = $1, review_note = $2, reviewed_by = $3, reviewed_at = NOW(), updated_at = NOW()
-       WHERE id = $4
+       WHERE id = $4 AND revision = $5
        RETURNING *`,
-      [status, reviewNote, reviewedBy, document.id]
+      [status, reviewNote, reviewedBy, document.id, document.revision]
     );
     return normalizeDocument(result.rows[0]);
   }
 
   const stored = db.user_documents.find((doc) => doc.id === Number(document.id));
-  if (!stored) return null;
+  if (!stored || (Number(stored.revision) || 1) !== document.revision) return null;
   stored.status = status;
   stored.review_note = reviewNote;
   stored.reviewed_by = reviewedBy;
@@ -922,7 +669,7 @@ function requestIp(req) {
   return String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket?.remoteAddress || '';
 }
 
-async function recordAuditEvent(req, input) {
+async function recordAuditEvent(req, input, query = queryPostgres) {
   const event = {
     actor_id: input.actorId === undefined ? null : input.actorId,
     target_user_id: input.targetUserId === undefined ? null : input.targetUserId,
@@ -935,7 +682,7 @@ async function recordAuditEvent(req, input) {
   };
 
   if (USE_POSTGRES) {
-    const result = await queryPostgres(
+    const result = await query(
       `INSERT INTO audit_events
         (actor_id, target_user_id, action, entity_type, entity_id, metadata, ip_address, user_agent)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -1255,6 +1002,36 @@ function normalizeProject(row) {
   };
 }
 
+const PUBLIC_PROJECT_CATEGORIES = new Map([
+  ['general', 'General'],
+  ['remodel', 'General Remodel'],
+  ['general remodel', 'General Remodel'],
+  ['kitchen', 'Kitchen Remodel'],
+  ['kitchen remodel', 'Kitchen Remodel'],
+  ['bathroom', 'Bathroom'],
+  ['bathroom remodel', 'Bathroom'],
+  ['roofing', 'Roofing'],
+  ['flooring', 'Flooring'],
+  ['electrical', 'Electrical'],
+  ['plumbing', 'Plumbing'],
+  ['full renovation', 'Full Renovation'],
+  ['new construction', 'New Construction'],
+]);
+
+function publicProjectPreview(project) {
+  const category = PUBLIC_PROJECT_CATEGORIES.get(String(project.category || '').trim().toLowerCase()) || 'General';
+  return {
+    id: project.id,
+    title: `${category} project`,
+    category,
+    budget_min: project.budget_min,
+    budget_max: project.budget_max,
+    timeline_days: project.timeline_days,
+    status: project.status,
+    published_at: project.published_at || null,
+  };
+}
+
 function normalizeBid(row) {
   if (!row) return null;
   return {
@@ -1486,16 +1263,17 @@ async function recordLeadTokenPayment({ txHash, userId, fromAccount, amount, blo
   return { receipt, lead };
 }
 
-async function recordJobPostingPayment({ txHash, userId, fromAccount, amount, blockNum, project }) {
+async function recordJobPostingPayment({ txHash, userId, fromAccount, amount, blockNum, project, verificationStatus = 'confirmed' }) {
   if (USE_POSTGRES) {
     try {
       return await withPostgresTransaction(async (client) => {
         const receiptResult = await client.query(
           `INSERT INTO payment_receipts
-            (tx_hash, kind, user_id, from_account, amount, block_num, project_id)
-           VALUES ($1, 'job-posting', $2, $3, $4, $5, $6)
+            (tx_hash, kind, user_id, from_account, amount, block_num, project_id, verification_status, verified_at)
+           VALUES ($1, 'job-posting', $2, $3, $4, $5, $6, $7,
+             CASE WHEN $7 = 'confirmed' THEN NOW() ELSE NULL END)
            RETURNING *`,
-          [txHash, userId, fromAccount || '', amount, blockNum || null, project.id]
+          [txHash, userId, fromAccount || '', amount, blockNum || null, project.id, verificationStatus]
         );
         const paymentResult = await client.query(
           `INSERT INTO job_posting_payments (user_id, project_id, tx_hash)
@@ -1503,18 +1281,22 @@ async function recordJobPostingPayment({ txHash, userId, fromAccount, amount, bl
            RETURNING *`,
           [userId, project.id, txHash]
         );
-        const projectResult = await client.query(
-          `UPDATE projects
-           SET published = TRUE, published_at = NOW(), updated_at = NOW()
-           WHERE id = $1 AND homeowner_id = $2
-           RETURNING *`,
-          [project.id, userId]
-        );
-        if (!projectResult.rows[0]) throw new Error('Project disappeared during payment processing');
+        let publishedProject = project;
+        let publicationBlocked = false;
+        if (verificationStatus === 'confirmed') {
+          publishedProject = await publishPostgresProjectIfEligible(client, project.id, userId);
+          publicationBlocked = !publishedProject;
+          if (publicationBlocked) {
+            await client.query('UPDATE payment_receipts SET verify_error = $1 WHERE tx_hash = $2',
+              ['publication_blocked_owner_or_project_ineligible', txHash]);
+            publishedProject = project;
+          }
+        }
         return {
           receipt: receiptResult.rows[0],
           payment: paymentResult.rows[0],
-          project: normalizeProject(projectResult.rows[0]),
+          project: publishedProject,
+          publicationBlocked,
         };
       });
     } catch (err) {
@@ -1535,6 +1317,9 @@ async function recordJobPostingPayment({ txHash, userId, fromAccount, amount, bl
     amount,
     block_num: blockNum,
     project_id: project.id,
+    verification_status: verificationStatus,
+    verify_error: '',
+    verified_at: verificationStatus === 'confirmed' ? new Date().toISOString() : null,
     created_at: new Date().toISOString(),
   };
   const payment = {
@@ -1544,11 +1329,14 @@ async function recordJobPostingPayment({ txHash, userId, fromAccount, amount, bl
     tx_hash: txHash,
     created_at: new Date().toISOString(),
   };
-  project.published = true;
-  project.published_at = new Date().toISOString();
+  const publishedProject = verificationStatus === 'confirmed'
+    ? publishJsonProjectIfEligible(project, userId) : null;
+  const publicationBlocked = verificationStatus === 'confirmed' && !publishedProject;
+  if (publicationBlocked) receipt.verify_error = 'publication_blocked_owner_or_project_ineligible';
   db.payment_receipts.push(receipt);
   db.job_posting_payments.push(payment);
-  return { receipt, payment, project };
+  saveDatabase();
+  return { receipt, payment, project: publishedProject || project, publicationBlocked };
 }
 
 // ===== P1-4: WALLET OWNERSHIP PROOF (nonce/challenge + XPR signature) =====
@@ -1630,6 +1418,18 @@ async function verifyXprAccountKey({ accountName, permission, publicKey }) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 8000);
     try {
+      const infoResp = await fetch(`${normalizeEndpoint(node)}/v1/chain/get_info`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+        signal: controller.signal,
+      });
+      if (!infoResp.ok) { lastError = `chain_info_http_${infoResp.status}@${node}`; continue; }
+      const info = await infoResp.json();
+      if (info?.chain_id !== XPR_TESTNET_CHAIN_ID) {
+        lastError = `chain_id_mismatch@${node}`;
+        continue;
+      }
       const resp = await fetch(`${normalizeEndpoint(node)}/v1/chain/get_account`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1664,6 +1464,72 @@ async function verifyXprAccountKey({ accountName, permission, publicKey }) {
 }
 
 _hooks.verifyAccountKey = verifyXprAccountKey;
+_hooks.verifyOwnershipAuthority = async (identity) => {
+  if (identity.chainId !== XPR_TESTNET_CHAIN_ID) return false;
+  const result = await _hooks.verifyAccountKey({
+    accountName: identity.accountName,
+    permission: identity.permission,
+    publicKey: identity.publicKey,
+  });
+  return result?.ok === true;
+};
+
+function walletChallengeStore() {
+  return USE_POSTGRES
+    ? createPostgresChallengeStore({ query: queryPostgres })
+    : createJsonChallengeStore({ database: db, save: saveDatabase });
+}
+
+function walletSessionBinding(req) {
+  const authorization = String(req.headers.authorization || '');
+  if (!authorization.startsWith('Bearer ')) return null;
+  return crypto.createHash('sha256')
+    .update('gcsc-wallet-link-v1\0')
+    .update(authorization.slice(7))
+    .digest('hex');
+}
+
+async function findVerifiedWalletOwner(accountName, permission) {
+  if (USE_POSTGRES) {
+    const result = await queryPostgres(
+      `SELECT * FROM users
+       WHERE is_active = TRUE
+         AND wallet->>'accountName' = $1
+         AND COALESCE(wallet->>'permission', 'active') = $2
+         AND wallet->>'verified' = 'true'
+       ORDER BY id ASC
+       LIMIT 1`,
+      [accountName, permission],
+    );
+    return normalizeStoredUser(result.rows[0]);
+  }
+  return db.users.find(user => user.is_active
+    && user.wallet?.accountName === accountName
+    && (user.wallet.permission || 'active') === permission
+    && user.wallet.verified === true) || null;
+}
+
+async function findUserByVerifiedWallet(accountName, permission) {
+  if (USE_POSTGRES) {
+    const result = await queryPostgres(
+      `SELECT * FROM users
+       WHERE is_active = TRUE
+         AND wallet->>'accountName' = $1
+         AND COALESCE(wallet->>'permission', 'active') = $2
+         AND wallet->>'verified' = 'true'
+       ORDER BY id ASC
+       LIMIT 2`,
+      [accountName, permission],
+    );
+    if (result.rows.length !== 1) return null;
+    return normalizeStoredUser(result.rows[0]);
+  }
+  const matches = db.users.filter(user => user.is_active
+    && user.wallet?.accountName === accountName
+    && (user.wallet.permission || 'active') === permission
+    && user.wallet.verified === true);
+  return matches.length === 1 ? matches[0] : null;
+}
 
 async function getProjectCount() {
   if (USE_POSTGRES) {
@@ -1682,6 +1548,7 @@ async function getCompletedEscrowCount() {
 }
 
 async function createStoredProject(homeownerId, body) {
+  const createdAt = new Date().toISOString();
   const project = {
     homeowner_id: homeownerId,
     title: String(body.title || '').trim(),
@@ -1692,32 +1559,119 @@ async function createStoredProject(homeownerId, body) {
     location: String(body.location || '').trim(),
     timeline_days: normalizeNumber(body.timeline_days, 30),
     status: 'open',
-    created_at: new Date().toISOString(),
+    published: false,
+    published_at: null,
+    created_at: createdAt,
+    updated_at: createdAt,
   };
 
   if (USE_POSTGRES) {
-    const result = await queryPostgres(
-      `INSERT INTO projects (homeowner_id, title, description, category, budget_min, budget_max, location, timeline_days)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING *`,
-      [
-        project.homeowner_id,
-        project.title,
-        project.description,
-        project.category,
-        project.budget_min,
-        project.budget_max,
-        project.location,
-        project.timeline_days,
-      ]
-    );
-    return normalizeProject(result.rows[0]);
+    return withPostgresTransaction(async client => {
+      const owner = await client.query(
+        "SELECT id FROM users WHERE id = $1 AND is_active = TRUE AND role = 'homeowner' FOR SHARE",
+        [homeownerId]
+      );
+      if (owner.rows.length === 0) return null;
+      const result = await client.query(
+        `INSERT INTO projects (homeowner_id, title, description, category, budget_min, budget_max, location, timeline_days)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         RETURNING *`,
+        [
+          project.homeowner_id,
+          project.title,
+          project.description,
+          project.category,
+          project.budget_min,
+          project.budget_max,
+          project.location,
+          project.timeline_days,
+        ]
+      );
+      return normalizeProject(result.rows[0]);
+    });
   }
 
+  const owner = db.users.find(user => user.id === homeownerId);
+  if (!owner?.is_active || owner.role !== 'homeowner') return null;
   const stored = { id: db.nextId('projects'), ...project };
   db.projects.push(stored);
   saveDatabase();
   return stored;
+}
+
+function parseProjectDraftReplacement(body) {
+  const fields = ['title', 'description', 'category', 'budget_min', 'budget_max', 'location', 'timeline_days',
+    'expected_updated_at'];
+  if (!body || typeof body !== 'object' || Array.isArray(body)
+    || Object.keys(body).some(key => !fields.includes(key))
+    || !fields.every(key => Object.hasOwn(body, key))) return null;
+  const text = (value, max, required = false) =>
+    typeof value === 'string' && value.trim().length <= max && (!required || value.trim().length > 0)
+      ? value.trim() : null;
+  const title = text(body.title, 160, true);
+  const description = text(body.description, 10000, true);
+  const category = text(body.category, 80, true);
+  const location = text(body.location, 200);
+  const integer = (value, min, max) => Number.isInteger(value) && value >= min && value <= max;
+  const expectedUpdatedAt = body.expected_updated_at;
+  if (title === null || description === null || category === null || location === null
+    || !integer(body.budget_min, 0, 1000000000) || !integer(body.budget_max, 0, 1000000000)
+    || (body.budget_max > 0 && body.budget_min > body.budget_max)
+    || !integer(body.timeline_days, 1, 3650)
+    || typeof expectedUpdatedAt !== 'string' || !Number.isFinite(Date.parse(expectedUpdatedAt))
+    || new Date(expectedUpdatedAt).toISOString() !== expectedUpdatedAt) return null;
+  return { title, description, category, budget_min: body.budget_min, budget_max: body.budget_max,
+    location, timeline_days: body.timeline_days, expected_updated_at: expectedUpdatedAt };
+}
+
+async function replaceStoredDraftProject(req, projectId, homeownerId, draft) {
+  const audit = {
+    actorId: homeownerId, targetUserId: homeownerId, action: 'project.updated',
+    entityType: 'project', entityId: projectId, metadata: { project_id: projectId },
+  };
+  if (USE_POSTGRES) {
+    return withPostgresTransaction(async client => {
+      const owner = await client.query(
+        "SELECT id FROM users WHERE id = $1 AND is_active = TRUE AND role = 'homeowner' FOR SHARE",
+        [homeownerId]
+      );
+      if (owner.rows.length === 0) return null;
+      const result = await client.query(
+        `UPDATE projects SET title=$3, description=$4, category=$5, budget_min=$6,
+           budget_max=$7, location=$8, timeline_days=$9,
+           updated_at=GREATEST(NOW(), date_trunc('milliseconds', updated_at) + INTERVAL '1 millisecond')
+         WHERE id=$1 AND homeowner_id=$2 AND status='open' AND published=FALSE AND escrow_id IS NULL
+           AND date_trunc('milliseconds', updated_at)=$10::timestamptz
+         RETURNING *`,
+        [projectId, homeownerId, draft.title, draft.description, draft.category, draft.budget_min,
+          draft.budget_max, draft.location, draft.timeline_days, draft.expected_updated_at]
+      );
+      const updated = normalizeProject(result.rows[0]);
+      if (updated) await recordAuditEvent(req, audit, client.query.bind(client));
+      return updated;
+    });
+  }
+  const owner = db.users.find(user => user.id === homeownerId);
+  const project = db.projects.find(item => item.id === projectId);
+  if (!owner?.is_active || owner.role !== 'homeowner' || !project
+    || project.homeowner_id !== homeownerId || project.status !== 'open'
+    || project.published === true || project.escrow_id) return null;
+  if (project.updated_at !== draft.expected_updated_at) return null;
+  const previous = { ...project };
+  const auditCount = db.audit_events.length;
+  const { expected_updated_at, ...fields } = draft;
+  Object.assign(project, fields, {
+    updated_at: new Date(Math.max(Date.now(), Date.parse(expected_updated_at) + 1)).toISOString(),
+  });
+  try {
+    await recordAuditEvent(req, audit);
+  } catch (error) {
+    for (const key of Object.keys(project)) if (!Object.hasOwn(previous, key)) delete project[key];
+    Object.assign(project, previous);
+    db.audit_events.length = auditCount;
+    throw error;
+  }
+  return project;
 }
 
 async function listStoredProjects(filters = {}) {
@@ -1748,22 +1702,61 @@ async function findStoredProjectById(id) {
   return db.projects.find(p => p.id === Number(id)) || null;
 }
 
+async function publishPostgresProjectIfEligible(client, projectId, homeownerId) {
+  const owner = await client.query('SELECT role, is_active FROM users WHERE id = $1 FOR SHARE', [homeownerId]);
+  if (owner.rows[0]?.role !== 'homeowner' || owner.rows[0]?.is_active !== true) return null;
+  const result = await client.query(
+    `UPDATE projects SET published = TRUE, published_at = NOW(), updated_at = NOW()
+     WHERE id = $1 AND homeowner_id = $2 AND status = 'open'
+       AND published = FALSE AND escrow_id IS NULL
+     RETURNING *`,
+    [projectId, homeownerId]
+  );
+  return normalizeProject(result.rows[0]);
+}
+
+function publishJsonProjectIfEligible(project, homeownerId) {
+  const owner = db.users.find(user => user.id === Number(homeownerId));
+  if (!project || !owner?.is_active || owner.role !== 'homeowner' || project.homeowner_id !== Number(homeownerId)
+    || project.status !== 'open' || project.published === true || project.escrow_id) return null;
+  project.published = true;
+  project.published_at = new Date().toISOString();
+  return project;
+}
+
+async function publishStoredProject(project, homeownerId) {
+  if (USE_POSTGRES) {
+    return withPostgresTransaction(client => publishPostgresProjectIfEligible(client, project.id, homeownerId));
+  }
+
+  const published = publishJsonProjectIfEligible(project, homeownerId);
+  if (!published) return null;
+  saveDatabase();
+  return published;
+}
+
 async function listStoredProjectsForUser(user) {
   if (USE_POSTGRES) {
     if (user.role === 'homeowner') {
-      const result = await queryPostgres('SELECT * FROM projects WHERE homeowner_id = $1 ORDER BY created_at DESC', [user.userId]);
+      const result = await queryPostgres(
+        `SELECT p.* FROM projects p
+         JOIN users u ON u.id = $1 AND u.is_active = TRUE AND u.role = 'homeowner'
+         WHERE p.homeowner_id = u.id ORDER BY p.created_at DESC`, [user.userId]);
       return result.rows.map(normalizeProject);
     }
     const result = await queryPostgres(
       `SELECT DISTINCT p.* FROM projects p
-       JOIN bids b ON b.project_id = p.id
-       WHERE b.contractor_id = $1
+       JOIN users u ON u.id = $1 AND u.is_active = TRUE AND u.role = 'contractor'
+       JOIN bids b ON b.project_id = p.id AND b.contractor_id = u.id
        ORDER BY p.created_at DESC`,
       [user.userId]
     );
     return result.rows.map(normalizeProject);
   }
 
+  const currentUser = db.users.find(stored => Number(stored.id) === Number(user.userId));
+  if (!currentUser?.is_active || currentUser.role !== user.role
+    || !['homeowner', 'contractor'].includes(user.role)) return [];
   if (user.role === 'homeowner') return db.projects.filter(p => p.homeowner_id === user.userId);
   const myBidProjectIds = db.bids.filter(b => b.contractor_id === user.userId).map(b => b.project_id);
   return db.projects.filter(p => myBidProjectIds.includes(p.id));
@@ -1781,19 +1774,54 @@ async function createStoredBid(contractorId, body) {
   };
 
   if (USE_POSTGRES) {
-    const result = await queryPostgres(
-      `INSERT INTO bids (project_id, contractor_id, amount, proposed_timeline_days, message)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING *`,
-      [bid.project_id, bid.contractor_id, bid.amount, bid.proposed_timeline_days, bid.message]
-    );
-    return normalizeBid(result.rows[0]);
+    return withPostgresTransaction(async (client) => {
+      const project = await client.query('SELECT * FROM projects WHERE id = $1 FOR UPDATE',
+        [bid.project_id]);
+      const current = project.rows[0];
+      if (!current || current.published !== true || current.status !== 'open' || current.escrow_id) {
+        return { denial: 'project' };
+      }
+      const access = await client.query(
+        `SELECT 1 FROM project_access_entitlements
+         WHERE project_id = $1 AND contractor_id = $2 AND status = 'paid'
+           AND provider_payment_id <> '' AND verified_at IS NOT NULL
+         FOR SHARE`,
+        [bid.project_id, contractorId]
+      );
+      if (!access.rows.length) return { denial: 'access' };
+      const contractorResult = await client.query(
+        'SELECT * FROM users WHERE id = $1 FOR SHARE', [contractorId]
+      );
+      const contractor = normalizeStoredUser(contractorResult.rows[0]);
+      if (!contractor?.is_active || contractor.role !== 'contractor') {
+        return { denial: 'contractor' };
+      }
+      const result = await client.query(
+        `INSERT INTO bids (project_id, contractor_id, amount, proposed_timeline_days, message)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING *`,
+        [bid.project_id, bid.contractor_id, bid.amount, bid.proposed_timeline_days, bid.message]
+      );
+      return { bid: normalizeBid(result.rows[0]) };
+    });
   }
 
+  const currentProject = db.projects.find(project => Number(project.id) === bid.project_id);
+  if (!currentProject || currentProject.published !== true || currentProject.status !== 'open'
+    || currentProject.escrow_id) return { denial: 'project' };
+  const hasAccess = db.project_access_entitlements.some(grant =>
+    Number(grant.project_id) === bid.project_id
+    && Number(grant.contractor_id) === Number(contractorId)
+    && grant.status === 'paid' && !!grant.provider_payment_id && !!grant.verified_at);
+  if (!hasAccess) return { denial: 'access' };
+  const contractor = db.users.find(user => Number(user.id) === Number(contractorId));
+  if (!contractor?.is_active || contractor.role !== 'contractor') {
+    return { denial: 'contractor' };
+  }
   const stored = { id: db.nextId('bids'), ...bid };
   db.bids.push(stored);
   saveDatabase();
-  return stored;
+  return { bid: stored };
 }
 
 async function findStoredBidById(id) {
@@ -1814,12 +1842,300 @@ async function listStoredBidsByProject(projectId) {
 
 async function listStoredBidsForContractor(contractorId) {
   if (USE_POSTGRES) {
-    const result = await queryPostgres('SELECT * FROM bids WHERE contractor_id = $1 ORDER BY created_at DESC', [contractorId]);
+    const result = await queryPostgres(
+      `SELECT b.* FROM bids b
+       JOIN users u ON u.id = $1 AND u.is_active = TRUE AND u.role = 'contractor'
+       WHERE b.contractor_id = u.id ORDER BY b.created_at DESC`, [contractorId]);
     return result.rows.map(normalizeBid);
   }
+  const contractor = db.users.find(user => Number(user.id) === Number(contractorId));
+  if (!contractor?.is_active || contractor.role !== 'contractor') return [];
   return db.bids.filter(b => b.contractor_id === contractorId);
 }
 
+// Chat never falls back to a simulated delivery in the JSON demo database.
+function chatError(status, message) {
+  return Object.assign(new Error(message), { status });
+}
+
+function chatInteger(value, minimum = 1) {
+  if (!/^(0|[1-9]\d*)$/.test(String(value)) || !Number.isSafeInteger(Number(value))
+    || Number(value) < minimum || Number(value) > 2147483647) {
+    throw chatError(400, 'Invalid chat id or cursor');
+  }
+  return Number(value);
+}
+
+function chatPage(req, cursorName, initialCursor) {
+  const params = new URL(req.url, 'http://localhost').searchParams;
+  for (const key of params.keys()) {
+    if (![cursorName, 'limit'].includes(key) || params.getAll(key).length !== 1) {
+      throw chatError(400, 'Invalid pagination');
+    }
+  }
+  const cursor = params.has(cursorName) ? chatInteger(params.get(cursorName), cursorName === 'after' ? 0 : 1) : initialCursor;
+  const limit = params.has('limit') ? chatInteger(params.get('limit')) : 50;
+  if (limit > 100) throw chatError(400, 'Maximum page size is 100');
+  return { cursor, limit };
+}
+
+function parseChatBody(req, allowed) {
+  if (String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase() !== 'application/json') {
+    throw chatError(400, 'Chat requires application/json');
+  }
+  return new Promise((resolve, reject) => {
+    let size = 0;
+    let chunks = [];
+    let failed = false;
+    req.on('data', chunk => {
+      size += chunk.length;
+      if (size > 32768) {
+        failed = true;
+        chunks = [];
+        reject(chatError(413, 'Chat request exceeds 32 KiB'));
+      } else if (!failed) chunks.push(chunk);
+    });
+    req.on('error', reject);
+    req.on('aborted', () => reject(chatError(400, 'Chat request interrupted')));
+    req.on('end', () => {
+      if (failed) return;
+      try {
+        const body = JSON.parse(new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(Buffer.concat(chunks)));
+        if (!body || Array.isArray(body) || typeof body !== 'object'
+          || Object.keys(body).some(key => !allowed.includes(key))) throw new Error('Invalid fields');
+        resolve(body);
+      } catch { reject(chatError(400, 'Invalid chat JSON or fields')); }
+    });
+  });
+}
+
+async function requireChatUser(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+  let user;
+  try {
+    const lookup = USE_POSTGRES
+      ? id => withChatTransaction(client => findUserById(id, client.query.bind(client)))
+      : findUserById;
+    user = await requireActiveUser(req, res, undefined, lookup);
+  } catch (err) {
+    if (!err.status) throw err;
+    json(res, err.status, { error: err.message });
+    return null;
+  }
+  if (!user) return null;
+  if (!['homeowner', 'contractor'].includes(user.role)) {
+    json(res, 403, { error: 'Chat is limited to project participants' });
+    return null;
+  }
+  const limited = checkRateLimit(req, req.method === 'GET' ? 'chat_read' : 'chat_write', `user:${user.id}`);
+  if (limited) {
+    res.setHeader('Retry-After', String(limited.retryAfterSeconds));
+    json(res, 429, { error: 'Too many chat requests', retry_after_seconds: limited.retryAfterSeconds });
+    return null;
+  }
+  if (!USE_POSTGRES) {
+    json(res, 503, { error: 'Chat requires PostgreSQL storage' });
+    return null;
+  }
+  return user;
+}
+
+async function chatRelationship(client, projectId, contractorId, userId) {
+  // Lock the authoritative relationships while a message/history transaction runs.
+  const result = await client.query(`SELECT p.id AS project_id, p.homeowner_id, p.title,
+      p.status AS project_status, b.status AS bid_status, c.id AS contractor_id,
+      h.full_name AS homeowner_name, c.full_name AS contractor_name
+    FROM bids b JOIN projects p ON p.id=b.project_id
+    JOIN users h ON h.id=p.homeowner_id JOIN users c ON c.id=b.contractor_id
+    WHERE p.id=$1 AND c.id=$2 AND (h.id=$3 OR c.id=$3)
+      AND h.role='homeowner' AND c.role='contractor' AND h.is_active AND c.is_active
+    ORDER BY b.id FOR SHARE OF b,p,h,c`, [projectId, contractorId, userId]);
+  if (!result.rowCount) throw chatError(404, 'Conversation not found');
+  return { ...result.rows[0], can_send: result.rows.some(row =>
+    (row.bid_status === 'pending' && row.project_status === 'open')
+    || (row.bid_status === 'accepted' && row.project_status === 'in_progress')) };
+}
+
+function publicChatThread(thread, relationship, userId) {
+  const isOwner = userId === thread.homeowner_id;
+  return {
+    id: thread.id, project_id: thread.project_id, homeowner_id: thread.homeowner_id,
+    contractor_id: thread.contractor_id, title: relationship.title,
+    counterparty: { id: isOwner ? thread.contractor_id : thread.homeowner_id,
+      full_name: isOwner ? relationship.contractor_name : relationship.homeowner_name,
+      role: isOwner ? 'contractor' : 'homeowner' },
+    can_send: relationship.can_send, last_sequence: thread.last_sequence,
+    created_at: thread.created_at, updated_at: thread.updated_at,
+  };
+}
+
+async function lockChatThread(client, threadId, userId, write = false) {
+  const result = await client.query(`SELECT * FROM chat_threads
+    WHERE id=$1 AND (homeowner_id=$2 OR contractor_id=$2) FOR ${write ? 'UPDATE' : 'SHARE'}`, [threadId, userId]);
+  const thread = result.rows[0];
+  if (!thread) throw chatError(404, 'Conversation not found');
+  const relationship = await chatRelationship(client, thread.project_id, thread.contractor_id, userId);
+  if (relationship.homeowner_id !== thread.homeowner_id) throw chatError(404, 'Conversation not found');
+  return { thread, relationship };
+}
+
+async function withChatTransaction(work) {
+  try {
+    return await withPostgresTransaction(async client => {
+      await client.query("SET LOCAL lock_timeout='3s'");
+      await client.query("SET LOCAL statement_timeout='5s'");
+      return work(client);
+    });
+  } catch (err) {
+    if (['55P03', '57014', '40P01'].includes(err.code)) throw chatError(503, 'Chat is temporarily busy; retry with the same message key');
+    throw err;
+  }
+}
+
+async function openChatThread(bidId, userId) {
+  return withChatTransaction(async client => {
+    const bid = (await client.query('SELECT project_id,contractor_id FROM bids WHERE id=$1', [bidId])).rows[0];
+    if (!bid) throw chatError(404, 'Conversation not found');
+    const relationship = await chatRelationship(client, bid.project_id, bid.contractor_id, userId);
+    const params = [bid.project_id, relationship.homeowner_id, bid.contractor_id];
+    const existing = await client.query(`SELECT * FROM chat_threads
+      WHERE project_id=$1 AND homeowner_id=$2 AND contractor_id=$3`, params);
+    if (existing.rowCount) return { thread: publicChatThread(existing.rows[0], relationship, userId), created: false };
+    if (!relationship.can_send) throw chatError(409, 'Conversation is read-only');
+    const inserted = await client.query(`INSERT INTO chat_threads(project_id,homeowner_id,contractor_id)
+      VALUES($1,$2,$3) ON CONFLICT(project_id,homeowner_id,contractor_id) DO NOTHING RETURNING *`, params);
+    const thread = inserted.rows[0] || (await client.query(`SELECT * FROM chat_threads
+      WHERE project_id=$1 AND homeowner_id=$2 AND contractor_id=$3`, params)).rows[0];
+    return { thread: publicChatThread(thread, relationship, userId), created: inserted.rowCount === 1 };
+  });
+}
+
+async function listChatThreads(userId, before, limit) {
+  return withChatTransaction(async client => {
+    const result = await client.query(`SELECT t.*,p.title,h.full_name AS homeowner_name,c.full_name AS contractor_name,
+      EXISTS(SELECT 1 FROM bids b WHERE b.project_id=p.id AND b.contractor_id=c.id
+        AND ((b.status='pending' AND p.status='open') OR (b.status='accepted' AND p.status='in_progress'))) AS can_send
+    FROM chat_threads t JOIN projects p ON p.id=t.project_id AND p.homeowner_id=t.homeowner_id
+    JOIN users h ON h.id=t.homeowner_id JOIN users c ON c.id=t.contractor_id
+    WHERE (t.homeowner_id=$1 OR t.contractor_id=$1) AND ($2::integer IS NULL OR t.id<$2)
+      AND h.role='homeowner' AND c.role='contractor' AND h.is_active AND c.is_active
+      AND EXISTS(SELECT 1 FROM bids b WHERE b.project_id=t.project_id AND b.contractor_id=t.contractor_id)
+    ORDER BY t.id DESC LIMIT $3`, [userId, before, limit + 1]);
+    const threads = result.rows.slice(0, limit).map(row => publicChatThread(row, row, userId));
+    return { threads, has_more: result.rows.length > limit, next_before: threads.at(-1)?.id ?? before };
+  });
+}
+
+async function readChatMessages(threadId, userId, after, limit) {
+  return withChatTransaction(async client => {
+    const { thread, relationship } = await lockChatThread(client, threadId, userId);
+    const result = await client.query(`SELECT * FROM chat_messages WHERE thread_id=$1 AND sequence>$2
+      ORDER BY sequence LIMIT $3`, [threadId, after, limit + 1]);
+    const messages = result.rows.slice(0, limit);
+    return { thread: publicChatThread(thread, relationship, userId), messages,
+      has_more: result.rows.length > limit, next_after: messages.at(-1)?.sequence ?? after };
+  });
+}
+
+async function sendChatMessage(req, threadId, userId, body) {
+  if (typeof body.text !== 'string' || !body.text.trim() || body.text.trim().length > 4000 || body.text.includes('\0')
+    || Buffer.from(body.text, 'utf8').toString('utf8') !== body.text
+    || typeof body.client_message_id !== 'string'
+    || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(body.client_message_id)) {
+    throw chatError(400, 'A UUID client_message_id and 1..4000 text characters are required');
+  }
+  const text = body.text.trim();
+  return withChatTransaction(async client => {
+    // Allocate the cursor under the thread lock, not from a pre-commit global sequence.
+    const { thread, relationship } = await lockChatThread(client, threadId, userId, true);
+    const existing = await client.query(`SELECT * FROM chat_messages
+      WHERE thread_id=$1 AND sender_id=$2 AND client_message_id=$3`, [threadId, userId, body.client_message_id]);
+    if (existing.rowCount) {
+      if (existing.rows[0].text !== text) throw chatError(409, 'Message key already used with different text');
+      return { message: existing.rows[0], duplicate: true };
+    }
+    if (!relationship.can_send) throw chatError(409, 'Conversation is read-only');
+    const result = await client.query(`INSERT INTO chat_messages(thread_id,sequence,sender_id,client_message_id,text)
+      VALUES($1,$2,$3,$4,$5) RETURNING *`, [threadId, thread.last_sequence + 1, userId, body.client_message_id, text]);
+    const message = result.rows[0];
+    await client.query('UPDATE chat_threads SET last_sequence=$2,updated_at=clock_timestamp() WHERE id=$1', [threadId, message.sequence]);
+    await recordAuditEvent(req, { actorId: userId,
+      targetUserId: userId === thread.homeowner_id ? thread.contractor_id : thread.homeowner_id,
+      action: 'chat.message_sent', entityType: 'chat_thread', entityId: threadId,
+      metadata: { message_id: message.id, thread_id: threadId, sequence: message.sequence } }, client.query.bind(client));
+    return { message, duplicate: false };
+  });
+}
+
+async function hasPaidProjectAccess(projectId, contractorId) {
+  if (USE_POSTGRES) {
+    const result = await queryPostgres(
+      `SELECT 1 FROM project_access_entitlements
+       WHERE project_id = $1 AND contractor_id = $2 AND status = 'paid'
+         AND provider_payment_id <> '' AND verified_at IS NOT NULL
+       LIMIT 1`,
+      [projectId, contractorId]
+    );
+    return result.rows.length > 0;
+  }
+  return db.project_access_entitlements.some(grant =>
+    Number(grant.project_id) === Number(projectId)
+    && Number(grant.contractor_id) === Number(contractorId)
+    && grant.status === 'paid'
+    && !!grant.provider_payment_id
+    && !!grant.verified_at);
+}
+
+async function readAuthorizedProjectDetails(projectId, auth) {
+  if (!Number.isSafeInteger(auth.userId) || auth.userId <= 0 || auth.userId > 2147483647
+    || !['homeowner', 'contractor'].includes(auth.role)) return null;
+
+  let project;
+  if (USE_POSTGRES) {
+    // One snapshot binds the returned project to current role, lifecycle and grant.
+    const result = await queryPostgres(
+      `SELECT p.* FROM projects p
+       JOIN users u ON u.id = $2 AND u.is_active = TRUE AND u.role = $3
+       WHERE p.id = $1 AND (
+         (u.role = 'homeowner' AND p.homeowner_id = u.id)
+         OR (u.role = 'contractor' AND p.published = TRUE AND p.status = 'open'
+           AND p.escrow_id IS NULL AND EXISTS (
+             SELECT 1 FROM project_access_entitlements e
+             WHERE e.project_id = p.id AND e.contractor_id = u.id AND e.status = 'paid'
+               AND e.provider_payment_id <> '' AND e.verified_at IS NOT NULL
+           ))
+       ) LIMIT 1`,
+      [projectId, auth.userId, auth.role]
+    );
+    project = normalizeProject(result.rows[0]);
+  } else {
+    const currentUser = db.users.find(user => Number(user.id) === auth.userId);
+    if (!currentUser?.is_active || currentUser.role !== auth.role) return null;
+    project = db.projects.find(row => Number(row.id) === projectId);
+    if (!project) return null;
+    if (auth.role === 'homeowner') {
+      if (Number(project.homeowner_id) !== auth.userId) return null;
+    } else if (project.published !== true || project.status !== 'open' || project.escrow_id
+      || !db.project_access_entitlements.some(grant =>
+        Number(grant.project_id) === projectId && Number(grant.contractor_id) === auth.userId
+        && grant.status === 'paid' && !!grant.provider_payment_id && !!grant.verified_at)) {
+      return null;
+    }
+  }
+  if (!project || auth.role === 'homeowner') return project;
+  // Paid brief only; structured address/contact/attachments have no disclosure policy yet.
+  return {
+    id: project.id,
+    title: project.title,
+    description: project.description,
+    category: project.category,
+    budget_min: project.budget_min,
+    budget_max: project.budget_max,
+    timeline_days: project.timeline_days,
+    status: project.status,
+    published_at: project.published_at || null,
+  };
+}
 function publicContractorProfile(user) {
   const profile = { ...defaultProfile(user.role), ...(user.profile || {}) };
   return {
@@ -1876,12 +2192,15 @@ async function verificationForContractorId(contractorId) {
 }
 
 async function publicContractorDetails(contractorId) {
-  const { contractor, verification } = await verificationForContractorId(contractorId);
-  if (!contractor || contractor.role !== 'contractor') return null;
+  const initial = await findUserById(contractorId);
+  if (!initial) return null;
+  const documents = await listStoredUserDocuments(contractorId);
+  const contractor = await findUserById(contractorId);
+  if (!contractor?.is_active || contractor.role !== 'contractor') return null;
 
   return {
     contractor: publicContractorProfile(contractor),
-    verification,
+    verification: complianceForUser(contractor, documents),
   };
 }
 
@@ -1912,48 +2231,74 @@ async function enrichBidsWithContractors(bids) {
 
 async function acceptStoredBid(bid, project, homeownerId) {
   if (USE_POSTGRES) {
-    // Atomically claim the project (open -> in_progress) so concurrent accepts
-    // of any bid on the same project cannot create a second escrow.
-    const claimed = await queryPostgres(
-      `UPDATE projects SET status = 'in_progress', updated_at = NOW()
-       WHERE id = $1 AND status = 'open'
-       RETURNING id`,
-      [project.id]
-    );
-    if (!claimed.rows.length) return null;
+    const conflict = new Error('Bid or project changed concurrently');
+    try {
+      return await withPostgresTransaction(async (client) => {
+        const claimed = await client.query(
+          `UPDATE projects SET status = 'in_progress', updated_at = NOW()
+           WHERE id = $1 AND homeowner_id = $2 AND status = 'open'
+             AND published = TRUE AND escrow_id IS NULL
+           RETURNING id`,
+          [project.id, homeownerId]
+        );
+        if (!claimed.rows.length) throw conflict;
 
-    const accepted = await queryPostgres(
-      `UPDATE bids SET status = $1, updated_at = NOW()
-       WHERE id = $2 AND status = 'pending'
-       RETURNING *`,
-      ['accepted', bid.id]
-    );
-    if (!accepted.rows.length) {
-      // Compensate: this bid was not pending anymore, release the project claim.
-      await queryPostgres(
-        `UPDATE projects SET status = 'open', updated_at = NOW() WHERE id = $1`,
-        [project.id]
-      );
-      return null;
+        const ownerResult = await client.query(
+          'SELECT * FROM users WHERE id = $1 FOR SHARE', [homeownerId]
+        );
+        const owner = normalizeStoredUser(ownerResult.rows[0]);
+        if (!owner?.is_active || owner.role !== 'homeowner') throw conflict;
+
+        const access = await client.query(
+          `SELECT 1 FROM project_access_entitlements
+           WHERE project_id = $1 AND contractor_id = $2 AND status = 'paid'
+             AND provider_payment_id <> '' AND verified_at IS NOT NULL
+           FOR SHARE`,
+          [project.id, bid.contractor_id]
+        );
+        if (!access.rows.length) throw conflict;
+
+        const contractorResult = await client.query(
+          'SELECT * FROM users WHERE id = $1 FOR SHARE', [bid.contractor_id]
+        );
+        const contractor = normalizeStoredUser(contractorResult.rows[0]);
+        if (!contractor?.is_active || contractor.role !== 'contractor') throw conflict;
+        const documentsResult = await client.query(
+          'SELECT * FROM user_documents WHERE user_id = $1 FOR SHARE', [bid.contractor_id]
+        );
+        if (!complianceForUser(contractor, documentsResult.rows.map(normalizeDocument)).ready_for_bids) {
+          throw conflict;
+        }
+
+        const accepted = await client.query(
+          `UPDATE bids SET status = 'accepted', updated_at = NOW()
+           WHERE id = $1 AND project_id = $2 AND contractor_id = $3 AND status = 'pending'
+           RETURNING *`,
+          [bid.id, project.id, bid.contractor_id]
+        );
+        if (!accepted.rows.length) throw conflict;
+
+        await client.query(
+          `UPDATE bids SET status = 'rejected', updated_at = NOW()
+           WHERE project_id = $1 AND id <> $2 AND status = 'pending'`,
+          [bid.project_id, bid.id]
+        );
+        const escrow = await client.query(
+          `INSERT INTO escrow_contracts (project_id, homeowner_id, contractor_id, total_amount)
+           VALUES ($1, $2, $3, $4)
+           RETURNING *`,
+          [bid.project_id, homeownerId, bid.contractor_id, bid.amount]
+        );
+        await client.query(
+          `UPDATE projects SET escrow_id = $1, updated_at = NOW() WHERE id = $2`,
+          [escrow.rows[0].id, project.id]
+        );
+        return { bid: normalizeBid(accepted.rows[0]), escrow: normalizeEscrow(escrow.rows[0]) };
+      });
+    } catch (err) {
+      if (err === conflict) return null;
+      throw err;
     }
-    await queryPostgres(
-      `UPDATE bids SET status = 'rejected', updated_at = NOW()
-       WHERE project_id = $1 AND id <> $2`,
-      [bid.project_id, bid.id]
-    );
-    const escrow = await queryPostgres(
-      `INSERT INTO escrow_contracts (project_id, homeowner_id, contractor_id, total_amount)
-       VALUES ($1, $2, $3, $4)
-       RETURNING *`,
-      [bid.project_id, homeownerId, bid.contractor_id, bid.amount]
-    );
-    await queryPostgres(
-      `UPDATE projects SET escrow_id = $1, updated_at = NOW()
-       WHERE id = $2
-       RETURNING *`,
-      [escrow.rows[0].id, project.id]
-    );
-    return { bid: normalizeBid(accepted.rows[0]), escrow: normalizeEscrow(escrow.rows[0]) };
   }
 
   if (project.status !== 'open' || bid.status !== 'pending') return null;
@@ -1982,6 +2327,15 @@ async function findStoredEscrowById(id) {
     return normalizeEscrow(result.rows[0]);
   }
   return db.escrow_contracts.find(e => e.id === Number(id)) || null;
+}
+
+async function isAcceptedProjectContractor(project, auth) {
+  if (!auth || !project.escrow_id || !(await hasCurrentRole(auth, 'contractor'))) return false;
+  const escrow = await findStoredEscrowById(project.escrow_id);
+  return !!escrow
+    && Number(escrow.project_id) === Number(project.id)
+    && Number(escrow.homeowner_id) === Number(project.homeowner_id)
+    && Number(escrow.contractor_id) === Number(auth.userId);
 }
 
 async function listStoredEscrowsForUser(userId) {
@@ -2284,9 +2638,13 @@ async function applyPaymentVerdict(receipt, status, error) {
   const leadStatus = status === 'confirmed' ? 'active' : 'revoked';
   if (USE_POSTGRES) {
     await withPostgresTransaction(async (client) => {
+      let publicationBlocked = false;
+      if (receipt.kind === 'job-posting' && status === 'confirmed') {
+        publicationBlocked = !await publishPostgresProjectIfEligible(client, receipt.project_id, receipt.user_id);
+      }
       await client.query(
         `UPDATE payment_receipts SET verification_status = $1, verify_error = $2, verified_at = NOW() WHERE tx_hash = $3`,
-        [status, error || '', receipt.tx_hash]
+        [status, publicationBlocked ? 'publication_blocked_owner_or_project_ineligible' : (error || ''), receipt.tx_hash]
       );
       if (receipt.kind === 'lead-token') {
         await client.query(`UPDATE lead_tokens SET status = $1 WHERE tx_hash = $2`, [leadStatus, receipt.tx_hash]);
@@ -2295,9 +2653,13 @@ async function applyPaymentVerdict(receipt, status, error) {
     return;
   }
   const stored = db.payment_receipts.find(r => r.tx_hash === receipt.tx_hash);
+  const project = receipt.kind === 'job-posting' && status === 'confirmed'
+    ? db.projects.find(p => p.id === Number(receipt.project_id)) : null;
+  const publicationBlocked = receipt.kind === 'job-posting' && status === 'confirmed'
+    && !publishJsonProjectIfEligible(project, receipt.user_id);
   if (stored) {
     stored.verification_status = status;
-    stored.verify_error = error || '';
+    stored.verify_error = publicationBlocked ? 'publication_blocked_owner_or_project_ineligible' : (error || '');
     stored.verified_at = new Date().toISOString();
   }
   if (receipt.kind === 'lead-token') {
@@ -2603,10 +2965,12 @@ function parseDataUrl(value) {
   const input = String(value || '');
   const match = input.match(/^data:([a-z0-9.+/-]+);base64,([a-z0-9+/=]+)$/i);
   if (!match) return null;
+  const buffer = Buffer.from(match[2], 'base64');
+  if (!buffer.length || buffer.toString('base64') !== match[2]) return null;
   return {
     mimeType: match[1].toLowerCase(),
     payload: match[2],
-    buffer: Buffer.from(match[2], 'base64'),
+    buffer,
   };
 }
 
@@ -2655,7 +3019,7 @@ function buildDocumentPayload(user, body) {
     file_size: parsed.buffer.length,
     file_sha256: crypto.createHash('sha256').update(parsed.buffer).digest('hex'),
     status: 'submitted',
-    review_note: cleanString(body.reviewNote || body.review_note, 300),
+    review_note: '',
   };
 }
 
@@ -2756,20 +3120,24 @@ function createTokenForUser(user) {
   return jwtSign({ userId: user.id, email: user.email, role: user.role });
 }
 
+const PROFILE_TEXT_FIELDS = [
+  'companyName', 'businessName', 'ein', 'licenseNumber', 'serviceArea', 'address',
+  'city', 'state', 'zip', 'yearsInBusiness', 'website', 'bio', 'projectNeeds',
+  'propertyAddress', 'propertyType', 'budgetRange'
+];
+const PROFILE_AUDIT_FIELDS = new Set([
+  'fullName', 'full_name', 'phone', ...PROFILE_TEXT_FIELDS, 'specialties', 'wallet'
+]);
+
 function updateProfileFromBody(user, body) {
   const profile = { ...defaultProfile(user.role), ...(user.profile || {}) };
-  const allowedTextFields = [
-    'companyName', 'businessName', 'ein', 'licenseNumber', 'serviceArea', 'address',
-    'city', 'state', 'zip', 'yearsInBusiness', 'website', 'bio', 'projectNeeds',
-    'propertyAddress', 'propertyType', 'budgetRange'
-  ];
 
   if (body.fullName !== undefined || body.full_name !== undefined) {
     user.full_name = cleanString(body.fullName || body.full_name, 120);
   }
   if (body.phone !== undefined) user.phone = cleanString(body.phone, 40);
 
-  for (const field of allowedTextFields) {
+  for (const field of PROFILE_TEXT_FIELDS) {
     if (body[field] !== undefined) profile[field] = cleanString(body[field], field === 'bio' ? 700 : 240);
   }
 
@@ -2842,6 +3210,23 @@ function getUser(req) {
   try { return jwtVerify(token); } catch { return null; }
 }
 
+async function requireActiveUser(req, res, role, lookup = findUserById) {
+  const auth = getUser(req);
+  if (!auth) { json(res, 401, { error: 'Unauthorized' }); return null; }
+  const user = await lookup(auth.userId);
+  if (!user) { json(res, 404, { error: 'User not found' }); return null; }
+  if (!user.is_active) { json(res, 403, { error: 'Account is inactive' }); return null; }
+  // Roles in a still-valid JWT may have been revoked since login.
+  if (role && user.role !== role) { json(res, 403, { error: 'Admin only' }); return null; }
+  return user;
+}
+
+async function hasCurrentRole(auth, role) {
+  if (!auth || auth.role !== role) return false;
+  const user = await findUserById(auth.userId);
+  return !!user?.is_active && user.role === role;
+}
+
 function envInt(name, fallback) {
   const value = parseInt(process.env[name] || '', 10);
   return Number.isFinite(value) && value > 0 ? value : fallback;
@@ -2872,25 +3257,34 @@ function rateLimitConfigForRoute(pattern) {
     },
   };
 
-  if (pattern === 'POST /api/auth/register' || pattern === 'POST /api/auth/login') return { name: 'auth', ...configs.auth };
+  if (pattern === 'POST /api/auth/register' || pattern === 'POST /api/auth/login'
+    || pattern === 'POST /api/auth/wallet/challenge' || pattern === 'POST /api/auth/wallet/verify') {
+    return { name: 'auth', ...configs.auth };
+  }
   if (pattern === 'GET /api/auth/profile' || pattern === 'PUT /api/auth/profile') return { name: 'profile', ...configs.profile };
   if (pattern === 'GET /api/auth/documents' || pattern === 'POST /api/auth/documents') return { name: 'documents', ...configs.documents };
-  if (pattern === 'POST /api/wallet/connect') return { name: 'wallet', ...configs.wallet };
+  if (pattern === 'POST /api/wallet/connect'
+    || pattern === 'POST /api/wallet/ownership/challenge'
+    || pattern === 'POST /api/wallet/ownership/verify') {
+    return { name: 'wallet', ...configs.wallet };
+  }
   if (pattern === 'POST /api/bids/:id/accept') return { name: 'bid_accept', ...configs.bid_accept };
+  if (pattern === 'chat_read' || pattern === 'chat_write') return { name: pattern,
+    max: pattern === 'chat_read' ? 240 : 60, windowMs: 60000 };
   return null;
 }
 
-function clientIdentity(req) {
-  const forwardedFor = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
-  const ip = forwardedFor || req.socket?.remoteAddress || 'unknown';
-  const auth = String(req.headers.authorization || '');
-  const tokenHash = auth.startsWith('Bearer ')
-    ? crypto.createHash('sha256').update(auth.slice(7)).digest('hex').slice(0, 16)
-    : '';
-  return tokenHash ? `${ip}:${tokenHash}` : ip;
+function clientIdentity(req, pattern) {
+  // The process has no configured trusted-proxy boundary. A direct client can
+  // forge X-Forwarded-For; use the transport peer and, outside login, a verified user.
+  const ip = req.socket?.remoteAddress || 'unknown';
+  if (rateLimitConfigForRoute(pattern)?.name === 'auth') return ip;
+  const auth = getUser(req);
+  return Number.isSafeInteger(auth?.userId) && auth.userId > 0
+    ? `${ip}:user:${auth.userId}` : ip;
 }
 
-function checkRateLimit(req, pattern) {
+function checkRateLimit(req, pattern, identity = clientIdentity(req, pattern)) {
   if (process.env.RATE_LIMITS_DISABLED === 'true') return null;
   const config = rateLimitConfigForRoute(pattern);
   if (!config) return null;
@@ -2902,7 +3296,7 @@ function checkRateLimit(req, pattern) {
     }
   }
 
-  const key = `${config.name}:${pattern}:${clientIdentity(req)}`;
+  const key = `${config.name}:${pattern}:${identity}`;
   const current = rateLimitStore.get(key);
   if (!current || current.resetAt <= now) {
     rateLimitStore.set(key, { count: 1, resetAt: now + config.windowMs });
@@ -2924,10 +3318,13 @@ function json(res, status, data) {
   res.end(JSON.stringify(data));
 }
 
-const DEV_ROUTES_ENABLED = process.env.NODE_ENV !== 'production';
+const DEV_ROUTES_ENABLED = TEST_MODE
+  && process.env.ENABLE_DEV_ROUTES === 'true'
+  && !USE_POSTGRES;
 
-function requireDevRoutes(res) {
-  if (DEV_ROUTES_ENABLED) return true;
+function requireDevRoutes(req, res) {
+  const remote = req.socket?.remoteAddress;
+  if (DEV_ROUTES_ENABLED && ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(remote)) return true;
   json(res, 404, { error: 'Not found' });
   return false;
 }
@@ -2936,7 +3333,7 @@ function requireDevRoutes(res) {
 const routes = {
   // Dev helper: get latest OTP for testing
   'GET /api/dev/otp': async (req, res) => {
-    if (!requireDevRoutes(res)) return;
+    if (!requireDevRoutes(req, res)) return;
     const url = new URL(req.url, `http://${req.headers.host}`);
     const email = url.searchParams.get('email');
     if (!email) return json(res, 400, { error: 'Email required' });
@@ -2948,9 +3345,9 @@ const routes = {
   // Dev helper: fabricate a "verified" contractor (profile complete + docs
   // approved + a fake wallet) so the escrow/milestone cycle can be exercised
   // end to end before an admin panel exists to do real document review.
-  // Gated by NODE_ENV so it never runs in production.
+  // Available only for explicitly enabled loopback tests with ephemeral storage.
   'POST /api/dev/verify-contractor': async (req, res) => {
-    if (!requireDevRoutes(res)) return;
+    if (!requireDevRoutes(req, res)) return;
     const body = await parseBody(req);
     const user = await findUserByEmail(body.email);
     if (!user) return json(res, 404, { error: 'User not found' });
@@ -3108,6 +3505,81 @@ const routes = {
   },
 
   // Direct auth API used by the production dashboard
+  'POST /api/auth/wallet/challenge': async (req, res) => {
+    const body = await parseBody(req);
+    const accountName = cleanString(body.accountName || body.account || body.actor, 12).toLowerCase();
+    const permission = cleanString(body.permission || 'active', 12).toLowerCase();
+    if (!/^[a-z1-5](?:[a-z1-5.]{0,10}[a-z1-5])?$/.test(accountName)) {
+      return json(res, 400, { error: 'Valid XPR account name required', code: 'wallet_proof_config_invalid' });
+    }
+    if (!/^[a-z1-5](?:[a-z1-5.]{0,10}[a-z1-5])?$/.test(permission)) {
+      return json(res, 400, { error: 'Valid XPR permission required', code: 'wallet_proof_config_invalid' });
+    }
+    try {
+      const challenge = createOwnershipChallenge({
+        purpose: 'login',
+        audience: WALLET_PROOF_AUDIENCE,
+        chainId: XPR_TESTNET_CHAIN_ID,
+        accountName,
+        permission,
+        sessionBinding: crypto.randomBytes(32).toString('hex'),
+      });
+      await walletChallengeStore().put(challenge);
+      json(res, 200, challenge);
+    } catch (err) {
+      json(res, 503, { error: 'Wallet challenge unavailable', code: err.message || 'wallet_proof_unavailable' });
+    }
+  },
+
+  'POST /api/auth/wallet/verify': async (req, res) => {
+    const body = await parseBody(req);
+    const accountName = cleanString(body.accountName || body.account || body.actor, 12).toLowerCase();
+    const permission = cleanString(body.permission || 'active', 12).toLowerCase();
+    const sessionBinding = cleanString(body.sessionBinding || '', 64).toLowerCase();
+    const context = {
+      purpose: 'login',
+      audience: WALLET_PROOF_AUDIENCE,
+      chainId: XPR_TESTNET_CHAIN_ID,
+      accountName,
+      permission,
+      sessionBinding,
+    };
+    try {
+      const verify = createOwnershipVerifier({
+        store: walletChallengeStore(),
+        verifyAuthority: (identity, signal) => _hooks.verifyOwnershipAuthority(identity, signal),
+      });
+      const identity = await verify(body.proof, context);
+      const user = await findUserByVerifiedWallet(identity.accountName, identity.permission);
+      if (!user) {
+        return json(res, 401, {
+          error: 'Wallet login is not available for this application account',
+          code: 'wallet_login_unavailable',
+        });
+      }
+      const token = jwtSign({ userId: user.id, email: user.email, role: user.role });
+      await recordAuditEvent(req, {
+        actorId: user.id,
+        targetUserId: user.id,
+        action: 'wallet.login',
+        entityType: 'wallet',
+        entityId: user.id,
+        metadata: {
+          accountName: identity.accountName,
+          permission: identity.permission,
+          chainId: identity.chainId,
+          publicKey: identity.publicKey,
+        },
+      });
+      json(res, 200, { message: 'Wallet login verified', token, user: publicUser(user) });
+    } catch (err) {
+      const code = String(err?.message || 'wallet_proof_invalid');
+      const status = code === 'wallet_proof_store_timeout'
+        || code === 'wallet_proof_authority_timeout' ? 503 : 400;
+      json(res, status, { error: 'Wallet proof verification failed', code });
+    }
+  },
+
   'POST /api/auth/register': async (req, res) => {
     const body = await parseBody(req);
     const email = cleanString(body.email, 160).toLowerCase();
@@ -3264,6 +3736,8 @@ const routes = {
   },
 
   'GET /api/auth/profile': async (req, res) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', 'Origin, Authorization');
     const auth = getUser(req);
     if (!auth) return json(res, 401, { error: 'Unauthorized' });
     const user = await findUserById(auth.userId);
@@ -3294,7 +3768,7 @@ const routes = {
       entityType: 'user',
       entityId: user.id,
       metadata: {
-        fields: Object.keys(body || {}).filter((key) => key !== 'logoDataUrl'),
+        fields: Object.keys(body || {}).filter((key) => PROFILE_AUDIT_FIELDS.has(key)),
         profile_completion: publicUser(updatedUser).profile_completion,
       },
     });
@@ -3303,6 +3777,8 @@ const routes = {
   },
 
   'GET /api/auth/documents': async (req, res) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', 'Origin, Authorization');
     const auth = getUser(req);
     if (!auth) return json(res, 401, { error: 'Unauthorized' });
     const user = await findUserById(auth.userId);
@@ -3333,8 +3809,8 @@ const routes = {
         entityId: document.id,
         metadata: {
           document_type: document.document_type,
-          file_name: document.file_name,
           file_sha256: document.file_sha256,
+          revision: document.revision,
           status: document.status,
         },
       });
@@ -3349,7 +3825,39 @@ const routes = {
     }
   },
 
+  'GET /api/auth/documents/:id/file': async (req, res, params) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Vary', 'Origin, Authorization');
+    const user = await requireActiveUser(req, res);
+    if (!user) return;
+    const id = Number(params.id);
+    if (!Number.isSafeInteger(id) || id <= 0) return json(res, 404, { error: 'Document not found' });
+    const document = await findStoredUserDocumentById(id, true);
+    if (!document || (document.user_id !== user.id && user.role !== 'admin')) {
+      return json(res, 404, { error: 'Document not found' });
+    }
+    const rawRevision = parse(req.url, true).query.revision;
+    if (rawRevision === undefined) return json(res, 428, { error: 'Document revision required. Refresh the document list.' });
+    const revision = typeof rawRevision === 'string' && /^[1-9][0-9]*$/.test(rawRevision) ? Number(rawRevision) : 0;
+    if (!Number.isSafeInteger(revision) || revision <= 0) return json(res, 400, { error: 'Invalid document revision' });
+    if (document.revision !== revision) return json(res, 409, { error: 'Document changed. Refresh the document list.' });
+    const parsed = parseDataUrl(document.file_data_url);
+    if (!parsed || !ALLOWED_DOCUMENT_MIME_TYPES.includes(parsed.mimeType)
+      || crypto.createHash('sha256').update(parsed.buffer).digest('hex') !== document.file_sha256) {
+      return json(res, 409, { error: 'Document file is unavailable. Ask the owner to upload it again.' });
+    }
+    await recordAuditEvent(req, {
+      actorId: user.id, targetUserId: document.user_id, action: 'document.downloaded',
+      entityType: 'user_document', entityId: document.id,
+      metadata: { revision: document.revision, file_sha256: document.file_sha256 },
+    });
+    const { file_data_url, ...metadata } = document;
+    json(res, 200, { document: metadata, file_data_url });
+  },
+
   'GET /api/auth/compliance': async (req, res) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', 'Origin, Authorization');
     const auth = getUser(req);
     if (!auth) return json(res, 401, { error: 'Unauthorized' });
     const user = await findUserById(auth.userId);
@@ -3361,6 +3869,102 @@ const routes = {
       ...complianceForUser(user, documents),
       documents,
     });
+  },
+
+  'POST /api/wallet/ownership/challenge': async (req, res) => {
+    const auth = getUser(req);
+    if (!auth) return json(res, 401, { error: 'Unauthorized' });
+    const user = await findUserById(auth.userId);
+    if (!user) return json(res, 404, { error: 'User not found' });
+    if (!user.is_active) return json(res, 403, { error: 'Account is inactive' });
+
+    const body = await parseBody(req);
+    const accountName = cleanString(body.accountName || body.account || body.actor, 12).toLowerCase();
+    const permission = cleanString(body.permission || 'active', 12).toLowerCase();
+    const sessionBinding = walletSessionBinding(req);
+    if (!/^[a-z1-5](?:[a-z1-5.]{0,10}[a-z1-5])?$/.test(accountName)
+      || !/^[a-z1-5](?:[a-z1-5.]{0,10}[a-z1-5])?$/.test(permission)
+      || !sessionBinding) {
+      return json(res, 400, { error: 'Valid wallet identity required', code: 'wallet_proof_config_invalid' });
+    }
+    try {
+      const challenge = createOwnershipChallenge({
+        purpose: 'link',
+        audience: WALLET_PROOF_AUDIENCE,
+        chainId: XPR_TESTNET_CHAIN_ID,
+        accountName,
+        permission,
+        sessionBinding,
+      });
+      await walletChallengeStore().put(challenge);
+      json(res, 200, challenge);
+    } catch (err) {
+      json(res, 503, { error: 'Wallet challenge unavailable', code: err.message || 'wallet_proof_unavailable' });
+    }
+  },
+
+  'POST /api/wallet/ownership/verify': async (req, res) => {
+    const auth = getUser(req);
+    if (!auth) return json(res, 401, { error: 'Unauthorized' });
+    const user = await findUserById(auth.userId);
+    if (!user) return json(res, 404, { error: 'User not found' });
+    if (!user.is_active) return json(res, 403, { error: 'Account is inactive' });
+
+    const body = await parseBody(req);
+    const accountName = cleanString(body.accountName || body.account || body.actor, 12).toLowerCase();
+    const permission = cleanString(body.permission || 'active', 12).toLowerCase();
+    const sessionBinding = walletSessionBinding(req);
+    const context = {
+      purpose: 'link',
+      audience: WALLET_PROOF_AUDIENCE,
+      chainId: XPR_TESTNET_CHAIN_ID,
+      accountName,
+      permission,
+      sessionBinding,
+    };
+    try {
+      const verify = createOwnershipVerifier({
+        store: walletChallengeStore(),
+        verifyAuthority: (identity, signal) => _hooks.verifyOwnershipAuthority(identity, signal),
+      });
+      const identity = await verify(body.proof, context);
+      const existingOwner = await findVerifiedWalletOwner(identity.accountName, identity.permission);
+      if (existingOwner && Number(existingOwner.id) !== Number(user.id)) {
+        return json(res, 409, {
+          error: 'Wallet is already linked to another application account',
+          code: 'wallet_already_linked',
+        });
+      }
+      const wallet = {
+        accountName: identity.accountName,
+        permission: identity.permission,
+        publicKey: identity.publicKey,
+        walletType: 'webauth',
+        verified: true,
+        verifiedAt: new Date().toISOString(),
+        connectedAt: new Date().toISOString(),
+      };
+      const updatedUser = await updateStoredWallet(user, wallet);
+      await recordAuditEvent(req, {
+        actorId: user.id,
+        targetUserId: user.id,
+        action: 'wallet.connected',
+        entityType: 'wallet',
+        entityId: user.id,
+        metadata: {
+          accountName: identity.accountName,
+          permission: identity.permission,
+          chainId: identity.chainId,
+          publicKey: identity.publicKey,
+        },
+      });
+      json(res, 200, { message: 'Wallet ownership verified', wallet, user: publicUser(updatedUser) });
+    } catch (err) {
+      const code = String(err?.message || 'wallet_proof_invalid');
+      const status = code === 'wallet_proof_store_timeout'
+        || code === 'wallet_proof_authority_timeout' ? 503 : 400;
+      json(res, status, { error: 'Wallet proof verification failed', code });
+    }
   },
 
   'POST /api/wallet/challenge': async (req, res) => {
@@ -3424,6 +4028,14 @@ const routes = {
       return json(res, 400, { error: 'Wallet key not authorized on-chain', code: keyCheck.error || 'account_key_unverified' });
     }
 
+    const existingOwner = await findVerifiedWalletOwner(accountName, permission);
+    if (existingOwner && Number(existingOwner.id) !== Number(user.id)) {
+      return json(res, 409, {
+        error: 'Wallet is already linked to another application account',
+        code: 'wallet_already_linked',
+      });
+    }
+
     const wallet = {
       accountName,
       permission,
@@ -3452,6 +4064,8 @@ const routes = {
   },
 
   'GET /api/wallet/me': async (req, res) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', 'Origin, Authorization');
     const auth = getUser(req);
     if (!auth) return json(res, 401, { error: 'Unauthorized' });
     const user = await findUserById(auth.userId);
@@ -3493,6 +4107,8 @@ const routes = {
   },
 
   'GET /api/financing/prechecks': async (req, res) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', 'Origin, Authorization');
     const auth = getUser(req);
     if (!auth) return json(res, 401, { error: 'Unauthorized' });
     const user = await findUserById(auth.userId);
@@ -3504,9 +4120,9 @@ const routes = {
   },
 
   'GET /api/admin/documents': async (req, res) => {
-    const auth = getUser(req);
-    if (!auth) return json(res, 401, { error: 'Unauthorized' });
-    if (auth.role !== 'admin') return json(res, 403, { error: 'Admin only' });
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', 'Origin, Authorization');
+    if (!await requireActiveUser(req, res, 'admin')) return;
 
     const parsed = parse(req.url, true);
     const status = cleanString(parsed.query.status || '', 40);
@@ -3516,9 +4132,9 @@ const routes = {
   },
 
   'GET /api/admin/audit-events': async (req, res) => {
-    const auth = getUser(req);
-    if (!auth) return json(res, 401, { error: 'Unauthorized' });
-    if (auth.role !== 'admin') return json(res, 403, { error: 'Admin only' });
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', 'Origin, Authorization');
+    if (!await requireActiveUser(req, res, 'admin')) return;
 
     const parsed = parse(req.url, true);
     const events = await listStoredAuditEvents({
@@ -3531,9 +4147,9 @@ const routes = {
   },
 
   'GET /api/admin/financing-prechecks': async (req, res) => {
-    const auth = getUser(req);
-    if (!auth) return json(res, 401, { error: 'Unauthorized' });
-    if (auth.role !== 'admin') return json(res, 403, { error: 'Admin only' });
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', 'Origin, Authorization');
+    if (!await requireActiveUser(req, res, 'admin')) return;
 
     const parsed = parse(req.url, true);
     const prechecks = await listFinancingPrechecks({
@@ -3544,11 +4160,12 @@ const routes = {
   },
 
   'PUT /api/admin/documents/:id/review': async (req, res, params) => {
-    const auth = getUser(req);
-    if (!auth) return json(res, 401, { error: 'Unauthorized' });
-    if (auth.role !== 'admin') return json(res, 403, { error: 'Admin only' });
+    const reviewer = await requireActiveUser(req, res, 'admin');
+    if (!reviewer) return;
 
-    const document = await findStoredUserDocumentById(parseInt(params.id));
+    const id = Number(params.id);
+    if (!Number.isSafeInteger(id) || id <= 0) return json(res, 404, { error: 'Document not found' });
+    const document = await findStoredUserDocumentById(id);
     if (!document) return json(res, 404, { error: 'Document not found' });
 
     const body = await parseBody(req);
@@ -3556,22 +4173,30 @@ const routes = {
     if (status !== 'approved' && status !== 'rejected') {
       return json(res, 400, { error: 'Review status must be approved or rejected' });
     }
+    if (body.expectedRevision === undefined) return json(res, 428, { error: 'Document revision required. Refresh the document list.' });
+    if (!Number.isSafeInteger(body.expectedRevision) || body.expectedRevision <= 0) return json(res, 400, { error: 'Invalid document revision' });
+    if (document.revision !== body.expectedRevision) return json(res, 409, { error: 'Document changed. Refresh the document list.' });
+    const reviewNote = cleanString(body.reviewNote || body.review_note, 300);
+    if (status === 'rejected' && !reviewNote) return json(res, 400, { error: 'Rejection reason required' });
 
     const reviewed = await reviewStoredUserDocument(
       document,
       status,
-      cleanString(body.reviewNote || body.review_note, 300),
-      auth.userId || null
+      reviewNote,
+      reviewer.id
     );
+    if (!reviewed) return json(res, 409, { error: 'Document changed. Refresh the document list.' });
     const enrichedDocument = await enrichDocumentWithUser(reviewed);
     await recordAuditEvent(req, {
-      actorId: auth.userId || null,
+      actorId: reviewer.id,
       targetUserId: document.user_id,
       action: 'document.reviewed',
       entityType: 'user_document',
       entityId: document.id,
       metadata: {
         document_type: document.document_type,
+        revision: document.revision,
+        file_sha256: document.file_sha256,
         status: reviewed.status,
         review_note_present: !!reviewed.review_note,
       },
@@ -3665,22 +4290,64 @@ const routes = {
 
   // Get current user
   'GET /api/me': async (req, res) => {
-    const user = getUser(req);
-    if (!user) return json(res, 401, { error: 'Unauthorized' });
-    const u = await findUserById(user.userId);
-    if (!u) return json(res, 404, { error: 'User not found' });
-    json(res, 200, { user: publicUser(u) });
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', 'Origin, Authorization');
+    const user = await requireActiveUser(req, res);
+    if (!user) return;
+    json(res, 200, { user: publicUser(user) });
+  },
+
+  // Private project conversations; native/web consumers integrate separately.
+  'POST /api/chat/threads': async (req, res) => {
+    const user = await requireChatUser(req, res);
+    if (!user) return;
+    try {
+      const body = await parseChatBody(req, ['bid_id']);
+      if (typeof body.bid_id !== 'number') throw chatError(400, 'bid_id must be an integer');
+      const result = await openChatThread(chatInteger(body.bid_id), user.id);
+      json(res, result.created ? 201 : 200, { thread: result.thread });
+    } catch (err) { if (err.status) json(res, err.status, { error: err.message }); else throw err; }
+  },
+
+  'GET /api/chat/threads': async (req, res) => {
+    const user = await requireChatUser(req, res);
+    if (!user) return;
+    try {
+      const { cursor, limit } = chatPage(req, 'before', null);
+      json(res, 200, await listChatThreads(user.id, cursor, limit));
+    } catch (err) { if (err.status) json(res, err.status, { error: err.message }); else throw err; }
+  },
+
+  'GET /api/chat/threads/:id/messages': async (req, res, params) => {
+    const user = await requireChatUser(req, res);
+    if (!user) return;
+    try {
+      const { cursor, limit } = chatPage(req, 'after', 0);
+      json(res, 200, await readChatMessages(chatInteger(params.id), user.id, cursor, limit));
+    } catch (err) { if (err.status) json(res, err.status, { error: err.message }); else throw err; }
+  },
+
+  'POST /api/chat/threads/:id/messages': async (req, res, params) => {
+    const user = await requireChatUser(req, res);
+    if (!user) return;
+    try {
+      const threadId = chatInteger(params.id);
+      const body = await parseChatBody(req, ['text', 'client_message_id']);
+      const result = await sendChatMessage(req, threadId, user.id, body);
+      json(res, result.duplicate ? 200 : 201, result);
+    } catch (err) { if (err.status) json(res, err.status, { error: err.message }); else throw err; }
   },
 
   // Create project
   'POST /api/projects': async (req, res) => {
     const user = getUser(req);
     if (!user) return json(res, 401, { error: 'Unauthorized' });
-    if (user.role !== 'homeowner') return json(res, 403, { error: 'Homeowners only' });
+    if (!(await hasCurrentRole(user, 'homeowner'))) return json(res, 403, { error: 'Homeowners only' });
     
     const body = await parseBody(req);
     if (!body.title || !body.description) return json(res, 400, { error: 'Title and description required' });
     const project = await createStoredProject(user.userId, body);
+    if (!project) return json(res, 403, { error: 'Homeowners only' });
     await recordAuditEvent(req, {
       actorId: user.userId,
       targetUserId: user.userId,
@@ -3689,11 +4356,8 @@ const routes = {
       entityId: project.id,
       metadata: {
         project_id: project.id,
-        title: project.title,
-        category: project.category,
         budget_min: project.budget_min,
         budget_max: project.budget_max,
-        location: project.location,
         timeline_days: project.timeline_days,
         status: project.status,
       },
@@ -3701,47 +4365,194 @@ const routes = {
     json(res, 201, { message: 'Project created', project });
   },
 
+  'PUT /api/projects/:id': async (req, res, params) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    const auth = getUser(req);
+    if (!auth) return json(res, 401, { error: 'Unauthorized' });
+    const projectId = Number(params.id);
+    if (!/^[1-9]\d*$/.test(params.id) || !Number.isSafeInteger(projectId) || projectId > 2147483647) {
+      return json(res, 404, { error: 'Project not found' });
+    }
+    const project = await findStoredProjectById(projectId);
+    if (!project || Number(project.homeowner_id) !== Number(auth.userId)
+      || !(await hasCurrentRole(auth, 'homeowner'))) {
+      return json(res, 404, { error: 'Project not found' });
+    }
+    if (project.status !== 'open' || project.published === true || project.escrow_id) {
+      return json(res, 409, { error: 'Only an open private draft can be edited' });
+    }
+    const draft = parseProjectDraftReplacement(await parseBody(req));
+    if (!draft) return json(res, 400, { error: 'Invalid project draft' });
+    const updated = await replaceStoredDraftProject(req, projectId, auth.userId, draft);
+    if (!updated) return json(res, 409, { error: 'Project changed; refresh and retry' });
+    json(res, 200, { project: updated });
+  },
+
+  'POST /api/projects/:id/publish': async (req, res, params) => {
+    const auth = getUser(req);
+    if (!auth) return json(res, 401, { error: 'Unauthorized' });
+    const projectId = Number(params.id);
+    if (!/^[1-9]\d*$/.test(params.id) || !Number.isSafeInteger(projectId) || projectId > 2147483647) {
+      return json(res, 404, { error: 'Project not found' });
+    }
+    const project = await findStoredProjectById(projectId);
+    if (!project || Number(project.homeowner_id) !== Number(auth.userId)
+      || !(await hasCurrentRole(auth, 'homeowner'))) {
+      return json(res, 404, { error: 'Project not found' });
+    }
+    if (project.status !== 'open' || project.escrow_id) {
+      return json(res, 409, { error: 'Project is not open' });
+    }
+    if (project.published === true) return json(res, 200, { project });
+
+    const published = await publishStoredProject(project, auth.userId);
+    if (!published) return json(res, 409, { error: 'Project changed; refresh and retry' });
+    await recordAuditEvent(req, {
+      actorId: auth.userId,
+      targetUserId: auth.userId,
+      action: 'project.published',
+      entityType: 'project',
+      entityId: published.id,
+      metadata: { project_id: published.id },
+    });
+    json(res, 200, { project: published });
+  },
+
   // List projects
   'GET /api/projects': async (req, res) => {
     const { status, category, location } = parse(req.url, true).query;
-    const projects = await listStoredProjects({ status, category, location });
+    if (location !== undefined) {
+      return json(res, 400, { error: 'Location filtering is unavailable until safe service areas are stored' });
+    }
+    const projects = (await listStoredProjects({ status }))
+      .filter(project => project.published === true && project.status === 'open')
+      .map(publicProjectPreview)
+      .filter(project => !category || project.category.toLowerCase() === String(category).toLowerCase());
     json(res, 200, { projects });
   },
 
   // Get single project
+  'GET /api/projects/:id/details': async (req, res, params) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', [res.getHeader('Vary'), 'Authorization'].filter(Boolean).join(', '));
+    const auth = getUser(req);
+    if (!auth) return json(res, 401, { error: 'Unauthorized' });
+    const projectId = Number(params.id);
+    const validId = /^[1-9]\d*$/.test(params.id)
+      && Number.isSafeInteger(projectId) && projectId <= 2147483647;
+    const project = validId ? await readAuthorizedProjectDetails(projectId, auth) : null;
+    if (!project) {
+      return json(res, 404, { error: 'Project details unavailable', code: 'project_details_unavailable' });
+    }
+    json(res, 200, { project });
+  },
+
   'GET /api/projects/:id': async (req, res, params) => {
-    const project = await findStoredProjectById(parseInt(params.id));
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', [res.getHeader('Vary'), 'Authorization'].filter(Boolean).join(', '));
+    const projectId = Number(params.id);
+    if (!/^[1-9]\d*$/.test(params.id) || !Number.isSafeInteger(projectId) || projectId > 2147483647) {
+      return json(res, 404, { error: 'Project not found' });
+    }
+    const project = await findStoredProjectById(projectId);
     if (!project) return json(res, 404, { error: 'Project not found' });
-    const bids = await enrichBidsWithContractors(await listStoredBidsByProject(parseInt(params.id)));
+    const auth = getUser(req);
+    const isOwner = Number(auth?.userId) === project.homeowner_id
+      && await hasCurrentRole(auth, 'homeowner');
+    const isAcceptedContractor = !isOwner && await isAcceptedProjectContractor(project, auth);
+    if (!isOwner && !isAcceptedContractor) {
+      if (project.published !== true || project.status !== 'open') {
+        return json(res, 404, { error: 'Project not found' });
+      }
+      return json(res, 200, { project: publicProjectPreview(project) });
+    }
+    const storedBids = await listStoredBidsByProject(projectId);
+    const bids = await enrichBidsWithContractors(isOwner
+      ? storedBids
+      : storedBids.filter(bid => Number(bid.contractor_id) === Number(auth.userId)));
+    const stillAuthorized = isOwner
+      ? await hasCurrentRole(auth, 'homeowner')
+      : await isAcceptedProjectContractor(project, auth);
+    if (!stillAuthorized) return json(res, 404, { error: 'Project not found' });
     json(res, 200, { project, bids });
   },
 
   'GET /api/contractors/:id/public': async (req, res, params) => {
-    const details = await publicContractorDetails(parseInt(params.id));
+    res.setHeader('Cache-Control', 'no-store');
+    const contractorId = Number(params.id);
+    if (!/^[1-9]\d*$/.test(params.id) || !Number.isSafeInteger(contractorId) || contractorId > 2147483647) {
+      return json(res, 404, { error: 'Contractor profile not found' });
+    }
+    const details = await publicContractorDetails(contractorId);
     if (!details) return json(res, 404, { error: 'Contractor profile not found' });
     json(res, 200, details);
   },
 
   // My projects
   'GET /api/projects/my/projects': async (req, res) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', [res.getHeader('Vary'), 'Authorization'].filter(Boolean).join(', '));
     const user = getUser(req);
     if (!user) return json(res, 401, { error: 'Unauthorized' });
+    if (!(await hasCurrentRole(user, user.role))) return json(res, 403, { error: 'Account role is not active' });
     const projects = await listStoredProjectsForUser(user);
-    json(res, 200, { projects });
+    const visibleProjects = user.role === 'homeowner'
+      ? projects
+      : (await Promise.all(projects.map(async project => {
+        if (await isAcceptedProjectContractor(project, user)) return project;
+        return project.published === true && project.status === 'open'
+          ? publicProjectPreview(project) : null;
+      }))).filter(Boolean);
+    if (!(await hasCurrentRole(user, user.role))) return json(res, 200, { projects: [] });
+    json(res, 200, {
+      projects: visibleProjects,
+    });
   },
 
   // Place bid
   'POST /api/bids': async (req, res) => {
     const user = getUser(req);
     if (!user) return json(res, 401, { error: 'Unauthorized' });
-    if (user.role !== 'contractor') return json(res, 403, { error: 'Contractors only' });
+    if (!(await hasCurrentRole(user, 'contractor'))) return json(res, 403, { error: 'Contractors only' });
     
     const body = await parseBody(req);
-    if (!body.project_id || !body.amount) return json(res, 400, { error: 'Project ID and amount required' });
-    const project = await findStoredProjectById(parseInt(body.project_id));
-    if (!project) return json(res, 404, { error: 'Project not found' });
+    const projectId = Number(body.project_id);
+    const amount = Number(body.amount);
+    const validProjectInput = typeof body.project_id === 'number'
+      || (typeof body.project_id === 'string' && /^[1-9]\d*$/.test(body.project_id));
+    const validAmountInput = typeof body.amount === 'number'
+      || (typeof body.amount === 'string' && /^[1-9]\d*$/.test(body.amount));
+    if (!validProjectInput || !Number.isSafeInteger(projectId) || projectId <= 0 || projectId > 2147483647
+      || !validAmountInput
+      || !Number.isInteger(amount) || amount <= 0 || amount > 2147483647
+    ) {
+      return json(res, 400, { error: 'Valid project ID and positive amount required' });
+    }
+    const timelineInput = body.proposed_timeline_days;
+    const timelineDays = timelineInput === undefined ? 30 : Number(timelineInput);
+    const validTimelineInput = timelineInput === undefined || typeof timelineInput === 'number'
+      || (typeof timelineInput === 'string' && /^[1-9]\d*$/.test(timelineInput));
+    if (!validTimelineInput || !Number.isInteger(timelineDays) || timelineDays <= 0
+      || timelineDays > 2147483647) {
+      return json(res, 400, { error: 'Valid positive proposal timeline required' });
+    }
+    const project = await findStoredProjectById(projectId);
+    if (!project || project.published !== true || project.status !== 'open' || project.escrow_id) {
+      return json(res, 404, { error: 'Project not found' });
+    }
+    if (!(await hasPaidProjectAccess(project.id, user.userId))) {
+      return json(res, 403, { error: 'Paid access to this project required', code: 'project_access_required' });
+    }
 
-    const bid = await createStoredBid(user.userId, body);
+    const placement = await createStoredBid(user.userId, {
+      ...body, project_id: projectId, amount, proposed_timeline_days: timelineDays,
+    });
+    if (placement.denial === 'project') return json(res, 404, { error: 'Project not found' });
+    if (placement.denial === 'access') {
+      return json(res, 403, { error: 'Paid access to this project required', code: 'project_access_required' });
+    }
+    if (placement.denial === 'contractor') return json(res, 403, { error: 'Contractors only' });
+    const { bid } = placement;
     await recordAuditEvent(req, {
       actorId: user.userId,
       targetUserId: project.homeowner_id,
@@ -3771,13 +4582,18 @@ const routes = {
     
     const project = await findStoredProjectById(bid.project_id);
     if (!project || project.homeowner_id !== user.userId) return json(res, 403, { error: 'Not your project' });
+    if (!(await hasCurrentRole(user, 'homeowner'))) return json(res, 403, { error: 'Homeowners only' });
+    if (project.published !== true) return json(res, 409, { error: 'Project is not published' });
 
-    const { verification } = await verificationForContractorId(bid.contractor_id);
-    if (!verification?.ready_for_bids) {
+    const { contractor: bidContractor, verification } = await verificationForContractorId(bid.contractor_id);
+    if (!bidContractor?.is_active || bidContractor.role !== 'contractor' || !verification?.ready_for_bids) {
       return json(res, 400, {
-        error: 'Contractor must be verified before bid acceptance',
+        error: 'Contractor must be active and verified before bid acceptance',
         contractor_verification: verification,
       });
+    }
+    if (!(await hasPaidProjectAccess(project.id, bid.contractor_id))) {
+      return json(res, 409, { error: 'Contractor no longer has paid access to this project', code: 'project_access_required' });
     }
 
     if (bid.status !== 'pending') return json(res, 400, { error: 'Bid is not pending' });
@@ -3806,14 +4622,19 @@ const routes = {
 
   // My bids
   'GET /api/bids/my/bids': async (req, res) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', [res.getHeader('Vary'), 'Authorization'].filter(Boolean).join(', '));
     const user = getUser(req);
     if (!user) return json(res, 401, { error: 'Unauthorized' });
+    if (!(await hasCurrentRole(user, 'contractor'))) return json(res, 403, { error: 'Contractors only' });
     const bids = await listStoredBidsForContractor(user.userId);
     json(res, 200, { bids });
   },
 
   // Get escrow
   'GET /api/escrow/:id': async (req, res, params) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', [res.getHeader('Vary'), 'Authorization'].filter(Boolean).join(', '));
     const user = getUser(req);
     if (!user) return json(res, 401, { error: 'Unauthorized' });
     
@@ -4074,6 +4895,8 @@ const routes = {
 
   // My escrows
   'GET /api/escrow/my/escrows': async (req, res) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', [res.getHeader('Vary'), 'Authorization'].filter(Boolean).join(', '));
     const user = getUser(req);
     if (!user) return json(res, 401, { error: 'Unauthorized' });
     const escrows = await listStoredEscrowsForUser(user.userId);
@@ -4086,7 +4909,7 @@ const routes = {
   'POST /api/payment/lead-token': async (req, res) => {
     const user = getUser(req);
     if (!user) return json(res, 401, { error: 'Unauthorized' });
-    if (user.role !== 'contractor') return json(res, 403, { error: 'Contractors only' });
+    if (!(await hasCurrentRole(user, 'contractor'))) return json(res, 403, { error: 'Contractors only' });
 
     // Refuse to request funds until the caller's stored ownership proof is valid.
     const leadUser = await findUserById(user.userId);
@@ -4179,7 +5002,13 @@ const routes = {
   'POST /api/payment/job-posting': async (req, res) => {
     const user = getUser(req);
     if (!user) return json(res, 401, { error: 'Unauthorized' });
-    if (user.role !== 'homeowner') return json(res, 403, { error: 'Homeowners only' });
+    if (!LEGACY_XPR_JOB_POSTING_ENABLED) {
+      return json(res, 410, {
+        error: 'Legacy XPR job-posting payments are disabled',
+        code: 'legacy_job_posting_disabled',
+      });
+    }
+    if (!(await hasCurrentRole(user, 'homeowner'))) return json(res, 403, { error: 'Homeowners only' });
 
     const jobUser = await findUserById(user.userId);
     const jobWallet = jobUser && jobUser.wallet && jobUser.wallet.accountName;
@@ -4220,6 +5049,10 @@ const routes = {
       return json(res, 409, { error: 'Payment already processed', tx_hash: txHash });
     }
 
+    if (project.status !== 'open' || project.escrow_id || project.published === true) {
+      return json(res, 400, { error: 'Valid project_id required (must be your own project)' });
+    }
+
     const verify = await _hooks.verifyHyperionTransfer({
       txHash,
       expectedRecipient: PAYMENT_RECIPIENT,
@@ -4233,14 +5066,16 @@ const routes = {
     }
     const verifyPending = !verify.ok && verify.pending === true;
 
+    let posting;
     try {
-      await recordJobPostingPayment({
+      posting = await recordJobPostingPayment({
         txHash,
         userId: user.userId,
         fromAccount: verify.from || jobWallet,
         amount,
         blockNum: verify.block_num || null,
         project,
+        verificationStatus: verifyPending ? 'pending' : 'confirmed',
       });
     } catch (err) {
       if (err && err.status === 409) {
@@ -4254,10 +5089,16 @@ const routes = {
       'Payment-Receipt': `project_id=${projectId}; tx=${txHash}`,
     });
     res.end(JSON.stringify({
-      message: 'Payment confirmed, project published',
+      message: verifyPending
+        ? 'Payment recorded, awaiting on-chain confirmation; project remains unpublished'
+        : posting.publicationBlocked
+          ? 'Payment confirmed, but project remains unpublished; contact support'
+          : 'Payment confirmed, project published',
       project_id: projectId,
       tx_hash: txHash,
-      block_num: verify.block_num,
+      block_num: verify.block_num || null,
+      pending: verifyPending,
+      publication_blocked: posting.publicationBlocked,
     }));
   },
 };
@@ -4334,13 +5175,13 @@ const server = http.createServer(async (req, res) => {
 
 if (require.main === module) {
   initStorage().then(() => {
-    server.listen(PORT, '0.0.0.0', () => {
+    server.listen(PORT, BIND_HOST, () => {
       startChainTxVerifier();
       startPaymentReconciler();
       console.log(`╔══════════════════════════════════════════╗`);
       console.log(`║   GCSC Backend v3.0 — RUNNING            ║`);
       console.log(`║   Port: ${PORT}                            ║`);
-      console.log(`║   Health: http://0.0.0.0:${PORT}/health      ║`);
+      console.log(`║   Health: http://${BIND_HOST}:${PORT}/health      ║`);
       console.log(`║   JWT: custom (zero deps)                ║`);
       console.log(`║   DB: ${USE_POSTGRES ? 'postgres' : 'json-file'}                         ║`);
       console.log(`║   XPR: ${PAYMENT_RECIPIENT}                       ║`);
@@ -4366,3 +5207,5 @@ module.exports.recoverXprPublicKey = recoverXprPublicKey;
 module.exports.issueWalletChallenge = issueWalletChallenge;
 module.exports.consumeWalletChallenge = consumeWalletChallenge;
 module.exports.walletChallengeMessage = walletChallengeMessage;
+module.exports.resolveJwtSecret = resolveJwtSecret;
+module.exports.clientIdentity = clientIdentity;

@@ -1,35 +1,53 @@
-import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
-import { colors, radius, spacing, typography } from '../lib/tokens';
+import { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { HelperText, TextInput, TextInputProps } from 'react-native-paper';
+import { colors, control, radius, typography } from '../lib/tokens';
+import { useAppTheme } from '../lib/theme';
 
-type Props = TextInputProps & {
+type Props = Omit<TextInputProps, 'label'> & {
   label?: string;
   helper?: string;
+  error?: boolean;
 };
 
-export function Input({ label, helper, style, ...rest }: Props) {
+export function Input({ label, helper, error = false, style, secureTextEntry, accessibilityLabel, ...rest }: Props) {
+  useAppTheme();
+  const [passwordVisible, setPasswordVisible] = useState(false);
   return (
     <View style={styles.wrap}>
-      {label ? <Text style={[typography.caption, { color: colors.textMuted }]}>{label}</Text> : null}
       <TextInput
+        mode="outlined"
+        label={label}
+        accessibilityLabel={accessibilityLabel ?? label}
+        error={error}
         placeholderTextColor={colors.textDim}
-        style={[styles.input, style]}
+        style={[styles.input, { backgroundColor: colors.surface }, style]}
+        outlineStyle={styles.outline}
+        contentStyle={[styles.content, { color: colors.text }]}
+        secureTextEntry={Boolean(secureTextEntry && !passwordVisible)}
+        right={secureTextEntry ? (
+          <TextInput.Icon
+            icon={passwordVisible ? 'eye-off-outline' : 'eye-outline'}
+            accessibilityLabel={passwordVisible ? 'Hide password' : 'Show password'}
+            style={styles.passwordToggle}
+            forceTextInputFocus={false}
+            onPress={() => setPasswordVisible((visible) => !visible)}
+          />
+        ) : undefined}
         {...rest}
       />
-      {helper ? <Text style={[typography.micro, { color: colors.textDim }]}>{helper}</Text> : null}
+      {helper ? <HelperText type={error ? 'error' : 'info'} accessibilityLiveRegion="polite">{helper}</HelperText> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: spacing.xs },
+  wrap: { minWidth: 0 },
+  passwordToggle: { width: control.minTouch, height: control.minTouch, margin: 0 },
   input: {
+    minHeight: control.primaryHeight,
     backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    color: colors.text,
-    fontSize: 15,
   },
+  outline: { borderRadius: radius.md },
+  content: { ...typography.body, color: colors.text },
 });

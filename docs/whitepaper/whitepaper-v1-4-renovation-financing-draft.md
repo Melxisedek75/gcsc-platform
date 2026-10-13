@@ -79,6 +79,47 @@ The package is informational and decision-support material. It does not submit a
 
 No step automatically moves funds. Missing evidence, an unresolved dispute, low confidence, conflicting evidence, or a required inspection creates review or block states rather than a positive recommendation.
 
+## Priority Access Marketplace
+
+The planned Priority Access Marketplace gives eligible verified contractors a
+fair, auditable way to compete for a time-limited exclusive opportunity to
+inspect a homeowner project and prepare a proposal. It separates three records:
+the homeowner's Project Opportunity, an XPR-denominated Access Priority Offer,
+and the contractor's Work Proposal. An access offer is not the contractor's
+construction price.
+
+Contractors first see a privacy-safe project preview. After a bounded access
+round, the highest valid offer may receive one exclusive access window. The
+contractor must submit a complete Work Proposal before expiry. Homeowner
+acceptance closes the opportunity and starts the normal contract workflow;
+rejection or expiry can reopen a new access round with an auditable reason.
+
+The design must prevent double grants, indefinite exclusivity, repeated
+homeowner rejection for fee generation, payment replay, account or network
+substitution, and disclosure of homeowner contact data before authorization.
+The recommended pilot uses bounded 1-, 4-, or 12-hour windows and gives the
+homeowner no share of access fees. If a contractor submits a compliant Work
+Proposal but is not awarded the project, the intended policy returns 50% of the
+verified access fee and retains 50% as platform revenue. If that contractor is
+awarded the project, 100% of the access fee is retained as platform revenue.
+Full refunds remain available for defined platform failure, cancellation,
+duplicate settlement, invalid-project, and abuse cases. No-show, abandoned, or
+non-compliant submissions do not automatically qualify for the 50% refund.
+
+XPR may be used for testnet and early wallet integration. Future production
+settlement may use approved fiat-denominated rails, USDC, USDT, or another
+permitted asset after legal, provider, treasury, accounting, custody, and
+security approval. XPR and future GCSC ecosystem tokens may provide staking,
+rewards, membership, access, and other utility benefits under separately
+approved token economics. XPR is not XRP, and neither token may be represented
+as guaranteed yield or investment return.
+
+This capability is a product specification, not a live payment feature. The
+canonical backend state machine and verified chain receipts should precede any
+dedicated transfer-capable smart contract. Real XPR payments require wallet,
+legal, economic, privacy, security, refund, and production approval. The
+detailed internal specification is `docs/product/priority-access-marketplace.md`.
+
 ## AI Decision-Support Layer
 
 ### Renovation Valuation Agent
@@ -140,7 +181,7 @@ This data can improve decision-support models, contractor reputation, project-ri
 | Status | Capability | Boundary |
 |---|---|---|
 | Built or existing | Construction workflow concepts, project records, contractor profiles, bids, milestone documentation, and audit-oriented prototype components | Status varies by module; no claim authorizes live finance or public rollout. |
-| In development | Internal v1.4 documentation, local AI-domain models, fixture-driven simulation, and no-transfer \`gcscrenovate\` design | Demo-only, no external provider or wallet action. |
+| In development | Internal v1.4 documentation, local AI-domain models, fixture-driven simulation, no-transfer \`gcscrenovate\` design, and Priority Access Marketplace specification | Demo-only, no external provider, live XPR, or wallet action. |
 | Long-term vision | Partner-powered underwriting, qualified valuation, licensed escrow and payments, regulated digital settlement, XPR/Metal/FIO/WebAuth integrations | Requires founder, legal, provider, security, licensing, and production approval. |
 
 ## Legal, Financial, and Operational Boundaries

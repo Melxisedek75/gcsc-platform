@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { colors, spacing, typography } from '../lib/tokens';
+import { useAppTheme } from '../lib/theme';
 
 type Props = {
   title: string;
@@ -7,6 +8,7 @@ type Props = {
 };
 
 export function Header({ title, subtitle }: Props) {
+  useAppTheme();
   return (
     <View style={styles.wrap}>
       <Text style={[typography.h1, { color: colors.text }]}>{title}</Text>

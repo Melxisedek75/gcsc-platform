@@ -1,52 +1,108 @@
 [
   {
+    "path": "apps/marketing/index.html",
+    "sourceBlob": "cb8564ebb98cd04d1930993c7af9a0cd54cdce3e",
+    "sha256": "32502c376dea4cfc09ca46753ca31ea58b2f634f97141380dcfcd46a6d2fc96e",
+    "reason": "Replace the historical landing with the reviewed October pilot presentation and homeowner/contractor account CTAs; disclose the AI-generated hero concept image as not a customer project. Financial services remain planned, not live.",
+    "test": "node apps/marketing/validate-static.mjs --test; node apps/marketing/validate-static.mjs; node apps/marketing/verify-browser.cjs; node apps/web/scripts/verify-account-role-browser.cjs --marketing"
+  },
+  {
+    "path": "apps/marketing/whitepaper.html",
+    "sourceBlob": "83087a646e67eccb812a9c32ba2e84f71609d510",
+    "sha256": "0128b2d83207f2c3b0012eceffff73fd9f0bfda287436d9ee28dbd9926b05a71",
+    "reason": "Label the retained historical v1.3 draft, add noindex and align metadata/links with the October candidate; do not publish or substitute internal whitepaper v1.4.",
+    "test": "node apps/marketing/validate-static.mjs --test; node apps/marketing/validate-static.mjs"
+  },
+  {
+    "path": "apps/web/scripts/validate-auth-channel-verification-ui.mjs",
+    "sourceBlob": "fe926fcfa75b86fbbad619adccf900ba12c9e309",
+    "sha256": "3f5b55acf2b869cc8152b0adea4f4b19e25c4cb0fde96b14beace94328361e56",
+    "reason": "Add account-role hint and stale verification-state guards; accept the data-backed hash router needed for private draft navigation blocking. Static checks do not imply provider acceptance.",
+    "test": "npm --prefix apps/web run check:auth-channel-verification-ui; account-role browser regressions"
+  },
+  {
+    "path": "apps/web/src/pages/dashboard/shared.tsx",
+    "sourceBlob": "6bf5d6f7bdd18c820adb75521ed2920618e0e3bc",
+    "sha256": "38aaebfcd38c067e4e50505ecbaee679343bec9e5a84943e4bbee20bdcf05092",
+    "reason": "Add the shared Draft status presentation for owner projects; no payment or identity bypass.",
+    "test": "npm --prefix apps/web run build; paid-project browser regressions"
+  },
+  {
+    "path": "services/api/v3/.env.example",
+    "sourceBlob": "b31347781edc94d63aa66aa7431ef55b0c1e5849",
+    "sha256": "06fe7f19b395b826781d29551df403436bf67be38162d4b007d9d4f6b863fd9a",
+    "reason": "Document the disabled-by-default legacy XPR job-posting charge; October publication is free and enabling legacy billing needs a separate reviewed product decision.",
+    "test": "npm run test:api; node --test tests/migration.test.mjs"
+  },
+  {
+    "path": "apps/web/scripts/validate-webauth-integration.mjs",
+    "sourceBlob": "2883951b3a7e433d54fac0d6e10e78e7e12b0ef6",
+    "sha256": "408051aba74dc488e810715742c8b1fe94ba78e34aec0700942c3e0557115916",
+    "reason": "Resolve the WebAuth static validator app root from its own module, preserving identical checks when invoked from the monorepo or via npm --prefix apps/web. Repair the receiving-tree cwd-dependent root change.",
+    "test": "node --test tests/web-validator-root.test.mjs; npm --prefix apps/web run check:webauth; npm run check"
+  },
+  {
     "path": "services/api/v3/package.json",
     "sourceBlob": "b9cfb0115f8397470f152032fb954155d53064f8",
-    "sha256": "5efe26cf93e70f9051caeb36ddc437755fb8d617bb591c3e55255555eec4d1f0",
-    "reason": "Select pure-server.js for main/start/dev, matching the canonical runtime. No dependency changes.",
-    "test": "node --test tests/migration.test.mjs; witnessed red before correction"
+    "sha256": "07dd90c5b0d8530d2695d8fda45209da8f473e1bfd8000e3d1034dd94c614e2b",
+    "reason": "Select pure-server.js for main/start/dev, matching the canonical runtime. No dependency changes. Expose the canonical SQL exporter instead of the obsolete v2/Express psql sequence; explicit --print-sql never reads database credentials or applies changes.",
+    "test": "npm run check; npm run test:api; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage"
   },
   {
     "path": "services/api/v3/pure-server.js",
     "sourceBlob": "952128e9316fe78bef42dba8ddc7b04eb09e29e5",
-    "sha256": "81852557dcc26816fc177ce0a72e5c7a4901b10b075ca9f8ca12904cc3457f2e",
-    "reason": "Require verified wallet ownership before payment challenges and bid readiness; invalidate changed identity proof; enforce single-key authority threshold and remove the ownership-check environment bypass.",
-    "test": "npm run test:api; reproduced earlier metadata/threshold/bypass failures and 15 pre-payment/bid-readiness regression failures before fixes"
+    "sha256": "68307cd2a1c6cdd2766ce485197137d565419ac0cfa5830f43d82186bd4d3c44",
+    "reason": "Require verified wallet ownership before payment challenges and bid readiness; preserve wallet-first login plus authenticated sign-only binding, single-use challenges and strict XPR Testnet authority checks. Fail closed on JWT configuration, isolate test storage and bind auth limits to the direct peer. Preserve fresh admin ACL, revision-bound document review and PostgreSQL participant chat. Merge October private drafts, free publication, redacted previews, project-specific paid details and transactional bid/accept checks through the canonical shared schema including paid entitlements. Reject malformed legacy project IDs before detail reads or owner publication. Keep personal project, bid-list, escrow-read, document, compliance, profile, wallet, admin review/audit, current-user and financing-precheck responses private and uncacheable, varying by Authorization. Require a currently active account for /api/me and a current contractor role before listing personal bids or issuing a legacy lead-token payment challenge. Bind personal project and bid list SQL to the account's current active role in the same statement as each private read. Recheck and lock the active owner row inside draft creation so a revoked role cannot persist a new project. Keep legacy posting opt-in and replay-safe without publishing pending receipts. Prevent public contractor profiles from being cached after role revocation. Add owner-only full replacement of open private drafts with current-role validation, expected_updated_at conflict guard and transactional PostgreSQL audit; version new and legacy JSON drafts. Require PostgreSQL by default for account storage, allowing JSON only with explicit local development opt-in. Allow explicit loopback bind for local mobile API testing.",
+    "test": "npm run check; npm run test:api; npm run check:integration-contracts; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm run test:postgres:local -- --postgres-bin <installed-bin> --project-draft-edit --api-root <receiving-api-root>; npm --prefix services/api/v3 run test:pg-storage; npm --prefix services/api/v3 run test:pg-workflow; focused project-preview-privacy and project-paid-details Jest tests; isolated project-publication and project-browser PostgreSQL acceptance"
   },
   {
     "path": "services/api/v3/tests/payments-402.test.js",
     "sourceBlob": "db703f6925ddf23794991f56baca83daae18cb86",
-    "sha256": "9cb828d8ecd676e59f3e30bf9bcab8b2f4ce549a6e9653e79c089e613422f23a",
-    "reason": "Positive payment fixtures explicitly represent verified bindings; boot with the legacy false flag to prove ownership checks remain mandatory, including failed lookup and unchanged wallet assertions; isolate JSON database IO.",
+    "sha256": "663323f5681f59b2c94a5d0626c1766cec480652dffb60ac74901d79d294bb21",
+    "reason": "Positive payment fixtures explicitly represent verified bindings; boot with the legacy false flag to prove ownership checks remain mandatory, including failed lookup and unchanged wallet assertions; isolate JSON database IO. Reject inactive or demoted contractors with an old JWT before the legacy lead-token payment challenge.",
     "test": "npm run test:api"
   },
   {
     "path": "services/api/v3/tests/escrow-milestones.test.js",
     "sourceBlob": "21f10e3556473b1ee6f99c552c7973dd1b74b1aa",
-    "sha256": "afa4e326088d2919f0da7a3f42a1308ff8c4aeea7dce93d91788bd8971c17233",
-    "reason": "Positive escrow lifecycle fixtures explicitly model already server-verified wallet bindings; forged metadata rejection is covered separately.",
-    "test": "npm run test:api"
+    "sha256": "88a466ee05cd85acde6f4fcc4fef0023a16be17089f254c2e77b5b2549e36a7b",
+    "reason": "Positive escrow lifecycle fixtures explicitly model already server-verified wallet bindings; forged metadata rejection is covered separately. Isolate JSON fixture IO from the checkout to prevent shared-file EBUSY and accidental data modification. Assert private no-store cache headers for participant escrow reads.",
+    "test": "npm run check; npm run test:api; focused escrow-milestones Jest suite; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage"
   },
   {
     "path": "services/api/v3/tests/postgres-storage-smoke.js",
     "sourceBlob": "2cea20855229da14e3dfbad3de9c2a5e69e5023a",
-    "sha256": "d7d9da8a24b4ae3f5fac3c1993216f86c607237f71eea910f579fa4dcd5d1155",
-    "reason": "Replace ownership bypass with explicit fixture-key RPC; sanitize child environment, use argv for preload, keep fixtures in the worktree, wait for child exit and clean only generated files without recursive deletion.",
-    "test": "npm run test:pg-storage (services/api/v3; fake PostgreSQL and mocked RPC only)"
+    "sha256": "268bb2d48719dbf1ef6dd41815d8bc7ab3568432b6e946dc0880835143795a3b",
+    "reason": "Replace ownership bypass with explicit fixture-key and Testnet chain-identity RPC; sanitize child environment, use argv for preload, retain worktree isolation and wait for child exit. Model canonical expiry cleanup, verified wallet lookup, transaction/client interface and revision-bound document review. Treat the existing empty checkout-binding migration backfill and conflict preflight as no-ops in this fake-PG fixture; real DDL/locking/rollback remain covered by PostgreSQL acceptance. Use the actual bootstrapped admin and count its login toward the peer limit; forged Bearer and forwarded IP must not reset that limit.",
+    "test": "npm run check; npm run test:api; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage; npm --prefix apps/web run build; browser document review smoke"
   },
   {
     "path": "apps/web/src/services/api.ts",
     "sourceBlob": "386771574699c2d98c025c8bcae2e27b91bfa9c9",
-    "sha256": "b2ff8e83ff6643acc12cbbf70c5ba1d45345f3463080a85630eb2f72442c0e79",
-    "reason": "Explicit API origin (existing adaptation) plus typed HTTP status for scoped authentication error handling.",
-    "test": "node --test tests/wallet-restore.test.mjs tests/api-config.test.mjs; regression red witnessed before fix"
+    "sha256": "d2c0a308b55f9f8b9eb4e94cb8becb71b500535f8fb88d70030205271412cb9b",
+    "reason": "Preserve explicit API origin and typed HTTP errors; expose document review, wallet-first challenge/verify and participant chat methods while suppressing stale application JWT headers on unauthenticated wallet routes. Add typed owner draft, publish and project-specific paid-brief methods with current-session requests. Add versioned owner-only private draft replacement request.",
+    "test": "npm run check; npm run test:api; npm run test:web-wallet-login; node scripts/check-chat-ui.mjs; npm run build:web; browser document and chat smoke; account-role and paid-project browser regressions; actual receiving-tree API/PostgreSQL journey"
+  },
+  {
+    "path": "apps/web/src/pages/dashboard/AccountAccess.tsx",
+    "sourceBlob": "6eecb5d7c25b12dcf5091364a945c268d8ed1eca",
+    "sha256": "1211beb63bd838ba47585fccd28d96960832475d8078cdbd25072bc2ff21dbab",
+    "reason": "Add an active WebAuth login command to login mode, reusing the existing status/loading state and the reviewed sign-only wallet-first service; registration and email login remain unchanged. Add role preselection, clear stale verification state on identity edits and lock identity controls during registration.",
+    "test": "npm run test:web-wallet-login; npm run build:web; account-role and paid-project browser regressions; actual receiving-tree API/PostgreSQL journey"
   },
   {
     "path": "apps/mobile/lib/api.ts",
     "sourceBlob": "58ac59c3eb9eb9e959a463f7ffb173999ff62b12",
-    "sha256": "6418ac17b050e9cf9b5336150f3e0bc44b97b734506480609b9639775e099a5a",
-    "reason": "Resolve explicit API origin independently of payments/SDK; remove circular dependency.",
-    "test": "npm run test:api-config; witnessed unsafe no-env fetch before correction"
+    "sha256": "9aebfc16a9792559771da5e526449af34f4fb0db91b2b183fa483dd8d2886ad7",
+    "reason": "Resolve explicit API origin independently of payments/SDK; remove circular dependency. Distinguish transport failures from HTTP account rejection without exposing raw platform network errors.",
+    "test": "npm run test:api-config; node --test tests/mobile-auth-transport.test.mjs; witnessed unsafe no-env fetch before correction"
+  },
+  {
+    "path": "apps/mobile/app/(auth)/sign-up.tsx",
+    "sourceBlob": "ed7076e0df9519ab83e441083401bcd7b950ee19",
+    "sha256": "057437ec1b669f0a977a3d12a408222fce0e990b4fe98a29f76449cb87b201d8",
+    "reason": "Enter the selected role after successful email registration without requiring optional wallet binding; explain uncertain registration outcome when the server cannot be reached.",
+    "test": "node --test tests/mobile-auth-transport.test.mjs; npm run check:mobile-types; physical device registration pending"
   },
   {
     "path": "apps/mobile/lib/payments.ts",
@@ -114,8 +170,302 @@
   {
     "path": "services/api/v3/tests/payment-receipts-postgres.test.js",
     "sourceBlob": "4db2cfe70a631bdf79f12b5dde24d478cecfcd45",
-    "sha256": "dfe95fecf03ee369633b6db93313f7e03ef8115409b4e650da85231bd2a4a687",
+    "sha256": "83b009c8e4b429436bcf4567d86076a3e1213b299200aee591ce116c46ef384a",
     "reason": "Reject non-loopback and non-test PostgreSQL cleanup targets before storage initialization.",
     "test": "node --test tests/local-test-database.test.mjs"
+  },
+  {
+    "path": "docs/whitepaper/whitepaper-v1-4-renovation-financing-changelog.md",
+    "sourceBlob": "97fa1fcae83eedb9d5b5a8da049f14a76567c669",
+    "sha256": "c982a43e0054de2afc7e97b6868f74ef5e4440e3909856f7b571eaa786c7624f",
+    "reason": "Record the internal Priority Access Marketplace design, 100/0 or 50/50 access-fee policy, future settlement direction, and non-live financial boundary in the v1.4 changelog.",
+    "test": "npm test"
+  },
+  {
+    "path": "docs/whitepaper/whitepaper-v1-4-renovation-financing-draft.md",
+    "sourceBlob": "4cc030152dc317babf827fc717102724e0454dc3",
+    "sha256": "d651240f1302602ae1606456af5db6ff0d0908a617dabf1dff818e8950ce162c",
+    "reason": "Add the internal Priority Access Marketplace product model, 100/0 or 50/50 access-fee policy, and future asset roles while preserving wallet, legal, security and production gates.",
+    "test": "npm test"
+  },
+  {
+    "path": "services/api/v3/scripts/check-migration-readiness.mjs",
+    "sourceBlob": "f27b12b5bdd3ac4081b8c4b493fc93bd11538e70",
+    "sha256": "258044fbf972209f04f9ba9eaf4277046b55f5189d97bbb03bc6778cf80e8771",
+    "reason": "Check the canonical runtime/export recipe instead of excluded v2 sources; explicitly report local/static readiness, not production approval.",
+    "test": "npm run check; npm run test:api; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage"
+  },
+  {
+    "path": "services/api/v3/tests/migration-readiness-script.test.js",
+    "sourceBlob": "6ebd65c2bf7af49f408d1dc5459b776217397838",
+    "sha256": "87784b6e17b56c9b5ea2c2bdbd17e5e69cc2f417d6d8c14b75ea89f92529eccf",
+    "reason": "Verify the canonical entrypoints and explicit production limitation; real SQL compatibility is tested separately on isolated PostgreSQL.",
+    "test": "npm run check; npm run test:api; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage"
+  },
+  {
+    "path": "services/api/v3/tests/payment-reconciler.test.js",
+    "sourceBlob": "a645aa4772a5f3d601fb5db886729881b190d8c3",
+    "sha256": "7b75c12f1df535c5f51685d18f73719daab9958215e81ed700856f671d6e9daa",
+    "reason": "Isolate fixture JSON database IO; preserve all payment/reconciliation assertions.",
+    "test": "npm run check; npm run test:api; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage"
+  },
+  {
+    "path": "services/api/v3/tests/postgres-workflow-smoke.js",
+    "sourceBlob": "81ddb88e3f3fa65957478f7191a10d5e9b8720f4",
+    "sha256": "db018f1a078c2958bae3cfed6031de27b6ab1b34659bb81c3e4497f9baa03e3a",
+    "reason": "Model transactional rollback and project-specific paid grants; isolate API, wallet modules, canonical schema and JSON data in retained scratch with sanitized child environment. Model canonical challenge expiry cleanup and fail closed if Checkout binding backfill would need nonempty purchase data. Recognize current-role-bound personal project and bid SQL and filter inactive or role-changed users. Model the active homeowner row check before draft creation. Keep unpaid/unverified acceptance denial and use an explicit previously verified fixture only for the later workflow; no runtime ownership bypass or real settlement.",
+    "test": "node services/api/v3/tests/postgres-workflow-smoke.js; npm run test:api; isolated PostgreSQL project acceptance; node --test tests/migration.test.mjs"
+  },
+  {
+    "path": "apps/web/src/pages/dashboard/AdminDocumentReviewPanel.tsx",
+    "sourceBlob": "673835701b91d2bf9cee52e19a4c00923fb2da23",
+    "sha256": "db8a9e206e83fc4edefd3a05997028e691fb9b434b8ca12be9c4c969c29b050d",
+    "reason": "P3.1: review exactly the displayed revision, reload on conflicts and expose protected file download.",
+    "test": "npm run check; npm run test:api; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage; npm --prefix apps/web run build; browser document review smoke"
+  },
+  {
+    "path": "apps/web/src/pages/dashboard/CompliancePanel.tsx",
+    "sourceBlob": "463461cc013e249442c9262e0590abe21d5c9c45",
+    "sha256": "939eee911716c5fa208c8488ab308ba9e9ba4acbd1124c8af3e2220130b8a9c0",
+    "reason": "P3.1: expose protected download of the owner document revision.",
+    "test": "npm run check; npm run test:api; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm --prefix services/api/v3 run test:pg-storage; npm --prefix apps/web run build; browser document review smoke"
+  },
+  {
+    "path": "apps/mobile/app.json",
+    "sourceBlob": "34e7fb48f1cefe1fffbda1c5ffd28b33a80c5699",
+    "sha256": "2d7eb2eb57be9f0e4f63ac08a7b423225f448cb138354339e7c84c05f8bbf33a",
+    "reason": "Advance the local free-publication candidate to 0.1.6/versionCode 8 so its APK can update code 7 without uninstalling user data. No device acceptance implied. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
+    "test": "node --test tests/mobile-apk.test.mjs; npm run check; npm run test:mobile-design"
+  },
+  {
+    "path": "apps/mobile/package.json",
+    "sourceBlob": "4c492c185d9c189ae5ab919457976b40f381df7c",
+    "sha256": "eeecd4981efd2f3a80a404953c8e6ed88aa30c80138dedaed5ebf2d4a53d00bd",
+    "reason": "Retain Expo native run commands and guarded standalone APK build. Pin Material-compatible React Native Paper and explicitly declare the existing Expo icon family for the mobile design foundation.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; npm run check"
+  },
+  {
+    "path": "apps/mobile/package-lock.json",
+    "sourceBlob": "9b2b588f37c3bb646c10a285f08b665996ca4483",
+    "sha256": "01b384d1809c393f0a99460883d444f6947157947e1d8956090d0338d15f8a48",
+    "reason": "Lock Paper 5.15.3 and its six newly installed packages without unrelated upgrades; installation disabled lifecycle scripts.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; npm run check"
+  },
+  {
+    "path": "apps/mobile/app/(auth)/sign-in.tsx",
+    "sourceBlob": "67b9f324ea5fb59de86c7c8fb56a8588d4bb3671",
+    "sha256": "3c7fc5c456a895cb2913d3e28697fd3683f8b875eccfac74384b797a60f561b6",
+    "reason": "Preserve accessible email login and activate the previously absent WebAuth command through the reviewed wallet-first challenge/sign/verify flow; no payment or broadcast action is used. Email login reaches role jobs without forcing optional wallet binding; wallet proof remains required for wallet login.",
+    "test": "npm run test:wallet-login-client; npm run test:wallet-proof-client; npm run check:mobile-types; physical WebAuth acceptance remains open"
+  },
+  {
+    "path": "apps/mobile/app/(contractor)/_layout.tsx",
+    "sourceBlob": "f9536c49791c370015635d2e0424ce1080478a0c",
+    "sha256": "38e2ff20b26d193c9b815cd549564b7288e120e04e02061c0e72fcdb4c0f8da3",
+    "reason": "Use shared accessible role tabs with real icons and explicit hidden detail routes; retain all existing route files.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/app/(homeowner)/_layout.tsx",
+    "sourceBlob": "9ff26f42b838d6a8047c572b53f0dcef901a52c1",
+    "sha256": "d29426a518b9ddddd1fc2c84703c58197f1a4f5dfd65fb534e1c137cd1ca8355",
+    "reason": "Use shared accessible role tabs with real icons and explicit hidden detail routes; retain all existing route files.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/app/_layout.tsx",
+    "sourceBlob": "41af3e10e5fe6a1cb594a835e297ee3332c30f77",
+    "sha256": "38b39166a9b8259caa3b9a58a0e5ac1344f970767ccc1d92c1f812ee9e7dad34",
+    "reason": "Retain diagnostic hydration guard while clearing saved app credentials only for confirmed profile authorization failures; show retry on transient network, server, or timeout errors. Restore email-only users to role jobs after wallet setup was skipped. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
+    "test": "node --test tests/mobile-session-restore.test.mjs; npm run check:mobile-types; npm run check; npm run test:mobile-design"
+  },
+  {
+    "path": "apps/mobile/app/(contractor)/profile.tsx",
+    "sourceBlob": "7c2445c10ba77a8aae3422be637b52983832e509",
+    "sha256": "ea7778899d152d0e0813992d6d502167ca4b4dff745ee95adec344a1fa728b47",
+    "reason": "Remove the fictional shared review score and show unavailable reviews honestly; wrap selectable account/profile values without changing account actions. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/components/Avatar.tsx",
+    "sourceBlob": "b4f7789fe82d125c1a72571cd0586de0fa560375",
+    "sha256": "e66616a9d9b2e738dd93140bbd4dcc523a0d4f8642b330bb211dd359a9dc3e33",
+    "reason": "Use contrasting on-brand initials with the shared light palette.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/components/Badge.tsx",
+    "sourceBlob": "1ea8668dacadf45537fd0637ad00ea3701177309",
+    "sha256": "eff29d5710353c6ffecff5f113d2a794eb54c0351f0d6adc3e0a1565efce12f0",
+    "reason": "Use contrasting badge text and normal letter spacing with the shared light palette. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/components/Button.tsx",
+    "sourceBlob": "0184a22a2c72e0961289f981c51a7d05843141c5",
+    "sha256": "8630980d812e2ee971b723b5525402b65ec7858681a34aa198c6f6c03b6e91cf",
+    "reason": "Use Material ripple/loading primitives, accessible disabled/busy state, a 56dp minimum and wrapping labels without changing consumers' callbacks. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/components/Input.tsx",
+    "sourceBlob": "e0ad54bc96bab1726d6cda1d5fea6d6e6454fd79",
+    "sha256": "3d2d00b251a787897b7e53f8dc5aa35f0b8ef72e98f953a5c173eee1fd207bd3",
+    "reason": "Adopt outlined Material input with labels, helper state, focus and explicit password visibility; preserve controlled value callbacks. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; browser UI verification in MOBILE-DESIGN.md"
+  },
+  {
+    "path": "apps/mobile/components/Screen.tsx",
+    "sourceBlob": "39271b0a6db5042e7afd9e4eb02e04adbded2b85",
+    "sha256": "5845a706b95eeba2c09c0d5384573983d01e7c36b4d08fa38e8fb8be720d7299",
+    "reason": "Constrain wide content and provide keyboard-aware scroll/forms with handled taps. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; native keyboard acceptance remains open"
+  },
+  {
+    "path": "apps/mobile/lib/tokens.ts",
+    "sourceBlob": "136d415e5244d0211deb1a09be9de7b5efbf2810",
+    "sha256": "997ea706d1cdc3df01e77ec82e676381b07f04488e7d04a108f809879f64b086",
+    "reason": "Define a neutral light work-focused palette, contrasting semantic colors, readable typography, compact corners and minimum touch dimensions. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/app/(homeowner)/profile.tsx",
+    "sourceBlob": "2d7664da35e4e1e5ec49c0af70e4bc92702b7975",
+    "sha256": "5d73f863655ad4e0db65cfa34e636e0c822ee002917acf613df351a5c6731e6f",
+    "reason": "Wrap selectable full account values consistently for both roles; no change to profile or wallet actions. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; browser UI verification in MOBILE-DESIGN.md"
+  },
+  {
+    "path": "apps/mobile/lib/webauth.ts",
+    "sourceBlob": "b3ffa5c39bb62d63dbb21babef2768546796edd4",
+    "sha256": "c9e6344deb0350a0c13136a6811f4616689f109308fcb6507a956df4137a9f65",
+    "reason": "P2.2 mobile wallet-login candidate: send the sign-only ownership transaction through the parent Proton Link transport so Android WebAuth receives the complete ESR instead of the unavailable paired push channel. Device proof remained broadcast false.",
+    "test": "node --test tests/wallet-login-client.test.mjs tests/wallet-proof-client.test.mjs tests/wallet-device-probe.test.mjs; npm run check:mobile-types; npm run check; Pixel 8 XPR Testnet exact-byte probe in MOBILE-WALLET-PROBE.md"
+  },
+  {
+    "path": "apps/mobile/lib/auth.ts",
+    "sourceBlob": "4e7e9d388994624f7b45a8cc0601c76c62ccab24",
+    "sha256": "3e030d0e20f79ec4b36442673de98512f44d99d78706982d67ed20c75ab93117",
+    "reason": "Use shared sign-only ownership proof orchestration for both wallet-first login and authenticated wallet binding. Binding calls only the canonical ownership challenge/verify API and accepts only a server-verified wallet response.",
+    "test": "node --test tests/wallet-binding-client.test.mjs tests/wallet-login-client.test.mjs tests/wallet-proof-client.test.mjs; npm run test:wallet-restore; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/app/(auth)/connect-wallet.tsx",
+    "sourceBlob": "f7b47bf1f9dfbb0959a4549996b03535a7b0af6b",
+    "sha256": "a8e1e48dfde23d360bb22c21a3fe8f30d6eba2b1a6f1fe4ebae099a9fc74d1a2",
+    "reason": "Replace metadata-only profile wallet assignment with authenticated canonical ownership binding; preserve existing navigation and session persistence after the server returns a verified wallet.",
+    "test": "node --test tests/wallet-binding-client.test.mjs; npm run check:mobile-types; physical device acceptance remains open"
+  },
+  {
+    "path": "apps/web/src/services/webauth.ts",
+    "sourceBlob": "13fdadd14ef7675d9175e9f60621a9ec5d7128ff",
+    "sha256": "22ef8ac9870ef77150e0a8f8d27465635e1dc3241b57c42a7d3684f6fc0c7d1a",
+    "reason": "P2.2 candidate: expose the shared sign-only proof requester; fail closed if popup signature/bytes are absent. Existing connect/restore callers remain unchanged; no ownership claim from metadata.",
+    "test": "npm run test:wallet-proof-client; npm run build:web; npm run check; independent wallet SDK serialization review"
+  },
+  {
+    "path": "apps/web/src/pages/dashboard/BidsPanel.tsx",
+    "sourceBlob": "c9573afbbd78338281811aff2e0186d530001035",
+    "sha256": "8e481626d3d9972c549512dc373ab0c9974716fec111b5c9f4883ccc9d431946",
+    "reason": "Add accessible loading/error/retry/empty states, stable mobile bid cards and stale-response protection while exposing participant chat navigation without changing bid API behavior.",
+    "test": "npm run test:web-jobs-bids-states; node scripts/check-chat-ui.mjs; npm run build:web; npm run lint:web"
+  },
+  {
+    "path": "apps/web/src/pages/dashboard/ProjectsPanel.tsx",
+    "sourceBlob": "11b314e2e4936411906e898cadb2cf94356a2a18",
+    "sha256": "b95e9f67cc3d2c16aacdc4afd5b517c6aa1a22a9779a9675589aee0fc5740f9e",
+    "reason": "Expose accessible loading and recoverable API error states, ignore stale out-of-order refresh responses, and add participant chat navigation without changing project, bid, escrow or milestone API behavior. Add private drafts, free publication, redacted previews and guarded paid briefs; clear stale private state and preserve accepted-project reads while legacy financial controls default off. Let owners edit versioned private drafts with explicit conflict comparison and retry; report unsaved state to dashboard navigation.",
+    "test": "npm run test:web-jobs-bids-states; node scripts/check-chat-ui.mjs; npm run build:web; npm run lint:web; account-role and paid-project browser regressions; actual receiving-tree API/PostgreSQL journey"
+  },
+  {
+    "path": "apps/web/src/pages/Dashboard.tsx",
+    "sourceBlob": "ba747aeac2490dd44470a4816daa546962701fb4",
+    "sha256": "d22c72d395ffc9f198a21908b77f1d3e8f3b2641294c16acf990f195ca946288",
+    "reason": "Add the participant chat destination and route bid/project chat actions into it without changing authentication, payment or project ownership behavior. Accept homeowner/contractor registration role hints; absent or unsupported hints, including owner, default to contractor. Preserve logged-in identity. Require explicit discard before dashboard section or sign-out navigation with unsaved owner draft edits; block leaving during save. Use a router blocker for all route changes, including the shared Navbar and browser history, and beforeunload for tab exit.",
+    "test": "node scripts/check-chat-ui.mjs --playwright-dir <installed node_modules>; npm run build:web; account-role and paid-project browser regressions; actual receiving-tree API/PostgreSQL journey"
+  },
+  {
+    "path": "apps/web/src/main.tsx",
+    "sourceBlob": "dce27a580fd3f18a2327adf931dcba26366fcd0c",
+    "sha256": "ed9d2ae42e111fe272d7018492c61a341b58c47f3909e7fe91e517f1acbbc5d0",
+    "reason": "Use a data-backed hash router so the authenticated dashboard can block SPA route changes while an owner draft has unsaved changes or a save is in flight; preserve existing hash URLs.",
+    "test": "npm run check; npm --prefix apps/web run build; scoped ESLint; full App and Navbar Edge/API/isolated PostgreSQL project browser journey"
+  },
+  {
+    "path": "apps/web/src/pages/dashboard/types.ts",
+    "sourceBlob": "dd088ca4c0b5a8327fbe86a8c204808712d3b27b",
+    "sha256": "ddb9007cea89bfc91879de117f73208c1dc02e94919df42defef28d4d3b68682",
+    "reason": "Add the chat dashboard destination to the existing typed navigation union.",
+    "test": "npm --prefix apps/web run build; node scripts/check-chat-ui.mjs --playwright-dir <installed node_modules>"
+  },
+  {
+    "path": "apps/mobile/app/(homeowner)/job/[id].tsx",
+    "sourceBlob": "c306e7b79c271bd2dd4893e4831fae3b4c7a15a8",
+    "sha256": "46f1b13c18a491498691f41a5ffe9d0999606548663a9d609104710d04334c30",
+    "reason": "Show server-backed owner project details and allow explicit free publication of saved drafts; remove unverified on-chain milestones.",
+    "test": "node --test tests/mobile-job-publication.test.mjs; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/app/(homeowner)/jobs.tsx",
+    "sourceBlob": "d26651966511e2fae12d3e5d9aa278a629e4aeb5",
+    "sha256": "8fbef045ae2e41e1358094090975416603bd923fb9ed5df55ea762e4775208c8",
+    "reason": "Load owner drafts and published projects from the authenticated API instead of local-only storage. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
+    "test": "node --test tests/mobile-job-publication.test.mjs; npm run check:mobile-types; npm run test:mobile-design"
+  },
+  {
+    "path": "apps/mobile/app/(homeowner)/post-job.tsx",
+    "sourceBlob": "df0e20bf695f3d030c0aa4267f52454c045b7067",
+    "sha256": "6f74902a612b0daf82ba2dd74e16df08a4b86e29ac315aafc76f42b49a723eb9",
+    "reason": "Create and publish owner jobs through the free server workflow; remove the obsolete 25 XPR wallet charge. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
+    "test": "node --test tests/mobile-job-publication.test.mjs; npm run check:mobile-types; npm run test:mobile-design"
+  },
+  {
+    "path": "apps/mobile/lib/jobs.ts",
+    "sourceBlob": "985d7501e70812fa300dd80bf72e8f03e8a12d35",
+    "sha256": "45e25d42187fbf45e184050ab251adf743404908a94ec394a79240a4f41e0b31",
+    "reason": "Map budget ranges to numeric API fields and expose explicit project publication without payment calls.",
+    "test": "node --test tests/mobile-job-publication.test.mjs; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/app/(contractor)/jobs.tsx",
+    "sourceBlob": "191f4362fcd9aeb89d5a5311cb5afc7cac411f9f",
+    "sha256": "004b1b7ca206961268fcf085e6facc7dee2f88a7a9a61e8f39ae605868e7f4dc",
+    "reason": "Adapt prototype theme and workspace UI without changing server behavior or wallet proof.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; npm run check"
+  },
+  {
+    "path": "apps/mobile/app/(contractor)/milestones.tsx",
+    "sourceBlob": "b900bab5a30cd2b0c299713e5f2810f360e2a15a",
+    "sha256": "1fdea859487f10d9715514ea65392598fc0a3ffeb49eddffa7ad94781b02e480",
+    "reason": "Adapt prototype theme and workspace UI without changing server behavior or wallet proof.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; npm run check"
+  },
+  {
+    "path": "apps/mobile/app/(homeowner)/milestones.tsx",
+    "sourceBlob": "b18eeb86ab7f41d2aac7f8b550bd067df0a2efd1",
+    "sha256": "5f86d072a44d1ed877354df3c8d515e051eba7635d2bde75a38be48ad902f0ca",
+    "reason": "Adapt prototype theme and workspace UI without changing server behavior or wallet proof.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; npm run check"
+  },
+  {
+    "path": "apps/mobile/app/settings.tsx",
+    "sourceBlob": "9b73c67fd050c6a077daa029adfe1358a94ae0a0",
+    "sha256": "dfd9b877708a4eb78312d702a143243855097f51b686af51f7e0dfd8b930a5c1",
+    "reason": "Adapt prototype theme and workspace UI without changing server behavior or wallet proof.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; npm run check"
+  },
+  {
+    "path": "apps/mobile/components/Card.tsx",
+    "sourceBlob": "9e45358ae0bdb482d7e7b159c55687a193293974",
+    "sha256": "bb414463f43fbe9afbc55fd2ea9280a8acd3a5b40829781a4abdac086b4dfeb6",
+    "reason": "Adapt prototype theme and workspace UI without changing server behavior or wallet proof.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; npm run check"
+  },
+  {
+    "path": "apps/mobile/components/Header.tsx",
+    "sourceBlob": "369c05d79fa4bb5e0a8d0eb16954c68aeeea71cd",
+    "sha256": "883a473e14dc20ac2eb2ebbf2c8974fb1509f6cfc879f76be8f85b2c1005d5f6",
+    "reason": "Adapt prototype theme and workspace UI without changing server behavior or wallet proof.",
+    "test": "npm run test:mobile-design; npm run check:mobile-types; npm run check"
   }
 ]

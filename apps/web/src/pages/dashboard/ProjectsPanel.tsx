@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { motion } from 'framer-motion';
 import {
@@ -12,20 +12,32 @@ import {
   Building2,
   UserCircle,
   ClipboardList,
+  RefreshCw,
+  MessageCircle,
+  Send,
 } from 'lucide-react';
 import {
   api,
+  ApiError,
   type GcscBid,
   type GcscEscrow,
   type GcscMilestone,
   type GcscProject,
+  type GcscPaidProjectBrief,
   type GcscUser,
 } from '../../services/api';
+import { createLatestRequestGate } from '../../services/latest-request.mjs';
 import { fieldClass, formatCurrency, projectStatusLabel, bidStatusLabel } from './format';
 import { StatusBadge, ContractorTrustBadge } from './shared';
 import { MilestoneManager } from './MilestoneManager';
 
-function ProjectRequestForm({ onCreated }: { onCreated: (project: GcscProject) => void }) {
+const legacyEscrowWorkflowEnabled = import.meta.env.VITE_ENABLE_LEGACY_ESCROW_WORKFLOW === 'true';
+
+function ProjectRequestForm({ onCreated, disabled, onSavingChange }: {
+  onCreated: (project: GcscProject) => void;
+  disabled: boolean;
+  onSavingChange: (saving: boolean) => void;
+}) {
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -44,7 +56,9 @@ function ProjectRequestForm({ onCreated }: { onCreated: (project: GcscProject) =
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    if (disabled) return;
     setSaving(true);
+    onSavingChange(true);
     setStatus('');
     try {
       const response = await api.createProject({
@@ -66,20 +80,22 @@ function ProjectRequestForm({ onCreated }: { onCreated: (project: GcscProject) =
         location: '',
         timeline_days: '30',
       });
-      setStatus('Project posted. Contractors can now submit bids.');
+      setStatus('Draft saved. Review it below, then publish when ready.');
     } catch (err) {
       setStatus(err instanceof Error ? err.message : 'Could not create project');
     } finally {
       setSaving(false);
+      onSavingChange(false);
     }
   };
 
   return (
     <form onSubmit={submit} className="glass-card p-5 space-y-4">
+      <fieldset disabled={disabled} className="space-y-4 disabled:opacity-60">
       <div>
-        <h3 className="font-outfit font-semibold text-[#0F172A] text-lg">Post a project</h3>
+        <h3 className="font-outfit font-semibold text-[#0F172A] text-lg">New project draft</h3>
         <p className="text-sm text-[#64748B] mt-1">
-          Create a real homeowner project in the backend so contractors can bid on it.
+          Your request stays private until you publish it.
         </p>
       </div>
 
@@ -155,19 +171,176 @@ function ProjectRequestForm({ onCreated }: { onCreated: (project: GcscProject) =
         style={{ background: 'linear-gradient(135deg, #7B2FF7 0%, #3B6BF7 55%, #00D4FF 100%)' }}
       >
         {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-        Create Project
+        Save Draft
       </button>
+      </fieldset>
     </form>
   );
 }
 
-function BidComposer({ project, onSubmitted }: { project: GcscProject; onSubmitted: () => void }) {
+type DraftEditState = { dirty: boolean; saving: boolean };
+
+function DraftEditForm({ project, onSaved, onCancel, onSavingChange, onEditStateChange }: {
+  project: GcscProject;
+  onSaved: (project: GcscProject) => void;
+  onCancel: () => void;
+  onSavingChange: (saving: boolean) => void;
+  onEditStateChange: (state: DraftEditState) => void;
+}) {
+  const [form, setForm] = useState({
+    title: project.title, description: project.description || '', category: project.category,
+    budget_min: String(project.budget_min), budget_max: String(project.budget_max),
+    location: project.location || '', timeline_days: String(project.timeline_days),
+  });
+  const [saving, setSaving] = useState(false);
+  const initialForm = useRef(form);
+  const dirty = (Object.keys(form) as (keyof typeof form)[])
+    .some((key) => form[key] !== initialForm.current[key]);
+  useEffect(() => { onEditStateChange({ dirty, saving }); }, [dirty, saving, onEditStateChange]);
+  useEffect(() => () => onEditStateChange({ dirty: false, saving: false }), [onEditStateChange]);
+  const [status, setStatus] = useState('');
+  const [version, setVersion] = useState(project.updated_at || '');
+  const [conflictProject, setConflictProject] = useState<GcscProject | null>(null);
+  const [needsRefresh, setNeedsRefresh] = useState(false);
+  const update = (field: keyof typeof form, value: string) => {
+    setForm((current) => ({ ...current, [field]: value }));
+  };
+  const refreshConflict = async () => {
+    try {
+      const response = await api.getProject(project.id);
+      const current: GcscProject = response.project;
+      if (!current || current.id !== project.id || !current.updated_at
+        || current.published === true || current.status !== 'open') {
+        setStatus('This draft is no longer editable. Your unsaved text remains here until you cancel.');
+        return;
+      }
+      setConflictProject(current);
+      setStatus('The stored draft changed. Compare it below before replacing it with your edits.');
+    } catch {
+      setStatus('Could not load the latest draft. Your edits are still here; try again.');
+    }
+  };
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!version) {
+      setStatus('Refresh this project before editing.');
+      return;
+    }
+    setSaving(true);
+    onSavingChange(true);
+    setStatus('');
+    try {
+      const response = await api.updateProjectDraft(project.id, {
+        title: form.title, description: form.description, category: form.category,
+        budget_min: Number(form.budget_min || 0), budget_max: Number(form.budget_max || 0),
+        location: form.location, timeline_days: Number(form.timeline_days),
+        expected_updated_at: version,
+      });
+      onSaved(response.project);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        setNeedsRefresh(true);
+        await refreshConflict();
+      }
+      else setStatus(err instanceof Error ? err.message : 'Could not save draft. Try again.');
+    } finally {
+      setSaving(false);
+      onSavingChange(false);
+    }
+  };
+
+  return (
+    <form onSubmit={submit} className="space-y-3 border-t border-[#E2E8F0] pt-4">
+      <h4 className="font-outfit font-semibold text-[#0F172A]">Edit private draft</h4>
+      <label className="block text-sm text-[#475569]">Project title
+        <input className={fieldClass} value={form.title} maxLength={160} required
+          onChange={(event) => update('title', event.target.value)} />
+      </label>
+      <label className="block text-sm text-[#475569]">Description
+        <textarea className={fieldClass + ' min-h-[110px]'} value={form.description} maxLength={10000} required
+          onChange={(event) => update('description', event.target.value)} />
+      </label>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <label className="block text-sm text-[#475569]">Category
+          <input className={fieldClass} value={form.category} maxLength={80} required
+            onChange={(event) => update('category', event.target.value)} />
+        </label>
+        <label className="block text-sm text-[#475569]">Location
+          <input className={fieldClass} value={form.location} maxLength={200}
+            onChange={(event) => update('location', event.target.value)} />
+        </label>
+        <label className="block text-sm text-[#475569]">Minimum budget
+          <input className={fieldClass} type="number" min="0" max="1000000000" step="1"
+            value={form.budget_min} onChange={(event) => update('budget_min', event.target.value)} />
+        </label>
+        <label className="block text-sm text-[#475569]">Maximum budget
+          <input className={fieldClass} type="number" min="0" max="1000000000" step="1"
+            value={form.budget_max} onChange={(event) => update('budget_max', event.target.value)} />
+        </label>
+        <label className="block text-sm text-[#475569]">Timeline in days
+          <input className={fieldClass} type="number" min="1" max="3650" step="1" required
+            value={form.timeline_days} onChange={(event) => update('timeline_days', event.target.value)} />
+        </label>
+      </div>
+      {status && <p role="alert" className="text-sm text-[#B91C1C]">{status}</p>}
+      {needsRefresh && !conflictProject && (
+        <button type="button" onClick={() => void refreshConflict()}
+          className="min-h-11 rounded-md border border-[#CBD5E1] px-3 py-2 text-sm font-semibold text-[#334155]">
+          <RefreshCw size={16} className="inline mr-2" /> Refresh comparison
+        </button>
+      )}
+      {conflictProject && (
+        <div className="space-y-2 border-t border-[#CBD5E1] pt-3 text-sm text-[#334155]">
+          <p className="font-semibold">Current saved draft</p>
+          <p>Title: {conflictProject.title}</p>
+          <p className="whitespace-pre-wrap">Description: {conflictProject.description}</p>
+          <p>Category: {conflictProject.category}</p>
+          <p>Location: {conflictProject.location || 'Not set'}</p>
+          <p>Budget: {formatCurrency(conflictProject.budget_min)} - {formatCurrency(conflictProject.budget_max)}</p>
+          <p>Timeline: {conflictProject.timeline_days} days</p>
+          <button type="button" onClick={() => {
+            setVersion(conflictProject.updated_at || '');
+            setConflictProject(null);
+            setNeedsRefresh(false);
+            setStatus('Your edits are kept. Save changes to replace the current draft.');
+          }} className="min-h-11 rounded-md border border-[#0F766E] px-3 py-2 font-semibold text-[#0F766E]">
+            Keep my edits
+          </button>
+        </div>
+      )}
+      <div className="flex flex-wrap gap-2">
+        <button type="submit" disabled={saving || !version || needsRefresh}
+          className="inline-flex min-h-11 items-center gap-2 rounded-md bg-[#0F766E] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+          {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save changes
+        </button>
+        <button type="button" onClick={() => {
+          if (!dirty || window.confirm('Discard unsaved project changes?')) onCancel();
+        }} disabled={saving}
+          className="min-h-11 rounded-md border border-[#CBD5E1] px-4 py-2 text-sm font-semibold text-[#334155] disabled:opacity-60">
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function BidComposer({ project, onSubmitted, onAccessLost }: {
+  project: GcscPaidProjectBrief;
+  onSubmitted: () => void;
+  onAccessLost: () => void;
+}) {
   const [form, setForm] = useState({ amount: '', proposed_timeline_days: String(project.timeline_days || 30), message: '' });
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState('');
+  const [submissionComplete, setSubmissionComplete] = useState(false);
+  const submissionGate = useRef(createLatestRequestGate()).current;
+
+  useEffect(() => () => submissionGate.invalidate(), [submissionGate]);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    if (saving || submissionComplete) return;
+    const requestId = submissionGate.start();
     setSaving(true);
     setStatus('');
     try {
@@ -177,13 +350,23 @@ function BidComposer({ project, onSubmitted }: { project: GcscProject; onSubmitt
         proposed_timeline_days: Number(form.proposed_timeline_days || project.timeline_days || 30),
         message: form.message,
       });
+      if (!submissionGate.isCurrent(requestId)) return;
+      setSubmissionComplete(true);
       setStatus('Bid submitted. You can track it in My Bids.');
       setForm({ amount: '', proposed_timeline_days: String(project.timeline_days || 30), message: '' });
       onSubmitted();
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Could not submit bid');
+      if (!submissionGate.isCurrent(requestId)) return;
+      if (err instanceof ApiError && [401, 403, 404].includes(err.status)) {
+        onAccessLost();
+      } else if (!(err instanceof ApiError) || err.status >= 500) {
+        setSubmissionComplete(true);
+        setStatus('Could not confirm submission. Check My Bids before trying again.');
+      } else {
+        setStatus(err.message);
+      }
     } finally {
-      setSaving(false);
+      if (submissionGate.isCurrent(requestId)) setSaving(false);
     }
   };
 
@@ -221,7 +404,7 @@ function BidComposer({ project, onSubmitted }: { project: GcscProject; onSubmitt
       {status && <p className="text-sm text-[#475569]">{status}</p>}
       <button
         type="submit"
-        disabled={saving}
+        disabled={saving || submissionComplete}
         className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full text-white text-sm font-semibold disabled:opacity-60"
         style={{ background: 'linear-gradient(135deg, #7B2FF7 0%, #3B6BF7 100%)' }}
       >
@@ -232,11 +415,23 @@ function BidComposer({ project, onSubmitted }: { project: GcscProject; onSubmitt
   );
 }
 
-export function ProjectsPanel({ user }: { user: GcscUser }) {
+type ProjectsPanelProps = {
+  user: GcscUser;
+  onOpenChat: (bidId: number) => void;
+  onEditStateChange: (state: DraftEditState) => void;
+};
+
+export function ProjectsPanel(props: ProjectsPanelProps) {
+  // Remount before painting another account: no previous private state or draft is reused.
+  return <AccountProjectsPanel key={`${props.user.id}:${props.user.role}`} {...props} />;
+}
+
+function AccountProjectsPanel({ user, onOpenChat, onEditStateChange }: ProjectsPanelProps) {
   const [filter, setFilter] = useState<string>('All');
   const [search, setSearch] = useState('');
   const [projects, setProjects] = useState<GcscProject[]>([]);
   const [selectedProject, setSelectedProject] = useState<GcscProject | null>(null);
+  const [paidBrief, setPaidBrief] = useState<{ project: GcscPaidProjectBrief; requestId: number } | null>(null);
   const [selectedBids, setSelectedBids] = useState<GcscBid[]>([]);
   const [selectedEscrow, setSelectedEscrow] = useState<GcscEscrow | null>(null);
   const [selectedMilestones, setSelectedMilestones] = useState<GcscMilestone[]>([]);
@@ -245,15 +440,28 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState('');
   const [detailMessage, setDetailMessage] = useState('');
+  const [publishingId, setPublishingId] = useState<number | null>(null);
+  const [editingDraftId, setEditingDraftId] = useState<number | null>(null);
+  const [draftSaving, setDraftSaving] = useState(false);
+  const draftSavingRef = useRef(false);
+  const [creatingDraft, setCreatingDraft] = useState(false);
+  const creatingDraftRef = useRef(false);
+  const editButtonRef = useRef<HTMLButtonElement>(null);
+  const requestGate = useRef(createLatestRequestGate()).current;
+  const detailGate = useRef(createLatestRequestGate()).current;
   const isHomeowner = user.role === 'homeowner';
+  const displayedProject = paidBrief?.project ?? selectedProject;
 
   const loadProjects = useCallback(async () => {
+    const requestId = requestGate.start();
     setLoading(true);
     setError('');
+    setProjects([]);
     try {
+      let nextProjects: GcscProject[];
       if (isHomeowner) {
         const response = await api.getMyProjects();
-        setProjects(response.projects || []);
+        nextProjects = response.projects || [];
       } else {
         const [openResponse, myResponse] = await Promise.all([
           api.getProjects({ status: 'open' }),
@@ -263,37 +471,79 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
         for (const project of [...(openResponse.projects || []), ...(myResponse.projects || [])]) {
           merged.set(project.id, project);
         }
-        setProjects([...merged.values()]);
+        nextProjects = [...merged.values()];
       }
+      if (!requestGate.isCurrent(requestId)) return;
+      setProjects(nextProjects);
     } catch (err) {
+      if (!requestGate.isCurrent(requestId)) return;
+      setProjects([]);
+      setSelectedProject(null);
+      setEditingDraftId(null);
+      detailGate.invalidate();
+      setPaidBrief(null);
+      setBiddingProjectId(null);
+      setDetailLoading(false);
+      setSelectedBids([]);
+      setSelectedEscrow(null);
+      setSelectedMilestones([]);
       setError(err instanceof Error ? err.message : 'Could not load projects');
     } finally {
-      setLoading(false);
+      if (requestGate.isCurrent(requestId)) setLoading(false);
     }
-  }, [isHomeowner]);
+  }, [isHomeowner, requestGate, detailGate]);
 
   useEffect(() => {
     void loadProjects();
-  }, [loadProjects]);
+    return () => { requestGate.invalidate(); detailGate.invalidate(); };
+  }, [loadProjects, requestGate, detailGate]);
 
   const loadDetails = async (projectId: number) => {
+    if (draftSavingRef.current || editingDraftId !== null) return;
+    const requestId = detailGate.start();
+    setSelectedProject(null);
+    setEditingDraftId(null);
+    setPaidBrief(null);
+    setBiddingProjectId(null);
+    setSelectedBids([]);
+    setSelectedEscrow(null);
+    setSelectedMilestones([]);
     setDetailLoading(true);
     setDetailMessage('');
     try {
       const response = await api.getProject(projectId);
-      setSelectedProject(response.project);
-      setSelectedBids(response.bids || []);
-      setSelectedEscrow(null);
-      setSelectedMilestones([]);
-      if (response.project?.escrow_id) {
+      if (!detailGate.isCurrent(requestId)) return;
+      if (!response.project || response.project.id !== projectId) throw new Error('Project unavailable. Please try again.');
+      const project: GcscProject = response.project;
+      // The server's existing accepted-contractor read is independent of escrow actions.
+      // Public previews never carry an escrow_id; this does not grant paid-lead access.
+      const acceptedProject = user.role === 'contractor'
+        && Number.isSafeInteger(project.escrow_id) && Number(project.escrow_id) > 0;
+      setSelectedProject(isHomeowner || acceptedProject ? project : {
+        id: project.id, title: project.title, category: project.category,
+        budget_min: project.budget_min, budget_max: project.budget_max,
+        timeline_days: project.timeline_days, status: project.status, published_at: project.published_at,
+      });
+      if (isHomeowner || acceptedProject) setSelectedBids(response.bids || []);
+      if (user.role === 'contractor' && project.status === 'open' && !acceptedProject) {
+        const details = await api.getProjectDetails(projectId);
+        if (!detailGate.isCurrent(requestId)) return;
+        setPaidBrief({ project: details.project, requestId });
+      }
+      if (legacyEscrowWorkflowEnabled && response.project?.escrow_id) {
         const escrowResponse = await api.getEscrow(response.project.escrow_id);
+        if (!detailGate.isCurrent(requestId)) return;
         setSelectedEscrow(escrowResponse.escrow);
         setSelectedMilestones(escrowResponse.milestones || []);
       }
     } catch (err) {
-      setDetailMessage(err instanceof Error ? err.message : 'Could not load project details');
+      if (!detailGate.isCurrent(requestId)) return;
+      setPaidBrief(null);
+      setDetailMessage(err instanceof ApiError && [401, 403, 404].includes(err.status)
+        ? 'Project details are unavailable for this account. Access may have changed.'
+        : 'Could not verify project details. Please try again.');
     } finally {
-      setDetailLoading(false);
+      if (detailGate.isCurrent(requestId)) setDetailLoading(false);
     }
   };
 
@@ -315,6 +565,7 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
   };
 
   const onProjectCreated = (project: GcscProject) => {
+    setEditingDraftId(null);
     setProjects((current) => [project, ...current]);
     setSelectedProject(project);
     setSelectedBids([]);
@@ -322,14 +573,42 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
     setSelectedMilestones([]);
   };
 
+  const publishProject = async (project: GcscProject) => {
+    setPublishingId(project.id);
+    setDetailMessage('');
+    try {
+      const response = await api.publishProject(project.id);
+      setSelectedProject(response.project);
+      setProjects((current) => current.map((item) => item.id === project.id ? response.project : item));
+      setDetailMessage('Project published. Contractors can now see its preview.');
+    } catch (err) {
+      setDetailMessage(err instanceof Error ? err.message : 'Could not publish project');
+    } finally {
+      setPublishingId(null);
+    }
+  };
+
+  const onDraftSaved = (project: GcscProject) => {
+    setProjects((current) => current.map((item) => item.id === project.id ? project : item));
+    setSelectedProject((current) => current?.id === project.id ? project : current);
+    setEditingDraftId((current) => current === project.id ? null : current);
+    setDetailMessage('Draft changes saved. Review before publishing.');
+    requestAnimationFrame(() => editButtonRef.current?.focus());
+  };
+
+  const closeDraftEditor = () => {
+    setEditingDraftId(null);
+    requestAnimationFrame(() => editButtonRef.current?.focus());
+  };
+
   const filtered = useMemo(() => {
     return projects.filter((project) => {
-      const label = projectStatusLabel(project.status);
+      const label = project.published === false ? 'Draft' : projectStatusLabel(project.status);
       const matchesFilter = filter === 'All' || label === filter;
       const q = search.toLowerCase().trim();
       const matchesSearch = !q || [project.title, project.category, project.location, String(project.id)]
         .filter(Boolean)
-        .some((item) => item.toLowerCase().includes(q));
+        .some((item) => String(item).toLowerCase().includes(q));
       return matchesFilter && matchesSearch;
     });
   }, [filter, search, projects]);
@@ -340,6 +619,7 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
       className="space-y-6"
+      aria-busy={loading}
     >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -348,8 +628,8 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
           </h2>
           <p className="font-inter text-sm text-[#475569] mt-1">
             {isHomeowner
-              ? 'Create project requests, review contractor bids, and move accepted work into escrow.'
-              : 'Review homeowner requests and submit real bids through the backend API.'}
+              ? 'Save a private draft, then publish it when ready.'
+              : 'Browse project previews. Full details require project-specific access.'}
           </p>
         </div>
         <div className="relative">
@@ -364,10 +644,15 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
         </div>
       </div>
 
-      {isHomeowner && <ProjectRequestForm onCreated={onProjectCreated} />}
+      {isHomeowner && <ProjectRequestForm onCreated={onProjectCreated}
+        disabled={editingDraftId !== null || draftSaving}
+        onSavingChange={(saving) => {
+          creatingDraftRef.current = saving;
+          setCreatingDraft(saving);
+        }} />}
 
       <div className="flex items-center gap-2 flex-wrap">
-        {(['All', 'Open', 'In Progress', 'Completed', 'Cancelled'] as const).map((status) => (
+        {(['All', ...(isHomeowner ? ['Draft'] : []), 'Open', 'In Progress', 'Completed', 'Cancelled'] as const).map((status) => (
           <button
             key={status}
             onClick={() => setFilter(status)}
@@ -386,7 +671,18 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
         </div>
       </div>
 
-      {error && <div className="glass-card p-4 text-sm text-[#EF4444]">{error}</div>}
+      {error && (
+        <div role="alert" className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border border-[#FECACA] bg-[#FEF2F2] p-4 text-sm text-[#B91C1C]">
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={() => void loadProjects()}
+            className="inline-flex min-h-11 items-center justify-center gap-2 border border-[#FCA5A5] bg-white px-4 font-semibold text-[#991B1B] hover:bg-[#FFF7F7]"
+          >
+            <RefreshCw size={16} /> Retry
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-[1.35fr_0.95fr] gap-6">
         <div className="glass-card overflow-hidden">
@@ -410,7 +706,7 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
                     </td>
                   </tr>
                 ) : filtered.map((project) => {
-                  const label = projectStatusLabel(project.status);
+                  const label = project.published === false ? 'Draft' : projectStatusLabel(project.status);
                   return (
                     <tr key={project.id} className="border-b border-[#F1F5F9] hover:bg-[#F8FAFC]/60 transition-colors">
                       <td className="px-4 py-3">
@@ -418,7 +714,9 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
                         <div className="font-mono text-xs text-[#3B6BF7]">#{project.id}</div>
                       </td>
                       <td className="px-4 py-3 text-[#475569]">{project.category || 'General'}</td>
-                      <td className="px-4 py-3 text-[#475569]">{project.location || 'Not set'}</td>
+                      <td className="px-4 py-3 text-[#475569]">
+                        {isHomeowner ? project.location || 'Not set' : 'Not disclosed'}
+                      </td>
                       <td className="px-4 py-3 font-medium text-[#0F172A]">
                         {formatCurrency(project.budget_min || 0)} - {formatCurrency(project.budget_max || 0)}
                       </td>
@@ -427,25 +725,12 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => void loadDetails(project.id)}
+                            disabled={draftSaving || editingDraftId !== null}
+                            title={editingDraftId !== null ? 'Save or cancel your draft edits first' : undefined}
                             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium bg-[#F1F5F9] text-[#475569] hover:bg-[#E2E8F0] hover:text-[#0F172A] transition-colors"
                           >
                             <Eye size={12} /> View
                           </button>
-                          {!isHomeowner && project.status === 'open' && (
-                            <button
-                              onClick={() => {
-                                setBiddingProjectId(project.id);
-                                setSelectedProject(project);
-                                setSelectedBids([]);
-                                setSelectedEscrow(null);
-                                setSelectedMilestones([]);
-                              }}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium text-white transition-all hover:scale-[1.04]"
-                              style={{ background: 'linear-gradient(135deg, #7B2FF7 0%, #3B6BF7 100%)' }}
-                            >
-                              <Gavel size={12} /> Bid
-                            </button>
-                          )}
                         </div>
                       </td>
                     </tr>
@@ -461,26 +746,62 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
           )}
         </div>
 
-        <aside className="glass-card p-5 min-h-[320px]">
+        <aside className="glass-card p-5 min-h-[320px]" aria-label="Project details" aria-busy={detailLoading}>
           {detailLoading ? (
             <div className="h-full flex items-center justify-center text-[#64748B]">
               <Loader2 size={18} className="animate-spin mr-2" /> Loading details...
             </div>
-          ) : selectedProject ? (
+          ) : selectedProject && displayedProject ? (
             <div className="space-y-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider gradient-text">Selected Project</p>
-                <h3 className="font-outfit font-bold text-xl text-[#0F172A] mt-1">{selectedProject.title}</h3>
-                <p className="text-sm text-[#64748B] mt-2 leading-6">{selectedProject.description}</p>
+                <h3 className="font-outfit font-bold text-xl text-[#0F172A] mt-1 break-words">{displayedProject.title}</h3>
+                <p className="text-sm text-[#64748B] mt-2 leading-6 whitespace-pre-wrap break-words">
+                  {displayedProject.description || (isHomeowner ? 'No description yet.' : 'Full project details require confirmed access to this lead.')}
+                </p>
               </div>
+              {!isHomeowner && (
+                <button type="button" onClick={() => void loadDetails(selectedProject.id)} disabled={draftSaving}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-md border border-[#CBD5E1] px-3 py-2 text-sm font-semibold text-[#334155]">
+                  <RefreshCw size={16} /> {paidBrief || selectedProject.escrow_id ? 'Refresh details' : 'Check access'}
+                </button>
+              )}
+              {isHomeowner && selectedProject.published !== true && selectedProject.status === 'open' && (
+                editingDraftId === selectedProject.id ? (
+                  <DraftEditForm key={`${selectedProject.id}:${selectedProject.updated_at}`} project={selectedProject}
+                    onSaved={onDraftSaved} onCancel={closeDraftEditor}
+                    onEditStateChange={onEditStateChange}
+                    onSavingChange={(saving) => {
+                      draftSavingRef.current = saving;
+                      setDraftSaving(saving);
+                    }} />
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" ref={editButtonRef}
+                      onClick={() => { if (!creatingDraftRef.current) setEditingDraftId(selectedProject.id); }}
+                      disabled={!selectedProject.updated_at || publishingId === selectedProject.id || creatingDraft}
+                      className="inline-flex min-h-11 items-center gap-2 rounded-md border border-[#CBD5E1] px-4 py-2 text-sm font-semibold text-[#334155] disabled:opacity-60">
+                      <Save size={16} /> Edit draft
+                    </button>
+                    <button type="button" onClick={() => void publishProject(selectedProject)}
+                      disabled={publishingId === selectedProject.id}
+                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#0F766E] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+                      {publishingId === selectedProject.id ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                      Publish project
+                    </button>
+                  </div>
+                )
+              )}
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="rounded-xl bg-[#F8FAFC] p-3">
                   <p className="text-xs text-[#94A3B8]">Timeline</p>
-                  <p className="font-semibold text-[#0F172A]">{selectedProject.timeline_days || 30} days</p>
+                  <p className="font-semibold text-[#0F172A]">{displayedProject.timeline_days || 30} days</p>
                 </div>
                 <div className="rounded-xl bg-[#F8FAFC] p-3">
                   <p className="text-xs text-[#94A3B8]">Status</p>
-                  <p className="font-semibold text-[#0F172A]">{projectStatusLabel(selectedProject.status)}</p>
+                  <p className="font-semibold text-[#0F172A]">
+                    {selectedProject.published === false ? 'Draft' : projectStatusLabel(selectedProject.status)}
+                  </p>
                 </div>
               </div>
 
@@ -540,7 +861,14 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
                         >
                           <UserCircle size={14} /> View profile
                         </Link>
-                        {bid.status === 'pending' && selectedProject.status === 'open' && (
+                        <button
+                          type="button"
+                          onClick={() => onOpenChat(bid.id)}
+                          className="inline-flex items-center gap-2 rounded-full border border-[#C4B5FD] px-4 py-2 text-xs font-semibold text-[#7B2FF7] hover:bg-[rgba(123,47,247,0.06)] transition-colors"
+                        >
+                          <MessageCircle size={14} /> Open chat
+                        </button>
+                        {legacyEscrowWorkflowEnabled && bid.status === 'pending' && selectedProject.status === 'open' && (
                           <button
                             onClick={() => void acceptBid(bid)}
                             disabled={!canAccept}
@@ -554,8 +882,22 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
                     );
                   })}
                 </div>
+              ) : selectedProject.escrow_id ? (
+                <p className="text-sm text-[#475569]" role="status">You are assigned to this project.</p>
+              ) : !paidBrief ? (
+                <p className="text-sm text-[#475569]" role="status">
+                  Purchasing lead access is not available yet. No payment is requested here.
+                </p>
               ) : biddingProjectId === selectedProject.id ? (
-                <BidComposer project={selectedProject} onSubmitted={() => void loadProjects()} />
+                <BidComposer key={`${selectedProject.id}:${paidBrief.requestId}`} project={paidBrief.project}
+                  onSubmitted={() => { if (detailGate.isCurrent(paidBrief.requestId)) void loadProjects(); }}
+                  onAccessLost={() => {
+                    if (!detailGate.isCurrent(paidBrief.requestId)) return;
+                    detailGate.invalidate();
+                    setPaidBrief(null);
+                    setBiddingProjectId(null);
+                    setDetailMessage('Access has changed. Your bid was not submitted. Check access before trying again.');
+                  }} />
               ) : (
                 <button
                   onClick={() => setBiddingProjectId(selectedProject.id)}
@@ -566,7 +908,7 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
                 </button>
               )}
 
-              {selectedEscrow && (
+              {legacyEscrowWorkflowEnabled && selectedEscrow && (
                 <MilestoneManager
                   escrow={selectedEscrow}
                   milestones={selectedMilestones}
@@ -575,13 +917,13 @@ export function ProjectsPanel({ user }: { user: GcscUser }) {
                 />
               )}
 
-              {detailMessage && <p className="text-sm text-[#475569]">{detailMessage}</p>}
+              {detailMessage && <p role="status" className="text-sm text-[#475569]">{detailMessage}</p>}
             </div>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center text-[#64748B] py-10">
               <ClipboardList size={32} className="text-[#94A3B8] mb-3" />
               <p className="font-semibold text-[#0F172A]">Select a project</p>
-              <p className="text-sm mt-1">Project details, bids, and escrow actions appear here.</p>
+              <p className="text-sm mt-1">{detailMessage || 'Project details and proposals appear here.'}</p>
             </div>
           )}
         </aside>

@@ -41,12 +41,12 @@ export default function SignUp() {
         });
         return;
       }
-      // New accounts have no wallet yet — route to wallet connect so payments
-      // (which require a bound wallet) work. connect-wallet forwards to jobs.
-      router.replace('/(auth)/connect-wallet');
+      router.replace(res.user.role === 'contractor' ? '/(contractor)/jobs' : '/(homeowner)/jobs');
     } catch (err) {
       const apiErr = err as ApiError;
-      setError(apiErr.message ?? 'Registration failed');
+      setError(apiErr.code === 'NETWORK_UNAVAILABLE'
+        ? 'Cannot reach the server. Your account may have been created. Check your connection, then try signing in before registering again.'
+        : apiErr.message ?? 'Registration failed');
     } finally {
       setSubmitting(false);
     }
