@@ -18,6 +18,7 @@ const { createOwnershipChallenge, createOwnershipVerifier } = require('./wallet-
 const { createJsonChallengeStore, createPostgresChallengeStore } = require('./wallet-challenge-store.cjs');
 
 const PORT = process.env.PORT || 10000;
+const BIND_HOST = process.env.BIND_HOST || '0.0.0.0';
 const DEV_JWT_SECRET = 'gcsc-dev-secret-256-bits-minimum-length';
 const UNSAFE_JWT_SECRETS = new Set([
   'secret', 'changeme', 'password', 'gcsc-dev-secret', DEV_JWT_SECRET,
@@ -5174,13 +5175,13 @@ const server = http.createServer(async (req, res) => {
 
 if (require.main === module) {
   initStorage().then(() => {
-    server.listen(PORT, '0.0.0.0', () => {
+    server.listen(PORT, BIND_HOST, () => {
       startChainTxVerifier();
       startPaymentReconciler();
       console.log(`╔══════════════════════════════════════════╗`);
       console.log(`║   GCSC Backend v3.0 — RUNNING            ║`);
       console.log(`║   Port: ${PORT}                            ║`);
-      console.log(`║   Health: http://0.0.0.0:${PORT}/health      ║`);
+      console.log(`║   Health: http://${BIND_HOST}:${PORT}/health      ║`);
       console.log(`║   JWT: custom (zero deps)                ║`);
       console.log(`║   DB: ${USE_POSTGRES ? 'postgres' : 'json-file'}                         ║`);
       console.log(`║   XPR: ${PAYMENT_RECIPIENT}                       ║`);
