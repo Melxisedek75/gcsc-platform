@@ -49,6 +49,29 @@ test('working palette maintains ordinary-text contrast on both surfaces', () => 
   }
 });
 
+test('appearance preference switches the active palette and restores saved choice', async () => {
+  const tokens = loadData('lib/tokens.ts');
+  let system = 'light';
+  let changed;
+  const theme = loadData('lib/theme.ts', {
+    react: { useSyncExternalStore: () => 0 },
+    'react-native': { Appearance: {
+      getColorScheme: () => system,
+      addChangeListener: (listener) => { changed = listener; },
+    } },
+    './settings': { loadSettings: async () => ({ theme: 'dark' }) },
+    './tokens': tokens,
+  });
+  await theme.initializeTheme();
+  assert.equal(tokens.colors.bg, tokens.darkColors.bg);
+  theme.applyThemePreference('light');
+  assert.equal(tokens.colors.bg, tokens.lightColors.bg);
+  theme.applyThemePreference('system');
+  system = 'dark';
+  changed({ colorScheme: system });
+  assert.equal(tokens.colors.bg, tokens.darkColors.bg);
+});
+
 test('all touch targets and text spacing have explicit accessible defaults', () => {
   const { control, typography, radius } = loadData('lib/tokens.ts');
   assert(control.minTouch >= 48);
