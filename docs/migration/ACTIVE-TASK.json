@@ -787,7 +787,7 @@
     "next": "P2.2c: implement a bounded diagnostic sign-only path and observe actual native/web WebAuth responses with user-controlled approval. Verify K1/R1 or separately implement/review SIG_WA handling. Before auth activation: durable atomic challenge storage, current authority on verified chain, popup exact origin/source hardening, coordinated HTTP/consumer contract and independent review. Wallet-first routes remain absent (integration contract5/7 FAIL). ADB list empty and only Pixel8 Bluetooth/audio PnP entries present. No automatic device polling, false wallet-ready APK, or scheduler restart."
   },
   "walletRepair20261017": {
-    "status": "REPAIR_REVIEW_APPROVED_DRAFT_PR_PENDING_NO_RELEASE",
+    "status": "REPAIR_REVIEW_APPROVED_DRAFT_PR_OPEN_NO_RELEASE",
     "sourceCommit": "f91c3cb8586f453b298aab5074f41436e7db9840",
     "localCodePin": "719a934a2ff54d5e91f136f71959e9f1d3616090",
     "report": "docs/tasks/2026-10-17-wallet-arena/REPORT.md",
@@ -795,10 +795,14 @@
     "gates": [
       "real PostgreSQL",
       "restored original large assets for full rootcheck",
-      "current device/wallet/deployed acceptance"
+      "current device/wallet/deployed acceptance",
+      "GitHub Actions startup failure before jobs; reason not exposed"
     ],
     "arena": "unfinished; historical4 checked, current2 available;0 rounds, no champion",
-    "next": "reviewed private draft PR; no merge/deploy/signing/scheduler restart",
-    "review": "APPROVE fresh read-only /root/wallet_exact_diff_review;32 scoped files; independent91wallet/12queue PASS on immutable719a934"
+    "next": "Complete isolated real PostgreSQL and current user-controlled device/web testnet acceptance; full rootcheck with original assets; no merge/deploy/signing/scheduler restart.",
+    "review": "APPROVE fresh read-only /root/wallet_exact_diff_review;32 scoped files; independent91wallet/12queue PASS on immutable719a934",
+    "pullRequest": "https://github.com/Melxisedek75/gcsc-platform/pull/3",
+    "remoteCodeCommit": "436ceff932b1ec9e4f98e9282ccdc0a9d878c8a1",
+    "ci": "GitHub Actions run39004566820 ended startup_failure before any job (jobs total0); no remote CI pass is claimed and the connector exposes no detailed startup reason."
   }
 }

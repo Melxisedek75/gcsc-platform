@@ -2928,4 +2928,5 @@ identity v2 и unsigned payload уже проверены в QA eb4a84d8/08636fd
 
 - [x] Current-source wallet bugs reproduced and scoped repairs verified locally: wallet91/91, existing56/56, API364/364, web build/native types/static/syntax pass. Evidence and exact code pin: `docs/tasks/2026-10-17-wallet-arena/REPORT.md`.
 - [x] Independent exact-diff review APPROVE for local code719a934, independently91/91 wallet and12/12 queue tests; scope and limitations in task REVIEW.md.
-- [ ] Private draft PR; actual PostgreSQL/current native+web testnet acceptance; full rootcheck with original large assets. No production/signing/deploy acceptance. Arena100 remains incomplete, with no champion.
+- [x] Private draft PR [https://github.com/Melxisedek75/gcsc-platform/pull/3](https://github.com/Melxisedek75/gcsc-platform/pull/3), remote code436ceff; no merge/deploy.
+- [ ] Actual PostgreSQL/current native+web testnet acceptance; full rootcheck with original large assets. No production/signing/deploy acceptance. Arena100 remains incomplete, with no champion.
