@@ -1,0 +1,28 @@
+{
+  "status": "BLOCKED_EXECUTION_TRANSPORT_AND_AGENT_THREAD_LIMIT",
+  "sourceCommit": "f91c3cb8586f453b298aab5074f41436e7db9840",
+  "sourceBranch": "codex/mobile-prototype-integration-20261012",
+  "requestedCompetitors": 100,
+  "plannedJobs": 595,
+  "currentJobsLaunched": 9,
+  "officialSpawnOutputsVerified": 4,
+  "officialCompletedIds": [
+    "a001",
+    "a002",
+    "a004",
+    "a005"
+  ],
+  "transportUnverifiedIds": [
+    "a003",
+    "a006",
+    "a007",
+    "a008",
+    "a009"
+  ],
+  "eliminationRoundsCompleted": 0,
+  "champion": null,
+  "preliminarySupersededOutputs": 16,
+  "applicationPatched": false,
+  "resume": "Restore execution transport and agent capacity; recover and verify current run outputs; bracket.py check spawn then next. Do not restart,simulate or claim100complete.",
+  "permissionMissing": false
+}
