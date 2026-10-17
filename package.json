@@ -32,7 +32,8 @@
     "test:mobile-design": "node --test tests/mobile-design.test.mjs",
     "check:mobile-types": "node apps/mobile/node_modules/typescript/bin/tsc --project apps/mobile/tsconfig.json --noEmit",
     "bundle:android:local": "node scripts/bundle-mobile-local.mjs",
-    "build:apk:local": "node scripts/build-mobile-apk.mjs"
+    "build:apk:local": "node scripts/build-mobile-apk.mjs",
+    "test:wallet-repair": "node --test tests/native-signing-boundary.test.mjs tests/web-settlement-boundary.test.mjs tests/web-sdk-session-boundary.test.mjs tests/mobile-payment-state.test.mjs tests/payment-sheet-close.test.mjs tests/binding-repair-cancellation.test.mjs tests/binding-repair-session.test.mjs tests/binding-repair-screen-cancel.test.mjs tests/wallet-restore.test.mjs"
   },
   "engines": {
     "node": ">=20"

@@ -15,6 +15,7 @@ else process.env.ENABLE_LEGACY_XPR_JOB_POSTING = originalLegacyPosting;
 const { db, _hooks, jwtSign } = mod;
 
 const CONTRACTOR_TOKEN = jwtSign({ userId: 2, email: 'contractor@gcsc.store', role: 'contractor' });
+const OTHER_CONTRACTOR_TOKEN = jwtSign({ userId: 3, email: 'other@gcsc.store', role: 'contractor' });
 const HOMEOWNER_TOKEN = jwtSign({ userId: 1, email: 'homeowner@gcsc.store', role: 'homeowner' });
 const LEAD_TX = 'c'.repeat(64);
 const JOB_TX = 'd'.repeat(64);
@@ -78,11 +79,13 @@ beforeEach(async () => {
     TRUNCATE TABLE job_posting_payments, lead_tokens, payment_receipts, projects, users
     RESTART IDENTITY CASCADE
   `);
+  // Stored bindings represent ownership already verified by the server.
   await pool.query(`
     INSERT INTO users (id, email, password_hash, role, full_name, wallet, is_verified, is_active)
     VALUES
-      (1, 'homeowner@gcsc.store', 'test-hash', 'homeowner', 'Test Homeowner', '{"accountName":"homeowner1","permission":"active"}'::jsonb, TRUE, TRUE),
-      (2, 'contractor@gcsc.store', 'test-hash', 'contractor', 'Test Contractor', '{"accountName":"contractor1","permission":"active"}'::jsonb, TRUE, TRUE)
+      (1, 'homeowner@gcsc.store', 'test-hash', 'homeowner', 'Test Homeowner', '{"accountName":"homeowner1","permission":"active","verified":true}'::jsonb, TRUE, TRUE),
+      (2, 'contractor@gcsc.store', 'test-hash', 'contractor', 'Test Contractor', '{"accountName":"contractor1","permission":"active","verified":true}'::jsonb, TRUE, TRUE),
+      (3, 'other@gcsc.store', 'test-hash', 'contractor', 'Other Contractor', '{"accountName":"contractor2","permission":"active","verified":true}'::jsonb, TRUE, TRUE)
   `);
   await pool.query(`
     INSERT INTO projects (id, homeowner_id, title, description, category, status)
@@ -107,7 +110,7 @@ afterAll(async () => {
   await mod.closeStorage();
 });
 
-test('lead-token receipt survives in-memory reset and duplicate returns 409', async () => {
+test('lead-token receipt survives in-memory reset and same-owner replay returns its confirmed state', async () => {
   const first = await request({
     path: '/api/payment/lead-token',
     token: CONTRACTOR_TOKEN,
@@ -123,7 +126,9 @@ test('lead-token receipt survives in-memory reset and duplicate returns 409', as
     token: CONTRACTOR_TOKEN,
     txHash: LEAD_TX,
   });
-  expect(replay.status).toBe(409);
+  expect(replay.status).toBe(200);
+  expect(replay.body).toMatchObject({ tx_hash: LEAD_TX, lead_id: first.body.lead_id,
+    pending: false, lead_status: 'active' });
   expect(await countRows('payment_receipts', LEAD_TX)).toBe(1);
   expect(await countRows('lead_tokens', LEAD_TX)).toBe(1);
 });
@@ -162,7 +167,56 @@ test('concurrent duplicate lead-token requests create one atomic receipt', async
     request({ path: '/api/payment/lead-token', token: CONTRACTOR_TOKEN, txHash: LEAD_TX }),
   ]);
 
-  expect(results.map(result => result.status).sort()).toEqual([200, 409]);
+  expect(results.map(result => result.status)).toEqual([200, 200]);
+  expect(results[0].body.lead_id).toBe(results[1].body.lead_id);
+  for (const result of results) {
+    expect(result.body).toMatchObject({ tx_hash: LEAD_TX, pending: false, lead_status: 'active' });
+  }
   expect(await countRows('payment_receipts', LEAD_TX)).toBe(1);
   expect(await countRows('lead_tokens', LEAD_TX)).toBe(1);
+});
+
+test('foreign-owner lead-token replay stays 409 without revealing receipt identifiers', async () => {
+  const first = await request({ path: '/api/payment/lead-token', token: CONTRACTOR_TOKEN, txHash: LEAD_TX });
+  expect(first.status).toBe(200);
+  _hooks.verifyHyperionTransfer = jest.fn();
+  const replay = await request({ path: '/api/payment/lead-token', token: OTHER_CONTRACTOR_TOKEN, txHash: LEAD_TX });
+  expect(replay.status).toBe(409);
+  expect(replay.body).toEqual({ error: 'Payment already processed' });
+  expect(_hooks.verifyHyperionTransfer).not.toHaveBeenCalled();
+  expect(await countRows('payment_receipts', LEAD_TX)).toBe(1);
+  expect(await countRows('lead_tokens', LEAD_TX)).toBe(1);
+  const stored = await pool.query('SELECT user_id FROM payment_receipts WHERE tx_hash = $1', [LEAD_TX]);
+  expect(stored.rows[0].user_id).toBe(2);
+});
+
+test('same-owner pending replay stays withheld until the persisted receipt is reconciled', async () => {
+  _hooks.verifyHyperionTransfer = jest.fn()
+    .mockResolvedValueOnce({ ok: false, pending: true, error: 'node_stale' })
+    .mockResolvedValueOnce({ ok: true, from: 'contractor1', block_num: 12345 });
+  const payment = { path: '/api/payment/lead-token', token: CONTRACTOR_TOKEN, txHash: LEAD_TX };
+  const first = await request(payment);
+  expect(first.status).toBe(200);
+  expect(first.body).toMatchObject({ tx_hash: LEAD_TX, pending: true, lead_status: 'pending_verification' });
+  db.payment_receipts.length = 0;
+  db.lead_tokens.length = 0;
+  const pending = await request(payment);
+  expect(pending.status).toBe(200);
+  expect(pending.body).toMatchObject({ tx_hash: LEAD_TX, lead_id: first.body.lead_id,
+    pending: true, lead_status: 'pending_verification' });
+  expect(_hooks.verifyHyperionTransfer).toHaveBeenCalledTimes(1);
+  const before = await pool.query(`SELECT r.user_id, r.verification_status, l.status
+    FROM payment_receipts r JOIN lead_tokens l ON l.tx_hash = r.tx_hash WHERE r.tx_hash = $1`, [LEAD_TX]);
+  expect(before.rows[0]).toEqual({ user_id: 2, verification_status: 'pending', status: 'pending_verification' });
+  await mod.reconcilePendingPayments();
+  const confirmed = await request(payment);
+  expect(confirmed.status).toBe(200);
+  expect(confirmed.body).toMatchObject({ tx_hash: LEAD_TX, lead_id: first.body.lead_id,
+    pending: false, lead_status: 'active' });
+  expect(_hooks.verifyHyperionTransfer).toHaveBeenCalledTimes(2);
+  expect(await countRows('payment_receipts', LEAD_TX)).toBe(1);
+  expect(await countRows('lead_tokens', LEAD_TX)).toBe(1);
+  const after = await pool.query(`SELECT r.user_id, r.verification_status, l.status
+    FROM payment_receipts r JOIN lead_tokens l ON l.tx_hash = r.tx_hash WHERE r.tx_hash = $1`, [LEAD_TX]);
+  expect(after.rows[0]).toEqual({ user_id: 2, verification_status: 'confirmed', status: 'active' });
 });

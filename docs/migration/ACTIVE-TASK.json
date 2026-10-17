@@ -65,7 +65,12 @@
   "frontendAccountRoleDuplicateFollowup": "2026-10-07 UTC: QA 69bb2618 tested duplicate registration of an existing homeowner from contractor-selected real Edge context. Exact frontend/backend sources, isolated PostgreSQL18.4 SPOzgB PASS1/1, test/PG exits0 and cleanup PASS: POST409 with visible Email already registered, no auth token, original homeowner id/role/name unchanged in PostgreSQL. Expected 409 is the only browser console error; no page/request failures. Root check and diff check PASS. Informal read-only review found missing UI transition and partial DB comparison; QA e42f626b now waits for homeowner project form after login and compares full selected account row (including password hash and verification state) before/after duplicate. Exact-source Edge/API/PG18.4 2758e0 PASS1/1, test/PG exits0 and cleanup PASS. Reviewer SHA concern is addressed by the per-run explicit project manifest hash and source before/after bundle checks, not a fixed default pin for arbitrary explicit web roots. Final diff not independently re-reviewed. This is isolated QA evidence, not provider delivery, formal review, full project journey, integration, push or deploy.",
   "frontendAccountDashboardRecovery": "2026-10-07 UTC: QA a09b3d46 switches only account-browser fixture to actual selected Dashboard/HashRouter with role query; Dashboard.tsx is now in the per-run SHA manifest and drift guard. Exact frontend/backend, real Edge154/API/disposable PostgreSQL18.4 YIR6Ij PASS1/1, test/PG exits0, Edge/API cleanup PASS: homeowner and contractor registrations, existing homeowner login from contractor-selected context, subsequent reload GET /api/auth/profile 200, homeowner project form restored and token preserved, duplicate cross-role POST409 leaves full selected account row unchanged. Runner18/18, root check, syntax and diff checks PASS. Informal read-only review found restored-profile ID assertion missing; QA e3df5fca binds GET profile user.id/role to the original homeowner, exact sources Edge/API/PG18.4 h947Hw PASS1/1, test/PG exits0 and cleanup PASS. The fixture mounts Dashboard directly inside HashRouter, not App.tsx routing, and the selected-source SHA manifest is per run rather than a fixed release pin. The final follow-up was not independently re-reviewed. This is local session recovery for one account, not restart/device/provider delivery or full L05/ProjectsPanel journey; formal CODEX/CLAUDE gate, integration, push and deploy remain open.",
   "contractorDashboardComplianceQa": "2026-10-07 UTC: QA test-only a43eed60/30a1c4a2/8fe05d64/2cdbfff9 extend real Edge/HashRouter Dashboard acceptance with contractor Compliance desktop/mobile navigation, persisted filename visibility, account-deactivation GET403 clearing and revoked-profile reload. Reviewer found P2 filename-only denial assertion; 8fe05d64 adds SHA-256, Download and Replace file disappearance assertions. 2cdbfff9 checks profile GET403, AccountAccess, hidden Compliance and cleared local token. Explicit backend and October-web sources, disposable PostgreSQL18.4 runs 2593Wp/JhkCIH/aY41xU/4GuUV0 PASS1/1, test/PG exits0, QA root check and syntax/diff checks PASS. Final diff not independently re-reviewed; no production CSS, formal CODEX/CLAUDE gate, integration, push or deploy; L07 and L06 remain open. Evidence: docs/migration/DOCUMENT-UPLOAD-PG-REVIEW.md.",
-  "adminDocumentReviewRevocationCandidate": "2026-10-07 UTC: QA c406a993 and October-web 51753f2d isolate document-review action 403 privacy follow-up. Real Edge/API/disposable PG18.4 Vh6TsE PASS1/1, test/PG exits0: held PUT receives 403 after admin demotion, pending GET200 completes afterward, document filename and draft rejection note remain absent, loading ends, PG row remains submitted/unreviewed, and a fresh authorized request has an empty note. Earlier original UI was RED y5ZtmX; first race run MPi3n8 reached the revoked-state checks but failed on test reload after re-promotion, corrected by filter transition. QA root check and runner16/16, web build/scoped ESLint and diff checks PASS. Independent read-only review identified loading and race-test gaps, both corrected; exact final diff not re-reviewed. Separate candidates only; no formal CODEX/CLAUDE gate, integration, push or deploy. Evidence: docs/migration/DOCUMENT-UPLOAD-PG-REVIEW.md.",
+  "adminDocumentReviewRevocationCandidate": {
+    "qaCommit": "236150b1",
+    "backendCommit": "d28c7fb8",
+    "status": "LOCAL_PASS_ROOT_ADAPTATION_FAILURE_REVIEW_AND_INTEGRATION_OPEN",
+    "evidence": "QA RED YMitZY approved document HTTP200 after concurrent admin demotion during document read. Backend PostgreSQL transaction locks reviewer users row FOR UPDATE and conditionally updates document; JSON mode checks current reviewer. Second PG test verifies blocked role-row ordering. Exact-source PG project-publication39/39 twice wa1ebe/83ZPvw test/PG exits0, API354/354, syntax/diff PASS. Root adaptation mismatch, independent exact-diff review, formal gate and integration open."
+  },
   "adminDocumentDownloadRevocationCandidate": "2026-10-07 UTC: QA 847d057f and October-web 674c0812 isolate a document-download revocation follow-up. The exact backend responds hidden 404 (not 403) when a demoted admin requests another user's file. Original UI RED MKdWU4 at contract expectation; final Edge/API/disposable PG18.4 PWiGnJ PASS1/1, test/PG exits0: after hidden 404, admin panel clears prior filename and unsaved review note. Earlier held GET race test now confirms its captured 200 body actually contains the target document. QA root check, web build/scoped ESLint and diff checks PASS. Read-only review found the delayed-GET body assertion gap in prior QA commit; corrected before final run, exact final follow-up not independently reviewed. Separate candidates only; no formal CODEX/CLAUDE gate, integration, push or deploy. Evidence: docs/migration/DOCUMENT-UPLOAD-PG-REVIEW.md.",
   "contractorDocumentRevocationCandidate": "2026-10-07 UTC: QA f85a2738 and October-web 0f4c7e63 isolate contractor CompliancePanel privacy follow-up. Original UI RED iA7WtR retained prior document name after disabled-account POST403. Final Edge/API/disposable PG18.4 CGto0q PASS1/1, test/PG exits0: disabled contractor POST/GET403 bodies contain only Account is inactive, previously displayed document metadata clears, row revision is unchanged for denied upload, and held authorized POST201 cannot restore data after later download403. Earlier JozgyY/WElHuU passed before reviewer found P1 stale-success race and P2 denial-body test gap; initial race run 2RVYDK failed on erroneous expected 200 versus actual 201, then lTYD24 and exact final CGto0q passed. Web build, scoped ESLint, QA root check and diff checks PASS. Independent read-only re-review of final diff found no P1-P3; reviewer did not run tests and separate stale getCompliance race is not browser-reproduced. Separate candidates only; no formal CODEX/CLAUDE gate, integration, push or deploy. Evidence: docs/migration/DOCUMENT-UPLOAD-PG-REVIEW.md.",
   "contractorComplianceRefreshCandidate": "2026-10-07 UTC: QA bfebfdfc and October-web 4ec10a4c isolate manual contractor compliance refresh and response-order checks. Initial browser RED wMckik had no Refresh control. Exact final Edge/API/disposable PG18.4 V1fBMK PASS1/1, test/PG exits0: held authorized GET200 cannot restore document data after file GET403; old GET200 cannot overwrite newer POST201 or erase newer POST400 error; late GET403 clears a newer POST201; old synthetic GET500 cannot overwrite newer POST400 error. Failed upload errors remain visible; owner errors are shown outside contractor-only section. Prior xjL4iC/nyEO4x/y0X9gL passed before successive read-only reviewer findings were repaired; final exact diff not independently re-reviewed. Web build/scoped ESLint, QA root check and diff checks PASS. Browser fixture lacks production CSS; formal CODEX/CLAUDE gate, integration, push and deploy remain open. Evidence: docs/migration/DOCUMENT-UPLOAD-PG-REVIEW.md.",
@@ -102,7 +107,15 @@
   "leaseUntil": null,
   "baseCommit": "a0834ac7917c3de57ebc02fb542814561469bca2",
   "candidateCommit": "979130af",
-  "marketingConceptDisclosure": "2026-10-04 LA: separate Codex reviewer 01a10a8c-ed8d-7350-930a-cf19e089a921 APPROVED exact b229fd4e source/static candidate and receiving 87fbb29c plus the existing index.html adaptation hash; adaptation and signed review record committed dcdfd734. Local cherry-pick only. Receiving marketing static18/18, Edge154 eight viewport/text variants errors0/failures0, root check37+12+11/static PASS. Initial root failure on old manifest hash resolved by verified SHA-256 32502c376dea4cfc09ca46753ca31ea58b2f634f97141380dcfcd46a6d2fc96e. Review record ai-review/records/2026-10-04-generated-hero-disclosure.md. Reviewer did not run browser; image rights, full accessibility and live claims/deploy remain blocked. No push or public replacement.",
+  "marketingConceptDisclosure": {
+    "worktree": "C:/gcsc-platform/.worktrees/marketing-october",
+    "branch": "codex/marketing-concept-disclosure-20261001",
+    "baseCommit": "7d5a8b3d",
+    "candidateCommit": "b229fd4e",
+    "status": "SOURCE_CANDIDATE_REVIEW_AUTH_BLOCKED_NOT_INTEGRATED",
+    "checks": "Red Edge verifier absent disclosure exit1, green Edge154 eight viewport/text variants exit0, static18/18, two pages/seven CTAs, syntax/diff checks exit0. Mobile/desktop JPEG inspected. No independent review or receiving integration.",
+    "next": "Claude Code 2.1.186 read-only review attempt exited1 before analysis: 401 OAuth access token is invalid. Do not retry unchanged credentials. Obtain independent CODEX/CLAUDE review on exact diff after authorization is restored or an alternate gate is expressly accepted, then receiving checks before integration. Rights, full accessibility, live domain and release remain open."
+  },
   "latestLocalIntegration": "2026-10-06 UTC: L06 backend source received as ba53b340/c7455937/feaa3777 after independent approval; clean API Jest334/334, baseline PG41/41 l2kPf2, opt-in edit PG5/5 jYTPp8. October-web UI source cherry-picked as 7103e902 and guarded navigation/test follow-up committed 979130af after independent APPROVED review. Actual main/App/Navbar/Edge/API/isolated PostgreSQL browser journey 1/1 twice llsPCH/80TkfV, test/PG exit0; web build, root check, runner12/12, auth-channel validator, account-role10/10, paid-project21/21 PASS. Review records ai-review/records/2026-10-06-private-draft-api.md and private-draft-web.md. Full L06 remains open for PostgreSQL-process restart and focused positive-discard/Back/delayed-PUT browser coverage. No provider, real payment, push or deploy.",
   "localDiskEvidence": "2026-10-05 LA: owner authorized deletion of verified disposable local test clusters and Gradle caches. Removed 57 QA plus 21 publication stopped postgres-baseline cluster subdirectories, preserving parent result/review evidence; removed five inactive Gradle user-home caches under C:/gcsc/.tools. C: free space rose from 5.79 to 22.66 GiB. Subsequent publication PG41/41 cXigP5 PASS. Other dirty worktrees, source, reports, Android SDK/JDK, Docker/WSL and application data were preserved; do not infer 50 GiB is safely reclaimable without verified archival.",
   "privateDraftEditCandidate": "2026-10-05 UTC: backend 7c5e4c54 adds owner-only PUT /api/projects/:id for open unpublished drafts, full-body validation, expected_updated_at conflict guard and transactional PostgreSQL audit. Test-only b815388e adds inactive/demoted owner with stale JWT. Follow-up 0dde0a06 versions new JSON drafts and derives legacy updated_at from created_at on load; RED fresh-create test, focused6/6 and full API Jest334/334 PASS. Independent read-only reviewer found no P1-P3 after backfill fixture repair and independently ran focused6/6; not a formal integration gate. 2026-10-06 UTC: QA opt-in real-PG draft-edit tests b3ed02ef/1e5af966/9380c66d against backend working-tree snapshot SHA-256 30ee422b passed 5/5, isolated PG/test exits0, evidence postgres-baseline-hS4pA0. Independent informal reviewer found two P2 assertion gaps; follow-ups require exact generic denial JSON and unchanged full PostgreSQL row after published 409; narrow static re-review closed both, not formal CODEX/CLAUDE gate. QA runner12/12 and root check PASS after final assertion follow-up. Backend full Jest with explicit dummy test JWT_SECRET passed 340/340; earlier ambient-secret run was invalid and interrupted. Backend working tree also includes dirty L05a changes. Publication pinned source hash still needs coordinated adaptation at integration. Not READY_FOR_REVIEW, not cherry-picked to publication, not full L06 acceptance. October-web UI remains unintegrated. No provider, real payment, push or deploy.",
@@ -132,7 +145,10 @@
   "review": "Independent reviewer 01a0edd5-92a1-7b42-ac8f-88094d6f5637 APPROVED exact 2c15d92c..3ade39b1 late-negative hold source with no confirmed P1-P3. Reviewer PG initdb ENOSPC was not PASS. Earlier reconciliation source and test-only follow-up were independently APPROVED with PG101/101. No full L11/L12/provider/production approval.",
   "result": "Local publication 0727b2e6 adds a reviewed test-only real-PostgreSQL regression for a public contractor whose role changes to admin: active 200, demoted 404 without contractor payload and with no-store. Candidate PG33/33 jiJLkC and root check passed; independent Codex Sol/medium review of 34f3244c..0727b2e6 found no defect. Publication receiving PG33/33 NYNNnr and root check passed. Runtime source remains 34f3244c, whose receiving API328/328, PG32/32, fake-PG and root check passed. No provider activation, real payment, push or deploy. L07/L08/L09/L12 remain open.",
   "publicPreviewBrowserQaCandidate": {
-    "qaCommits": ["daa97d60", "14b3361e"],
+    "qaCommits": [
+      "daa97d60",
+      "14b3361e"
+    ],
     "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
     "checks": "Test-only QA worktree addition: after publishing a local project, anonymous direct GET /api/projects and GET /api/projects/:id expose only the public preview allowlist, a generic title and no owner title, description or address. Existing unpaid/paid/revoked browser journey remains. First PG/Edge run stopped before behavior on a stale default API pin (qYlzQj), not counted PASS. Exact diff 0727b2e6..daa97d60 had two P2 test gaps found by independent Astra review: extra top-level fields and escaped private sentinel. Follow-up 14b3361e checks complete response allowlists and parsed JSON. Explicit current publication API/web roots: Edge/API/isolated PostgreSQL 1/1 PASS uAYqpw before review and 1/1 PASS MY9Je1 after repair, test/PG exits0, browser/API/Edge ports closed and cleanup errors empty; node syntax, diff and root check passed. Independent Astra focused re-review APPROVED exact 0727b2e6..14b3361e and checked assertions, but did not run Edge/PG. Publication fast-forward 14b3361e and receiving explicit publication API/web Edge/API/isolated PostgreSQL 1/1 PASS FcVf1O, test/PG exits0; npm run check PASS. No runtime API change, provider, payment, push or deploy; full L07 remains open."
   },
@@ -158,7 +174,10 @@
     "checks": "Public GET /api/contractors/:id/public read current user, awaited documents and could return the stale profile after contractor disable. Real PostgreSQL table-lock test returned 200 instead of 404 on old API (RED OJ3oI); final current-user read now returns 404 with no profile. Candidate focused32/32, API328/328, root check, fake-PG xxNZN1 and real PG32/32 twice 5Hy3Aj/5Q0kl4 passed. Independent Codex Sol/high review of 884eeb94..59ec9da0 found no introduced defect and repeated focused32/32; reviewer did not run PG. Publication fast-forward 59ec9da0; receiving root check, fake-PG dre9H1, real PG32/32 CqAZg4 and API328/328 passed. No provider, real payment, push or deploy; full L07 remains open."
   },
   "bidTimelineValidation": {
-    "qaTestCommits": ["26fa47c3", "c8ef93aa"],
+    "qaTestCommits": [
+      "26fa47c3",
+      "c8ef93aa"
+    ],
     "backendCommit": "64e7c420",
     "qaCommit": "884eeb94",
     "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
@@ -198,7 +217,10 @@
   },
   "personalProjectsRoleRace": {
     "backendCommit": "7d3dc571",
-    "qaCommits": ["05b300bc", "99f363d6"],
+    "qaCommits": [
+      "05b300bc",
+      "99f363d6"
+    ],
     "status": "REVIEWED_AND_LOCALLY_INTEGRATED",
     "checks": "Real PostgreSQL row-lock test held the project read after the route's first role check, disabled the owner, then observed the old SQL return a full private draft (RED I1lSo5, test/PG1). Backend SQL now joins the current active role in the same statement as owner or contractor project selection. QA added a separate published project and bid so both owner and contractor lists are nonempty before each blocked read, then requires an empty response after disable; disposable fixture is removed. Candidate real PG26/26 twice hFDEar/lmrzOI test/PG0, fake-PG workflow twice HxXhHI/6aRHxa, root check and API318/318 exit0. Initial independent review found P2 fake-PG SQL mismatch; repaired in QA. Combined review then found P2 contractor list lacked a preexisting project; fixed in follow-up 99f363d6. Final independent Sol/high review of 6f7b7e0a..99f363d6 found no introduced defects, ran fake-PG smoke and inspected saved real PG PASS. Publication fast-forward 99f363d6; receiving fake-PG eAPoDK, real PG26/26 jCXJ3b and root check exit0. No site, provider, real payment, push or deploy; L07 remains open."
   },
@@ -366,15 +388,6 @@
     "path": "docs/migration/VIDEO-ANIMATIC-A-B.html",
     "status": "LOCAL_CONCEPT_ONLY",
     "checks": "JavaScript syntax, existing poster path and concept disclosures PASS. node --test docs/migration/video-animatic.test.cjs checks A/B, scrub, play/pause, loop and explainer end in mocked DOM. Local Edge B/hero screenshots at 390/1440 inspected; verify-video-animatic-browser.cjs checks 12 combinations at 320/390/1440, controls, loaded poster, containment and no page errors. Two new-viewer comprehension test not run; no footage, cleared rights or final video."
-  },
-  "marketingConceptDisclosure": {
-    "worktree": "C:/gcsc-platform/.worktrees/marketing-october",
-    "branch": "codex/marketing-concept-disclosure-20261001",
-    "baseCommit": "7d5a8b3d",
-    "candidateCommit": "b229fd4e",
-    "status": "SOURCE_CANDIDATE_REVIEW_AUTH_BLOCKED_NOT_INTEGRATED",
-    "checks": "Red Edge verifier absent disclosure exit1, green Edge154 eight viewport/text variants exit0, static18/18, two pages/seven CTAs, syntax/diff checks exit0. Mobile/desktop JPEG inspected. No independent review or receiving integration.",
-    "next": "Claude Code 2.1.186 read-only review attempt exited1 before analysis: 401 OAuth access token is invalid. Do not retry unchanged credentials. Obtain independent CODEX/CLAUDE review on exact diff after authorization is restored or an alternate gate is expressly accepted, then receiving checks before integration. Rights, full accessibility, live domain and release remain open."
   },
   "legacyProjectIdGuard": {
     "worktree": "C:/gcsc-platform/.worktrees/backend",
@@ -674,12 +687,6 @@
     "status": "LOCAL_PASS_ROOT_ADAPTATION_FAILURE_REVIEW_AND_INTEGRATION_OPEN",
     "evidence": "QA RED returned HTTP200 with private filename after concurrent account disable during user_documents read. Backend rechecks active account and current role before response. Exact-source PG project-publication40/40 twice 10ZfPL/e6PQnM, test/PG exits0; API354/354 with disposable local test JWT_SECRET; syntax/diff PASS. Root adaptation mismatch, independent exact-diff review, formal gate and integration open."
   },
-  "adminDocumentReviewRevocationCandidate": {
-    "qaCommit": "236150b1",
-    "backendCommit": "d28c7fb8",
-    "status": "LOCAL_PASS_ROOT_ADAPTATION_FAILURE_REVIEW_AND_INTEGRATION_OPEN",
-    "evidence": "QA RED YMitZY approved document HTTP200 after concurrent admin demotion during document read. Backend PostgreSQL transaction locks reviewer users row FOR UPDATE and conditionally updates document; JSON mode checks current reviewer. Second PG test verifies blocked role-row ordering. Exact-source PG project-publication39/39 twice wa1ebe/83ZPvw test/PG exits0, API354/354, syntax/diff PASS. Root adaptation mismatch, independent exact-diff review, formal gate and integration open."
-  },
   "marketingSocialDevelopmentStatusCandidate": {
     "marketingCommit": "fd48e71e",
     "status": "LOCAL_PASS_REVIEW_AND_INTEGRATION_OPEN",
@@ -778,5 +785,20 @@
     "review": "APPROVED: Helmholtz independent Sol/high context01a0a1b1-ec17-7ee0-b66f-8c1998a2672b, exact0d597d9b4e93d357875588a6fc8280519423187a vs553c3692b7cb816da0be9c04ee0cf6f8bb6d3356, restricted nonactivated K1/R1 candidate. Independently proof52/52, client15/15 and diff exit0; pinned native/web codecs produce equal candidate bytes/digest. SIG_WA is unsupported and a pre-activation compatibility gate. Durable store/current authority, real wallet, popup origin/source, HTTP/JWT/UI and release excluded.",
     "result": "Candidate implements canonical reqauth/raw nonce transaction bytes, K1/R1 recovery, session/chain/account/purpose/audience binding, expiry and bounded redemption via mandatory atomic-store/current-authority adapters. Shared client refuses transfers, missing/changed proof bytes, session changes and duplicate requests after timeout. Parent API220/220, client15/15, root48/static/readiness, mobile TypeScript, web build2979 modules exit0. No live or mock-as-live claim. Source guards unchanged; two adaptations explicitly registered.",
     "next": "P2.2c: implement a bounded diagnostic sign-only path and observe actual native/web WebAuth responses with user-controlled approval. Verify K1/R1 or separately implement/review SIG_WA handling. Before auth activation: durable atomic challenge storage, current authority on verified chain, popup exact origin/source hardening, coordinated HTTP/consumer contract and independent review. Wallet-first routes remain absent (integration contract5/7 FAIL). ADB list empty and only Pixel8 Bluetooth/audio PnP entries present. No automatic device polling, false wallet-ready APK, or scheduler restart."
+  },
+  "walletRepair20261017": {
+    "status": "REPAIR_REVIEW_APPROVED_DRAFT_PR_PENDING_NO_RELEASE",
+    "sourceCommit": "f91c3cb8586f453b298aab5074f41436e7db9840",
+    "localCodePin": "719a934a2ff54d5e91f136f71959e9f1d3616090",
+    "report": "docs/tasks/2026-10-17-wallet-arena/REPORT.md",
+    "checks": "wallet91/91; existing56/56; API364/364; webbuild/native types/static/syntax PASS",
+    "gates": [
+      "real PostgreSQL",
+      "restored original large assets for full rootcheck",
+      "current device/wallet/deployed acceptance"
+    ],
+    "arena": "unfinished; historical4 checked, current2 available;0 rounds, no champion",
+    "next": "reviewed private draft PR; no merge/deploy/signing/scheduler restart",
+    "review": "APPROVE fresh read-only /root/wallet_exact_diff_review;32 scoped files; independent91wallet/12queue PASS on immutable719a934"
   }
 }

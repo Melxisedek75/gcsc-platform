@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Modal, StyleSheet, Text, View } from 'react-native';
 import {
   PaymentProgress,
   PaymentReceipt,
@@ -32,27 +32,35 @@ export function PaymentSheet({ visible, title, subtitle, request, onClose, onSuc
   const [receipt, setReceipt] = useState<PaymentReceipt | null>(null);
   const [running, setRunning] = useState(false);
 
+  const inFlight = useRef(false);
   useEffect(() => {
-    if (!visible) {
+    // A confirmed purchase may be followed by a new one. Pending attempts survive hiding.
+    if (!visible && !running && receipt?.ok) {
       setProgress({ stage: 'idle', detail: '' });
       setReceipt(null);
+    }
+  }, [visible, running, receipt?.ok]);
+  const start = async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setRunning(true);
+    try {
+      const r = await requestPayment(request, setProgress);
+      setReceipt(r);
+      if (r.ok && onSuccess) onSuccess(r);
+    } finally {
+      inFlight.current = false;
       setRunning(false);
     }
-  }, [visible]);
-
-  const start = async () => {
-    setRunning(true);
-    setReceipt(null);
-    const r = await requestPayment(request, setProgress);
-    setReceipt(r);
-    setRunning(false);
-    if (r.ok && onSuccess) onSuccess(r);
   };
+  // Closing hides the sheet; it never cancels an already submitted transfer.
+  // Keep state across close/reopen so a pending attempt cannot look like a new payment.
+  const close = () => { onClose(); };
 
   const currentIdx = STAGES.findIndex((s) => s.stage === progress.stage);
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={close}>
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
           <View style={styles.handle} />
@@ -122,25 +130,24 @@ export function PaymentSheet({ visible, title, subtitle, request, onClose, onSuc
           <View style={styles.actions}>
             {progress.stage === 'idle' && (
               <>
-                <Button label="Cancel" variant="secondary" onPress={onClose} style={{ flex: 1 }} />
+                <Button label="Cancel" variant="secondary" onPress={close} style={{ flex: 1 }} />
                 <Button
                   label={`Pay ${request.amount.split(' ')[0]} XPR`}
                   onPress={start}
+                  disabled={running}
                   style={{ flex: 1 }}
                 />
               </>
             )}
-            {receipt?.ok && <Button label="Done" fullWidth onPress={onClose} />}
-            {progress.stage === 'failed' && (
+            {receipt?.ok && <Button label="Done" fullWidth onPress={close} />}
+            {(progress.stage === 'failed' || progress.stage === 'pending') && (
               <>
-                <Button label="Close" variant="secondary" onPress={onClose} style={{ flex: 1 }} />
-                <Button label="Retry" onPress={start} style={{ flex: 1 }} />
+                <Button label="Close" variant="secondary" onPress={close} style={{ flex: 1 }} />
+                <Button label={receipt?.pending ? "Check confirmation" : "Retry"} disabled={running} onPress={start} style={{ flex: 1 }} />
               </>
             )}
-            {running && progress.stage !== 'failed' && !receipt && (
-              <Pressable onPress={onClose} style={styles.cancelLink}>
-                <Text style={[typography.caption, { color: colors.textMuted }]}>Cancel</Text>
-              </Pressable>
+            {running && (
+              <Button label="Hide · payment continues" variant="secondary" onPress={close} />
             )}
           </View>
         </View>

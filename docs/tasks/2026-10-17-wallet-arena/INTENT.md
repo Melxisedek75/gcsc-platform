@@ -12,3 +12,5 @@ Acceptance:
 - A5: independent exact-diff review plus private reviewable PR; no automatic merge/deploy.
 
 Unknown: exact installed/deployed failing artifact and fresh device trace; availability of user-controlled current wallet signing. No permanent faultlessness claim. Parent proof evidence in .arena/baseline-summary.md.
+
+Urgency clarification 2026-10-17: the owner prioritizes working wallet connection, transactions and verification. Independently validated repairs may proceed before the unfinished tournament; A2 stays open and these repairs must not be called its winning solution. A3 repair verification applies to each concrete defect regardless of proposal origin. No unhackable, bug-free or backdoor-free certification is implied.
