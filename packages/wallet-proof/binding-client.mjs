@@ -19,6 +19,7 @@ export function createWalletBinding({ connect, issueChallenge, sign, verify }) {
       const proof = await sign(challenge, signal);
       if (signal?.aborted) fail('wallet_binding_cancelled');
       const response = await verify({ accountName, permission, proof });
+      if (signal?.aborted) fail('wallet_binding_cancelled');
       if (!response?.user?.wallet || response.user.wallet.verified !== true) {
         fail('wallet_binding_response_invalid');
       }

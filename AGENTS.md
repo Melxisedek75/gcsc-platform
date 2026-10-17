@@ -91,3 +91,5 @@ progress, failure or owner-required action. Never promise uninterrupted availabi
 
 No new global plugin, paid service, live database, public deployment, wallet signing,
 account/privacy change or provider commitment as a side effect of local migration.
+
+For the wallet repair/Arena task, also read docs/tasks/2026-10-17-wallet-arena/{INTENT,SPEC,PLAN,REPORT}.md; preserve the distinction between independently tested repairs, unfinished Arena output, and real-device acceptance.

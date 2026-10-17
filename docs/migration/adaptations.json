@@ -37,9 +37,9 @@
   {
     "path": "apps/web/scripts/validate-webauth-integration.mjs",
     "sourceBlob": "2883951b3a7e433d54fac0d6e10e78e7e12b0ef6",
-    "sha256": "408051aba74dc488e810715742c8b1fe94ba78e34aec0700942c3e0557115916",
-    "reason": "Resolve the WebAuth static validator app root from its own module, preserving identical checks when invoked from the monorepo or via npm --prefix apps/web. Repair the receiving-tree cwd-dependent root change.",
-    "test": "node --test tests/web-validator-root.test.mjs; npm --prefix apps/web run check:webauth; npm run check"
+    "sha256": "6986d42cef2035e0e31175e1f68e91a2826d7cb5fe6700e012fdf59f8f4d33bd",
+    "reason": "Resolve the WebAuth static validator app root from its own module, preserving identical checks when invoked from the monorepo or via npm --prefix apps/web. Repair the receiving-tree cwd-dependent root change. Wallet repair: verify explicit ownership binding and live actor/permission/chain; prevent duplicate broadcast; preserve pending transaction verification and ownership-safe receipt replay. Scope is the actual changes in this file; real-device acceptance remains separate.",
+    "test": "node --test tests/*boundary.test.mjs tests/mobile-payment-state.test.mjs tests/binding-repair-*.test.mjs tests/wallet-restore.test.mjs; npm run test:api; npm run build:web; npm run check:mobile-types"
   },
   {
     "path": "services/api/v3/package.json",
@@ -51,16 +51,16 @@
   {
     "path": "services/api/v3/pure-server.js",
     "sourceBlob": "952128e9316fe78bef42dba8ddc7b04eb09e29e5",
-    "sha256": "68307cd2a1c6cdd2766ce485197137d565419ac0cfa5830f43d82186bd4d3c44",
-    "reason": "Require verified wallet ownership before payment challenges and bid readiness; preserve wallet-first login plus authenticated sign-only binding, single-use challenges and strict XPR Testnet authority checks. Fail closed on JWT configuration, isolate test storage and bind auth limits to the direct peer. Preserve fresh admin ACL, revision-bound document review and PostgreSQL participant chat. Merge October private drafts, free publication, redacted previews, project-specific paid details and transactional bid/accept checks through the canonical shared schema including paid entitlements. Reject malformed legacy project IDs before detail reads or owner publication. Keep personal project, bid-list, escrow-read, document, compliance, profile, wallet, admin review/audit, current-user and financing-precheck responses private and uncacheable, varying by Authorization. Require a currently active account for /api/me and a current contractor role before listing personal bids or issuing a legacy lead-token payment challenge. Bind personal project and bid list SQL to the account's current active role in the same statement as each private read. Recheck and lock the active owner row inside draft creation so a revoked role cannot persist a new project. Keep legacy posting opt-in and replay-safe without publishing pending receipts. Prevent public contractor profiles from being cached after role revocation. Add owner-only full replacement of open private drafts with current-role validation, expected_updated_at conflict guard and transactional PostgreSQL audit; version new and legacy JSON drafts. Require PostgreSQL by default for account storage, allowing JSON only with explicit local development opt-in. Allow explicit loopback bind for local mobile API testing.",
-    "test": "npm run check; npm run test:api; npm run check:integration-contracts; npm run test:postgres:local -- --postgres-bin <installed-bin>; npm run test:postgres:local -- --postgres-bin <installed-bin> --project-draft-edit --api-root <receiving-api-root>; npm --prefix services/api/v3 run test:pg-storage; npm --prefix services/api/v3 run test:pg-workflow; focused project-preview-privacy and project-paid-details Jest tests; isolated project-publication and project-browser PostgreSQL acceptance"
+    "sha256": "0359f2eb9409aa8c3d89361a4b6e8f88cd5b7e226aa413b8f995e79db81c4e28",
+    "reason": "Require verified wallet ownership before payment challenges and bid readiness; preserve wallet-first login plus authenticated sign-only binding, single-use challenges and strict XPR Testnet authority checks. Fail closed on JWT configuration, isolate test storage and bind auth limits to the direct peer. Preserve fresh admin ACL, revision-bound document review and PostgreSQL participant chat. Merge October private drafts, free publication, redacted previews, project-specific paid details and transactional bid/accept checks through the canonical shared schema including paid entitlements. Reject malformed legacy project IDs before detail reads or owner publication. Keep personal project, bid-list, escrow-read, document, compliance, profile, wallet, admin review/audit, current-user and financing-precheck responses private and uncacheable, varying by Authorization. Require a currently active account for /api/me and a current contractor role before listing personal bids or issuing a legacy lead-token payment challenge. Bind personal project and bid list SQL to the account's current active role in the same statement as each private read. Recheck and lock the active owner row inside draft creation so a revoked role cannot persist a new project. Keep legacy posting opt-in and replay-safe without publishing pending receipts. Prevent public contractor profiles from being cached after role revocation. Add owner-only full replacement of open private drafts with current-role validation, expected_updated_at conflict guard and transactional PostgreSQL audit; version new and legacy JSON drafts. Require PostgreSQL by default for account storage, allowing JSON only with explicit local development opt-in. Allow explicit loopback bind for local mobile API testing. Wallet repair: verify explicit ownership binding and live actor/permission/chain; prevent duplicate broadcast; preserve pending transaction verification and ownership-safe receipt replay. Scope is the actual changes in this file; real-device acceptance remains separate.",
+    "test": "node --test tests/*boundary.test.mjs tests/mobile-payment-state.test.mjs tests/binding-repair-*.test.mjs tests/wallet-restore.test.mjs; npm run test:api; npm run build:web; npm run check:mobile-types"
   },
   {
     "path": "services/api/v3/tests/payments-402.test.js",
     "sourceBlob": "db703f6925ddf23794991f56baca83daae18cb86",
-    "sha256": "663323f5681f59b2c94a5d0626c1766cec480652dffb60ac74901d79d294bb21",
-    "reason": "Positive payment fixtures explicitly represent verified bindings; boot with the legacy false flag to prove ownership checks remain mandatory, including failed lookup and unchanged wallet assertions; isolate JSON database IO. Reject inactive or demoted contractors with an old JWT before the legacy lead-token payment challenge.",
-    "test": "npm run test:api"
+    "sha256": "6320ac8809e2f3239b2a2857e1dae4ec884678410a9528122d74ac206a8ed291",
+    "reason": "Positive payment fixtures explicitly represent verified bindings; boot with the legacy false flag to prove ownership checks remain mandatory, including failed lookup and unchanged wallet assertions; isolate JSON database IO. Reject inactive or demoted contractors with an old JWT before the legacy lead-token payment challenge. Wallet repair: verify explicit ownership binding and live actor/permission/chain; prevent duplicate broadcast; preserve pending transaction verification and ownership-safe receipt replay. Scope is the actual changes in this file; real-device acceptance remains separate.",
+    "test": "node --test tests/*boundary.test.mjs tests/mobile-payment-state.test.mjs tests/binding-repair-*.test.mjs tests/wallet-restore.test.mjs; npm run test:api; npm run build:web; npm run check:mobile-types"
   },
   {
     "path": "services/api/v3/tests/escrow-milestones.test.js",
@@ -79,9 +79,9 @@
   {
     "path": "apps/web/src/services/api.ts",
     "sourceBlob": "386771574699c2d98c025c8bcae2e27b91bfa9c9",
-    "sha256": "d2c0a308b55f9f8b9eb4e94cb8becb71b500535f8fb88d70030205271412cb9b",
-    "reason": "Preserve explicit API origin and typed HTTP errors; expose document review, wallet-first challenge/verify and participant chat methods while suppressing stale application JWT headers on unauthenticated wallet routes. Add typed owner draft, publish and project-specific paid-brief methods with current-session requests. Add versioned owner-only private draft replacement request.",
-    "test": "npm run check; npm run test:api; npm run test:web-wallet-login; node scripts/check-chat-ui.mjs; npm run build:web; browser document and chat smoke; account-role and paid-project browser regressions; actual receiving-tree API/PostgreSQL journey"
+    "sha256": "5285e39a5da78ca72f7aea434b03e6ee6cf1ba0f54d6aea84daba644c3d26cce",
+    "reason": "Preserve explicit API origin and typed HTTP errors; expose document review, wallet-first challenge/verify and participant chat methods while suppressing stale application JWT headers on unauthenticated wallet routes. Add typed owner draft, publish and project-specific paid-brief methods with current-session requests. Add versioned owner-only private draft replacement request. Wallet repair: verify explicit ownership binding and live actor/permission/chain; prevent duplicate broadcast; preserve pending transaction verification and ownership-safe receipt replay. Scope is the actual changes in this file; real-device acceptance remains separate.",
+    "test": "node --test tests/*boundary.test.mjs tests/mobile-payment-state.test.mjs tests/binding-repair-*.test.mjs tests/wallet-restore.test.mjs; npm run test:api; npm run build:web; npm run check:mobile-types"
   },
   {
     "path": "apps/web/src/pages/dashboard/AccountAccess.tsx",
@@ -107,9 +107,9 @@
   {
     "path": "apps/mobile/lib/payments.ts",
     "sourceBlob": "926287b21f4ee1dd48345cba31e4490372b72964",
-    "sha256": "b6d12b0aeabfcd56d86ea309a040cefe75a67e5e84b29754f5718da5143fca30",
-    "reason": "Keep endpoint paths render-safe; resolve explicit origin inside payment try/catch before fetch or signing.",
-    "test": "npm run test:api-config; witnessed no-env payment fetch before correction; no real signatures"
+    "sha256": "cd8ffe29b7847c85ff66dcfb26b5da4f7d7cad18c05b9a2b118f562058c3b18c",
+    "reason": "Keep endpoint paths render-safe; resolve explicit origin inside payment try/catch before fetch or signing. Wallet repair: verify explicit ownership binding and live actor/permission/chain; prevent duplicate broadcast; preserve pending transaction verification and ownership-safe receipt replay. Scope is the actual changes in this file; real-device acceptance remains separate.",
+    "test": "node --test tests/*boundary.test.mjs tests/mobile-payment-state.test.mjs tests/binding-repair-*.test.mjs tests/wallet-restore.test.mjs; npm run test:api; npm run build:web; npm run check:mobile-types"
   },
   {
     "path": "apps/mobile/eas.json",
@@ -121,9 +121,9 @@
   {
     "path": "apps/web/src/pages/Wallet.tsx",
     "sourceBlob": "c10fdb5e4b99081c908b4581de3fc55697444b6c",
-    "sha256": "69aba2b19526b5e91bbd91b79c5ee746af1d174e9609c41267671f3406e46286",
-    "reason": "Preserve app authentication on wallet/network failure; clear only profile HTTP401; catch anonymous restore failure.",
-    "test": "node --test tests/wallet-restore.test.mjs tests/api-config.test.mjs; regression red witnessed before fix"
+    "sha256": "374f9489702ae004352c713f5e3e4ef4f19ac6df6edf967f7f322f2fc7558101",
+    "reason": "Preserve app authentication on wallet/network failure; clear only profile HTTP401; catch anonymous restore failure. Wallet repair: verify explicit ownership binding and live actor/permission/chain; prevent duplicate broadcast; preserve pending transaction verification and ownership-safe receipt replay. Scope is the actual changes in this file; real-device acceptance remains separate.",
+    "test": "node --test tests/*boundary.test.mjs tests/mobile-payment-state.test.mjs tests/binding-repair-*.test.mjs tests/wallet-restore.test.mjs; npm run test:api; npm run build:web; npm run check:mobile-types"
   },
   {
     "path": "contracts/gcsc-core/package.json",
@@ -170,7 +170,7 @@
   {
     "path": "services/api/v3/tests/payment-receipts-postgres.test.js",
     "sourceBlob": "4db2cfe70a631bdf79f12b5dde24d478cecfcd45",
-    "sha256": "83b009c8e4b429436bcf4567d86076a3e1213b299200aee591ce116c46ef384a",
+    "sha256": "82516e80b9d14de43572c39e2494a2cedbaf89fdb8414b7d878d850832a35ded",
     "reason": "Reject non-loopback and non-test PostgreSQL cleanup targets before storage initialization.",
     "test": "node --test tests/local-test-database.test.mjs"
   },
@@ -338,30 +338,30 @@
   {
     "path": "apps/mobile/lib/webauth.ts",
     "sourceBlob": "b3ffa5c39bb62d63dbb21babef2768546796edd4",
-    "sha256": "c9e6344deb0350a0c13136a6811f4616689f109308fcb6507a956df4137a9f65",
-    "reason": "P2.2 mobile wallet-login candidate: send the sign-only ownership transaction through the parent Proton Link transport so Android WebAuth receives the complete ESR instead of the unavailable paired push channel. Device proof remained broadcast false.",
-    "test": "node --test tests/wallet-login-client.test.mjs tests/wallet-proof-client.test.mjs tests/wallet-device-probe.test.mjs; npm run check:mobile-types; npm run check; Pixel 8 XPR Testnet exact-byte probe in MOBILE-WALLET-PROBE.md"
+    "sha256": "54b9cb241db08255a7360a48d91cf709d115dc0d696e8d67b08d90122a5a9e33",
+    "reason": "P2.2 mobile wallet-login candidate: send the sign-only ownership transaction through the parent Proton Link transport so Android WebAuth receives the complete ESR instead of the unavailable paired push channel. Device proof remained broadcast false. Wallet repair: verify explicit ownership binding and live actor/permission/chain; prevent duplicate broadcast; preserve pending transaction verification and ownership-safe receipt replay. Scope is the actual changes in this file; real-device acceptance remains separate.",
+    "test": "node --test tests/*boundary.test.mjs tests/mobile-payment-state.test.mjs tests/binding-repair-*.test.mjs tests/wallet-restore.test.mjs; npm run test:api; npm run build:web; npm run check:mobile-types"
   },
   {
     "path": "apps/mobile/lib/auth.ts",
     "sourceBlob": "4e7e9d388994624f7b45a8cc0601c76c62ccab24",
-    "sha256": "3e030d0e20f79ec4b36442673de98512f44d99d78706982d67ed20c75ab93117",
-    "reason": "Use shared sign-only ownership proof orchestration for both wallet-first login and authenticated wallet binding. Binding calls only the canonical ownership challenge/verify API and accepts only a server-verified wallet response.",
-    "test": "node --test tests/wallet-binding-client.test.mjs tests/wallet-login-client.test.mjs tests/wallet-proof-client.test.mjs; npm run test:wallet-restore; npm run check:mobile-types"
+    "sha256": "a31518162c79a5a5926eea9cf7ea6899129c596cb546afe5aaf6c8cd73714325",
+    "reason": "Use shared sign-only ownership proof orchestration for both wallet-first login and authenticated wallet binding. Binding calls only the canonical ownership challenge/verify API and accepts only a server-verified wallet response. Wallet repair: verify explicit ownership binding and live actor/permission/chain; prevent duplicate broadcast; preserve pending transaction verification and ownership-safe receipt replay. Scope is the actual changes in this file; real-device acceptance remains separate.",
+    "test": "node --test tests/*boundary.test.mjs tests/mobile-payment-state.test.mjs tests/binding-repair-*.test.mjs tests/wallet-restore.test.mjs; npm run test:api; npm run build:web; npm run check:mobile-types"
   },
   {
     "path": "apps/mobile/app/(auth)/connect-wallet.tsx",
     "sourceBlob": "f7b47bf1f9dfbb0959a4549996b03535a7b0af6b",
-    "sha256": "a8e1e48dfde23d360bb22c21a3fe8f30d6eba2b1a6f1fe4ebae099a9fc74d1a2",
-    "reason": "Replace metadata-only profile wallet assignment with authenticated canonical ownership binding; preserve existing navigation and session persistence after the server returns a verified wallet.",
-    "test": "node --test tests/wallet-binding-client.test.mjs; npm run check:mobile-types; physical device acceptance remains open"
+    "sha256": "e94bc77c81ccd7f23cbff308d58d02685ea2470501a68869832a3ff30815d2df",
+    "reason": "Replace metadata-only profile wallet assignment with authenticated canonical ownership binding; preserve existing navigation and session persistence after the server returns a verified wallet. Wallet repair: verify explicit ownership binding and live actor/permission/chain; prevent duplicate broadcast; preserve pending transaction verification and ownership-safe receipt replay. Scope is the actual changes in this file; real-device acceptance remains separate.",
+    "test": "node --test tests/*boundary.test.mjs tests/mobile-payment-state.test.mjs tests/binding-repair-*.test.mjs tests/wallet-restore.test.mjs; npm run test:api; npm run build:web; npm run check:mobile-types"
   },
   {
     "path": "apps/web/src/services/webauth.ts",
     "sourceBlob": "13fdadd14ef7675d9175e9f60621a9ec5d7128ff",
-    "sha256": "22ef8ac9870ef77150e0a8f8d27465635e1dc3241b57c42a7d3684f6fc0c7d1a",
-    "reason": "P2.2 candidate: expose the shared sign-only proof requester; fail closed if popup signature/bytes are absent. Existing connect/restore callers remain unchanged; no ownership claim from metadata.",
-    "test": "npm run test:wallet-proof-client; npm run build:web; npm run check; independent wallet SDK serialization review"
+    "sha256": "ed2eb344dac8bcfb699c46f0fc09ef9ed5c223c723528e0c428ddd4e6cab4ca4",
+    "reason": "P2.2 candidate: expose the shared sign-only proof requester; fail closed if popup signature/bytes are absent. Existing connect/restore callers remain unchanged; no ownership claim from metadata. Wallet repair: verify explicit ownership binding and live actor/permission/chain; prevent duplicate broadcast; preserve pending transaction verification and ownership-safe receipt replay. Scope is the actual changes in this file; real-device acceptance remains separate.",
+    "test": "node --test tests/*boundary.test.mjs tests/mobile-payment-state.test.mjs tests/binding-repair-*.test.mjs tests/wallet-restore.test.mjs; npm run test:api; npm run build:web; npm run check:mobile-types"
   },
   {
     "path": "apps/web/src/pages/dashboard/BidsPanel.tsx",
@@ -467,5 +467,40 @@
     "sha256": "883a473e14dc20ac2eb2ebbf2c8974fb1509f6cfc879f76be8f85b2c1005d5f6",
     "reason": "Adapt prototype theme and workspace UI without changing server behavior or wallet proof.",
     "test": "npm run test:mobile-design; npm run check:mobile-types; npm run check"
+  },
+  {
+    "path": "apps/mobile/components/PaymentSheet.tsx",
+    "sourceBlob": "3814de5f17849eec3830e7cd95892e37fa080f0f",
+    "sha256": "6c336f9c99cb74f37db307afd18e17d53d830abc8336a7c1018bb9815447ee86",
+    "reason": "Wallet repair: verify explicit ownership binding and live actor/permission/chain; prevent duplicate broadcast; preserve pending transaction verification and ownership-safe receipt replay. Scope is the actual changes in this file; real-device acceptance remains separate.",
+    "test": "node --test tests/*boundary.test.mjs tests/mobile-payment-state.test.mjs tests/binding-repair-*.test.mjs tests/wallet-restore.test.mjs; npm run test:api; npm run build:web; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/web/src/pages/dashboard/MilestoneManager.tsx",
+    "sourceBlob": "d55acfab4ff38848732cbf012447d9ee253ee8e7",
+    "sha256": "f18023e886b926a64a02b8e9aafdbf9168255765790f751d086285bcac39d91a",
+    "reason": "Wallet repair: verify explicit ownership binding and live actor/permission/chain; prevent duplicate broadcast; preserve pending transaction verification and ownership-safe receipt replay. Scope is the actual changes in this file; real-device acceptance remains separate.",
+    "test": "node --test tests/*boundary.test.mjs tests/mobile-payment-state.test.mjs tests/binding-repair-*.test.mjs tests/wallet-restore.test.mjs; npm run test:api; npm run build:web; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/web/src/pages/dashboard/WalletPanel.tsx",
+    "sourceBlob": "ea25e494d8862cab4a8d8ed7477856a8c3059200",
+    "sha256": "3428fef7afe8658c0d2dea31648406273acde99642cc5385b681c1f6566ac52b",
+    "reason": "Wallet repair: verify explicit ownership binding and live actor/permission/chain; prevent duplicate broadcast; preserve pending transaction verification and ownership-safe receipt replay. Scope is the actual changes in this file; real-device acceptance remains separate.",
+    "test": "node --test tests/*boundary.test.mjs tests/mobile-payment-state.test.mjs tests/binding-repair-*.test.mjs tests/wallet-restore.test.mjs; npm run test:api; npm run build:web; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/web/src/services/xprSettlement.ts",
+    "sourceBlob": "071cf7573cf4c627bb643f2c55014cc8bd2d0339",
+    "sha256": "154f01b99440ad236f20aac10fd2eea4e91f331cbde20a6f2632557f0db48c28",
+    "reason": "Wallet repair: verify explicit ownership binding and live actor/permission/chain; prevent duplicate broadcast; preserve pending transaction verification and ownership-safe receipt replay. Scope is the actual changes in this file; real-device acceptance remains separate.",
+    "test": "node --test tests/*boundary.test.mjs tests/mobile-payment-state.test.mjs tests/binding-repair-*.test.mjs tests/wallet-restore.test.mjs; npm run test:api; npm run build:web; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/web/scripts/validate-xpr-settlement-layer.mjs",
+    "sourceBlob": "9a7d241c09e785cb237fe0ee599290ffdfe61b6d",
+    "reason": "Align wallet acceptance checks with verified signing boundaries and ownership-safe receipt replay; retain independent real-device/PostgreSQL acceptance gates.",
+    "test": "npm run check:web; node --check services/api/v3/tests/payment-receipts-postgres.test.js; actual-source focused wallet regressions",
+    "sha256": "e569de839e8b4b55eff4570dee1921f3a9a7a89668eaed8f3c75c8584179f665"
   }
 ]

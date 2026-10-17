@@ -1,10 +1,11 @@
 // Auth helpers — login/register against Railway /api/auth/*.
 // Saves JWT + user to AsyncStorage on success via api.saveSession.
 
-import { apiRequest, AuthUser, clearSession, normalizeUser, saveSession, UserRole } from './api';
+import { apiRequest, AuthUser, clearSession, getCurrentUser, getToken, normalizeUser, saveSession, UserRole } from './api';
 import { connectWallet, signWalletOwnershipChallenge } from './webauth';
 import { createWalletFirstLogin } from '../../../packages/wallet-proof/login-client.mjs';
 import { createWalletBinding } from '../../../packages/wallet-proof/binding-client.mjs';
+import type { OwnershipChallenge } from '../../../packages/wallet-proof/request-proof.mjs';
 
 interface AuthResponse {
   message?: string;
@@ -58,21 +59,46 @@ export async function loginWithWallet(signal?: AbortSignal): Promise<AuthUser> {
   return normalizeUser(await walletFirstLogin({ signal }));
 }
 
-const walletBinding = createWalletBinding<AuthUser>({
-  connect: connectWallet,
-  issueChallenge: body => apiRequest('/api/wallet/ownership/challenge', {
-    method: 'POST',
-    body,
-  }),
-  sign: signWalletOwnershipChallenge,
-  verify: body => apiRequest<{ user: AuthUser }>('/api/wallet/ownership/verify', {
-    method: 'POST',
-    body,
-  }),
-});
+let bindingPending = false;
 
 export async function bindWallet(signal?: AbortSignal): Promise<AuthUser> {
-  return normalizeUser(await walletBinding({ signal }));
+  if (bindingPending) throw new Error('wallet_binding_request_pending');
+  const token = getToken();
+  const userId = getCurrentUser()?.id;
+  if (!token || !userId) throw new Error('wallet_binding_sign_in_required');
+  const assertSession = () => {
+    if (signal?.aborted || getToken() !== token || getCurrentUser()?.id !== userId) {
+      throw new Error('wallet_binding_session_changed');
+    }
+  };
+  bindingPending = true;
+  try {
+    const walletBinding = createWalletBinding<AuthUser>({
+      connect: async () => { assertSession(); const result = await connectWallet(); assertSession(); return result; },
+      issueChallenge: async body => {
+        assertSession();
+        const result = await apiRequest<OwnershipChallenge>('/api/wallet/ownership/challenge', { method: 'POST', body });
+        assertSession();
+        return result;
+      },
+      sign: async (challenge, cancellation) => {
+        assertSession();
+        const result = await signWalletOwnershipChallenge(challenge, cancellation);
+        assertSession();
+        return result;
+      },
+      verify: async body => {
+        assertSession();
+        const result = await apiRequest<{ user: AuthUser }>('/api/wallet/ownership/verify', { method: 'POST', body });
+        assertSession();
+        if (result.user.id !== userId) throw new Error('wallet_binding_session_changed');
+        return result;
+      },
+    });
+    const result = await walletBinding({ signal });
+    assertSession();
+    return normalizeUser(result);
+  } finally { bindingPending = false; }
 }
 
 interface RegisterArgs {

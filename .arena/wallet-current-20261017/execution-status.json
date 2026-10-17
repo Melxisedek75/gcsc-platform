@@ -1,0 +1,30 @@
+{
+  "status": "TOURNAMENT_INCOMPLETE_URGENT_INDEPENDENT_REPAIR_REVIEW",
+  "sourceCommit": "f91c3cb8586f453b298aab5074f41436e7db9840",
+  "sourceBranch": "codex/mobile-prototype-integration-20261012",
+  "requestedCompetitors": 100,
+  "plannedJobs": 595,
+  "currentJobsLaunched": 9,
+  "officialSpawnOutputsVerified": 4,
+  "officialCompletedIds": [
+    "a001",
+    "a002",
+    "a004",
+    "a005"
+  ],
+  "transportUnverifiedIds": [
+    "a003",
+    "a006",
+    "a007",
+    "a008",
+    "a009"
+  ],
+  "eliminationRoundsCompleted": 0,
+  "champion": null,
+  "preliminarySupersededOutputs": 16,
+  "applicationPatched": true,
+  "resume": "Execution transport recovered. Independently tested repair is not an Arena winner. Recover/check historical originals; current bracket next sees98missing. Preserve source/task/state and resume without invented outputs.",
+  "permissionMissing": false,
+  "currentAvailableSpawnOutputs": 2,
+  "localRepairCodePin": "719a934a2ff54d5e91f136f71959e9f1d3616090"
+}

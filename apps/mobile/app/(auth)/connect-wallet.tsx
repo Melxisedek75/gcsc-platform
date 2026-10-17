@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../components/Button';
 import { Header } from '../../components/Header';
@@ -13,27 +13,39 @@ export default function ConnectWallet() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const activeBinding = useRef<AbortController | null>(null);
+  useEffect(() => () => { activeBinding.current?.abort(); }, []);
+
   async function handleConnect() {
-    if (submitting) return;
+    if (submitting || activeBinding.current) return;
+    const controller = new AbortController();
+    activeBinding.current = controller;
     setError(null);
     setSubmitting(true);
     try {
-      const updated = await bindWallet();
       const token = getToken();
-      if (token) {
-        await saveSession(token, updated);
+      const userId = getCurrentUser()?.id;
+      const updated = await bindWallet(controller.signal);
+      if (controller.signal.aborted) return;
+      if (!token || getToken() !== token || getCurrentUser()?.id !== userId || updated.id !== userId) {
+        throw new Error('wallet_binding_session_changed');
       }
+      await saveSession(token, updated);
+      if (controller.signal.aborted || getToken() !== token || getCurrentUser()?.id !== userId) return;
       const target = updated.role === 'contractor' ? '/(contractor)/jobs' : '/(homeowner)/jobs';
       router.replace(target);
     } catch (err) {
+      if (controller.signal.aborted) return;
       const apiErr = err as ApiError | Error;
       setError(apiErr.message ?? 'Failed to connect wallet');
     } finally {
-      setSubmitting(false);
+      if (activeBinding.current === controller) activeBinding.current = null;
+      if (!controller.signal.aborted) setSubmitting(false);
     }
   }
 
   function handleSkip() {
+    activeBinding.current?.abort();
     const user = getCurrentUser();
     const target = user?.role === 'contractor' ? '/(contractor)/jobs' : '/(homeowner)/jobs';
     router.replace(target);

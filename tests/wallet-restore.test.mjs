@@ -17,7 +17,7 @@ const code = ts.transpileModule(`(${loader.getText(file)})()`, { compilerOptions
 class ApiError extends Error {
   constructor(message, status) { super(message); this.status = status; }
 }
-for (const failure of ['profile', 'profile500', 'profile401', 'storageMismatch', 'clientChanged', 'restore', 'connect', 'connect401', 'anonymous', 'success', 'unmounted']) {
+for (const failure of ['profile', 'profile500', 'profile401', 'storageMismatch', 'clientChanged', 'restore', 'anonymous', 'success', 'unmounted']) {
   test(`wallet restore: ${failure}`, async () => {
     let cleared = false;
     let status = '';
@@ -38,11 +38,7 @@ for (const failure of ['profile', 'profile500', 'profile401', 'storageMismatch',
           if (['profile401', 'storageMismatch', 'clientChanged'].includes(failure)) throw new ApiError('unauthorized', 401);
           return { user: { id: 1 } };
         },
-        connectWallet: async () => {
-          if (failure === 'connect') throw new Error('ownership rejected');
-          if (failure === 'connect401') throw new ApiError('wallet rejected', 401);
-          return { user: { id: 1 }, wallet: { accountName: 'fixture' } };
-        },
+        connectWallet: async () => { throw new Error('Restore must never link metadata or request a proof'); },
         clearToken: () => { cleared = true; },
       },
       restoreWebAuthWallet: async () => {
@@ -57,10 +53,14 @@ for (const failure of ['profile', 'profile500', 'profile401', 'storageMismatch',
     assert.equal(cleared, failure === 'profile401');
     if (failure === 'unmounted') { assert.equal(writes, 0); return; }
     assert.ok(status.length > 0, 'success or failure must be visible');
-    if (['restore', 'connect', 'connect401'].includes(failure)) {
+    if (failure === 'restore') {
       assert.equal(user.id, 1, 'keep the authenticated profile');
       assert.equal(wallet, null, 'do not invent a verified wallet');
     }
-    if (failure === 'success') assert.equal(wallet.accountName, 'fixture');
+    if (failure === 'success') {
+      assert.equal(wallet.accountName, 'fixture');
+      assert.equal(wallet.verified, false, 'SDK restore is local, never proof of ownership');
+      assert.match(status, /Connect explicitly/);
+    }
   });
 }

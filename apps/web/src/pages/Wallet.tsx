@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { motion } from 'framer-motion'
 import { Link2, Coins, CreditCard, Check, ExternalLink, ArrowRight, Loader2, PlugZap, ShieldCheck } from 'lucide-react'
 import { api, ApiError, type GcscUser, type GcscWallet } from '../services/api'
 import { connectWebAuthWallet, restoreWebAuthWallet } from '../services/webauth'
+import { bindWebAuthWallet } from '../services/walletBinding'
 
 const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }
 const fadeUpChild = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] } } }
@@ -25,6 +26,7 @@ export default function Wallet() {
   const [wallet, setWallet] = useState<GcscWallet | null>(null)
   const [connecting, setConnecting] = useState(false)
   const [status, setStatus] = useState('')
+  const binding = useRef<AbortController | null>(null)
 
   useEffect(() => {
     let mounted = true
@@ -48,18 +50,16 @@ export default function Wallet() {
             }
             return
           }
-          if (!mounted) return
+          if (!mounted || api.getToken() !== token) return
           setUser(response.user)
           setWallet(response.user.wallet || null)
 
           if (!response.user.wallet) {
             const restored = await restoreWebAuthWallet()
             if (!mounted || !restored) return
-            const saved = await api.connectWallet(restored)
-            if (!mounted) return
-            setUser(saved.user)
-            setWallet(saved.wallet)
-            setStatus('Restored WebAuth session and saved it to your GCSC account.')
+            if (api.getToken() !== token) return
+            setWallet({ ...restored, verified: false })
+            setStatus('Restored WebAuth session locally. Connect explicitly to verify ownership and link it to your profile.')
           }
         } catch {
           if (mounted) setStatus('Could not restore your wallet. Your app sign-in has been kept; please try connecting again.')
@@ -69,7 +69,7 @@ export default function Wallet() {
 
       try {
         const restored = await restoreWebAuthWallet()
-        if (!mounted || !restored) return
+        if (!mounted || !restored || api.getToken()) return
         setWallet({ ...restored })
         setStatus('Restored WebAuth session locally. Sign in on Dashboard to save it.')
       } catch {
@@ -81,34 +81,43 @@ export default function Wallet() {
 
     return () => {
       mounted = false
+      binding.current?.abort()
     }
   }, [])
 
   const connectWallet = async () => {
+    if (binding.current) return
+    const controller = new AbortController()
+    binding.current = controller
     setConnecting(true)
     setStatus('')
     try {
-      const connected = await connectWebAuthWallet()
       if (user) {
-        const response = await api.connectWallet(connected)
-        setUser(response.user)
-        setWallet(response.wallet)
+        const token = api.getToken()
+        const updated = await bindWebAuthWallet(user.id, controller.signal)
+        if (controller.signal.aborted || api.getToken() !== token) return
+        setUser(updated)
+        setWallet(updated.wallet || null)
         setStatus('WebAuth wallet connected and saved to your GCSC account.')
       } else {
-        setWallet({ ...connected })
+        const connected = await connectWebAuthWallet()
+        if (controller.signal.aborted || api.getToken()) return
+        setWallet({ ...connected, verified: false })
         setStatus('WebAuth wallet connected locally. Open Dashboard and sign in to save it to your profile.')
       }
     } catch (err) {
+      if (controller.signal.aborted) return
       setStatus(err instanceof Error ? err.message : 'Could not connect WebAuth wallet')
     } finally {
-      setConnecting(false)
+      if (binding.current === controller) binding.current = null
+      if (!controller.signal.aborted) setConnecting(false)
     }
   }
 
   const steps = [
     { icon: PlugZap, num: '01', title: 'Connect WebAuth', desc: 'Use the WebAuth modal on this page or inside Dashboard to authorize your XPR account.', tags: ['WebAuth', 'XPR'] },
     { icon: ShieldCheck, num: '02', title: 'Keep Keys Private', desc: 'GCSC stores only your XPR account name and permission. Private keys stay inside your wallet.', tags: ['No Custody', 'Secure'] },
-    { icon: Link2, num: '03', title: 'Save to Dashboard', desc: 'If you are signed in, the connected wallet is attached to your GCSC profile automatically.', tags: ['Profile'] },
+    { icon: Link2, num: '03', title: 'Save to Dashboard', desc: 'If you are signed in, the connected wallet is attached after you approve a sign-only ownership verification.', tags: ['Profile'] },
     { icon: Coins, num: '04', title: 'Get GCSC Tokens', desc: 'Purchase GCSC tokens through the integrated swap feature or receive them as payment for completed construction projects.', tags: ['Buy', 'Earn'] },
   ]
 
@@ -150,7 +159,7 @@ export default function Wallet() {
                 </h2>
                 <p className="font-inter text-sm mt-2" style={{ color: '#475569' }}>
                   {wallet
-                    ? `Permission: ${wallet.permission}. ${user ? 'Saved to your Dashboard profile.' : 'Sign in on Dashboard to save this wallet.'}`
+                    ? `Permission: ${wallet.permission}. ${wallet.verified ? 'Ownership verified and linked to your Dashboard profile.' : 'Local session only. Connect to verify ownership and link your profile.'}`
                     : 'Authorize through WebAuth. GCSC never stores your private keys.'}
                 </p>
                 {status && <p className={`font-inter text-sm mt-3 ${status.includes('connected') ? 'text-[#10B981]' : 'text-[#EF4444]'}`}>{status}</p>}

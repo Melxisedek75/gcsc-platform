@@ -69,14 +69,20 @@ export interface TransferArgs {
   fromAccount?: string;
   fromPermission?: string;
   onDebug?: (message: string) => void;
+  // Caller checks its application login/account snapshot; this does not cancel an opened wallet request.
+  isSessionCurrent?: () => boolean;
 }
 
 export interface SignResult {
   ok: boolean;
   txHash?: string;
   error?: string;
+  // True once the SDK broadcast call starts, even if its outcome is unknown.
+  broadcastAttempted?: boolean;
 }
 
+let sessionRevision = 0;
+let transferInFlight = false;
 let currentSession: WebAuthSession | null = null;
 let protonLink: ProtonLink | null = null;
 let protonSession: LinkSession | null = null;
@@ -113,9 +119,11 @@ export async function signWalletOwnershipChallenge(challenge: OwnershipChallenge
 }
 
 export async function loadWebauthSession(): Promise<WebAuthSession | null> {
+  const revision = sessionRevision;
   const raw = await AsyncStorage.getItem(WEBAUTH_SESSION_KEY);
-  if (!raw) return null;
+  if (!raw || revision !== sessionRevision) return null;
   try {
+    sessionRevision += 1;
     currentSession = JSON.parse(raw) as WebAuthSession;
     return currentSession;
   } catch {
@@ -124,6 +132,7 @@ export async function loadWebauthSession(): Promise<WebAuthSession | null> {
 }
 
 async function persistSession(s: WebAuthSession): Promise<void> {
+  sessionRevision += 1;
   currentSession = s;
   await AsyncStorage.setItem(WEBAUTH_SESSION_KEY, JSON.stringify(s));
 }
@@ -138,18 +147,20 @@ export async function primeSessionFromBackend(
 }
 
 export async function clearSession(): Promise<void> {
+  sessionRevision += 1;
   currentSession = null;
+  const previousSession = protonSession;
+  protonLink = null;
+  protonSession = null;
   // Also drop the Proton Link session (in-memory + SDK storage). Without this,
   // a later transfer restores the PREVIOUS wallet account's session, so after
   // switching accounts every payment fails the profile-wallet match check no
   // matter which account the user picks in WebAuth.
   try {
-    await protonSession?.remove();
+    await previousSession?.remove();
   } catch {
     // best effort — a broken stored session must not block disconnect
   }
-  protonLink = null;
-  protonSession = null;
   await AsyncStorage.removeItem(WEBAUTH_SESSION_KEY);
 }
 
@@ -194,6 +205,7 @@ async function openSigningRequestWithWallet(req: SigningRequest): Promise<void> 
 }
 
 async function connectWithProtonNativeSdk(restoreSession = false): Promise<LinkSession> {
+  const revision = sessionRevision;
   const result = await ProtonRNSDK({
     linkOptions: {
       chainId: CHAIN_ID,
@@ -208,6 +220,9 @@ async function connectWithProtonNativeSdk(restoreSession = false): Promise<LinkS
     },
   });
 
+  if (revision !== sessionRevision) {
+    throw new Error('WebAuth session changed while pairing; connect again before signing.');
+  }
   if (!result.link || !result.session) {
     throw new Error('WebAuth did not return a Proton Link session');
   }
@@ -370,10 +385,6 @@ function debugTransfer(args: TransferArgs, trace: string[], message: string): vo
   args.onDebug?.(message);
 }
 
-function describeError(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
-}
-
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
@@ -516,7 +527,8 @@ export async function connectWallet(): Promise<WebAuthSession> {
   // result over the Proton Link channel, not the deeplink callback. So the
   // Proton Link SDK is the ONLY working path; it just needed a real chain API
   // node (see CHAIN_API). Use it as the sole connect path.
-  // Fresh pairing must not inherit a previous account's session state.
+  // Fresh pairing must invalidate pending work for the previous identity.
+  sessionRevision += 1;
   protonLink = null;
   protonSession = null;
   const identity = await withTimeout(
@@ -535,114 +547,111 @@ export async function connectWallet(): Promise<WebAuthSession> {
 }
 
 export async function signTransfer(args: TransferArgs): Promise<SignResult> {
+  if (transferInFlight) {
+    return { ok: false, broadcastAttempted: false, error: 'A WebAuth transfer is still pending. Check its result before submitting another transfer.' };
+  }
+  transferInFlight = true;
   const trace: string[] = [];
-  try {
-    if (!currentSession) {
-      debugTransfer(args, trace, 'Loading stored WebAuth session');
-      await loadWebauthSession();
+  let broadcastAttempted = false;
+  let txHash: string | undefined;
+  const pendingWork: { promise: Promise<unknown> | null } = { promise: null };
+  const revision = sessionRevision;
+  // A UI timeout does not cancel SDK work. Keep the guard until that exact
+  // promise settles, including when the caller already received an error.
+  function track<T>(promise: Promise<T>): Promise<T> {
+    pendingWork.promise = promise;
+    const settled = () => { if (pendingWork.promise === promise) pendingWork.promise = null; };
+    promise.then(settled, settled);
+    return promise;
+  }
+  const assertAppSessionCurrent = () => {
+    if (args.isSessionCurrent && !args.isSessionCurrent()) {
+      throw new Error('Application session changed before signing. Sign in again and review the transfer.');
     }
-    const from = args.fromAccount ?? currentSession?.account;
-    const permission =
-      args.fromPermission ?? currentSession?.permission ?? 'active';
-    if (!from) {
-      throw new Error('No WebAuth session — call connectWallet() first');
+  };
+  try {
+    assertAppSessionCurrent();
+    const hasExplicitIdentity = args.fromAccount !== undefined || args.fromPermission !== undefined;
+    // Saved profile metadata is not a signable wallet session. Without explicit
+    // payment identity, only a currently paired SDK session supplies authority.
+    const from = hasExplicitIdentity ? args.fromAccount : protonLink && protonSession?.auth?.actor?.toString();
+    const permission = hasExplicitIdentity ? args.fromPermission : protonLink && protonSession?.auth?.permission?.toString();
+    if (!from || !permission) {
+      throw new Error('A complete expected wallet account and permission or a current paired WebAuth session is required.');
     }
     debugTransfer(args, trace, `Preparing transfer as ${from}@${permission}`);
 
-    // Device logs proved direct-ESR deeplink cannot receive the signed result
-    // from XPR WebAuth (result comes over the Proton Link channel). So sign the
-    // transfer through the Proton Link session — the same channel that now works
-    // once CHAIN_API points at a real API node.
     let link: ProtonLink | null = protonLink;
     let session: LinkSession | null = protonSession;
     if (!link || !session) {
-      try {
-        debugTransfer(args, trace, 'Restoring Proton Link session');
-        session = await withTimeout(
-          connectWithProtonNativeSdk(true),
-          90_000,
-          'Proton Link session restore',
-        );
-        link = protonLink;
-      } catch (restoreErr) {
-        // A stored session can't always be restored (SDK login sessions are
-        // in-memory and lost across app restarts). Fall back to a fresh login,
-        // which re-opens WebAuth to re-establish a signable Proton Link session.
-        debugTransfer(args, trace, `Restore failed: ${describeError(restoreErr)}; re-authenticating`);
-        session = await withTimeout(
-          connectWithProtonNativeSdk(false),
-          90_000,
-          'Proton Link re-login',
-        );
-        link = protonLink;
-      }
-    }
-    if (!link) {
-      throw new Error('No Proton Link session');
-    }
-
-    const signerAccount = session?.auth?.actor ? String(session.auth.actor) : from;
-    const signerPermission = session?.auth?.permission
-      ? String(session.auth.permission)
-      : permission;
-    if (from && signerAccount !== from) {
-      throw new Error(
-        `Payment must be signed by your linked wallet ${from}, but WebAuth is using ${signerAccount}. ` +
-          'To switch accounts: open Profile -> Disconnect wallet -> Connect WebAuth and pick the account you want.',
+      debugTransfer(args, trace, 'Restoring Proton Link session');
+      assertAppSessionCurrent();
+      session = await withTimeout(
+        track(connectWithProtonNativeSdk(true)),
+        90_000,
+        'Proton Link session restore',
       );
+      link = protonLink;
     }
+    const validateSigner = () => {
+      assertAppSessionCurrent();
+      if (revision !== sessionRevision || link !== protonLink || session !== protonSession) {
+        throw new Error('WebAuth session changed before signing. Reconnect and review the transfer.');
+      }
+      if (!link || !session) throw new Error('No paired Proton Link session');
+      const actor = session.auth?.actor?.toString();
+      const actualPermission = session.auth?.permission?.toString();
+      const chain = session.chainId?.toString();
+      if (!actor || !actualPermission || !chain) {
+        throw new Error('WebAuth signer is missing its account, permission or chain. Reconnect before signing.');
+      }
+      if (actor !== from || actualPermission !== permission || chain !== CHAIN_ID) {
+        throw new Error(`WebAuth signer must match ${from}@${permission} on the configured XPR Testnet chain. Reconnect and select the linked wallet.`);
+      }
+    };
+    validateSigner();
     const action = {
       account: 'eosio.token',
       name: 'transfer',
-      authorization: [{ actor: signerAccount, permission: signerPermission }],
+      authorization: [{ actor: from, permission }],
       data: {
-        from: signerAccount,
+        from,
         to: args.recipient,
         quantity: args.amount,
         memo: args.memo ?? '',
       },
     };
     debugTransfer(args, trace, 'Opening Proton Link transaction request');
-    let result;
-    try {
-      result = await withTimeout(
-        link.transact({ actions: [action] }, { broadcast: true }),
-        180_000,
-        'WebAuth transaction',
-      );
-    } catch (txErr) {
-      // A session restored from storage can be stale after a reinstall or a
-      // fresh registration: the chain rejects its session key with "declares
-      // authority ... but does not have signatures". Self-heal by discarding
-      // the stale session, pairing fresh in WebAuth, and retrying once.
-      const txMsg = txErr instanceof Error ? txErr.message : String(txErr);
-      if (!/does not have signatures|unsatisfied|missing.*signature/i.test(txMsg)) {
-        throw txErr;
-      }
-      debugTransfer(args, trace, 'Stale session signature rejected; re-pairing');
-      protonLink = null;
-      protonSession = null;
-      await connectWithProtonNativeSdk(false);
-      // connectWithProtonNativeSdk repopulates the module-level protonLink;
-      // the cast re-widens the type TS narrowed to null above.
-      link = protonLink as ProtonLink | null;
-      if (!link) {
-        throw new Error('Re-pairing with WebAuth failed');
-      }
-      result = await withTimeout(
-        link.transact({ actions: [action] }, { broadcast: true }),
-        180_000,
-        'WebAuth transaction (retry)',
-      );
-    }
-    const txHash = extractTxHash(result);
-    if (!txHash) {
-      throw new Error('WebAuth did not return tx id');
-    }
-    return { ok: true, txHash };
+    validateSigner();
+    // Keep the parent Link transport: it carries the full ESR on Android.
+    // Starting this call is the point after which a failed/late callback cannot
+    // prove that nothing was broadcast. Never re-pair or broadcast automatically.
+    broadcastAttempted = true;
+    const result = await withTimeout(
+      track(link!.transact({ actions: [action] }, { broadcast: true, chain: CHAIN_ID })),
+      180_000,
+      'WebAuth transaction',
+    );
+    txHash = extractTxHash(result);
+    if (!txHash) throw new Error('WebAuth did not return tx id');
+    return { ok: true, txHash, broadcastAttempted: true };
   } catch (err) {
+    txHash = txHash ?? extractTxHash(err);
     const msg = err instanceof Error ? err.message : 'Unknown signing error';
-    return { ok: false, error: trace.length ? `${msg} | ${trace.join(' -> ')}` : msg };
+    const outcome = broadcastAttempted
+      ? `Transfer result is unknown. Check the wallet and chain before submitting again. ${msg}`
+      : msg;
+    // Invalidate a timed-out restore so its eventual completion cannot install
+    // a signer after this operation has already failed.
+    if (!broadcastAttempted && pendingWork.promise && revision === sessionRevision) sessionRevision += 1;
+    return { ok: false, broadcastAttempted, ...(txHash ? { txHash } : {}), error: trace.length ? `${outcome} | ${trace.join(' -> ')}` : outcome };
+  } finally {
+    if (pendingWork.promise) {
+      const release = () => { transferInFlight = false; };
+      pendingWork.promise.then(release, release);
+    } else {
+      transferInFlight = false;
+    }
   }
 }
 

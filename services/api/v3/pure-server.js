@@ -2386,16 +2386,19 @@ async function findStoredChainTxByTxId(txId) {
 }
 
 async function listStoredBroadcastChainTxs(limit = 10) {
+  // Pending observations also stamp verified_at. Rotate by that persisted attempt
+  // time so stale old rows cannot monopolize the bounded queue on every sweep.
   if (USE_POSTGRES) {
     const result = await queryPostgres(
-      "SELECT * FROM milestone_chain_txs WHERE status = 'broadcast' ORDER BY created_at ASC LIMIT $1",
+      "SELECT * FROM milestone_chain_txs WHERE status IN ('broadcast', 'pending') ORDER BY COALESCE(verified_at, created_at) ASC, created_at ASC, id ASC LIMIT $1",
       [limit]
     );
     return result.rows.map(normalizeChainTx);
   }
   return db.milestone_chain_txs
-    .filter(tx => tx.status === 'broadcast')
-    .sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0))
+    .filter(tx => tx.status === 'broadcast' || tx.status === 'pending')
+    .sort((a, b) => new Date(a.verified_at || a.created_at || 0) - new Date(b.verified_at || b.created_at || 0)
+      || new Date(a.created_at || 0) - new Date(b.created_at || 0) || Number(a.id) - Number(b.id))
     .slice(0, limit)
     .map(normalizeChainTx);
 }
@@ -4940,10 +4943,26 @@ const routes = {
 
     const txHash = paymentHeader.trim().toLowerCase();
 
+    const replyWithStoredLeadPayment = async (receipt) => {
+      if (!receipt || receipt.kind !== 'lead-token' || Number(receipt.user_id) !== Number(user.userId)) {
+        return json(res, 409, { error: 'Payment already processed' });
+      }
+      const lead = await findStoredLeadTokenByTxHash(txHash);
+      if (lead && Number(lead.user_id) !== Number(user.userId)) {
+        return json(res, 409, { error: 'Payment already processed' });
+      }
+      const rejected = receipt.verification_status === 'rejected' || lead?.status === 'revoked';
+      const confirmed = !rejected && receipt.verification_status === 'confirmed' && lead?.status === 'active';
+      return json(res, 200, {
+        tx_hash: txHash,
+        lead_id: lead?.id || null,
+        pending: !confirmed && !rejected,
+        lead_status: rejected ? 'revoked' : (confirmed ? 'active' : 'pending_verification'),
+      });
+    };
     const existing = await findStoredPaymentReceiptByTxHash(txHash);
     if (existing) {
-      const existingLead = await findStoredLeadTokenByTxHash(txHash);
-      return json(res, 409, { error: 'Payment already processed', tx_hash: txHash, lead_id: existingLead && existingLead.id });
+      return replyWithStoredLeadPayment(existing);
     }
 
     const verify = await _hooks.verifyHyperionTransfer({
@@ -4976,8 +4995,7 @@ const routes = {
       });
     } catch (err) {
       if (err && err.status === 409) {
-        const existingLead = await findStoredLeadTokenByTxHash(txHash);
-        return json(res, 409, { error: err.message, tx_hash: txHash, lead_id: existingLead && existingLead.id });
+        return replyWithStoredLeadPayment(await findStoredPaymentReceiptByTxHash(txHash));
       }
       throw err;
     }
@@ -5198,6 +5216,7 @@ module.exports.db = db;
 module.exports._hooks = _hooks;
 module.exports.verifyHyperionTransfer = verifyHyperionTransfer;
 module.exports.reconcilePendingPayments = reconcilePendingPayments;
+module.exports.verifyBroadcastChainTxs = verifyBroadcastChainTxs;
 module.exports.isHyperionPayloadAuthoritative = isHyperionPayloadAuthoritative;
 module.exports.jwtSign = jwtSign;
 module.exports.initStorage = initStorage;

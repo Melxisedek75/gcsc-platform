@@ -1,27 +1,34 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Wallet, Loader2, PlugZap } from 'lucide-react';
-import { api, type GcscUser } from '../../services/api';
-import { connectWebAuthWallet } from '../../services/webauth';
+import { type GcscUser } from '../../services/api';
+import { bindWebAuthWallet } from '../../services/walletBinding';
 import { LockIcon } from './shared';
 
 export function WalletPanel({ user, onUserChange }: { user: GcscUser; onUserChange: (user: GcscUser) => void }) {
   const [connecting, setConnecting] = useState(false);
   const [status, setStatus] = useState('');
   const wallet = user.wallet || null;
+  const binding = useRef<AbortController | null>(null);
+  useEffect(() => () => { binding.current?.abort(); }, [user.id]);
 
   const connectWallet = async () => {
+    if (binding.current) return;
+    const controller = new AbortController();
+    binding.current = controller;
     setConnecting(true);
     setStatus('');
     try {
-      const webauthWallet = await connectWebAuthWallet();
-      const response = await api.connectWallet(webauthWallet);
-      onUserChange(response.user);
+      const updated = await bindWebAuthWallet(user.id, controller.signal);
+      if (controller.signal.aborted) return;
+      onUserChange(updated);
       setStatus('WebAuth wallet connected.');
     } catch (err) {
+      if (controller.signal.aborted) return;
       setStatus(err instanceof Error ? err.message : 'Could not connect WebAuth wallet');
     } finally {
-      setConnecting(false);
+      if (binding.current === controller) binding.current = null;
+      if (!controller.signal.aborted) setConnecting(false);
     }
   };
 
@@ -49,7 +56,7 @@ export function WalletPanel({ user, onUserChange }: { user: GcscUser; onUserChan
               </h3>
               <p className="text-sm text-[#475569] mt-1">
                 {wallet
-                  ? `Permission: ${wallet.permission}. This XPR account is linked to your GCSC profile.`
+                  ? `Permission: ${wallet.permission}. ${wallet.verified ? 'Ownership verified for your GCSC profile.' : 'Ownership verification is required. Connect to verify this wallet.'}`
                   : 'Use WebAuth to authorize your XPR account. The site stores only your account name and permission, not private keys.'}
               </p>
               {status && <p className={`text-sm mt-3 ${status.includes('connected') ? 'text-[#10B981]' : 'text-[#EF4444]'}`}>{status}</p>}

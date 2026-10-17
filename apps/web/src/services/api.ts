@@ -120,6 +120,7 @@ export interface GcscCompliance {
 }
 
 export interface GcscWallet {
+  verified?: boolean
   accountName: string
   permission: string
   publicKey?: string
@@ -538,6 +539,12 @@ class ApiClient {
   // WALLET
   connectWallet(body: { accountName: string; permission?: string; publicKey?: string; walletType?: string }) {
     return this.request('/wallet/connect', { method: 'POST', body: JSON.stringify(body) })
+  }
+  walletOwnershipChallenge(body: { accountName: string; permission: string }): Promise<OwnershipChallenge> {
+    return this.request('/wallet/ownership/challenge', { method: 'POST', body: JSON.stringify(body) })
+  }
+  walletOwnershipVerify(body: { accountName: string; permission: string; proof: OwnershipProof }): Promise<{ user: GcscUser }> {
+    return this.request('/wallet/ownership/verify', { method: 'POST', body: JSON.stringify(body) })
   }
   getConnectedWallet() {
     return this.request('/wallet/me')

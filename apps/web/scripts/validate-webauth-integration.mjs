@@ -10,6 +10,7 @@ const packageJson = JSON.parse(read('package.json'));
 const webauth = read('src/services/webauth.ts');
 const walletPage = read('src/pages/Wallet.tsx');
 const dashboard = readDashboardSource(root);
+const binding = read('src/services/walletBinding.ts');
 
 const checks = [
   {
@@ -33,8 +34,8 @@ const checks = [
     message: 'Wallet page must support connect and restore flows.',
   },
   {
-    ok: dashboard.includes('connectWebAuthWallet') && dashboard.includes('api.connectWallet'),
-    message: 'Dashboard wallet panel must save WebAuth accounts to the backend profile.',
+    ok: dashboard.includes('bindWebAuthWallet') && binding.includes('api.walletOwnershipChallenge') && binding.includes('signWebAuthOwnershipChallenge') && binding.includes('api.walletOwnershipVerify') && !dashboard.includes('api.connectWallet('),
+    message: 'Dashboard wallet panel must verify ownership through challenge/sign/verify before saving a linked wallet.',
   },
 ];
 

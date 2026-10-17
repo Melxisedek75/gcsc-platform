@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Loader2, Plus, CheckCircle2, AlertTriangle, DollarSign, PlugZap, ShieldCheck } from 'lucide-react';
 import { api, type GcscChainTx, type GcscEscrow, type GcscMilestone, type GcscUser } from '../../services/api';
 import { signEscrowMilestoneAction, type EscrowMilestoneChainAction } from '../../services/xprSettlement';
@@ -83,6 +83,10 @@ export function MilestoneManager({
   user: GcscUser;
   onChanged: () => void;
 }) {
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  const currentUser = useRef(user);
+  currentUser.current = user;
   const [status, setStatus] = useState('');
   const [busyId, setBusyId] = useState<number | null>(null);
   const [chainStatus, setChainStatus] = useState('');
@@ -125,8 +129,17 @@ export function MilestoneManager({
   const signTestnetAction = async (milestone: GcscMilestone, action: EscrowMilestoneChainAction) => {
     const key = `${milestone.id}:${action}`;
     const expectedWallet = user.wallet?.accountName?.trim();
-    if (!expectedWallet) {
-      setChainStatus('Connect WebAuth wallet before signing escrow actions.');
+    const expectedPermission = user.wallet?.permission?.trim();
+    const expectedUserId = user.id;
+    const expectedToken = api.getToken();
+    const isSessionCurrent = () => {
+      const current = currentUser.current;
+      return mounted.current && !!expectedToken && api.getToken() === expectedToken && current.id === expectedUserId &&
+        current.wallet?.verified === true && current.wallet.accountName === expectedWallet &&
+        current.wallet.permission === expectedPermission;
+    };
+    if (!expectedWallet || !expectedPermission || !isSessionCurrent()) {
+      setChainStatus('Verify your WebAuth wallet before signing escrow actions.');
       return;
     }
 
@@ -135,24 +148,33 @@ export function MilestoneManager({
     try {
       const result = await signEscrowMilestoneAction({
         action,
+        expectedUserId,
+        expectedActor: expectedWallet,
+        expectedPermission,
+        isSessionCurrent,
         escrowId: escrow.id,
         milestoneId: milestone.id,
         evidenceHash: milestone.description || milestone.title || `milestone-${milestone.id}`,
       });
-      if (result.wallet.accountName !== expectedWallet) {
-        throw new Error(`Connected WebAuth account must match saved wallet ${expectedWallet}.`);
+      if (!isSessionCurrent()) {
+        throw new Error(`Application session changed. Transaction ${result.transactionId || '(id unavailable)'} may have been broadcast; do not sign again.`);
       }
       if (!result.transactionId) {
-        throw new Error('WebAuth did not return a transaction id. Nothing was recorded.');
+        throw new Error('Escrow transaction outcome is unknown. Reconcile the chain before signing again.');
       }
-      await api.recordMilestoneChainTx(milestone.id, {
-        action: result.action,
-        tx_id: result.transactionId,
-        chain_id: result.chainId,
-        contract_account: result.contractAccount,
-        actor: result.wallet.accountName,
-        status: 'broadcast',
-      });
+      try {
+        await api.recordMilestoneChainTx(milestone.id, {
+          action: result.action,
+          tx_id: result.transactionId,
+          chain_id: result.chainId,
+          contract_account: result.contractAccount,
+          actor: result.wallet.accountName,
+          status: 'broadcast',
+        });
+      } catch {
+        onChanged();
+        throw new Error(`Transaction ${result.transactionId} was broadcast. Check the refreshed audit trail: the save response was not confirmed. If the record is missing, retry reuses this same transaction without signing again.`);
+      }
       onChanged();
       setChainStatus(`Testnet action signed by ${result.wallet.accountName} and saved to audit trail. Transaction: ${result.transactionId.slice(0, 12)}...`);
     } catch (err) {

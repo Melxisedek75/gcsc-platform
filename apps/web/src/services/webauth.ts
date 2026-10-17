@@ -85,22 +85,27 @@ async function requestWebAuthSession(options: WebAuthConnectOptions = {}): Promi
   if (!auth?.actor) {
     throw new Error('WebAuth did not return an XPR account')
   }
+  if (!auth.permission || !String(auth.permission).trim()) {
+    throw new Error('WebAuth did not return an XPR permission')
+  }
   if (typeof session.transact !== 'function') {
     throw new Error('WebAuth did not return a signing session')
   }
 
   const wallet: ConnectedWebAuthWallet = {
     accountName: String(auth.actor),
-    permission: String(auth.permission || 'active'),
+    permission: String(auth.permission),
     publicKey: String((session as { publicKey?: unknown }).publicKey || ''),
     walletType: 'webauth',
   }
   const signingSession: WebAuthSigningSession = {
-    auth: {
-      actor: wallet.accountName,
-      permission: wallet.permission,
+    get auth() {
+      return {
+        actor: String(session.auth?.actor || ''),
+        permission: String(session.auth?.permission || ''),
+      }
     },
-    chainId: String((session as { chainId?: unknown }).chainId || ''),
+    get chainId() { return String((session as { chainId?: unknown }).chainId || '') },
     transact: (args, transactOptions) =>
       session.transact(
         args as Parameters<typeof session.transact>[0],

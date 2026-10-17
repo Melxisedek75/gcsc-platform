@@ -55,22 +55,24 @@ checks.push(
       dashboard.includes('Testnet signing only'),
   },
   {
-    name: 'dashboard requires a saved WebAuth wallet before escrow signing',
+    name: 'dashboard requires a current verified WebAuth wallet before escrow signing',
     ok:
       dashboard.includes('user.wallet?.accountName') &&
-      dashboard.includes('Connect WebAuth wallet before signing escrow actions'),
+      dashboard.includes('current.wallet?.verified === true') && dashboard.includes('isSessionCurrent'),
   },
   {
     name: 'dashboard refuses to record missing WebAuth transaction ids',
     ok:
       dashboard.includes('if (!result.transactionId)') &&
-      dashboard.includes('WebAuth did not return a transaction id'),
+      dashboard.includes('Escrow transaction outcome is unknown. Reconcile the chain before signing again.'),
   },
   {
-    name: 'dashboard rejects WebAuth account mismatch before recording tx evidence',
+    name: 'settlement rejects account, permission and chain mismatch before broadcast',
     ok:
-      dashboard.includes('result.wallet.accountName !== expectedWallet') &&
-      dashboard.includes('Connected WebAuth account must match saved wallet'),
+      service.includes('session.auth?.actor !== expectedActor') &&
+      service.includes('session.auth?.permission !== expectedPermission') &&
+      service.includes('session.chainId !== XPR_TESTNET_CHAIN_ID') &&
+      service.indexOf('session.auth?.actor !== expectedActor') < service.indexOf('await session.transact('),
   },
   {
     name: 'dashboard scopes settlement controls to accepted escrow details',

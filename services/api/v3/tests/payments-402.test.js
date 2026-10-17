@@ -4,7 +4,7 @@
  * Covers:
  *  - 402 challenge (no auth header)
  *  - Happy path: valid txHash → 200 + Payment-Receipt
- *  - Replay protection: same txHash twice → 409
+ *  - Idempotent receipt lookup: same owner and txHash → existing result
  *  - Bad amount → 400
  *  - Bad recipient → 400
  *  - Hyperion fallback: first call throws, second succeeds
@@ -199,7 +199,7 @@ describe('POST /api/payment/lead-token', () => {
     expect(db.payment_receipts).toHaveLength(1);
   });
 
-  test('replay protection: same txHash twice → second is 409', async () => {
+  test('same-owner replay returns the confirmed receipt without a second payment', async () => {
     _hooks.verifyHyperionTransfer = async () => ({ ok: true, from: 'testacct1', block_num: 12345 });
     await request({
       path: '/api/payment/lead-token',
@@ -209,9 +209,11 @@ describe('POST /api/payment/lead-token', () => {
       path: '/api/payment/lead-token',
       headers: { Authorization: `Bearer ${CONTRACTOR_TOKEN}`, 'X-Payment-Tx': FAKE_TX },
     });
-    expect(r.status).toBe(409);
-    expect(r.body.error).toMatch(/already processed/);
+    expect(r.status).toBe(200);
+    expect(r.body).toMatchObject({ tx_hash: FAKE_TX, pending: false, lead_status: 'active' });
+    expect(r.body.lead_id).toBe(db.lead_tokens[0].id);
     expect(db.payment_receipts).toHaveLength(1);
+    expect(db.lead_tokens).toHaveLength(1);
   });
 
   test('requires a connected contractor wallet before verification', async () => {
@@ -238,8 +240,103 @@ describe('POST /api/payment/lead-token', () => {
       headers: { Authorization: `Bearer ${CONTRACTOR_TOKEN}`, 'X-Payment-Tx': mixedCaseTx.toLowerCase() },
     });
     expect(first.status).toBe(200);
-    expect(replay.status).toBe(409);
+    expect(replay.status).toBe(200);
+    expect(replay.body.lead_id).toBe(first.body.lead_id);
+    expect(replay.body.pending).toBe(false);
     expect(db.payment_receipts).toHaveLength(1);
+  });
+
+  test.each([
+    ['pending', 'pending_verification', true, 'pending_verification'],
+    ['confirmed', 'active', false, 'active'],
+    ['rejected', 'revoked', false, 'revoked'],
+    ['unknown', 'active', true, 'pending_verification'],
+    ['confirmed', 'unknown', true, 'pending_verification'],
+    ['pending', 'active', true, 'pending_verification'],
+    ['confirmed', 'pending_verification', true, 'pending_verification'],
+    [undefined, 'active', true, 'pending_verification'],
+    ['rejected', 'active', false, 'revoked'],
+    ['confirmed', 'revoked', false, 'revoked'],
+  ])('same-hash lookup reports receipt %s / lead %s conservatively', async (receiptStatus, leadStatus, pending, expectedStatus) => {
+    db.payment_receipts.push({ tx_hash: FAKE_TX, kind: 'lead-token', user_id: 2, verification_status: receiptStatus });
+    db.lead_tokens.push({ tx_hash: FAKE_TX, user_id: 2, id: 'existing-lead', status: leadStatus });
+    _hooks.verifyHyperionTransfer = jest.fn(() => { throw new Error('Must not verify or pay again'); });
+    const snapshot = JSON.stringify([db.payment_receipts, db.lead_tokens]);
+    const r = await request({ path: '/api/payment/lead-token',
+      headers: { Authorization: `Bearer ${CONTRACTOR_TOKEN}`, 'X-Payment-Tx': FAKE_TX } });
+    expect(r.status).toBe(200);
+    expect(r.body).toMatchObject({ tx_hash: FAKE_TX, lead_id: 'existing-lead', pending, lead_status: expectedStatus });
+    expect(_hooks.verifyHyperionTransfer).not.toHaveBeenCalled();
+    expect(JSON.stringify([db.payment_receipts, db.lead_tokens])).toBe(snapshot);
+  });
+
+  test('same hash stays pending until reconciliation confirms the stored payment', async () => {
+    _hooks.verifyHyperionTransfer = jest.fn()
+      .mockResolvedValueOnce({ ok: false, pending: true, error: 'node_stale' })
+      .mockResolvedValueOnce({ ok: true, from: 'testacct1', block_num: 12345 });
+    const payment = { path: '/api/payment/lead-token',
+      headers: { Authorization: `Bearer ${CONTRACTOR_TOKEN}`, 'X-Payment-Tx': FAKE_TX } };
+    const first = await request(payment);
+    expect(first.status).toBe(200);
+    expect(first.body.pending).toBe(true);
+    const pending = await request(payment);
+    expect(pending.status).toBe(200);
+    expect(pending.body).toMatchObject({ tx_hash: FAKE_TX, lead_id: first.body.lead_id,
+      pending: true, lead_status: 'pending_verification' });
+    expect(_hooks.verifyHyperionTransfer).toHaveBeenCalledTimes(1);
+    await mod.reconcilePendingPayments();
+    const confirmed = await request(payment);
+    expect(confirmed.status).toBe(200);
+    expect(confirmed.body).toMatchObject({ tx_hash: FAKE_TX, lead_id: first.body.lead_id,
+      pending: false, lead_status: 'active' });
+    expect(_hooks.verifyHyperionTransfer).toHaveBeenCalledTimes(2);
+    expect(db.payment_receipts).toHaveLength(1);
+    expect(db.lead_tokens).toHaveLength(1);
+  });
+
+  test('a receipt without its lead never reports confirmed', async () => {
+    db.payment_receipts.push({ tx_hash: FAKE_TX, kind: 'lead-token', user_id: 2, verification_status: 'confirmed' });
+    _hooks.verifyHyperionTransfer = jest.fn();
+    const r = await request({ path: '/api/payment/lead-token',
+      headers: { Authorization: `Bearer ${CONTRACTOR_TOKEN}`, 'X-Payment-Tx': FAKE_TX } });
+    expect(r.status).toBe(200);
+    expect(r.body).toMatchObject({ lead_id: null, pending: true, lead_status: 'pending_verification' });
+    expect(_hooks.verifyHyperionTransfer).not.toHaveBeenCalled();
+    expect(db.lead_tokens).toHaveLength(0);
+  });
+
+  test.each(['other receipt owner', 'other lead owner', 'other payment kind'])('rejects %s without disclosing receipt identifiers', async variant => {
+    db.payment_receipts.push({ tx_hash: FAKE_TX, kind: variant === 'other payment kind' ? 'job-posting' : 'lead-token',
+      user_id: variant === 'other receipt owner' ? 1 : 2, verification_status: 'confirmed' });
+    db.lead_tokens.push({ tx_hash: FAKE_TX, user_id: variant === 'other lead owner' ? 1 : 2,
+      id: 'private-lead', status: 'active' });
+    _hooks.verifyHyperionTransfer = jest.fn();
+    const r = await request({ path: '/api/payment/lead-token',
+      headers: { Authorization: `Bearer ${CONTRACTOR_TOKEN}`, 'X-Payment-Tx': FAKE_TX } });
+    expect(r.status).toBe(409);
+    expect(r.body).toEqual({ error: 'Payment already processed' });
+    expect(_hooks.verifyHyperionTransfer).not.toHaveBeenCalled();
+  });
+
+  test.each([2, 1])('rechecks receipt ownership after an insert conflict (owner %s)', async ownerId => {
+    _hooks.verifyHyperionTransfer = jest.fn(async () => {
+      // Another request commits after the initial lookup but before the insert.
+      db.payment_receipts.push({ tx_hash: FAKE_TX, kind: 'lead-token', user_id: ownerId, verification_status: 'confirmed' });
+      db.lead_tokens.push({ tx_hash: FAKE_TX, user_id: ownerId, id: 'racing-lead', status: 'active' });
+      return { ok: true, from: 'testacct1', block_num: 12345 };
+    });
+    const r = await request({ path: '/api/payment/lead-token',
+      headers: { Authorization: `Bearer ${CONTRACTOR_TOKEN}`, 'X-Payment-Tx': FAKE_TX } });
+    if (ownerId === 2) {
+      expect(r.status).toBe(200);
+      expect(r.body).toMatchObject({ tx_hash: FAKE_TX, lead_id: 'racing-lead', pending: false, lead_status: 'active' });
+    } else {
+      expect(r.status).toBe(409);
+      expect(r.body).toEqual({ error: 'Payment already processed' });
+    }
+    expect(_hooks.verifyHyperionTransfer).toHaveBeenCalledTimes(1);
+    expect(db.payment_receipts).toHaveLength(1);
+    expect(db.lead_tokens).toHaveLength(1);
   });
 
   test('bad amount → 400', async () => {
