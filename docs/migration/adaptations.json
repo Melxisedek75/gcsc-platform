@@ -338,8 +338,8 @@
   {
     "path": "apps/mobile/lib/webauth.ts",
     "sourceBlob": "b3ffa5c39bb62d63dbb21babef2768546796edd4",
-    "sha256": "1df06afe0b25eba9e329e86b9770bef7ba0ec500426494350f0136693b865860",
-    "reason": "P2.2 sign-only ownership proof remains on the parent Proton Link transport. Wallet reconciliation clears both app and SDK identities, serializes SDK storage mutations, rejects late pairing and sign attempts during cleanup, and verifies the persisted selected account/permission. Ownership proof and no-automatic-rebroadcast boundaries remain intact; real-device acceptance is separate.",
+    "sha256": "999b27060eaa0e2f18518c9a50243ad048632a663b8b3ac786a1021ff45ca7fb",
+    "reason": "P2.2 sign-only ownership proof remains on the parent Proton Link transport. Wallet reconciliation clears both app and SDK identities, serializes SDK storage mutations, rejects late pairing and sign attempts during or after failed cleanup, and verifies the persisted selected account/permission. Ownership proof and no-automatic-rebroadcast boundaries remain intact; real-device acceptance is separate.",
     "test": "npm run test:wallet-repair; node --test tests/wallet-storage.test.mjs; npm run check:mobile-types; npm run check"
   },
   {

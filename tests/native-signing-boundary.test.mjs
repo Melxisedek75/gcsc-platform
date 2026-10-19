@@ -24,6 +24,7 @@ function harness() {
   const sdkQueue = [];
   const calls = [];
   let delayedRemove = null;
+  let failedRemoveKey = null;
   let skipSdkAuthWrite = false;
   let failedWriteKey = null;
   const api = { exports: {} };
@@ -41,6 +42,10 @@ function harness() {
         storage.set(key, value);
       },
       removeItem: async key => {
+        if (failedRemoveKey === key) {
+          failedRemoveKey = null;
+          throw new Error('Native wallet removal failed');
+        }
         if (delayedRemove?.key === key) {
           const pending = delayedRemove;
           delayedRemove = null;
@@ -89,6 +94,7 @@ function harness() {
     },
     skipNextSdkAuthWrite: () => { skipSdkAuthWrite = true; },
     failNextWrite: key => { failedWriteKey = key; },
+    failNextRemove: key => { failedRemoveKey = key; },
     connect: async pair => { sdkQueue.push(pair); await api.exports.connectWallet(); },
     expire: delay => { const match = [...timers].find(([, timer]) => timer.delay === delay); assert.ok(match, `timer ${delay} exists`); timers.delete(match[0]); match[1].callback(); },
   };
@@ -97,6 +103,21 @@ function harness() {
 test('disconnect clears a saved SDK identity even without an in-memory session', async () => {
   const h = harness();
   h.storage.set('@gcsc/proton-link/user-auth', JSON.stringify({ actor: 'previous', permission: 'active' }));
+  await h.api.clearSession();
+  assert.equal(h.storage.has('@gcsc/proton-link/user-auth'), false);
+});
+
+test('failed SDK identity removal blocks signer restoration until cleanup succeeds', async () => {
+  const h = harness();
+  h.storage.set('@gcsc/proton-link/user-auth', JSON.stringify({ actor: 'alice', permission: 'active' }));
+  h.failNextRemove('@gcsc/proton-link/user-auth');
+  await assert.rejects(h.api.clearSession(), /Native wallet removal failed/);
+  h.sdkQueue.push(h.makePair());
+  const result = await h.api.signTransfer(args);
+  assert.equal(result.ok, false);
+  assert.equal(result.broadcastAttempted, false);
+  assert.equal(h.sdkCalls.length, 0);
+  assert.equal(h.calls.length, 0);
   await h.api.clearSession();
   assert.equal(h.storage.has('@gcsc/proton-link/user-auth'), false);
 });

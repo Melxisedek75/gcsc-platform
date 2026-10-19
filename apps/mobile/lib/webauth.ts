@@ -77,6 +77,7 @@ export interface SignResult {
 let sessionRevision = 0;
 let transferInFlight = false;
 let cleanupPending = 0;
+let walletStorageSafe = true;
 let cleanupInFlight: Promise<void> = Promise.resolve();
 let storageMutationsInFlight: Promise<void> = Promise.resolve();
 let currentSession: WebAuthSession | null = null;
@@ -156,6 +157,7 @@ export async function primeSessionFromBackend(
 
 export async function clearSession(): Promise<void> {
   cleanupPending += 1;
+  walletStorageSafe = false;
   sessionRevision += 1;
   currentSession = null;
   const previousSession = protonSession;
@@ -186,6 +188,7 @@ export async function clearSession(): Promise<void> {
   cleanupInFlight = cleanup.catch(() => {});
   try {
     await cleanup;
+    if (cleanupPending === 1) walletStorageSafe = true;
   } finally {
     cleanupPending -= 1;
   }
@@ -610,6 +613,9 @@ export async function connectWallet(): Promise<WebAuthSession> {
 }
 
 export async function signTransfer(args: TransferArgs): Promise<SignResult> {
+  if (!walletStorageSafe) {
+    return { ok: false, broadcastAttempted: false, error: 'WebAuth session cleanup failed or is incomplete. Reconnect before signing.' };
+  }
   if (cleanupPending > 0) {
     return { ok: false, broadcastAttempted: false, error: 'WebAuth session is being cleared. Sign in and reconnect before signing.' };
   }
@@ -631,7 +637,7 @@ export async function signTransfer(args: TransferArgs): Promise<SignResult> {
     return promise;
   }
   const assertAppSessionCurrent = () => {
-    if (cleanupPending > 0) {
+    if (cleanupPending > 0 || !walletStorageSafe) {
       throw new Error('WebAuth session is being cleared. Sign in and reconnect before signing.');
     }
     if (args.isSessionCurrent && !args.isSessionCurrent()) {
