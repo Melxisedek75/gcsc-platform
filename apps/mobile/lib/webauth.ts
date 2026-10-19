@@ -573,7 +573,7 @@ export async function connectWallet(): Promise<WebAuthSession> {
   // node (see CHAIN_API). Use it as the sole connect path.
   // Fresh pairing must not restore a previous account's SDK authorization.
   const expectedRevision = sessionRevision + 1;
-  await clearSession();
+  await withTimeout(clearSession(), 15_000, 'WebAuth session cleanup');
   if (sessionRevision !== expectedRevision) {
     throw new Error('WebAuth session changed before pairing; connect again.');
   }

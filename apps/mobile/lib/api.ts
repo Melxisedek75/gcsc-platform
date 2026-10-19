@@ -70,7 +70,7 @@ export async function saveSession(token: string, user: AuthUser): Promise<void> 
 export async function clearSession(): Promise<void> {
   cachedToken = null;
   cachedUser = null;
-  await Promise.all([AsyncStorage.removeItem(TOKEN_KEY), AsyncStorage.removeItem(USER_KEY)]);
+  await Promise.all([AsyncStorage.removeItemRequired(TOKEN_KEY), AsyncStorage.removeItemRequired(USER_KEY)]);
 }
 
 export function getToken(): string | null {

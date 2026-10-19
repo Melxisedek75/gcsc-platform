@@ -93,9 +93,9 @@
   {
     "path": "apps/mobile/lib/api.ts",
     "sourceBlob": "58ac59c3eb9eb9e959a463f7ffb173999ff62b12",
-    "sha256": "9aebfc16a9792559771da5e526449af34f4fb0db91b2b183fa483dd8d2886ad7",
-    "reason": "Resolve explicit API origin independently of payments/SDK; remove circular dependency. Distinguish transport failures from HTTP account rejection without exposing raw platform network errors.",
-    "test": "npm run test:api-config; node --test tests/mobile-auth-transport.test.mjs; witnessed unsafe no-env fetch before correction"
+    "sha256": "9f47df937f554d6de7ef745cc9ecffe6fa72da59ce683e437f75cc3e0dbf3d75",
+    "reason": "Resolve explicit API origin and distinguish transport failures from HTTP rejection. Logout clears in-memory credentials and requires confirmed native deletion of saved credentials before reporting success.",
+    "test": "node --test tests/mobile-auth-transport.test.mjs; npm run check:mobile-types; npm run check"
   },
   {
     "path": "apps/mobile/app/(auth)/sign-up.tsx",
@@ -282,8 +282,8 @@
   {
     "path": "apps/mobile/app/(contractor)/profile.tsx",
     "sourceBlob": "7c2445c10ba77a8aae3422be637b52983832e509",
-    "sha256": "f58248a8d7af475cac74b1a041a55bf462a0846bd0cc2eecb6a314610d5e4bb9",
-    "reason": "Remove the fictional shared review score and show unavailable reviews honestly; wrap selectable account/profile values. Sign-out now relies on auth.logout for wallet invalidation instead of waiting for a duplicate cleanup. No auth, wallet, or payment bypass.",
+    "sha256": "bf20342b1b8b8c891ca748bfdab4408e8add5aeaa7875c1b80554a28113464b5",
+    "reason": "Show unavailable reviews honestly and wrap profile values. Sign-out relies on auth.logout for wallet invalidation and reports an error if saved app credentials cannot be confirmed removed. No auth, wallet, or payment bypass.",
     "test": "npm run test:mobile-design; npm run check:mobile-types"
   },
   {
@@ -331,15 +331,15 @@
   {
     "path": "apps/mobile/app/(homeowner)/profile.tsx",
     "sourceBlob": "2d7664da35e4e1e5ec49c0af70e4bc92702b7975",
-    "sha256": "d7d7aa3578ec9347c8fc3d2b5b877271e0258581d11687c383cf9304bc382a87",
-    "reason": "Wrap selectable full account values consistently for both roles. Sign-out now relies on auth.logout for wallet invalidation instead of waiting for a duplicate cleanup. No auth, wallet, or payment bypass.",
+    "sha256": "94ddba139b976f05ce98b6ae25afd784a2e7fbd2951a35c915f05d7567490c8d",
+    "reason": "Wrap selectable full account values consistently for both roles. Sign-out relies on auth.logout for wallet invalidation and reports an error if saved app credentials cannot be confirmed removed. No auth, wallet, or payment bypass.",
     "test": "npm run test:mobile-design; npm run check:mobile-types; browser UI verification in MOBILE-DESIGN.md"
   },
   {
     "path": "apps/mobile/lib/webauth.ts",
     "sourceBlob": "b3ffa5c39bb62d63dbb21babef2768546796edd4",
-    "sha256": "999b27060eaa0e2f18518c9a50243ad048632a663b8b3ac786a1021ff45ca7fb",
-    "reason": "P2.2 sign-only ownership proof remains on the parent Proton Link transport. Wallet reconciliation clears both app and SDK identities, serializes SDK storage mutations, rejects late pairing and sign attempts during or after failed cleanup, and verifies the persisted selected account/permission. Ownership proof and no-automatic-rebroadcast boundaries remain intact; real-device acceptance is separate.",
+    "sha256": "9ac8930b8f41944820bcd1f011b080a51c2e77456fb816d1030607584ef8c789",
+    "reason": "P2.2 sign-only ownership proof remains on the parent Proton Link transport. Wallet reconciliation clears both app and SDK identities, serializes SDK storage mutations, rejects late pairing and sign attempts during or after failed cleanup, times out stalled pre-pairing cleanup without opening a new signer, and verifies the persisted selected account/permission. Real-device acceptance is separate.",
     "test": "npm run test:wallet-repair; node --test tests/wallet-storage.test.mjs; npm run check:mobile-types; npm run check"
   },
   {
@@ -502,5 +502,12 @@
     "reason": "Align wallet acceptance checks with verified signing boundaries and ownership-safe receipt replay; retain independent real-device/PostgreSQL acceptance gates.",
     "test": "npm run check:web; node --check services/api/v3/tests/payment-receipts-postgres.test.js; actual-source focused wallet regressions",
     "sha256": "e569de839e8b4b55eff4570dee1921f3a9a7a89668eaed8f3c75c8584179f665"
+  },
+  {
+    "path": "apps/mobile/lib/storage.ts",
+    "sourceBlob": "fec43fcee0c20fdf7a47a40900135656f699315f",
+    "sha256": "ab4f35088f03dd471f515dfa98ac938dc125b88aa3689d730dfe32aaf2ab2871",
+    "reason": "Require confirmed native deletion for app login credentials on sign-out; keep the existing session-only fallback for non-auth storage. A stalled native deletion is surfaced instead of claiming sign-out succeeded.",
+    "test": "node --test tests/mobile-auth-transport.test.mjs; npm run check:mobile-types; npm run check"
   }
 ]

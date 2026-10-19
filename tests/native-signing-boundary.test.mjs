@@ -220,6 +220,20 @@ test('new pairing waits until the previous session cleanup finishes', async () =
   assert.equal(JSON.parse(h.storage.get('@gcsc/proton-link/user-auth')).actor, 'alice');
 });
 
+test('new pairing reports stalled cleanup without starting a wallet request', async () => {
+  const h = harness();
+  const pendingRemoval = deferred();
+  await h.connect(h.makePair({ remove: () => pendingRemoval.promise }));
+  h.sdkQueue.push(h.makePair({ auth: { actor: 'bob', permission: 'active' } }));
+  const reconnecting = h.api.connectWallet();
+  await flush();
+  h.expire(15_000);
+  await assert.rejects(reconnecting, /cleanup timed out/i);
+  assert.equal(h.sdkCalls.length, 1);
+  assert.equal(h.api.getSession(), null);
+  pendingRemoval.resolve();
+});
+
 test('unawaited SDK removal cannot erase a later pairing', async () => {
   const h = harness();
   await h.connect(h.makePair({ remove: async () => {

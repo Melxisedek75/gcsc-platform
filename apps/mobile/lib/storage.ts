@@ -63,4 +63,10 @@ export async function removeItem(key: string): Promise<void> {
   await tryNative(() => AsyncStorage.removeItem(key));
 }
 
-export const safeStorage = { getItem, setItem, removeItem };
+export async function removeItemRequired(key: string): Promise<void> {
+  memory.delete(key);
+  await withTimeout(AsyncStorage.removeItem(key), OP_TIMEOUT_MS);
+  nativeAvailable = true;
+}
+
+export const safeStorage = { getItem, setItem, removeItem, removeItemRequired };

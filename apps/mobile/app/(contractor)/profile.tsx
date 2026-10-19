@@ -24,6 +24,8 @@ export default function ContractorProfile() {
     try {
       await logout();
       router.replace('/');
+    } catch {
+      Alert.alert('Sign-out not confirmed', 'The saved session could not be removed. Retry sign out or clear this app\'s data in Android settings before sharing this device.');
     } finally {
       setBusy(false);
     }
