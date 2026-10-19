@@ -23,7 +23,6 @@ export default function HomeownerProfile() {
     setBusy(true);
     try {
       await logout();
-      await clearWebauthSession();
       router.replace('/');
     } finally {
       setBusy(false);

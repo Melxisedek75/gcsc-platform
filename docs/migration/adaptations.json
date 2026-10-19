@@ -233,8 +233,8 @@
   {
     "path": "apps/mobile/app.json",
     "sourceBlob": "34e7fb48f1cefe1fffbda1c5ffd28b33a80c5699",
-    "sha256": "d255d89ef6f8c9acbdf1a9ea5a7ca5fc7f8181f60bfca049a2a09fa32e05862a",
-    "reason": "Advance the isolated wallet-reconciliation candidate to 0.1.8/versionCode 10 so its local APK can update installed 0.1.6/0.1.7 without deleting application data. This does not imply device acceptance or permit a live transaction.",
+    "sha256": "27cb60d3d720a8d81c6f634bba2e8ce88efc8f3a2f4574320bf22c29cf0e10f8",
+    "reason": "Advance the isolated wallet-reconciliation candidate to 0.1.9/versionCode 11 after the logout race fix so its local APK is distinct from the earlier 0.1.8 test build and can update without deleting application data. This does not imply device acceptance or permit a live transaction.",
     "test": "node --test tests/mobile-apk.test.mjs; npm run check; verify-mobile-apk.ps1; device smoke pending"
   },
   {
@@ -282,8 +282,8 @@
   {
     "path": "apps/mobile/app/(contractor)/profile.tsx",
     "sourceBlob": "7c2445c10ba77a8aae3422be637b52983832e509",
-    "sha256": "ea7778899d152d0e0813992d6d502167ca4b4dff745ee95adec344a1fa728b47",
-    "reason": "Remove the fictional shared review score and show unavailable reviews honestly; wrap selectable account/profile values without changing account actions. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
+    "sha256": "f58248a8d7af475cac74b1a041a55bf462a0846bd0cc2eecb6a314610d5e4bb9",
+    "reason": "Remove the fictional shared review score and show unavailable reviews honestly; wrap selectable account/profile values. Sign-out now relies on auth.logout for wallet invalidation instead of waiting for a duplicate cleanup. No auth, wallet, or payment bypass.",
     "test": "npm run test:mobile-design; npm run check:mobile-types"
   },
   {
@@ -331,8 +331,8 @@
   {
     "path": "apps/mobile/app/(homeowner)/profile.tsx",
     "sourceBlob": "2d7664da35e4e1e5ec49c0af70e4bc92702b7975",
-    "sha256": "5d73f863655ad4e0db65cfa34e636e0c822ee002917acf613df351a5c6731e6f",
-    "reason": "Wrap selectable full account values consistently for both roles; no change to profile or wallet actions. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
+    "sha256": "d7d7aa3578ec9347c8fc3d2b5b877271e0258581d11687c383cf9304bc382a87",
+    "reason": "Wrap selectable full account values consistently for both roles. Sign-out now relies on auth.logout for wallet invalidation instead of waiting for a duplicate cleanup. No auth, wallet, or payment bypass.",
     "test": "npm run test:mobile-design; npm run check:mobile-types; browser UI verification in MOBILE-DESIGN.md"
   },
   {
@@ -345,8 +345,8 @@
   {
     "path": "apps/mobile/lib/auth.ts",
     "sourceBlob": "4e7e9d388994624f7b45a8cc0601c76c62ccab24",
-    "sha256": "e09a55f16a283ac8a89a9155ac648a4bc9f3ce95f93dc9f9909e9a2b44455476",
-    "reason": "Keep canonical sign-only ownership proof for wallet login and binding; during logout clear the paired SDK identity before completing app-session cleanup so stale signer state cannot survive account switching.",
+    "sha256": "2a8596cb90d8ebd65411ad55403d737f90c1618f1d1dde6f6bd09ca1f35c6771",
+    "reason": "Keep canonical sign-only ownership proof for wallet login and binding; logout invalidates the paired signer immediately and clears the application session without waiting for potentially hung native wallet storage. Wallet signing remains fail-closed until cleanup completes.",
     "test": "npm run test:wallet-repair; npm run check:mobile-types; npm run check"
   },
   {

@@ -64,3 +64,18 @@ test('mobile logout clears wallet pairing before the application session', async
   await module.logout();
   assert.deepEqual(cleared, ['wallet', 'app']);
 });
+
+test('mobile logout clears the application session when wallet cleanup never settles', async () => {
+  let appCleared = false;
+  const module = load('apps/mobile/lib/auth.ts', {
+    './api': { clearSession: async () => { appCleared = true; } },
+    './webauth': { clearSession: async () => new Promise(() => {}) },
+    '../../../packages/wallet-proof/login-client.mjs': { createWalletFirstLogin: () => () => {} },
+    '../../../packages/wallet-proof/binding-client.mjs': { createWalletBinding },
+  });
+  await Promise.race([
+    module.logout(),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('logout_waited_for_wallet')), 50)),
+  ]);
+  assert.equal(appCleared, true);
+});

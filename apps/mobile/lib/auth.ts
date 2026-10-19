@@ -148,11 +148,9 @@ export async function updateProfile(patch: ProfilePatch): Promise<AuthUser> {
 }
 
 export async function logout(): Promise<void> {
-  try {
-    await clearWalletSession();
-  } finally {
-    await clearSession();
-  }
+  // Invalidate the signer immediately; native wallet storage may never settle.
+  void clearWalletSession().catch(() => {});
+  await clearSession();
 }
 
 interface VerifyResponse {
