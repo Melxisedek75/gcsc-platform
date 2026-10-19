@@ -2,7 +2,7 @@
 // Saves JWT + user to AsyncStorage on success via api.saveSession.
 
 import { apiRequest, AuthUser, clearSession, getCurrentUser, getToken, normalizeUser, saveSession, UserRole } from './api';
-import { connectWallet, signWalletOwnershipChallenge } from './webauth';
+import { connectWallet, signWalletOwnershipChallenge, clearSession as clearWalletSession } from './webauth';
 import { createWalletFirstLogin } from '../../../packages/wallet-proof/login-client.mjs';
 import { createWalletBinding } from '../../../packages/wallet-proof/binding-client.mjs';
 import type { OwnershipChallenge } from '../../../packages/wallet-proof/request-proof.mjs';
@@ -148,7 +148,11 @@ export async function updateProfile(patch: ProfilePatch): Promise<AuthUser> {
 }
 
 export async function logout(): Promise<void> {
-  await clearSession();
+  try {
+    await clearWalletSession();
+  } finally {
+    await clearSession();
+  }
 }
 
 interface VerifyResponse {

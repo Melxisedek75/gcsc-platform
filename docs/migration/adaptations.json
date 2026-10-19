@@ -233,9 +233,9 @@
   {
     "path": "apps/mobile/app.json",
     "sourceBlob": "34e7fb48f1cefe1fffbda1c5ffd28b33a80c5699",
-    "sha256": "2d7eb2eb57be9f0e4f63ac08a7b423225f448cb138354339e7c84c05f8bbf33a",
-    "reason": "Advance the local free-publication candidate to 0.1.6/versionCode 8 so its APK can update code 7 without uninstalling user data. No device acceptance implied. Prototype integration: dark theme or visual-only workspace adaptation; no auth, wallet, or payment bypass.",
-    "test": "node --test tests/mobile-apk.test.mjs; npm run check; npm run test:mobile-design"
+    "sha256": "d255d89ef6f8c9acbdf1a9ea5a7ca5fc7f8181f60bfca049a2a09fa32e05862a",
+    "reason": "Advance the isolated wallet-reconciliation candidate to 0.1.8/versionCode 10 so its local APK can update installed 0.1.6/0.1.7 without deleting application data. This does not imply device acceptance or permit a live transaction.",
+    "test": "node --test tests/mobile-apk.test.mjs; npm run check; verify-mobile-apk.ps1; device smoke pending"
   },
   {
     "path": "apps/mobile/package.json",
@@ -338,16 +338,16 @@
   {
     "path": "apps/mobile/lib/webauth.ts",
     "sourceBlob": "b3ffa5c39bb62d63dbb21babef2768546796edd4",
-    "sha256": "54b9cb241db08255a7360a48d91cf709d115dc0d696e8d67b08d90122a5a9e33",
-    "reason": "P2.2 mobile wallet-login candidate: send the sign-only ownership transaction through the parent Proton Link transport so Android WebAuth receives the complete ESR instead of the unavailable paired push channel. Device proof remained broadcast false. Wallet repair: verify explicit ownership binding and live actor/permission/chain; prevent duplicate broadcast; preserve pending transaction verification and ownership-safe receipt replay. Scope is the actual changes in this file; real-device acceptance remains separate.",
-    "test": "node --test tests/*boundary.test.mjs tests/mobile-payment-state.test.mjs tests/binding-repair-*.test.mjs tests/wallet-restore.test.mjs; npm run test:api; npm run build:web; npm run check:mobile-types"
+    "sha256": "1df06afe0b25eba9e329e86b9770bef7ba0ec500426494350f0136693b865860",
+    "reason": "P2.2 sign-only ownership proof remains on the parent Proton Link transport. Wallet reconciliation clears both app and SDK identities, serializes SDK storage mutations, rejects late pairing and sign attempts during cleanup, and verifies the persisted selected account/permission. Ownership proof and no-automatic-rebroadcast boundaries remain intact; real-device acceptance is separate.",
+    "test": "npm run test:wallet-repair; node --test tests/wallet-storage.test.mjs; npm run check:mobile-types; npm run check"
   },
   {
     "path": "apps/mobile/lib/auth.ts",
     "sourceBlob": "4e7e9d388994624f7b45a8cc0601c76c62ccab24",
-    "sha256": "a31518162c79a5a5926eea9cf7ea6899129c596cb546afe5aaf6c8cd73714325",
-    "reason": "Use shared sign-only ownership proof orchestration for both wallet-first login and authenticated wallet binding. Binding calls only the canonical ownership challenge/verify API and accepts only a server-verified wallet response. Wallet repair: verify explicit ownership binding and live actor/permission/chain; prevent duplicate broadcast; preserve pending transaction verification and ownership-safe receipt replay. Scope is the actual changes in this file; real-device acceptance remains separate.",
-    "test": "node --test tests/*boundary.test.mjs tests/mobile-payment-state.test.mjs tests/binding-repair-*.test.mjs tests/wallet-restore.test.mjs; npm run test:api; npm run build:web; npm run check:mobile-types"
+    "sha256": "e09a55f16a283ac8a89a9155ac648a4bc9f3ce95f93dc9f9909e9a2b44455476",
+    "reason": "Keep canonical sign-only ownership proof for wallet login and binding; during logout clear the paired SDK identity before completing app-session cleanup so stale signer state cannot survive account switching.",
+    "test": "npm run test:wallet-repair; npm run check:mobile-types; npm run check"
   },
   {
     "path": "apps/mobile/app/(auth)/connect-wallet.tsx",

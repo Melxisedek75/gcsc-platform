@@ -20,23 +20,46 @@ function harness() {
   const timers = new Map();
   const storage = new Map();
   const sdkCalls = [];
+  const sdkAuthAtCall = [];
   const sdkQueue = [];
   const calls = [];
+  let delayedRemove = null;
+  let skipSdkAuthWrite = false;
+  let failedWriteKey = null;
   const api = { exports: {} };
   let timerId = 0;
   const mocks = {
     'expo-linking': {},
     'react-native': { AppState: {} },
-    './storage': { safeStorage: {
+    './walletStorage': { walletStorage: {
       getItem: async key => storage.get(key) ?? null,
-      setItem: async (key, value) => { storage.set(key, value); },
-      removeItem: async key => { storage.delete(key); },
+      setItem: async (key, value) => {
+        if (failedWriteKey === key) {
+          failedWriteKey = null;
+          throw new Error('Native wallet metadata write failed');
+        }
+        storage.set(key, value);
+      },
+      removeItem: async key => {
+        if (delayedRemove?.key === key) {
+          const pending = delayedRemove;
+          delayedRemove = null;
+          await pending.gate.promise;
+        }
+        storage.delete(key);
+      },
     } },
     '@proton/signing-request': {},
     '@proton/react-native-sdk': { __esModule: true, default: async options => {
       sdkCalls.push(options);
+      sdkAuthAtCall.push(await options.linkOptions.storage.read('user-auth'));
       if (!sdkQueue.length) throw new Error('Unexpected SDK pairing');
-      return await sdkQueue.shift();
+      const result = await sdkQueue.shift();
+      if (result?.session && !skipSdkAuthWrite) {
+        void options.linkOptions.storage.write('user-auth', JSON.stringify(result.session.auth));
+      }
+      skipSdkAuthWrite = false;
+      return result;
     } },
     '../../../packages/wallet-proof/request-proof.mjs': { createOwnershipProofRequester: () => { throw new Error('Unrelated ownership flow'); } },
   };
@@ -58,11 +81,144 @@ function harness() {
     },
   });
   return {
-    api: api.exports, calls, sdkCalls, sdkQueue, makePair,
+    api: api.exports, calls, sdkCalls, sdkAuthAtCall, sdkQueue, makePair, storage,
+    delayNextRemove: key => {
+      const gate = deferred();
+      delayedRemove = { key, gate };
+      return gate;
+    },
+    skipNextSdkAuthWrite: () => { skipSdkAuthWrite = true; },
+    failNextWrite: key => { failedWriteKey = key; },
     connect: async pair => { sdkQueue.push(pair); await api.exports.connectWallet(); },
     expire: delay => { const match = [...timers].find(([, timer]) => timer.delay === delay); assert.ok(match, `timer ${delay} exists`); timers.delete(match[0]); match[1].callback(); },
   };
 }
+
+test('disconnect clears a saved SDK identity even without an in-memory session', async () => {
+  const h = harness();
+  h.storage.set('@gcsc/proton-link/user-auth', JSON.stringify({ actor: 'previous', permission: 'active' }));
+  await h.api.clearSession();
+  assert.equal(h.storage.has('@gcsc/proton-link/user-auth'), false);
+});
+
+test('new pairing discards the previous SDK identity before opening WebAuth', async () => {
+  const h = harness();
+  h.storage.set('@gcsc/proton-link/user-auth', JSON.stringify({ actor: 'previous', permission: 'active' }));
+  await h.connect(h.makePair());
+  assert.equal(h.sdkAuthAtCall[0], null);
+  assert.equal(JSON.parse(h.storage.get('@gcsc/proton-link/user-auth')).actor, 'alice');
+  assert.equal(JSON.parse(await h.sdkCalls[0].linkOptions.storage.read('user-auth')).actor, 'alice');
+  assert.equal(h.sdkCalls[0].linkOptions.restoreSession, false);
+});
+
+test('pairing is not successful when the SDK identity was not persisted', async () => {
+  const h = harness();
+  h.skipNextSdkAuthWrite();
+  h.sdkQueue.push(h.makePair());
+  await assert.rejects(h.api.connectWallet(), /identity was not saved/);
+  assert.equal(h.api.getSession(), null);
+});
+
+test('failed app wallet metadata save clears the SDK signer before reporting failure', async () => {
+  const h = harness();
+  h.failNextWrite('@gcsc/webauth/session');
+  h.sdkQueue.push(h.makePair());
+  await assert.rejects(h.api.connectWallet(), /Native wallet metadata write failed/);
+  assert.equal(h.api.getSession(), null);
+  assert.equal(h.storage.has('@gcsc/proton-link/user-auth'), false);
+  const result = await h.api.signTransfer(args);
+  assert.equal(result.ok, false);
+  assert.equal(result.broadcastAttempted, false);
+  assert.equal(h.calls.length, 0);
+});
+
+test('late SDK pairing cannot restore a cleared identity after disconnect', async () => {
+  const h = harness();
+  const pending = deferred();
+  h.sdkQueue.push(pending.promise);
+  const connecting = h.api.connectWallet();
+  await flush();
+  await h.api.clearSession();
+  pending.resolve(h.makePair());
+  await assert.rejects(connecting, /session changed/);
+  assert.equal(h.storage.has('@gcsc/proton-link/user-auth'), false);
+});
+
+test('signing cannot restore an old wallet while logout cleanup is pending', async () => {
+  const h = harness();
+  h.storage.set('@gcsc/proton-link/user-auth', JSON.stringify({ actor: 'alice', permission: 'active' }));
+  const delayed = h.delayNextRemove('@gcsc/proton-link/user-auth');
+  const clearing = h.api.clearSession();
+  await flush();
+  h.sdkQueue.push(h.makePair());
+  try {
+    const result = await h.api.signTransfer(args);
+    assert.equal(result.ok, false);
+    assert.equal(result.broadcastAttempted, false);
+    assert.equal(h.sdkCalls.length, 0);
+    assert.equal(h.calls.length, 0);
+  } finally {
+    delayed.resolve();
+  }
+  await clearing;
+});
+
+test('late SDK pairing after timeout cannot save or install a wallet', async () => {
+  const h = harness();
+  const pending = deferred();
+  h.sdkQueue.push(pending.promise);
+  const connecting = h.api.connectWallet();
+  await flush();
+  h.expire(90_000);
+  await assert.rejects(connecting, /timed out/);
+  pending.resolve(h.makePair());
+  await flush();
+  assert.equal(h.api.getSession(), null);
+  assert.equal(h.storage.has('@gcsc/proton-link/user-auth'), false);
+});
+
+test('new pairing waits until the previous session cleanup finishes', async () => {
+  const h = harness();
+  const pendingRemoval = deferred();
+  await h.connect(h.makePair({ remove: async () => {
+    await pendingRemoval.promise;
+    h.storage.delete('@gcsc/proton-link/user-auth');
+  } }));
+  const clearing = h.api.clearSession();
+  await flush();
+  h.sdkQueue.push(h.makePair());
+  const reconnecting = h.api.connectWallet();
+  await flush();
+  try {
+    assert.equal(h.sdkCalls.length, 1);
+  } finally {
+    pendingRemoval.resolve();
+  }
+  await clearing;
+  await reconnecting;
+  assert.equal(JSON.parse(h.storage.get('@gcsc/proton-link/user-auth')).actor, 'alice');
+});
+
+test('unawaited SDK removal cannot erase a later pairing', async () => {
+  const h = harness();
+  await h.connect(h.makePair({ remove: async () => {
+    void h.sdkCalls[0].linkOptions.storage.remove('user-auth');
+  } }));
+  const delayed = h.delayNextRemove('@gcsc/proton-link/user-auth');
+  const clearing = h.api.clearSession();
+  await flush();
+  h.sdkQueue.push(h.makePair({ auth: { actor: 'bob', permission: 'active' } }));
+  const reconnecting = h.api.connectWallet();
+  await flush();
+  try {
+    assert.equal(h.sdkCalls.length, 1, 'reconnect must wait for the SDK removal');
+  } finally {
+    delayed.resolve();
+  }
+  await clearing;
+  await reconnecting;
+  assert.equal(JSON.parse(h.storage.get('@gcsc/proton-link/user-auth')).actor, 'bob');
+});
 
 for (const [label, identity] of [
   ['wrong actor', { auth: { actor: 'bob', permission: 'active' } }],

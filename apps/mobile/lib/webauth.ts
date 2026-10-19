@@ -1,19 +1,12 @@
 // WebAuth wallet integration for SmartContractor mobile.
 //
-// Strategy: React Native cannot run @proton/web-sdk directly (it requires DOM).
-// Instead we build an ESR (EOSIO Signing Request) on-device, encode it as an
-// `esr://` deeplink, hand it off to the WebAuth mobile app via expo-linking,
-// then await a callback deeplink (`smartcontractor://webauth-callback?...`)
-// containing the signed transaction id.
-//
-// Status: scaffolded. Device-side flow (deeplink open + callback listener) is
-// wired but requires a physical device + installed WebAuth app to verify
-// end-to-end. Session persistence is in-memory; AsyncStorage wiring is a TODO
-// once the device round-trip is confirmed.
+// The React Native Proton Link SDK carries XPR WebAuth pairing and signatures.
+// Wallet storage is kept separate from the app-session fallback: a timed-out
+// native write must not be mistaken for a safely persisted wallet identity.
 
 import * as Linking from 'expo-linking';
 import { AppState } from 'react-native';
-import { safeStorage as AsyncStorage } from './storage';
+import { walletStorage as AsyncStorage } from './walletStorage';
 import { SigningRequest } from '@proton/signing-request';
 import ProtonRNSDK, {
   type LinkSession,
@@ -83,9 +76,13 @@ export interface SignResult {
 
 let sessionRevision = 0;
 let transferInFlight = false;
+let cleanupPending = 0;
+let cleanupInFlight: Promise<void> = Promise.resolve();
+let storageMutationsInFlight: Promise<void> = Promise.resolve();
 let currentSession: WebAuthSession | null = null;
 let protonLink: ProtonLink | null = null;
 let protonSession: LinkSession | null = null;
+let protonStorageAccess: { allowCleanup: boolean; revision: number } | null = null;
 const ownershipRequests = new WeakMap<LinkSession, ReturnType<typeof createOwnershipProofRequester>>();
 const callbackHandlers = new Set<(url: string) => boolean>();
 const pendingCallbackUrls: string[] = [];
@@ -132,9 +129,20 @@ export async function loadWebauthSession(): Promise<WebAuthSession | null> {
 }
 
 async function persistSession(s: WebAuthSession): Promise<void> {
+  const previousRevision = sessionRevision;
+  await cleanupInFlight;
+  await storageMutationsInFlight;
+  if (previousRevision !== sessionRevision) throw new Error('WebAuth session changed while saving; connect again.');
   sessionRevision += 1;
+  const revision = sessionRevision;
+  if (protonStorageAccess && protonSession?.auth.actor.toString() === s.account) {
+    protonStorageAccess.revision = revision;
+  }
+  currentSession = null;
+  await queueStorageMutation(() => revision === sessionRevision,
+    () => AsyncStorage.setItem(WEBAUTH_SESSION_KEY, JSON.stringify(s)));
+  if (revision !== sessionRevision) throw new Error('WebAuth session changed while saving; connect again.');
   currentSession = s;
-  await AsyncStorage.setItem(WEBAUTH_SESSION_KEY, JSON.stringify(s));
 }
 
 export async function primeSessionFromBackend(
@@ -147,21 +155,40 @@ export async function primeSessionFromBackend(
 }
 
 export async function clearSession(): Promise<void> {
+  cleanupPending += 1;
   sessionRevision += 1;
   currentSession = null;
   const previousSession = protonSession;
+  const previousStorageAccess = protonStorageAccess;
   protonLink = null;
   protonSession = null;
+  protonStorageAccess = null;
   // Also drop the Proton Link session (in-memory + SDK storage). Without this,
   // a later transfer restores the PREVIOUS wallet account's session, so after
   // switching accounts every payment fails the profile-wallet match check no
   // matter which account the user picks in WebAuth.
+  const cleanup = cleanupInFlight.then(async () => {
+    await storageMutationsInFlight;
+    try {
+      if (previousStorageAccess) previousStorageAccess.allowCleanup = true;
+      await previousSession?.remove();
+    } catch {
+      // A broken session must not prevent removal of the saved identity.
+    } finally {
+      await storageMutationsInFlight;
+      if (previousStorageAccess) previousStorageAccess.allowCleanup = false;
+    }
+    await Promise.all([
+      AsyncStorage.removeItem(WEBAUTH_SESSION_KEY),
+      linkStorage.remove('user-auth'),
+    ]);
+  });
+  cleanupInFlight = cleanup.catch(() => {});
   try {
-    await previousSession?.remove();
-  } catch {
-    // best effort — a broken stored session must not block disconnect
+    await cleanup;
+  } finally {
+    cleanupPending -= 1;
   }
-  await AsyncStorage.removeItem(WEBAUTH_SESSION_KEY);
 }
 
 function buildCallbackUrl(requestKey: string): string {
@@ -186,6 +213,12 @@ const linkStorage: LinkStorage = {
   remove: (key: string) => AsyncStorage.removeItem(`${PROTON_LINK_STORAGE_PREFIX}${key}`),
 };
 
+function queueStorageMutation(allowed: () => boolean, mutation: () => Promise<void>): Promise<void> {
+  const pending = storageMutationsInFlight.then(() => allowed() ? mutation() : undefined);
+  storageMutationsInFlight = pending.catch(() => {});
+  return pending;
+}
+
 async function openSigningRequestWithWallet(req: SigningRequest): Promise<void> {
   const encoded = req.encode(true, false);
   const payload = encoded.replace(/^esr:(\/\/)?/i, '');
@@ -206,11 +239,18 @@ async function openSigningRequestWithWallet(req: SigningRequest): Promise<void> 
 
 async function connectWithProtonNativeSdk(restoreSession = false): Promise<LinkSession> {
   const revision = sessionRevision;
+  const storageAccess = { allowCleanup: false, revision };
+  const canUseStorage = () => storageAccess.revision === sessionRevision || storageAccess.allowCleanup;
+  const scopedStorage: LinkStorage = {
+    read: key => canUseStorage() ? linkStorage.read(key) : Promise.resolve(null),
+    write: (key, data) => queueStorageMutation(canUseStorage, () => linkStorage.write(key, data)),
+    remove: key => queueStorageMutation(canUseStorage, () => linkStorage.remove(key)),
+  };
   const result = await ProtonRNSDK({
     linkOptions: {
       chainId: CHAIN_ID,
       endpoints: CHAIN_ENDPOINTS,
-      storage: linkStorage,
+      storage: scopedStorage,
       storagePrefix: PROTON_LINK_STORAGE_PREFIX,
       restoreSession,
     },
@@ -228,6 +268,7 @@ async function connectWithProtonNativeSdk(restoreSession = false): Promise<LinkS
   }
   protonLink = result.link;
   protonSession = result.session;
+  protonStorageAccess = storageAccess;
   return result.session;
 }
 
@@ -527,26 +568,51 @@ export async function connectWallet(): Promise<WebAuthSession> {
   // result over the Proton Link channel, not the deeplink callback. So the
   // Proton Link SDK is the ONLY working path; it just needed a real chain API
   // node (see CHAIN_API). Use it as the sole connect path.
-  // Fresh pairing must invalidate pending work for the previous identity.
-  sessionRevision += 1;
-  protonLink = null;
-  protonSession = null;
-  const identity = await withTimeout(
-    connectWithProtonNativeSdk(false),
-    90_000,
-    'Proton Link login',
-  );
+  // Fresh pairing must not restore a previous account's SDK authorization.
+  const expectedRevision = sessionRevision + 1;
+  await clearSession();
+  if (sessionRevision !== expectedRevision) {
+    throw new Error('WebAuth session changed before pairing; connect again.');
+  }
+  const pairingRevision = sessionRevision;
+  let identity: LinkSession;
+  try {
+    identity = await withTimeout(connectWithProtonNativeSdk(false), 90_000, 'Proton Link login');
+  } catch (err) {
+    if (pairingRevision === sessionRevision) await clearSession();
+    throw err;
+  }
   const session: WebAuthSession = {
     account: String(identity.auth.actor),
     permission: String(identity.auth.permission),
     publicKey: identity.publicKey?.toString(),
     connectedAt: Date.now(),
   };
-  await persistSession(session);
-  return session;
+  try {
+    await persistSession(session);
+    const savedRevision = sessionRevision;
+    const stored = await linkStorage.read('user-auth');
+    let savedAuth: { actor?: string; permission?: string } | null = null;
+    try {
+      savedAuth = stored ? JSON.parse(stored) as { actor?: string; permission?: string } : null;
+    } catch {
+      // Corrupt SDK storage is treated as a failed pairing.
+    }
+    if (savedRevision !== sessionRevision) throw new Error('WebAuth session changed while pairing; connect again.');
+    if (savedAuth?.actor !== session.account || savedAuth?.permission !== session.permission) {
+      throw new Error('WebAuth identity was not saved on this device; connect again.');
+    }
+    return session;
+  } catch (err) {
+    if (protonSession === identity) await clearSession();
+    throw err;
+  }
 }
 
 export async function signTransfer(args: TransferArgs): Promise<SignResult> {
+  if (cleanupPending > 0) {
+    return { ok: false, broadcastAttempted: false, error: 'WebAuth session is being cleared. Sign in and reconnect before signing.' };
+  }
   if (transferInFlight) {
     return { ok: false, broadcastAttempted: false, error: 'A WebAuth transfer is still pending. Check its result before submitting another transfer.' };
   }
@@ -565,6 +631,9 @@ export async function signTransfer(args: TransferArgs): Promise<SignResult> {
     return promise;
   }
   const assertAppSessionCurrent = () => {
+    if (cleanupPending > 0) {
+      throw new Error('WebAuth session is being cleared. Sign in and reconnect before signing.');
+    }
     if (args.isSessionCurrent && !args.isSessionCurrent()) {
       throw new Error('Application session changed before signing. Sign in again and review the transfer.');
     }

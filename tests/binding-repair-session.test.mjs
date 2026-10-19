@@ -52,3 +52,15 @@ for (const platform of ['web', 'mobile']) {
     });
   }
 }
+
+test('mobile logout clears wallet pairing before the application session', async () => {
+  const cleared = [];
+  const module = load('apps/mobile/lib/auth.ts', {
+    './api': { clearSession: async () => { cleared.push('app'); } },
+    './webauth': { clearSession: async () => { cleared.push('wallet'); } },
+    '../../../packages/wallet-proof/login-client.mjs': { createWalletFirstLogin: () => () => {} },
+    '../../../packages/wallet-proof/binding-client.mjs': { createWalletBinding },
+  });
+  await module.logout();
+  assert.deepEqual(cleared, ['wallet', 'app']);
+});
