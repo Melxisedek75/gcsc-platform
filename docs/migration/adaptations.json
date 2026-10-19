@@ -506,8 +506,8 @@
   {
     "path": "apps/mobile/lib/storage.ts",
     "sourceBlob": "fec43fcee0c20fdf7a47a40900135656f699315f",
-    "sha256": "ab4f35088f03dd471f515dfa98ac938dc125b88aa3689d730dfe32aaf2ab2871",
-    "reason": "Require confirmed native deletion for app login credentials on sign-out; keep the existing session-only fallback for non-auth storage. A stalled native deletion is surfaced instead of claiming sign-out succeeded.",
+    "sha256": "f8fc36794a41bc0b1af8fbca73c0f45e4ce5f252a4132d3c1e33f601adb608ac",
+    "reason": "Require confirmed native deletion for app login credentials on sign-out and serialize native mutations per key so late writes cannot revive a logged-out token or late deletes erase a new login. Keep the existing session-only fallback for non-auth storage; a stalled native deletion is surfaced instead of claiming sign-out succeeded.",
     "test": "node --test tests/mobile-auth-transport.test.mjs; npm run check:mobile-types; npm run check"
   }
 ]

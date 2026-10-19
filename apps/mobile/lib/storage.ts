@@ -13,8 +13,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const memory = new Map<string, string>();
+const nativeMutations = new Map<string, Promise<void>>();
 const OP_TIMEOUT_MS = 2500;
 let nativeAvailable: boolean | null = null;
+
+function queueNativeMutation(key: string, op: () => Promise<void>): Promise<void> {
+  const pending = (nativeMutations.get(key) ?? Promise.resolve()).then(op);
+  const tail = pending.then(() => {}, () => {});
+  nativeMutations.set(key, tail);
+  void tail.then(() => { if (nativeMutations.get(key) === tail) nativeMutations.delete(key); });
+  return pending;
+}
 
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -55,17 +64,17 @@ export async function getItem(key: string): Promise<string | null> {
 
 export async function setItem(key: string, value: string): Promise<void> {
   memory.set(key, value);
-  await tryNative(() => AsyncStorage.setItem(key, value));
+  await tryNative(() => queueNativeMutation(key, () => AsyncStorage.setItem(key, value)));
 }
 
 export async function removeItem(key: string): Promise<void> {
   memory.delete(key);
-  await tryNative(() => AsyncStorage.removeItem(key));
+  await tryNative(() => queueNativeMutation(key, () => AsyncStorage.removeItem(key)));
 }
 
 export async function removeItemRequired(key: string): Promise<void> {
   memory.delete(key);
-  await withTimeout(AsyncStorage.removeItem(key), OP_TIMEOUT_MS);
+  await withTimeout(queueNativeMutation(key, () => AsyncStorage.removeItem(key)), OP_TIMEOUT_MS);
   nativeAvailable = true;
 }
 

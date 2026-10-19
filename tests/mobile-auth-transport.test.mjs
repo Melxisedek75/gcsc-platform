@@ -61,6 +61,36 @@ test('auth storage removal confirms native deletion', async () => {
   assert.deepEqual(removed, ['@gcsc/auth/token']);
 });
 
+test('timed-out token write cannot land after a confirmed removal', async () => {
+  let finishWrite;
+  const calls = [];
+  const storage = loadStorage({
+    setItem: async () => { calls.push('write-start'); await new Promise(resolve => { finishWrite = resolve; }); calls.push('write-end'); },
+    removeItem: async () => { calls.push('remove'); },
+  }, cb => setTimeout(cb, 5));
+  await storage.setItem('@gcsc/auth/token', 'old');
+  await assert.rejects(storage.removeItemRequired('@gcsc/auth/token'), /storage_timeout/);
+  assert.deepEqual(calls, ['write-start']);
+  finishWrite();
+  await new Promise(resolve => setTimeout(resolve, 20));
+  assert.deepEqual(calls, ['write-start', 'write-end', 'remove']);
+});
+
+test('later token write waits for an in-flight removal', async () => {
+  let finishRemove;
+  const calls = [];
+  const storage = loadStorage({
+    removeItem: async () => { calls.push('remove-start'); await new Promise(resolve => { finishRemove = resolve; }); calls.push('remove-end'); },
+    setItem: async () => { calls.push('write'); },
+  }, cb => setTimeout(cb, 5));
+  await assert.rejects(storage.removeItemRequired('@gcsc/auth/token'), /storage_timeout/);
+  await storage.setItem('@gcsc/auth/token', 'new');
+  assert.deepEqual(calls, ['remove-start']);
+  finishRemove();
+  await new Promise(resolve => setTimeout(resolve, 20));
+  assert.deepEqual(calls, ['remove-start', 'remove-end', 'write']);
+});
+
 test('mobile auth distinguishes unavailable transport from account rejection', async () => {
   const api = loadApi(async () => { throw new TypeError('Network request failed'); });
   await assert.rejects(api.apiRequest('/api/auth/register', { method: 'POST', auth: false }), error => {
