@@ -83,8 +83,9 @@ function normalizeResult(result, challenge) {
 }
 
 // One requester per signing session. Pairing metadata is never a proof or an application login.
-export function createOwnershipProofRequester({ transact, getIdentity, now = Date.now, timeoutMs = 90000 }) {
+export function createOwnershipProofRequester({ transact, getIdentity, requestAccount, now = Date.now, timeoutMs = 90000 }) {
   if (typeof transact !== 'function' || typeof getIdentity !== 'function' || typeof now !== 'function'
+    || (requestAccount !== undefined && !/^[a-z1-5](?:[a-z1-5.]{0,10}[a-z1-5])?$/.test(requestAccount))
     || !Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 120000) fail('wallet_proof_config_invalid');
   let pending = false;
   return async function request(input, { signal } = {}) {
@@ -105,7 +106,9 @@ export function createOwnershipProofRequester({ transact, getIdentity, now = Dat
       // Some wallet SDKs normalize the transaction object in place. Hand them a
       // disposable copy so the validated challenge snapshot remains immutable.
       const transactionForWallet = JSON.parse(JSON.stringify(challenge.transaction));
-      operation = Promise.resolve(transact({ transaction: transactionForWallet }, { broadcast: false, noModify: true }))
+      const args = { transaction: transactionForWallet,
+        ...(requestAccount ? { info: { req_account: requestAccount } } : {}) };
+      operation = Promise.resolve(transact(args, { broadcast: false, noModify: true }))
         .then(value => { pending = false; return value; }, error => { pending = false; throw error; });
     } catch (error) { pending = false; throw error; }
     let timer;

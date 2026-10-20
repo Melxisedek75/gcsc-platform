@@ -33,6 +33,15 @@ test('web response with explicit bytes creates a bounded server DTO and never br
   assert.deepEqual(calls, [[{ transaction: record.transaction }, { broadcast: false, noModify: true }]]);
 });
 
+test('ownership proof forwards requester metadata without changing the sign-only transaction', async () => {
+  const record = challenge();
+  const { request, calls } = fixture(response(record), { requestAccount: 'gcsctoken111' });
+  await request(record);
+  assert.deepEqual(calls[0][0].info, { req_account: 'gcsctoken111' });
+  assert.deepEqual(calls[0][0].transaction, record.transaction);
+  assert.deepEqual(calls[0][1], { broadcast: false, noModify: true });
+});
+
 test('native typed SDK result preserves exact serialized bytes and signature', async () => {
   const record = challenge();
   const { request } = fixture({

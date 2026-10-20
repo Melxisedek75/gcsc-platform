@@ -121,12 +121,15 @@ test('native transport retains the payload in the URI without opening a device',
   }, {}, t);
   const transport = new Transport({ requestAccount: 'gcsc.test', getReturnUrl: () => 'smartcontractor://fixture' });
   const req = request('mobile');
+  req.setInfoKey('req_account', 'proofmeta111');
   req.setCallback('http://127.0.0.1/fixture', true);
   transport.onRequest(req, () => assert.fail('unexpected cancel'));
   assert.equal(uris.length, 1);
   const codec = codecs.get('mobile');
   const decoded = codec.sdk.SigningRequest.from(uris[0], encodingOptions('mobile'));
   assert.equal(decoded.shouldBroadcast(), false);
+  // The configured transport account wins over caller-supplied proof metadata.
+  assert.equal(decoded.getInfoKey('req_account'), 'gcsc.test');
   assert.equal(digest(decoded), digest(req));
 });
 

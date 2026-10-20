@@ -100,6 +100,7 @@ export async function signWalletOwnershipChallenge(challenge: OwnershipChallenge
   let request = ownershipRequests.get(session);
   if (!request) {
     request = createOwnershipProofRequester({
+      requestAccount: REQUEST_ACCOUNT,
       getIdentity: () => protonSession === session && protonLink === link ? {
         actor: session.auth.actor, permission: session.auth.permission, chainId: session.chainId,
       } : null,

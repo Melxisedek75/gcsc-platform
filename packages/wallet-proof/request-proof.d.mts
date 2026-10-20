@@ -20,6 +20,7 @@ export interface OwnershipProof {
 export function createOwnershipProofRequester(options: {
   transact: (args: unknown, options: { broadcast: false; noModify: true }) => Promise<unknown>;
   getIdentity: () => { actor: unknown; permission: unknown; chainId: unknown } | null;
+  requestAccount?: string;
   now?: () => number;
   timeoutMs?: number;
 }): (challenge: OwnershipChallenge, options?: { signal?: AbortSignal }) => Promise<OwnershipProof>;

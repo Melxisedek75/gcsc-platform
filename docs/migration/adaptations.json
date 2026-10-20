@@ -233,8 +233,8 @@
   {
     "path": "apps/mobile/app.json",
     "sourceBlob": "34e7fb48f1cefe1fffbda1c5ffd28b33a80c5699",
-    "sha256": "27cb60d3d720a8d81c6f634bba2e8ce88efc8f3a2f4574320bf22c29cf0e10f8",
-    "reason": "Advance the isolated wallet-reconciliation candidate to 0.1.9/versionCode 11 after the logout race fix so its local APK is distinct from the earlier 0.1.8 test build and can update without deleting application data. This does not imply device acceptance or permit a live transaction.",
+    "sha256": "63a6c7c44162c7465ecea2f8766c2ba3d6c85f3dd3480549d7fca6eb7c89c235",
+    "reason": "Advance the isolated wallet-reconciliation candidate to 0.1.10/versionCode 12 for a diagnostic APK distinct from the 0.1.9 build. It can update without deleting application data but does not establish that Unknown Requestor is fixed or permit a live transaction.",
     "test": "node --test tests/mobile-apk.test.mjs; npm run check; verify-mobile-apk.ps1; device smoke pending"
   },
   {
@@ -338,9 +338,9 @@
   {
     "path": "apps/mobile/lib/webauth.ts",
     "sourceBlob": "b3ffa5c39bb62d63dbb21babef2768546796edd4",
-    "sha256": "9ac8930b8f41944820bcd1f011b080a51c2e77456fb816d1030607584ef8c789",
-    "reason": "P2.2 sign-only ownership proof remains on the parent Proton Link transport. Wallet reconciliation clears both app and SDK identities, serializes SDK storage mutations, rejects late pairing and sign attempts during or after failed cleanup, times out stalled pre-pairing cleanup without opening a new signer, and verifies the persisted selected account/permission. Real-device acceptance is separate.",
-    "test": "npm run test:wallet-repair; node --test tests/wallet-storage.test.mjs; npm run check:mobile-types; npm run check"
+    "sha256": "cc32d6d88f08cbe07632b47a83384932fd54fb7eb135106aeaccca63faf0cd89",
+    "reason": "P2.2 sign-only ownership proof remains on the parent Proton Link transport. Wallet reconciliation clears both app and SDK identities, serializes SDK storage mutations, rejects late pairing and sign attempts during or after failed cleanup, times out stalled pre-pairing cleanup without opening a new signer, and verifies the persisted selected account/permission. The requester is also passed as proof metadata, but installed transport overrides it with its configured account; this is not a proven fix for the on-device Unknown Requestor prompt.",
+    "test": "npm run test:wallet-repair; node --test tests/wallet-storage.test.mjs tests/wallet-challenge-payload.test.mjs; npm run check:mobile-types; npm run check; on-device acceptance pending"
   },
   {
     "path": "apps/mobile/lib/auth.ts",
@@ -422,16 +422,23 @@
   {
     "path": "apps/mobile/lib/jobs.ts",
     "sourceBlob": "985d7501e70812fa300dd80bf72e8f03e8a12d35",
-    "sha256": "45e25d42187fbf45e184050ab251adf743404908a94ec394a79240a4f41e0b31",
-    "reason": "Map budget ranges to numeric API fields and expose explicit project publication without payment calls.",
+    "sha256": "f2f0446bdd833ff197a631d49192571eebd2238061b9edbf5216691e839178b1",
+    "reason": "Map budget ranges to numeric API fields and expose free project publication. Format contractor job age from a valid published_at only, avoiding NaN for missing public timestamps.",
     "test": "node --test tests/mobile-job-publication.test.mjs; npm run check:mobile-types"
   },
   {
     "path": "apps/mobile/app/(contractor)/jobs.tsx",
     "sourceBlob": "191f4362fcd9aeb89d5a5311cb5afc7cac411f9f",
-    "sha256": "004b1b7ca206961268fcf085e6facc7dee2f88a7a9a61e8f39ae605868e7f4dc",
-    "reason": "Adapt prototype theme and workspace UI without changing server behavior or wallet proof.",
+    "sha256": "b5d3c4e2667b4dcbbdeea6c05ab906bcf9406dfbcf01a6dec00ffebaa9c10425",
+    "reason": "Adapt prototype theme and workspace UI and show age only for projects with a valid publication timestamp; no server or wallet-proof change.",
     "test": "npm run test:mobile-design; npm run check:mobile-types; npm run check"
+  },
+  {
+    "path": "apps/mobile/app/(contractor)/bid-submit/[jobId].tsx",
+    "sourceBlob": "1b5a8b7b47378e5fc9e42157365dcd6524e6266b",
+    "sha256": "efde6169118f3ea197da21bca1e0ca774760ce0b9ad56f55bb5b6c82c20ba458",
+    "reason": "Show age from a valid project publication timestamp in the bid preview; omit the label when the public timestamp is absent.",
+    "test": "node --test tests/mobile-job-publication.test.mjs; npm run check:mobile-types"
   },
   {
     "path": "apps/mobile/app/(contractor)/milestones.tsx",
