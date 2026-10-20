@@ -8,7 +8,7 @@ import { Header } from '../../../components/Header';
 import { Input } from '../../../components/Input';
 import { Screen } from '../../../components/Screen';
 import { placeBackendBid } from '../../../lib/bids';
-import { BackendProject, formatBudget, getBackendProject, timeAgoIso } from '../../../lib/jobs';
+import { BackendProject, formatBudget, getBackendProject, publicProjectAge } from '../../../lib/jobs';
 import { colors, spacing, typography } from '../../../lib/tokens';
 
 function parseDollars(raw: string): number {
@@ -105,7 +105,7 @@ export default function BidSubmit() {
         <View style={styles.row}>
           <Badge label={(project.category || 'general').toUpperCase()} color={colors.contractor} />
           <Text style={[typography.micro, { color: colors.textDim }]}>
-            {timeAgoIso(project.created_at)} ago
+            {publicProjectAge(project)}
           </Text>
         </View>
         {project.location ? (

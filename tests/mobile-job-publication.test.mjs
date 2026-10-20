@@ -51,6 +51,23 @@ test('invalid budget cannot silently publish an incorrect amount', () => {
   }
 });
 
+test('public contractor project age uses the published timestamp and omits invalid dates', () => {
+  const jobs = loadJobs(async () => ({}));
+  const preview = { published_at: new Date(Date.now() - 125_000).toISOString() };
+  assert.equal(jobs.publicProjectAge(preview), '2m ago');
+  assert.equal(jobs.publicProjectAge({ published_at: null }), null);
+  assert.equal(jobs.publicProjectAge({ published_at: 'invalid' }), null);
+
+  for (const screen of [
+    '../apps/mobile/app/(contractor)/jobs.tsx',
+    '../apps/mobile/app/(contractor)/bid-submit/[jobId].tsx',
+  ]) {
+    const source = fs.readFileSync(new URL(screen, import.meta.url), 'utf8');
+    assert.match(source, /publicProjectAge\(/);
+    assert.doesNotMatch(source, /timeAgoIso\([^)]*\.created_at\)/);
+  }
+});
+
 test('homeowner publication and job views use server persistence without the disabled fee', () => {
   const post = fs.readFileSync(new URL('../apps/mobile/app/(homeowner)/post-job.tsx', import.meta.url), 'utf8');
   const list = fs.readFileSync(new URL('../apps/mobile/app/(homeowner)/jobs.tsx', import.meta.url), 'utf8');

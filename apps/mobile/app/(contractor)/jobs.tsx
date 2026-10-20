@@ -7,7 +7,7 @@ import { Card } from '../../components/Card';
 import { Header } from '../../components/Header';
 import { Screen } from '../../components/Screen';
 import { WorkspaceBanner } from '../../components/WorkspaceBanner';
-import { BackendProject, formatBudget, listBackendProjects, timeAgoIso } from '../../lib/jobs';
+import { BackendProject, formatBudget, listBackendProjects, publicProjectAge } from '../../lib/jobs';
 import { listSavedJobIds, toggleSaved } from '../../lib/saved';
 import { colors, radius, spacing, typography } from '../../lib/tokens';
 import { useAppTheme } from '../../lib/theme';
@@ -134,7 +134,7 @@ export default function ContractorJobs() {
                   <Badge label={(p.category || 'general').toUpperCase()} color={colors.contractor} />
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                     <Text style={[typography.micro, { color: colors.textDim }]}>
-                      {timeAgoIso(p.created_at)} ago
+                      {publicProjectAge(p)}
                     </Text>
                     <Pressable onPress={() => handleToggle(jobId)} hitSlop={8}>
                       <Text style={{ fontSize: 22, color: saved ? colors.warning : colors.textDim }}>

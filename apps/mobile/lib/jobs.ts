@@ -112,6 +112,12 @@ export function timeAgoIso(iso: string): string {
   return `${Math.floor(sec / 86400)}d`;
 }
 
+export function publicProjectAge(project: Pick<BackendProject, 'published_at'>): string | null {
+  const publishedAt = project.published_at;
+  if (!publishedAt || !Number.isFinite(Date.parse(publishedAt))) return null;
+  return `${timeAgoIso(publishedAt)} ago`;
+}
+
 export interface LocalJob {
   id: string;
   title: string;
