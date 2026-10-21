@@ -233,9 +233,9 @@
   {
     "path": "apps/mobile/app.json",
     "sourceBlob": "34e7fb48f1cefe1fffbda1c5ffd28b33a80c5699",
-    "sha256": "63a6c7c44162c7465ecea2f8766c2ba3d6c85f3dd3480549d7fca6eb7c89c235",
-    "reason": "Advance the isolated wallet-reconciliation candidate to 0.1.10/versionCode 12 for a diagnostic APK distinct from the 0.1.9 build. It can update without deleting application data but does not establish that Unknown Requestor is fixed or permit a live transaction.",
-    "test": "node --test tests/mobile-apk.test.mjs; npm run check; verify-mobile-apk.ps1; device smoke pending"
+    "sha256": "e234a684673333edfb5561ae419b34fd90f12a00ce2d93d884dd0cec742b8b51",
+    "reason": "Advance the bid-access UX candidate to 0.1.11/versionCode 13 without changing server entitlement or payment enforcement.",
+    "test": "node --test tests/mobile-bid-access.test.mjs; npm run check; verify-mobile-apk.ps1; device smoke pending"
   },
   {
     "path": "apps/mobile/package.json",
@@ -422,9 +422,9 @@
   {
     "path": "apps/mobile/lib/jobs.ts",
     "sourceBlob": "985d7501e70812fa300dd80bf72e8f03e8a12d35",
-    "sha256": "f2f0446bdd833ff197a631d49192571eebd2238061b9edbf5216691e839178b1",
-    "reason": "Map budget ranges to numeric API fields and expose free project publication. Format contractor job age from a valid published_at only, avoiding NaN for missing public timestamps.",
-    "test": "node --test tests/mobile-job-publication.test.mjs; npm run check:mobile-types"
+    "sha256": "3473a7230b5b0c2121e7ac5a950da91c9cc46bbeff99860ab902ffa2a44ef523",
+    "reason": "Map budget ranges to API fields, format valid publication age, and check project-specific paid access through the authenticated details endpoint before displaying the bid form.",
+    "test": "node --test tests/mobile-bid-access.test.mjs; node --test tests/mobile-job-publication.test.mjs; npm run check:mobile-types"
   },
   {
     "path": "apps/mobile/app/(contractor)/jobs.tsx",
@@ -436,9 +436,16 @@
   {
     "path": "apps/mobile/app/(contractor)/bid-submit/[jobId].tsx",
     "sourceBlob": "1b5a8b7b47378e5fc9e42157365dcd6524e6266b",
-    "sha256": "efde6169118f3ea197da21bca1e0ca774760ce0b9ad56f55bb5b6c82c20ba458",
-    "reason": "Show age from a valid project publication timestamp in the bid preview; omit the label when the public timestamp is absent.",
-    "test": "node --test tests/mobile-job-publication.test.mjs; npm run check:mobile-types"
+    "sha256": "caff3bcf102d9b470e73de9306d813af01ab0c3eeb6906bb7fa325496520d4cd",
+    "reason": "Gate the bid form on project-specific access, show an honest access-required state, and handle a later server-side entitlement denial without implying generic lead receipts grant access.",
+    "test": "node --test tests/mobile-bid-access.test.mjs; npm run check:mobile-types"
+  },
+  {
+    "path": "apps/mobile/app/(contractor)/bid.tsx",
+    "sourceBlob": "b6e4fce766aa5d4528d8557d62ba167d20961d3a",
+    "sha256": "e76bfd4c3e6f1ef163fe404ba93c5c559b3e42cb5fb7f64534bf3332033dd979",
+    "reason": "Remove the generic 50 XPR lead purchase action because it does not create access to a specific project; preserve historical local receipts as informational only.",
+    "test": "node --test tests/mobile-bid-access.test.mjs; npm run check:mobile-types"
   },
   {
     "path": "apps/mobile/app/(contractor)/milestones.tsx",

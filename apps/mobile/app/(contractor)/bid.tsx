@@ -5,12 +5,10 @@ import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Header } from '../../components/Header';
-import { PaymentSheet } from '../../components/PaymentSheet';
 import { Screen } from '../../components/Screen';
 import { BackendBid, BackendBidStatus, listMyBackendBids } from '../../lib/bids';
 import { listBackendProjects, timeAgoIso } from '../../lib/jobs';
-import { LocalLead, addLead, listLeads } from '../../lib/leads';
-import { PAYMENT_CONFIG } from '../../lib/payments';
+import { LocalLead, listLeads } from '../../lib/leads';
 import { colors, spacing, typography } from '../../lib/tokens';
 
 const BID_COLOR: Record<BackendBidStatus, string> = {
@@ -34,7 +32,6 @@ function shortTx(tx: string): string {
 }
 
 export default function ContractorBids() {
-  const [sheetVisible, setSheetVisible] = useState(false);
   const [leads, setLeads] = useState<LocalLead[]>([]);
   const [bids, setBids] = useState<BackendBid[]>([]);
   const [projectTitles, setProjectTitles] = useState<Record<number, string>>({});
@@ -108,19 +105,12 @@ export default function ContractorBids() {
         </Card>
       </View>
 
-      <Card>
-        <View style={styles.leadRow}>
-          <View style={{ flex: 1, gap: spacing.xs }}>
-            <Text style={[typography.bodyStrong, { color: colors.text }]}>
-              Lead tokens · {leads.length}
-            </Text>
-            <Text style={[typography.caption, { color: colors.textMuted }]}>
-              Each 50 XPR lead unlocks one verified homeowner job + 100% replace guarantee.
-            </Text>
-          </View>
-        </View>
-        <Button label="Buy lead — 50 XPR" fullWidth onPress={() => setSheetVisible(true)} />
-        {leads.length > 0 && (
+      {leads.length > 0 && (
+        <Card>
+          <Text style={[typography.bodyStrong, { color: colors.text }]}>Past lead payments · {leads.length}</Text>
+          <Text style={[typography.caption, { color: colors.textMuted }]}>
+            These receipts do not unlock a specific job.
+          </Text>
           <View style={{ gap: spacing.xs, marginTop: spacing.sm }}>
             {leads.slice(0, 5).map((l) => (
               <Pressable key={l.id} onPress={() => l.txHash && Linking.openURL(explorerUrl(l.txHash))}>
@@ -130,8 +120,8 @@ export default function ContractorBids() {
               </Pressable>
             ))}
           </View>
-        )}
-      </Card>
+        </Card>
+      )}
 
       {bids.length === 0 ? (
         <Card variant="alt">
@@ -174,27 +164,6 @@ export default function ContractorBids() {
         ))
       )}
 
-      <PaymentSheet
-        visible={sheetVisible}
-        title="Unlock a verified lead"
-        subtitle="One Lead Token = one homeowner job. Replace guarantee on first purchase."
-        request={{
-          mode: 'charge',
-          amount: PAYMENT_CONFIG.LEAD_TOKEN_AMOUNT,
-          recipient: PAYMENT_CONFIG.LEAD_TOKEN_RECIPIENT,
-          memo: 'gcsc:lead-token',
-          endpoint: PAYMENT_CONFIG.LEAD_TOKEN_ENDPOINT,
-        }}
-        onClose={() => setSheetVisible(false)}
-        onSuccess={async (receipt) => {
-          await addLead({
-            amount: PAYMENT_CONFIG.LEAD_TOKEN_AMOUNT,
-            txHash: receipt.txHash ?? '',
-          });
-          const refreshed = await listLeads();
-          setLeads(refreshed);
-        }}
-      />
     </Screen>
   );
 }
@@ -205,5 +174,4 @@ const styles = StyleSheet.create({
   loader: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 200 },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   metaRow: { flexDirection: 'row', gap: spacing.xxl, marginTop: spacing.xs },
-  leadRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
 });

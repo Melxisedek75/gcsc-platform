@@ -8,7 +8,7 @@ import { Header } from '../../../components/Header';
 import { Input } from '../../../components/Input';
 import { Screen } from '../../../components/Screen';
 import { placeBackendBid } from '../../../lib/bids';
-import { BackendProject, formatBudget, getBackendProject, publicProjectAge } from '../../../lib/jobs';
+import { BackendProject, formatBudget, getBackendProject, hasBackendProjectAccess, publicProjectAge } from '../../../lib/jobs';
 import { colors, spacing, typography } from '../../../lib/tokens';
 
 function parseDollars(raw: string): number {
@@ -21,6 +21,9 @@ export default function BidSubmit() {
   const { jobId } = useLocalSearchParams<{ jobId: string }>();
 
   const [project, setProject] = useState<BackendProject | null>(null);
+  const [accessGranted, setAccessGranted] = useState<boolean | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [amount, setAmount] = useState('');
   const [timelineDays, setTimelineDays] = useState('');
@@ -29,17 +32,22 @@ export default function BidSubmit() {
 
   useEffect(() => {
     let cancelled = false;
+    setIsLoading(true);
+    setLoadError(null);
+    setProject(null);
+    setAccessGranted(null);
     if (!jobId) {
       setIsLoading(false);
       return;
     }
-    getBackendProject(jobId)
-      .then((res) => {
+    Promise.all([getBackendProject(jobId), hasBackendProjectAccess(jobId)])
+      .then(([res, access]) => {
         if (cancelled) return;
         setProject(res?.project.status === 'open' ? res.project : null);
+        setAccessGranted(access);
       })
-      .catch(() => {
-        if (!cancelled) setProject(null);
+      .catch((err) => {
+        if (!cancelled) setLoadError((err as { message?: string }).message ?? 'Could not check job access');
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -47,14 +55,14 @@ export default function BidSubmit() {
     return () => {
       cancelled = true;
     };
-  }, [jobId]);
+  }, [jobId, reload]);
 
   const amountValue = parseDollars(amount);
   const daysValue = parseDollars(timelineDays);
   const canSubmit = amountValue > 0 && daysValue > 0;
 
   async function handleSubmit() {
-    if (!canSubmit || isSubmitting || !project) return;
+    if (!canSubmit || isSubmitting || !project || accessGranted !== true) return;
     setIsSubmitting(true);
     try {
       await placeBackendBid({
@@ -67,6 +75,10 @@ export default function BidSubmit() {
         { text: 'OK', onPress: () => router.replace('/(contractor)/bid') },
       ]);
     } catch (err) {
+      if ((err as { body?: { code?: string } }).body?.code === 'project_access_required') {
+        setAccessGranted(false);
+        return;
+      }
       const msg = (err as { message?: string }).message ?? 'Failed to submit bid';
       Alert.alert('Submission failed', msg);
     } finally {
@@ -84,6 +96,16 @@ export default function BidSubmit() {
     );
   }
 
+  if (loadError) {
+    return (
+      <Screen>
+        <Header title="Could not check job access" subtitle={loadError} />
+        <Button label="Retry" fullWidth onPress={() => setReload((value) => value + 1)} />
+        <Button label="Back to jobs" fullWidth variant="ghost" onPress={() => router.replace('/(contractor)/jobs')} />
+      </Screen>
+    );
+  }
+
   if (!project) {
     return (
       <Screen>
@@ -93,6 +115,19 @@ export default function BidSubmit() {
           fullWidth
           onPress={() => router.replace('/(contractor)/jobs')}
         />
+      </Screen>
+    );
+  }
+
+  if (accessGranted === false) {
+    return (
+      <Screen>
+        <Header title="Job access required" subtitle={project.title} />
+        <Text style={[typography.body, { color: colors.textMuted }]}>
+          Bidding requires verified access to this specific job. A generic Lead Token does not unlock it.
+          Project-specific checkout is not available in this test build.
+        </Text>
+        <Button label="Back to jobs" fullWidth onPress={() => router.replace('/(contractor)/jobs')} />
       </Screen>
     );
   }
@@ -156,7 +191,7 @@ export default function BidSubmit() {
         label={isSubmitting ? 'Submitting…' : 'Submit bid'}
         fullWidth
         onPress={handleSubmit}
-        disabled={!canSubmit || isSubmitting}
+        disabled={!canSubmit || isSubmitting || accessGranted !== true}
       />
       <Button
         label="Cancel"

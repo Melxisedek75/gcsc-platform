@@ -92,6 +92,16 @@ export async function getBackendProject(
   }
 }
 
+export async function hasBackendProjectAccess(id: number | string): Promise<boolean> {
+  try {
+    await apiRequest(`/api/projects/${encodeURIComponent(String(id))}/details`);
+    return true;
+  } catch (err) {
+    if ((err as { status?: number }).status === 404) return false;
+    throw err;
+  }
+}
+
 export async function listMyBackendProjects(): Promise<BackendProject[]> {
   const res = await apiRequest<{ projects?: BackendProject[] }>('/api/projects/my/projects');
   return res.projects ?? [];
