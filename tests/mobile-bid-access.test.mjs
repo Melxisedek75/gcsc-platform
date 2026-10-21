@@ -43,7 +43,8 @@ test('bid form checks project access before entry and handles a late access revo
   assert.match(screen, /hasBackendProjectAccess\(/);
   assert.match(screen, /accessGranted === false/);
   assert.match(screen, /project_access_required/);
-  assert.match(screen, /Project-specific checkout is not available/);
+  assert.match(screen, /\/api\/payment\/project-access\/\$\{project\.id\}/);
+  assert.match(screen, /confirmation: \{ kind: 'project-access', projectId: project\.id \}/);
   assert.match(screen, /placeBackendBid\(/);
 });
 

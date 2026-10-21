@@ -4,7 +4,7 @@
     "slug": "smartcontractor",
     "owner": "gcsc",
     "scheme": "smartcontractor",
-    "version": "0.1.11",
+    "version": "0.1.12",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -17,7 +17,7 @@
     },
     "android": {
       "package": "com.gcsc.smartcontractor",
-      "versionCode": 13,
+      "versionCode": 14,
       "intentFilters": [
         {
           "action": "VIEW",

@@ -51,8 +51,8 @@
   {
     "path": "services/api/v3/pure-server.js",
     "sourceBlob": "952128e9316fe78bef42dba8ddc7b04eb09e29e5",
-    "sha256": "0359f2eb9409aa8c3d89361a4b6e8f88cd5b7e226aa413b8f995e79db81c4e28",
-    "reason": "Require verified wallet ownership before payment challenges and bid readiness; preserve wallet-first login plus authenticated sign-only binding, single-use challenges and strict XPR Testnet authority checks. Fail closed on JWT configuration, isolate test storage and bind auth limits to the direct peer. Preserve fresh admin ACL, revision-bound document review and PostgreSQL participant chat. Merge October private drafts, free publication, redacted previews, project-specific paid details and transactional bid/accept checks through the canonical shared schema including paid entitlements. Reject malformed legacy project IDs before detail reads or owner publication. Keep personal project, bid-list, escrow-read, document, compliance, profile, wallet, admin review/audit, current-user and financing-precheck responses private and uncacheable, varying by Authorization. Require a currently active account for /api/me and a current contractor role before listing personal bids or issuing a legacy lead-token payment challenge. Bind personal project and bid list SQL to the account's current active role in the same statement as each private read. Recheck and lock the active owner row inside draft creation so a revoked role cannot persist a new project. Keep legacy posting opt-in and replay-safe without publishing pending receipts. Prevent public contractor profiles from being cached after role revocation. Add owner-only full replacement of open private drafts with current-role validation, expected_updated_at conflict guard and transactional PostgreSQL audit; version new and legacy JSON drafts. Require PostgreSQL by default for account storage, allowing JSON only with explicit local development opt-in. Allow explicit loopback bind for local mobile API testing. Wallet repair: verify explicit ownership binding and live actor/permission/chain; prevent duplicate broadcast; preserve pending transaction verification and ownership-safe receipt replay. Scope is the actual changes in this file; real-device acceptance remains separate.",
+    "sha256": "588ddaa5f0032884d005d71bd99d88137ace8f4176f24a4e0424028783ee7d4c",
+    "reason": "Preserve canonical API and wallet repairs. Add project-specific 50 XPR Testnet access receipts and entitlements; verify Testnet node, signer permission, sender, amount, memo and freshness before granting access. Reserve one attempt per contractor and project before quoting; preserve original wallet authority in receipts and keep unresolved payments blocked for review.",
     "test": "node --test tests/*boundary.test.mjs tests/mobile-payment-state.test.mjs tests/binding-repair-*.test.mjs tests/wallet-restore.test.mjs; npm run test:api; npm run build:web; npm run check:mobile-types"
   },
   {
@@ -107,8 +107,8 @@
   {
     "path": "apps/mobile/lib/payments.ts",
     "sourceBlob": "926287b21f4ee1dd48345cba31e4490372b72964",
-    "sha256": "cd8ffe29b7847c85ff66dcfb26b5da4f7d7cad18c05b9a2b118f562058c3b18c",
-    "reason": "Keep endpoint paths render-safe; resolve explicit origin inside payment try/catch before fetch or signing. Wallet repair: verify explicit ownership binding and live actor/permission/chain; prevent duplicate broadcast; preserve pending transaction verification and ownership-safe receipt replay. Scope is the actual changes in this file; real-device acceptance remains separate.",
+    "sha256": "311f4083fdca7441fc1cab87079462781ecbd9ace152383f8da8abe69e96f6c7",
+    "reason": "Preserve wallet payment journal and enforce project-specific terms, durable attempt reservation and confirmation so an unknown broadcast never starts a second transfer.",
     "test": "node --test tests/*boundary.test.mjs tests/mobile-payment-state.test.mjs tests/binding-repair-*.test.mjs tests/wallet-restore.test.mjs; npm run test:api; npm run build:web; npm run check:mobile-types"
   },
   {
@@ -233,8 +233,8 @@
   {
     "path": "apps/mobile/app.json",
     "sourceBlob": "34e7fb48f1cefe1fffbda1c5ffd28b33a80c5699",
-    "sha256": "e234a684673333edfb5561ae419b34fd90f12a00ce2d93d884dd0cec742b8b51",
-    "reason": "Advance the bid-access UX candidate to 0.1.11/versionCode 13 without changing server entitlement or payment enforcement.",
+    "sha256": "bbcb90e5a6f51adf83bab049e0ac0ba42296e8473b61119c8f9b7ef333f89dd7",
+    "reason": "Advance the Testnet project-access trial to 0.1.12/versionCode 14.",
     "test": "node --test tests/mobile-bid-access.test.mjs; npm run check; verify-mobile-apk.ps1; device smoke pending"
   },
   {
@@ -436,8 +436,8 @@
   {
     "path": "apps/mobile/app/(contractor)/bid-submit/[jobId].tsx",
     "sourceBlob": "1b5a8b7b47378e5fc9e42157365dcd6524e6266b",
-    "sha256": "caff3bcf102d9b470e73de9306d813af01ab0c3eeb6906bb7fa325496520d4cd",
-    "reason": "Gate the bid form on project-specific access, show an honest access-required state, and handle a later server-side entitlement denial without implying generic lead receipts grant access.",
+    "sha256": "b360c45a7854a4ea850fda0c8bf1ec760ac35f471afb2fbf0253b79c6a64a790",
+    "reason": "Offer a job-bound 50 XPR Testnet payment only when access is absent, then reload the server entitlement before showing the bid form.",
     "test": "node --test tests/mobile-bid-access.test.mjs; npm run check:mobile-types"
   },
   {
@@ -485,8 +485,8 @@
   {
     "path": "apps/mobile/components/PaymentSheet.tsx",
     "sourceBlob": "3814de5f17849eec3830e7cd95892e37fa080f0f",
-    "sha256": "6c336f9c99cb74f37db307afd18e17d53d830abc8336a7c1018bb9815447ee86",
-    "reason": "Wallet repair: verify explicit ownership binding and live actor/permission/chain; prevent duplicate broadcast; preserve pending transaction verification and ownership-safe receipt replay. Scope is the actual changes in this file; real-device acceptance remains separate.",
+    "sha256": "0e9a8a3d634b2f35aabc1c02d71bbc66896688aaff80ec0f28783aceea223b67",
+    "reason": "Display Testnet payer, recipient and project memo before signature, and warn that an unresolved attempt must not be paid again.",
     "test": "node --test tests/*boundary.test.mjs tests/mobile-payment-state.test.mjs tests/binding-repair-*.test.mjs tests/wallet-restore.test.mjs; npm run test:api; npm run build:web; npm run check:mobile-types"
   },
   {

@@ -6,9 +6,11 @@ import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { Header } from '../../../components/Header';
 import { Input } from '../../../components/Input';
+import { PaymentSheet } from '../../../components/PaymentSheet';
 import { Screen } from '../../../components/Screen';
 import { placeBackendBid } from '../../../lib/bids';
 import { BackendProject, formatBudget, getBackendProject, hasBackendProjectAccess, publicProjectAge } from '../../../lib/jobs';
+import { PAYMENT_CONFIG } from '../../../lib/payments';
 import { colors, spacing, typography } from '../../../lib/tokens';
 
 function parseDollars(raw: string): number {
@@ -29,6 +31,7 @@ export default function BidSubmit() {
   const [timelineDays, setTimelineDays] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentVisible, setPaymentVisible] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -124,10 +127,26 @@ export default function BidSubmit() {
       <Screen>
         <Header title="Job access required" subtitle={project.title} />
         <Text style={[typography.body, { color: colors.textMuted }]}>
-          Bidding requires verified access to this specific job. A generic Lead Token does not unlock it.
-          Project-specific checkout is not available in this test build.
+          Unlock this job with one 50.0000 XPR transfer on XPR Testnet. After access is confirmed,
+          submitting a bid for this job is free. Check the account, recipient and amount in WebAuth before signing.
         </Text>
+        <Button label="Unlock this job · 50 XPR" fullWidth onPress={() => setPaymentVisible(true)} />
         <Button label="Back to jobs" fullWidth onPress={() => router.replace('/(contractor)/jobs')} />
+        <PaymentSheet
+          visible={paymentVisible}
+          title="Unlock this job"
+          subtitle={`XPR Testnet · ${project.title}`}
+          request={{
+            mode: 'charge',
+            amount: PAYMENT_CONFIG.LEAD_TOKEN_AMOUNT,
+            recipient: PAYMENT_CONFIG.LEAD_TOKEN_RECIPIENT,
+            memo: `gcsc:project:${project.id}`,
+            endpoint: `/api/payment/project-access/${project.id}`,
+            confirmation: { kind: 'project-access', projectId: project.id },
+          }}
+          onClose={() => setPaymentVisible(false)}
+          onSuccess={() => { setPaymentVisible(false); setReload(value => value + 1); }}
+        />
       </Screen>
     );
   }

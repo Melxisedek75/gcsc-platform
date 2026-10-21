@@ -45,14 +45,11 @@ const XPR_TESTNET_CHAIN_ID = '71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e208
 const WALLET_PROOF_AUDIENCE = process.env.WALLET_PROOF_AUDIENCE || `http://127.0.0.1:${PORT}`;
 const XPR_TX_VERIFIER_ENABLED = process.env.XPR_TX_VERIFIER_ENABLED !== 'false';
 const XPR_TX_VERIFIER_INTERVAL_MS = parseInt(process.env.XPR_TX_VERIFIER_INTERVAL_MS || '300000', 10);
-// Verified 2026-07-15 against the live testnet. Health-checked by real tx lookup,
-// not by /v2/health (a node's health endpoint reports "OK" while its Elasticsearch
-// index is weeks behind — saltant answered OK with total_indexed_blocks:0).
-// Order matters: first node that answers authoritatively wins.
+// Chain ID and history-index freshness must both be checked before confirming funds.
+// A healthy chain RPC alone does not establish that Hyperion is current.
 const DEFAULT_XPR_TESTNET_HYPERION_URLS = [
-  'https://test.proton.eosusa.io',            // current: index tracks head (~1 block lag)
-  'https://api-xprnetwork-test.saltant.io',   // fallback: was 6 weeks stale on 2026-07-15,
-                                              // kept because staleness is now detected per-query
+  'https://testnet.rockerone.io',
+  'https://api-xprnetwork-test.saltant.io',
 ];
 // A Hyperion node answers `executed:false` BOTH when a tx genuinely does not exist
 // and when its own index is too far behind to know. The only reliable discriminator
@@ -245,6 +242,7 @@ function createEmptyDatabase() {
     payment_receipts: [],
     lead_tokens: [],
     project_access_entitlements: [],
+    project_access_xpr_attempts: [],
     job_posting_payments: [],
     wallet_challenges: [],
   };
@@ -1103,7 +1101,8 @@ const _hooks = {
 // reconciler revisits a payment hours later it passes the receipt's creation time,
 // so a tx that was fresh when submitted stays valid without reopening the replay
 // window that PAYMENT_TX_MAX_AGE_MS exists to close.
-async function verifyHyperionTransfer({ txHash, expectedRecipient, expectedAmount, expectedMemo, expectedFrom, nowMs }) {
+async function verifyHyperionTransfer({ txHash, expectedRecipient, expectedAmount, expectedMemo,
+  expectedFrom, expectedPermission, requireTestnet = false, nowMs }) {
   if (!txHash || typeof txHash !== 'string' || !/^[0-9a-fA-F]{64}$/.test(txHash)) {
     return { ok: false, error: 'bad_tx_hash' };
   }
@@ -1121,6 +1120,24 @@ async function verifyHyperionTransfer({ txHash, expectedRecipient, expectedAmoun
   let sawAuthoritativeNode = false;
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
    for (const node of nodes) {
+    if (requireTestnet) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8000);
+      try {
+        const infoResponse = await fetch(`${normalizeEndpoint(node)}/v1/chain/get_info`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
+          signal: controller.signal,
+        });
+        const info = infoResponse.ok ? await infoResponse.json() : null;
+        if (info?.chain_id !== XPR_TESTNET_CHAIN_ID) {
+          lastError = `not_testnet@${node}`;
+          continue;
+        }
+      } catch {
+        lastError = `chain_info_unavailable@${node}`;
+        continue;
+      } finally { clearTimeout(timer); }
+    }
     const result = await fetchHyperionTransaction(node, txHash);
     if (result.authoritative) sawAuthoritativeNode = true;
     if (!result.found) {
@@ -1138,7 +1155,8 @@ async function verifyHyperionTransfer({ txHash, expectedRecipient, expectedAmoun
       // that is a definitive answer about a real transaction, not an outage.
       return { ok: false, error: 'no_transfer_action', detail: `tx=${txHash} node=${node}` };
     }
-    const data = getActionAct(transfer).data || {};
+    const act = getActionAct(transfer);
+    const data = act.data || {};
     if (data.to !== expectedRecipient) {
       return { ok: false, error: 'bad_recipient', detail: `got=${data.to} expected=${expectedRecipient}` };
     }
@@ -1153,10 +1171,16 @@ async function verifyHyperionTransfer({ txHash, expectedRecipient, expectedAmoun
     if (expectedFrom && String(data.from).trim() !== String(expectedFrom).trim()) {
       return { ok: false, error: 'bad_sender', detail: `got=${data.from} expected=${expectedFrom}` };
     }
+    if (expectedPermission && !act.authorization?.some(auth => auth.actor === expectedFrom
+      && auth.permission === expectedPermission)) {
+      return { ok: false, error: 'bad_permission' };
+    }
     const tsRaw = transfer.timestamp || transfer['@timestamp'];
+    if (requireTestnet && !tsRaw) return { ok: false, error: 'missing_tx_timestamp' };
     if (tsRaw) {
-      const txTime = new Date(/Z$/.test(tsRaw) ? tsRaw : (tsRaw + 'Z'));
+      const txTime = new Date(/[zZ]$|[+-]\d\d:\d\d$/.test(tsRaw) ? tsRaw : (tsRaw + 'Z'));
       const ageMs = (Number.isFinite(nowMs) ? nowMs : Date.now()) - txTime.getTime();
+      if (!Number.isFinite(ageMs)) return { ok: false, error: 'invalid_tx_timestamp' };
       if (ageMs > PAYMENT_TX_MAX_AGE_MS) return { ok: false, error: 'tx_too_old', detail: `age_ms=${ageMs}` };
       if (ageMs < -60000) return { ok: false, error: 'tx_in_future', detail: `age_ms=${ageMs}` };
     }
@@ -1261,6 +1285,95 @@ async function recordLeadTokenPayment({ txHash, userId, fromAccount, amount, blo
   db.payment_receipts.push(receipt);
   db.lead_tokens.push(lead);
   return { receipt, lead };
+}
+
+function projectCanAcceptBids(project) {
+  return project?.published === true && project.status === 'open' && !project.escrow_id;
+}
+
+async function grantVerifiedProjectAccess(client, receipt) {
+  const projectId = Number(receipt.project_id);
+  const contractorId = Number(receipt.user_id);
+  if (client) {
+    const project = (await client.query('SELECT * FROM projects WHERE id=$1 FOR UPDATE', [projectId])).rows[0];
+    const existing = (await client.query(
+      'SELECT * FROM project_access_entitlements WHERE project_id=$1 AND contractor_id=$2 FOR UPDATE',
+      [projectId, contractorId])).rows[0];
+    const contractor = (await client.query('SELECT role,is_active FROM users WHERE id=$1 FOR SHARE',
+      [contractorId])).rows[0];
+    if (!projectCanAcceptBids(project) || contractor?.role !== 'contractor' || contractor.is_active !== true) {
+      return 'review_required';
+    }
+    if (existing?.status === 'paid') {
+      return existing.provider_payment_id === receipt.tx_hash ? 'paid' : 'review_required';
+    }
+    if (existing) return 'review_required';
+    await client.query(`INSERT INTO project_access_entitlements
+        (project_id,contractor_id,status,provider_payment_id,verified_at)
+        VALUES ($1,$2,'paid',$3,NOW())`, [projectId, contractorId, receipt.tx_hash]);
+    return 'paid';
+  }
+  const project = db.projects.find(row => Number(row.id) === projectId);
+  const existing = db.project_access_entitlements.find(row => Number(row.project_id) === projectId
+    && Number(row.contractor_id) === contractorId);
+  const contractor = db.users.find(row => Number(row.id) === contractorId);
+  if (!projectCanAcceptBids(project) || contractor?.role !== 'contractor' || !contractor.is_active) {
+    return 'review_required';
+  }
+  if (existing?.status === 'paid') {
+    return existing.provider_payment_id === receipt.tx_hash ? 'paid' : 'review_required';
+  }
+  const now = new Date().toISOString();
+  if (existing) return 'review_required';
+  db.project_access_entitlements.push({ project_id: projectId, contractor_id: contractorId,
+    status: 'paid', provider_payment_id: receipt.tx_hash, verified_at: now,
+    created_at: now, updated_at: now });
+  return 'paid';
+}
+
+async function recordProjectAccessPayment({ txHash, userId, fromAccount, amount, blockNum,
+  projectId, fromPermission, attemptKey, verificationStatus }) {
+  const confirmed = verificationStatus === 'confirmed';
+  if (USE_POSTGRES) {
+    try {
+      return await withPostgresTransaction(async client => {
+        const result = await client.query(`INSERT INTO payment_receipts
+          (tx_hash,kind,user_id,from_account,wallet_permission,attempt_key,amount,block_num,project_id,verification_status,verified_at)
+          VALUES ($1,'project-access',$2,$3,$4,$5,$6,$7,$8,$9,CASE WHEN $9='confirmed' THEN NOW() ELSE NULL END)
+          RETURNING *`, [txHash, userId, fromAccount, fromPermission, attemptKey, amount,
+            blockNum, projectId, verificationStatus]);
+        const receipt = result.rows[0];
+        const accessStatus = confirmed ? await grantVerifiedProjectAccess(client, receipt) : 'pending_verification';
+        if (accessStatus === 'review_required') {
+          await client.query('UPDATE payment_receipts SET verify_error=$1 WHERE tx_hash=$2',
+            ['project_or_account_unavailable', txHash]);
+        }
+        await client.query(`UPDATE project_access_xpr_attempts SET status=$3,updated_at=NOW()
+          WHERE project_id=$1 AND contractor_id=$2 AND attempt_key=$4`,
+        [projectId, userId, accessStatus === 'paid' ? 'confirmed'
+          : accessStatus === 'review_required' ? 'review_required' : 'pending', attemptKey]);
+        return { receipt, accessStatus };
+      });
+    } catch (err) {
+      if (err?.code === '23505') throw paymentReplayError(txHash);
+      throw err;
+    }
+  }
+  if (db.payment_receipts.some(receipt => receipt.tx_hash === txHash)) throw paymentReplayError(txHash);
+  const now = new Date().toISOString();
+  const receipt = { id: db.nextId('payment_receipts'), tx_hash: txHash,
+    kind: 'project-access', user_id: userId, from_account: fromAccount,
+    wallet_permission: fromPermission, attempt_key: attemptKey, amount,
+    block_num: blockNum, project_id: projectId, verification_status: verificationStatus,
+    verify_error: '', verified_at: confirmed ? now : null, created_at: now };
+  db.payment_receipts.push(receipt);
+  const accessStatus = confirmed ? await grantVerifiedProjectAccess(null, receipt) : 'pending_verification';
+  if (accessStatus === 'review_required') receipt.verify_error = 'project_or_account_unavailable';
+  const attempt = db.project_access_xpr_attempts.find(row => row.attempt_key === attemptKey);
+  if (attempt) attempt.status = accessStatus === 'paid' ? 'confirmed'
+    : accessStatus === 'review_required' ? 'review_required' : 'pending';
+  saveDatabase();
+  return { receipt, accessStatus };
 }
 
 async function recordJobPostingPayment({ txHash, userId, fromAccount, amount, blockNum, project, verificationStatus = 'confirmed' }) {
@@ -2086,6 +2199,76 @@ async function hasPaidProjectAccess(projectId, contractorId) {
     && !!grant.verified_at);
 }
 
+async function hasExistingProjectEntitlement(projectId, contractorId) {
+  if (USE_POSTGRES) {
+    const result = await queryPostgres(`SELECT 1 FROM project_access_entitlements
+      WHERE project_id=$1 AND contractor_id=$2 LIMIT 1`, [projectId, contractorId]);
+    return result.rows.length > 0;
+  }
+  return db.project_access_entitlements.some(grant => Number(grant.project_id) === projectId
+    && Number(grant.contractor_id) === contractorId);
+}
+
+async function hasUnresolvedProjectAccessPayment(projectId, contractorId) {
+  if (USE_POSTGRES) {
+    const result = await queryPostgres(`SELECT 1 FROM payment_receipts
+      WHERE kind='project-access' AND project_id=$1 AND user_id=$2
+        AND (verification_status='pending' OR
+          (verification_status='confirmed' AND verify_error <> '')) LIMIT 1`,
+    [projectId, contractorId]);
+    return result.rows.length > 0;
+  }
+  return db.payment_receipts.some(receipt => receipt.kind === 'project-access'
+    && Number(receipt.project_id) === projectId && Number(receipt.user_id) === contractorId
+    && (receipt.verification_status === 'pending'
+      || (receipt.verification_status === 'confirmed' && !!receipt.verify_error)));
+}
+
+async function reserveProjectAccessAttempt(projectId, contractorId, attemptKey, wallet) {
+  if (USE_POSTGRES) {
+    await queryPostgres(`INSERT INTO project_access_xpr_attempts
+      (project_id,contractor_id,attempt_key,wallet_account,wallet_permission)
+      VALUES ($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING`,
+    [projectId, contractorId, attemptKey, wallet.accountName, wallet.permission || 'active']);
+    const result = await queryPostgres(`SELECT * FROM project_access_xpr_attempts
+      WHERE project_id=$1 AND contractor_id=$2`, [projectId, contractorId]);
+    return result.rows[0] || null;
+  }
+  let attempt = db.project_access_xpr_attempts.find(row => Number(row.project_id) === projectId
+    && Number(row.contractor_id) === contractorId);
+  if (!attempt) {
+    attempt = { project_id: projectId, contractor_id: contractorId,
+      attempt_key: attemptKey, wallet_account: wallet.accountName,
+      wallet_permission: wallet.permission || 'active', status: 'quoted' };
+    db.project_access_xpr_attempts.push(attempt);
+    saveDatabase();
+  }
+  return attempt;
+}
+
+async function findProjectAccessAttempt(projectId, contractorId) {
+  if (USE_POSTGRES) {
+    const result = await queryPostgres(`SELECT * FROM project_access_xpr_attempts
+      WHERE project_id=$1 AND contractor_id=$2`, [projectId, contractorId]);
+    return result.rows[0] || null;
+  }
+  return db.project_access_xpr_attempts.find(row => Number(row.project_id) === projectId
+    && Number(row.contractor_id) === contractorId) || null;
+}
+
+async function projectAccessIsFromPayment(projectId, contractorId, txHash) {
+  if (USE_POSTGRES) {
+    const result = await queryPostgres(`SELECT 1 FROM project_access_entitlements
+      WHERE project_id=$1 AND contractor_id=$2 AND status='paid'
+        AND provider_payment_id=$3 AND verified_at IS NOT NULL LIMIT 1`,
+    [projectId, contractorId, txHash]);
+    return result.rows.length > 0;
+  }
+  return db.project_access_entitlements.some(grant => Number(grant.project_id) === projectId
+    && Number(grant.contractor_id) === contractorId && grant.status === 'paid'
+    && grant.provider_payment_id === txHash && !!grant.verified_at);
+}
+
 async function readAuthorizedProjectDetails(projectId, auth) {
   if (!Number.isSafeInteger(auth.userId) || auth.userId <= 0 || auth.userId > 2147483647
     || !['homeowner', 'contractor'].includes(auth.role)) return null;
@@ -2626,6 +2809,11 @@ const PAYMENT_KIND_MEMOS = {
   'job-posting': 'gcsc:job-posting',
 };
 
+function paymentMemo(receipt) {
+  return receipt.kind === 'project-access'
+    ? `gcsc:project:${receipt.project_id}` : (PAYMENT_KIND_MEMOS[receipt.kind] || '');
+}
+
 async function listPendingPaymentReceipts(limit = 25) {
   if (USE_POSTGRES) {
     const result = await queryPostgres(
@@ -2642,12 +2830,23 @@ async function applyPaymentVerdict(receipt, status, error) {
   if (USE_POSTGRES) {
     await withPostgresTransaction(async (client) => {
       let publicationBlocked = false;
+      let accessReview = false;
       if (receipt.kind === 'job-posting' && status === 'confirmed') {
         publicationBlocked = !await publishPostgresProjectIfEligible(client, receipt.project_id, receipt.user_id);
       }
+      if (receipt.kind === 'project-access' && status === 'confirmed') {
+        accessReview = await grantVerifiedProjectAccess(client, receipt) !== 'paid';
+      }
+      if (receipt.kind === 'project-access') {
+        await client.query(`UPDATE project_access_xpr_attempts SET status=$3,updated_at=NOW()
+          WHERE project_id=$1 AND contractor_id=$2 AND attempt_key=$4`,
+        [receipt.project_id, receipt.user_id, status === 'confirmed'
+          ? (accessReview ? 'review_required' : 'confirmed') : 'rejected', receipt.attempt_key]);
+      }
       await client.query(
         `UPDATE payment_receipts SET verification_status = $1, verify_error = $2, verified_at = NOW() WHERE tx_hash = $3`,
-        [status, publicationBlocked ? 'publication_blocked_owner_or_project_ineligible' : (error || ''), receipt.tx_hash]
+        [status, accessReview ? 'project_or_account_unavailable'
+          : publicationBlocked ? 'publication_blocked_owner_or_project_ineligible' : (error || ''), receipt.tx_hash]
       );
       if (receipt.kind === 'lead-token') {
         await client.query(`UPDATE lead_tokens SET status = $1 WHERE tx_hash = $2`, [leadStatus, receipt.tx_hash]);
@@ -2660,14 +2859,22 @@ async function applyPaymentVerdict(receipt, status, error) {
     ? db.projects.find(p => p.id === Number(receipt.project_id)) : null;
   const publicationBlocked = receipt.kind === 'job-posting' && status === 'confirmed'
     && !publishJsonProjectIfEligible(project, receipt.user_id);
+  const accessReview = receipt.kind === 'project-access' && status === 'confirmed'
+    && await grantVerifiedProjectAccess(null, receipt) !== 'paid';
   if (stored) {
     stored.verification_status = status;
-    stored.verify_error = publicationBlocked ? 'publication_blocked_owner_or_project_ineligible' : (error || '');
+    stored.verify_error = accessReview ? 'project_or_account_unavailable'
+      : publicationBlocked ? 'publication_blocked_owner_or_project_ineligible' : (error || '');
     stored.verified_at = new Date().toISOString();
   }
   if (receipt.kind === 'lead-token') {
     const lead = db.lead_tokens.find(l => l.tx_hash === receipt.tx_hash);
     if (lead) lead.status = leadStatus;
+  }
+  if (receipt.kind === 'project-access') {
+    const attempt = db.project_access_xpr_attempts.find(row => row.attempt_key === receipt.attempt_key);
+    if (attempt) attempt.status = status === 'confirmed'
+      ? (accessReview ? 'review_required' : 'confirmed') : 'rejected';
   }
   saveDatabase();
 }
@@ -2680,8 +2887,10 @@ async function reconcilePendingPayments() {
         txHash: receipt.tx_hash,
         expectedRecipient: PAYMENT_RECIPIENT,
         expectedAmount: receipt.amount,
-        expectedMemo: PAYMENT_KIND_MEMOS[receipt.kind] || '',
+        expectedMemo: paymentMemo(receipt),
         expectedFrom: receipt.from_account,
+        expectedPermission: receipt.kind === 'project-access' ? (receipt.wallet_permission || 'active') : undefined,
+        requireTestnet: receipt.kind === 'project-access',
         // Judge freshness as of acceptance, not now — the tx was submitted back then,
         // and re-anchoring to now would reject every payment older than the window.
         nowMs: new Date(receipt.created_at).getTime(),
@@ -4907,6 +5116,118 @@ const routes = {
   },
 
   // ===== mppx 402-flow PAYMENT ROUTES (independent verifier — Variant B) =====
+
+  'POST /api/payment/project-access/:projectId': async (req, res, params) => {
+    res.setHeader('Cache-Control', 'private, no-store');
+    const user = getUser(req);
+    if (!user) return json(res, 401, { error: 'Unauthorized' });
+    if (!(await hasCurrentRole(user, 'contractor'))) return json(res, 403, { error: 'Contractors only' });
+    if (!/^[1-9]\d*$/.test(params.projectId)) return json(res, 400, { error: 'Valid project ID required' });
+    const projectId = Number(params.projectId);
+    if (!Number.isSafeInteger(projectId) || projectId > 2147483647) {
+      return json(res, 400, { error: 'Valid project ID required' });
+    }
+    const project = await findStoredProjectById(projectId);
+    if (!project) return json(res, 404, { error: 'Project not found' });
+    const amount = '50.0000 XPR';
+    const memo = `gcsc:project:${projectId}`;
+    const rawHash = req.headers['x-payment-tx'];
+    const txHash = typeof rawHash === 'string' ? rawHash.trim().toLowerCase() : '';
+    const attemptKey = typeof req.headers['x-payment-attempt'] === 'string'
+      ? req.headers['x-payment-attempt'].trim().toLowerCase() : '';
+    if (!/^[a-f0-9]{32}$/.test(attemptKey)) {
+      return json(res, 400, { error: 'Payment attempt key required' });
+    }
+
+    if (txHash && !/^[a-f0-9]{64}$/.test(txHash)) {
+      return json(res, 400, { error: 'Valid transaction hash required' });
+    }
+    if (txHash) {
+      const existing = await findStoredPaymentReceiptByTxHash(txHash);
+      if (existing) {
+        if (existing.kind !== 'project-access' || Number(existing.user_id) !== Number(user.userId)
+          || Number(existing.project_id) !== projectId || existing.attempt_key !== attemptKey) {
+          return json(res, 409, { error: 'Payment already processed', code: 'payment_already_processed' });
+        }
+        const paid = existing.verification_status === 'confirmed' && !existing.verify_error
+          && await projectAccessIsFromPayment(projectId, user.userId, txHash);
+        const pending = existing.verification_status === 'pending';
+        return json(res, 200, { project_id: projectId, tx_hash: txHash, pending,
+          access_status: paid ? 'paid' : pending ? 'pending_verification'
+            : existing.verification_status === 'rejected' ? 'rejected' : 'review_required' });
+      }
+    }
+
+    if (!txHash) {
+      const leadUser = await findUserById(user.userId);
+      const leadWallet = leadUser?.wallet?.accountName;
+      if (!leadWallet) return json(res, 409, { error: 'Wallet not connected', code: 'wallet_required' });
+      if (leadUser.wallet.verified !== true) {
+        return json(res, 409, { error: 'Verified wallet ownership required', code: 'wallet_proof_required' });
+      }
+      if (leadWallet === PAYMENT_RECIPIENT) {
+        return json(res, 409, { error: 'Payer and recipient must differ', code: 'self_payment_not_allowed' });
+      }
+      if (!projectCanAcceptBids(project)) {
+        return json(res, 409, { error: 'Project is not open for bids', code: 'project_unavailable' });
+      }
+      if (await hasExistingProjectEntitlement(projectId, user.userId)) {
+        return json(res, 409, { error: 'Project access has an existing entitlement', code: 'project_access_exists' });
+      }
+      if (await hasUnresolvedProjectAccessPayment(projectId, user.userId)) {
+        return json(res, 409, { error: 'Previous payment needs reconciliation', code: 'project_payment_unresolved' });
+      }
+      const attempt = await reserveProjectAccessAttempt(projectId, user.userId, attemptKey, leadUser.wallet);
+      if (attempt?.attempt_key !== attemptKey || attempt.status !== 'quoted'
+        || attempt.wallet_account !== leadWallet
+        || attempt.wallet_permission !== (leadUser.wallet.permission || 'active')) {
+        return json(res, 409, { error: 'Another payment attempt is reserved', code: 'project_payment_reserved' });
+      }
+      res.writeHead(402, { 'Content-Type': 'application/json',
+        'WWW-Authenticate': `Payment recipient="${PAYMENT_RECIPIENT}" amount="${amount}" memo="${memo}"` });
+      return res.end(JSON.stringify({ error: 'Payment required',
+        payment: { project_id: projectId, recipient: PAYMENT_RECIPIENT, amount, memo } }));
+    }
+
+    const attempt = await findProjectAccessAttempt(projectId, user.userId);
+    if (attempt?.attempt_key !== attemptKey || attempt.status !== 'quoted') {
+      return json(res, 409, { error: 'Payment attempt does not match reserved terms', code: 'project_payment_reserved' });
+    }
+
+    // A transfer broadcast just before closure must still be recorded for manual
+    // resolution. It cannot create an entitlement for a now-ineligible project.
+    const verify = await _hooks.verifyHyperionTransfer({ txHash,
+      expectedRecipient: PAYMENT_RECIPIENT, expectedAmount: amount,
+      expectedMemo: memo, expectedFrom: attempt.wallet_account,
+      expectedPermission: attempt.wallet_permission, requireTestnet: true });
+    if (!verify.ok && !verify.pending) {
+      return json(res, 400, { error: 'Payment verification failed', code: verify.error });
+    }
+    let recorded;
+    try {
+      recorded = await recordProjectAccessPayment({ txHash, userId: user.userId,
+        fromAccount: verify.from || attempt.wallet_account, amount, blockNum: verify.block_num || null,
+        fromPermission: attempt.wallet_permission, attemptKey, projectId,
+        verificationStatus: verify.ok ? 'confirmed' : 'pending' });
+    } catch (err) {
+      if (err?.status === 409) {
+        const existing = await findStoredPaymentReceiptByTxHash(txHash);
+        if (existing?.kind === 'project-access' && Number(existing.user_id) === Number(user.userId)
+          && Number(existing.project_id) === projectId && existing.attempt_key === attemptKey) {
+          const paid = existing.verification_status === 'confirmed' && !existing.verify_error
+            && await projectAccessIsFromPayment(projectId, user.userId, txHash);
+          return json(res, 200, { project_id: projectId, tx_hash: txHash,
+            pending: existing.verification_status === 'pending',
+            access_status: paid ? 'paid' : existing.verification_status === 'pending'
+              ? 'pending_verification' : 'review_required' });
+        }
+        return json(res, 409, { error: 'Payment already processed', code: 'payment_already_processed' });
+      }
+      throw err;
+    }
+    return json(res, 200, { project_id: projectId, tx_hash: txHash,
+      pending: recorded.accessStatus === 'pending_verification', access_status: recorded.accessStatus });
+  },
 
   // Lead Token purchase ($50 XPR) — Contractor pays for a project lead
   'POST /api/payment/lead-token': async (req, res) => {

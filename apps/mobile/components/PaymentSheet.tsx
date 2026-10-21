@@ -7,6 +7,7 @@ import {
   PaymentStage,
   requestPayment,
 } from '../lib/payments';
+import { getCurrentUser } from '../lib/api';
 import { colors, radius, spacing, typography } from '../lib/tokens';
 import { Button } from './Button';
 
@@ -28,6 +29,7 @@ const STAGES: { stage: PaymentStage; label: string }[] = [
 ];
 
 export function PaymentSheet({ visible, title, subtitle, request, onClose, onSuccess }: Props) {
+  const payer = getCurrentUser()?.wallet?.account || getCurrentUser()?.wallet?.accountName;
   const [progress, setProgress] = useState<PaymentProgress>({ stage: 'idle', detail: '' });
   const [receipt, setReceipt] = useState<PaymentReceipt | null>(null);
   const [running, setRunning] = useState(false);
@@ -75,9 +77,11 @@ export function PaymentSheet({ visible, title, subtitle, request, onClose, onSuc
           <View style={styles.amountBlock}>
             <Text style={[typography.caption, { color: colors.textMuted }]}>Amount</Text>
             <Text style={[typography.display, { color: colors.brand }]}>{request.amount}</Text>
+            {payer ? <Text style={[typography.caption, { color: colors.textDim }]}>from {payer}</Text> : null}
             <Text style={[typography.caption, { color: colors.textDim }]}>
-              to {request.recipient}
+              XPR Testnet · to {request.recipient}
             </Text>
+            {request.memo ? <Text style={[typography.micro, { color: colors.textDim }]}>Memo: {request.memo}</Text> : null}
           </View>
 
           {progress.stage !== 'idle' && (
@@ -124,6 +128,15 @@ export function PaymentSheet({ visible, title, subtitle, request, onClose, onSuc
           {progress.stage === 'failed' && receipt?.error && (
             <View style={styles.errorBox}>
               <Text style={[typography.caption, { color: colors.danger }]}>{receipt.error}</Text>
+            </View>
+          )}
+
+          {progress.stage === 'pending' && (
+            <View style={styles.errorBox}>
+              <Text style={[typography.caption, { color: colors.danger }]}>
+                The transfer outcome is not confirmed. Do not send another payment. Check the transaction in WebAuth and contact support if it remains unresolved.
+              </Text>
+              {receipt?.txHash ? <Text style={[typography.micro, { color: colors.textMuted }]} selectable>{receipt.txHash}</Text> : null}
             </View>
           )}
 

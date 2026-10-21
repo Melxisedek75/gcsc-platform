@@ -177,6 +177,8 @@ const statements = Object.freeze([
     kind TEXT NOT NULL,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     from_account TEXT NOT NULL DEFAULT '',
+    wallet_permission TEXT NOT NULL DEFAULT 'active',
+    attempt_key TEXT,
     amount TEXT NOT NULL,
     block_num BIGINT,
     project_id INTEGER REFERENCES projects(id) ON DELETE RESTRICT,
@@ -199,6 +201,17 @@ const statements = Object.freeze([
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (project_id, contractor_id),
     CHECK (status <> 'paid' OR (provider_payment_id <> '' AND verified_at IS NOT NULL))
+  )`,
+  `CREATE TABLE IF NOT EXISTS project_access_xpr_attempts (
+    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE RESTRICT,
+    contractor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    attempt_key TEXT NOT NULL UNIQUE CHECK (attempt_key ~ '^[a-f0-9]{32}$'),
+    wallet_account TEXT NOT NULL,
+    wallet_permission TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'quoted' CHECK (status IN ('quoted','pending','confirmed','review_required','rejected')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (project_id, contractor_id)
   )`,
   `CREATE TABLE IF NOT EXISTS project_access_purchases (
     id UUID PRIMARY KEY,
@@ -361,6 +374,8 @@ const statements = Object.freeze([
   `ALTER TABLE payment_receipts ADD COLUMN IF NOT EXISTS verification_status TEXT NOT NULL DEFAULT 'confirmed'`,
   `ALTER TABLE payment_receipts ADD COLUMN IF NOT EXISTS verify_error TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE payment_receipts ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ`,
+  `ALTER TABLE payment_receipts ADD COLUMN IF NOT EXISTS wallet_permission TEXT NOT NULL DEFAULT 'active'`,
+  `ALTER TABLE payment_receipts ADD COLUMN IF NOT EXISTS attempt_key TEXT`,
   `CREATE INDEX IF NOT EXISTS idx_payment_receipts_verification ON payment_receipts (verification_status)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_payment_receipts_tx_hash ON payment_receipts (tx_hash)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_lead_tokens_tx_hash ON lead_tokens (tx_hash)`,
