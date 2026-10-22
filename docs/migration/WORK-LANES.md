@@ -1,5 +1,23 @@
 # Parallel work lanes
 
+## November 2026 candidate coordination (current)
+
+Candidate and sole integration writer: `codex/wallet-reconcile-20261018` in
+`C:\gcsc-platform\.worktrees\wallet-reconcile-20261018`. This branch is a
+descendant of the older publication branch. Do not send another writer into
+this dirty checkout. Use the November plan and risk register in
+`docs/tasks/2026-10-22-november-mvp/` and `ACTIVE-TASK.json` for current work.
+
+| Lane | Responsible role | Write boundary | Required independent check |
+| --- | --- | --- | --- |
+| Integration/API | Codex integrator | Candidate worktree; coordinate API changes with clients | Separate reviewer for auth, privacy, payments and DB |
+| Web/mobile presentation | Separate writer only in an attached worktree, after frozen API contract | apps/web, apps/marketing or apps/mobile by assignment | Browser/device QA plus product truth review |
+| QA/security | Independent reviewer | Read-only against candidate or isolated tests worktree | Reproduce findings, do not self-approve |
+| Product/marketing | Dot Melchizedek coordinates; founder decides | Plans and approved copy only | Real user evidence, legal/claims check before publishing |
+
+The October table below is historical provenance, not a live instruction to
+write in its worktrees or deploy their independent outputs.
+
 Historical import checkout: C:\gcsc-platform; do not use it for new development.
 October MVP coordination source: C:\gcsc-platform\.worktrees\publication,
 branch codex/monorepo-publication. Current continuation: through 2026-10-31;

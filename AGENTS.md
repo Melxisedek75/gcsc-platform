@@ -3,10 +3,12 @@
 Respond to the founder in Russian. Read this file and docs/migration/CHECKLIST.md
 first, then only task-relevant files. Do not repeatedly scan historical sources.
 
-Consolidation source of truth: Melxisedek75/gcsc-platform, branch main. Active
-integration worktree: C:/gcsc-platform/.worktrees/publication. The older root
-checkout and three source repositories retain prior/dirty work; do not develop
-against them by mistake. Verify HEAD and the active checkpoint before writing.
+Consolidation source of truth: Melxisedek75/gcsc-platform, branch main. The
+current November MVP candidate is codex/wallet-reconcile-20261018 in
+C:/gcsc-platform/.worktrees/wallet-reconcile-20261018; the publication worktree
+is its ancestor, not a second integration destination. The older root checkout
+and three source repositories retain prior/dirty work; do not develop against
+them by mistake. Verify HEAD and the active checkpoint before writing.
 
 Owner authorized autonomous continuation on 2026-09-09. Use the existing checklist
 as the completion plan and ACTIVE-TASK.json as the checkpoint. Continue directly
