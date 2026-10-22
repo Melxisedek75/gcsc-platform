@@ -35,6 +35,16 @@
 - `ACCEPTANCE-MAP.md` connects current acceptance gates to historical L-items
   without declaring them completed.
 
+## Local planning checkpoint verification
+
+- Scoped planning commit `2dfbba82` contains 11 documentation/coordination
+  files. The pre-existing mobile/API/payment edits were not staged or committed.
+- `git diff --cached --check` passed before commit. `ACTIVE-TASK.json` parsed
+  with PowerShell `ConvertFrom-Json`.
+- `npm test` passed locally: 37 tests, 0 failed, exit code 0. This checks
+  migration/provenance/schema/lead-checkout guards, not the November product
+  acceptance gates or the dirty mobile/API candidate.
+
 ## Independent read-only challenge, 2026-10-22
 
 - Technical reviewer `01a16592-1213-70a2-b742-b22cbed2ae27` identified eight
