@@ -33,7 +33,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
   }, [location.pathname])
 
   return (
-    <div className="relative min-h-[100dvh] bg-void">
+    <div className="relative min-h-[100dvh]">
       <MarketingNavbar />
       <main>{children}</main>
       <MarketingFooter />

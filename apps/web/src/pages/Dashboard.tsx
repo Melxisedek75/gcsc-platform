@@ -133,7 +133,7 @@ export default function Dashboard() {
 
   if (loadingUser) {
     return (
-      <div className="min-h-[100dvh] bg-white flex items-center justify-center">
+      <div className="min-h-[100dvh] bg-[#020612] flex items-center justify-center">
         <div className="flex items-center gap-3 text-[#7B2FF7] font-inter font-semibold">
           <Loader2 size={22} className="animate-spin" />
           Loading dashboard...
@@ -150,10 +150,10 @@ export default function Dashboard() {
   const visibleNavItems = navItems.filter((item) => !item.adminOnly || user.role === 'admin');
 
   return (
-    <div className="min-h-[100dvh] bg-white flex">
+    <div className="min-h-[100dvh] bg-transparent flex">
       {/* Desktop Sidebar */}
       <aside
-        className="hidden lg:flex flex-col w-[240px] shrink-0 border-r border-[#E2E8F0] bg-[#F8FAFC] fixed left-0 top-[72px] bottom-0 overflow-y-auto z-40"
+        className="hidden lg:flex flex-col w-[240px] shrink-0 border-r border-[#22315E] bg-[#0A1633] fixed left-0 top-[72px] bottom-0 overflow-y-auto z-40"
       >
         <nav className="flex-1 px-3 py-6 space-y-1">
           {visibleNavItems.map((item) => {
@@ -183,12 +183,12 @@ export default function Dashboard() {
           })}
 
           {/* Divider */}
-          <div className="my-3 border-t border-[#E2E8F0]" />
+          <div className="my-3 border-t border-[#22315E]" />
 
           {/* Token link */}
           <Link
             to="/token"
-            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-[#475569] hover:bg-[rgba(123,47,247,0.06)] hover:text-[#7B2FF7] transition-all duration-200"
+            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-[#A9BCD6] hover:bg-[rgba(123,47,247,0.06)] hover:text-[#7B2FF7] transition-all duration-200"
           >
             <Coins size={18} />
             Token
@@ -197,7 +197,7 @@ export default function Dashboard() {
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="px-4 py-4 border-t border-[#E2E8F0]">
+        <div className="px-4 py-4 border-t border-[#22315E]">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7B2FF7] to-[#3B6BF7] flex items-center justify-center overflow-hidden">
               {profile.logoDataUrl ? (
@@ -207,13 +207,13 @@ export default function Dashboard() {
               )}
             </div>
             <div className="overflow-hidden">
-              <p className="text-sm font-medium text-[#0F172A] truncate">{user.fullName || user.full_name || user.email}</p>
+              <p className="text-sm font-medium text-white truncate">{user.fullName || user.full_name || user.email}</p>
               <p className="text-xs text-[#94A3B8] truncate">{user.role === 'contractor' ? 'Builder account' : 'Owner account'}</p>
             </div>
           </div>
           <button
             onClick={logout}
-            className="mt-4 w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-[#64748B] hover:text-[#7B2FF7] hover:bg-[rgba(123,47,247,0.06)] transition-colors"
+            className="mt-4 w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-[#A9BCD6] hover:text-[#7B2FF7] hover:bg-[rgba(123,47,247,0.06)] transition-colors"
           >
             <LogOut size={14} />
             Sign out
@@ -237,11 +237,11 @@ export default function Dashboard() {
               animate={{ x: 0 }}
               exit={{ x: -260 }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
-              className="lg:hidden fixed left-0 top-0 bottom-0 w-[260px] bg-[#F8FAFC] border-r border-[#E2E8F0] z-50 flex flex-col"
+              className="lg:hidden fixed left-0 top-0 bottom-0 w-[260px] bg-[#0A1633] border-r border-[#22315E] z-50 flex flex-col"
             >
-              <div className="flex items-center justify-between px-4 py-4 border-b border-[#E2E8F0]">
-                <span className="font-outfit font-bold text-[#0F172A]">Dashboard</span>
-                <button onClick={() => setMobileMenuOpen(false)} className="p-1 text-[#475569]">
+              <div className="flex items-center justify-between px-4 py-4 border-b border-[#22315E]">
+                <span className="font-outfit font-bold text-white">Dashboard</span>
+                <button onClick={() => setMobileMenuOpen(false)} className="p-1 text-[#A9BCD6]">
                   <X size={20} />
                 </button>
               </div>
@@ -267,11 +267,11 @@ export default function Dashboard() {
                     </button>
                   );
                 })}
-                <div className="my-3 border-t border-[#E2E8F0]" />
+                <div className="my-3 border-t border-[#22315E]" />
                 <Link
                   to="/token"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium text-[#475569] hover:bg-[rgba(123,47,247,0.06)] hover:text-[#7B2FF7] transition-all duration-200"
+                  className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium text-[#A9BCD6] hover:bg-[rgba(123,47,247,0.06)] hover:text-[#7B2FF7] transition-all duration-200"
                 >
                   <Coins size={18} />
                   Token
@@ -282,7 +282,7 @@ export default function Dashboard() {
                     logout();
                     setMobileMenuOpen(false);
                   }}
-                  className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium text-[#475569] hover:bg-[rgba(123,47,247,0.06)] hover:text-[#7B2FF7] transition-all duration-200"
+                  className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium text-[#A9BCD6] hover:bg-[rgba(123,47,247,0.06)] hover:text-[#7B2FF7] transition-all duration-200"
                 >
                   <LogOut size={18} />
                   Sign out
@@ -296,32 +296,32 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="flex-1 lg:ml-[240px] min-w-0">
         {/* Mobile Header */}
-        <div className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-[#E2E8F0] bg-[#F8FAFC] sticky top-0 z-30">
+        <div className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-[#22315E] bg-[#0A1633] sticky top-0 z-30">
           <button
             onClick={() => setMobileMenuOpen(true)}
-            className="p-2 rounded-lg text-[#0F172A] hover:bg-[#E2E8F0] transition-colors"
+            className="p-2 rounded-lg text-white hover:bg-white/10 transition-colors"
           >
             <Menu size={20} />
           </button>
-          <span className="font-outfit font-semibold text-[#0F172A]">
+          <span className="font-outfit font-semibold text-white">
             {visibleNavItems.find((n) => n.key === activeSection)?.label || 'Dashboard'}
           </span>
         </div>
 
         <div className="container-padding py-8 max-w-[1200px]">
           {registrationNotice && (
-            <div className="mb-6 rounded-2xl border border-[#BFDBFE] bg-[#EFF6FF] p-5">
+            <div className="mb-6 rounded-2xl border border-[#3B6BF7]/40 bg-[#0D1B3E] p-5">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex gap-3">
-                  <CheckCircle2 size={22} className="text-[#2563EB] shrink-0 mt-0.5" />
+                  <CheckCircle2 size={22} className="text-[#4DA3FF] shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-outfit font-bold text-[#0F172A]">GCSC account created</p>
-                    <p className="text-sm text-[#475569] mt-1 leading-6">
+                    <p className="font-outfit font-bold text-white">GCSC account created</p>
+                    <p className="text-sm text-[#A9BCD6] mt-1 leading-6">
                       Your dashboard account is active with email {registrationNotice.email || user.email}.
                       {registrationNotice.phone ? ' Your phone number was saved on the profile.' : ' No phone confirmation was sent.'}
                       {' '}Check the verification status panel before using sensitive owner, contractor, claim, or finance workflows.
                     </p>
-                    <p className="text-xs text-[#64748B] mt-2">
+                    <p className="text-xs text-[#A9BCD6] mt-2">
                       Next step: complete Profile, upload contractor documents if needed, and connect WebAuth wallet.
                     </p>
                   </div>
@@ -329,7 +329,7 @@ export default function Dashboard() {
                 <button
                   type="button"
                   onClick={() => setRegistrationNotice(null)}
-                  className="self-start rounded-lg px-3 py-2 text-xs font-semibold text-[#2563EB] hover:bg-white transition-colors"
+                  className="self-start rounded-lg px-3 py-2 text-xs font-semibold text-[#4DA3FF] hover:bg-white/10 transition-colors"
                 >
                   Dismiss
                 </button>

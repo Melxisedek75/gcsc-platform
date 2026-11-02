@@ -1,6 +1,6 @@
 export default function HeaderBanner() {
   return (
-    <div className="w-full bg-white">
+    <div className="w-full bg-[#020612]">
       <img
         src="/gcsc-header-banner.jpg"
         alt="GCSC Smart Contract - Blockchain Powered Construction Escrow"

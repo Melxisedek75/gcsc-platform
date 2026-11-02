@@ -32,7 +32,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   }, [location.pathname])
 
   return (
-    <div className="min-h-[100dvh] flex flex-col">
+    <div className="min-h-[100dvh] flex flex-col text-white">
       <HeaderBanner />
       <Navbar />
       <main className="flex-1">

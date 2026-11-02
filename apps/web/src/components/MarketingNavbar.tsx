@@ -58,12 +58,15 @@ export default function MarketingNavbar() {
         }}
       >
         <div className="max-w-[1280px] mx-auto h-full flex items-center justify-between px-6 md:px-12">
-          <Link to="/" className="flex flex-col items-start shrink-0">
-            <span className="font-display text-xl font-bold brand-gradient-text leading-none">
-              GCSC
-            </span>
-            <span className="text-[10px] font-mono font-medium tracking-[0.12em] text-muted-blue uppercase leading-none mt-0.5">
-              SMART CONTRACTOR
+          <Link to="/" className="flex items-center gap-2.5 shrink-0">
+            <img src="/gcsc-logo-nav.png" alt="GCSC" className="h-10 w-auto" />
+            <span className="flex flex-col items-start">
+              <span className="font-display text-xl font-bold brand-gradient-text leading-none">
+                GCSC
+              </span>
+              <span className="text-[10px] font-mono font-medium tracking-[0.12em] text-muted-blue uppercase leading-none mt-0.5">
+                SMART CONTRACTOR
+              </span>
             </span>
           </Link>
 

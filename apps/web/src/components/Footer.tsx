@@ -30,7 +30,7 @@ const socialLinks = [
 
 export default function Footer() {
   return (
-    <footer className="w-full bg-white border-t" style={{ borderColor: 'rgba(123,47,247,0.12)' }}>
+    <footer className="w-full bg-[#020612] border-t" style={{ borderColor: 'rgba(123,47,247,0.12)' }}>
       <div className="mx-auto max-w-container container-padding pt-20 pb-10">
         {/* 4-column grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8 mb-16">
@@ -43,7 +43,7 @@ export default function Footer() {
                 className="w-12 h-12 rounded-full object-cover brand-logo-wave"
               />
             </Link>
-            <p className="font-inter text-body-sm text-[#475569] leading-body-sm mb-6 max-w-[260px]">
+            <p className="font-inter text-body-sm text-[#A9BCD6] leading-body-sm mb-6 max-w-[260px]">
               Blockchain-powered construction escrow. Secure payments, verified contractors, immutable trust.
             </p>
             <div className="flex items-center gap-3">
@@ -52,7 +52,7 @@ export default function Footer() {
                   key={social.label}
                   href={social.href}
                   aria-label={social.label}
-                  className="w-10 h-10 flex items-center justify-center rounded-lg border text-[#475569] hover:text-violet hover:border-violet/40 hover:scale-[1.15] transition-all duration-300"
+                  className="w-10 h-10 flex items-center justify-center rounded-lg border text-[#A9BCD6] hover:text-violet hover:border-violet/40 hover:scale-[1.15] transition-all duration-300"
                   style={{ borderColor: 'rgba(123,47,247,0.2)' }}
                 >
                   <social.icon size={18} />
@@ -71,7 +71,7 @@ export default function Footer() {
                 <li key={link.label}>
                   <Link
                     to={link.path}
-                    className="font-inter text-body-sm text-[#475569] hover:text-[#0F172A] hover:translate-x-1 inline-block transition-all duration-200"
+                    className="font-inter text-body-sm text-[#A9BCD6] hover:text-white hover:translate-x-1 inline-block transition-all duration-200"
                   >
                     {link.label}
                   </Link>
@@ -90,7 +90,7 @@ export default function Footer() {
                 <li key={link.label}>
                   <Link
                     to={link.path}
-                    className="font-inter text-body-sm text-[#475569] hover:text-[#0F172A] hover:translate-x-1 inline-block transition-all duration-200"
+                    className="font-inter text-body-sm text-[#A9BCD6] hover:text-white hover:translate-x-1 inline-block transition-all duration-200"
                   >
                     {link.label}
                   </Link>
@@ -109,7 +109,7 @@ export default function Footer() {
                 <li key={link.label}>
                   <Link
                     to={link.path}
-                    className="font-inter text-body-sm text-[#475569] hover:text-[#0F172A] hover:translate-x-1 inline-block transition-all duration-200"
+                    className="font-inter text-body-sm text-[#A9BCD6] hover:text-white hover:translate-x-1 inline-block transition-all duration-200"
                   >
                     {link.label}
                   </Link>
@@ -124,7 +124,7 @@ export default function Footer() {
                 <li key={link.label}>
                   <a
                     href={link.href}
-                    className="font-inter text-body-sm text-[#475569] hover:text-[#0F172A] hover:translate-x-1 inline-block transition-all duration-200"
+                    className="font-inter text-body-sm text-[#A9BCD6] hover:text-white hover:translate-x-1 inline-block transition-all duration-200"
                   >
                     {link.label}
                   </a>

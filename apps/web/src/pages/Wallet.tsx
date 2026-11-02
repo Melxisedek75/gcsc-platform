@@ -122,14 +122,14 @@ export default function Wallet() {
   return (
     <div>
       {/* HERO */}
-      <section className="relative overflow-hidden" style={{ background: '#FFFFFF' }}>
+      <section className="relative overflow-hidden" style={{ background: 'transparent' }}>
         <div className="mx-auto max-w-container container-padding text-center" style={{ padding: '120px 0 80px' }}>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
             <motion.div variants={fadeUpChild}><SectionLabel text="GETTING STARTED" /></motion.div>
             <motion.h1 variants={fadeUpChild} className="font-outfit font-bold brand-heading-hero shimmer-text break-words mt-4">
               Connect WebAuth Wallet
             </motion.h1>
-            <motion.p variants={fadeUpChild} className="font-inter text-body-lg mt-4 mx-auto" style={{ color: '#475569', maxWidth: '560px' }}>
+            <motion.p variants={fadeUpChild} className="font-inter text-body-lg mt-4 mx-auto" style={{ color: '#A9BCD6', maxWidth: '560px' }}>
               Link your decentralized XPR account to GCSC for profile identity, escrow workflows, and future on-chain actions.
             </motion.p>
           </motion.div>
@@ -137,7 +137,7 @@ export default function Wallet() {
       </section>
 
       {/* WEBAUTH CONNECT */}
-      <section style={{ background: '#FFFFFF', padding: '0 0 80px' }}>
+      <section style={{ background: 'transparent', padding: '0 0 80px' }}>
         <div className="mx-auto max-w-container container-padding">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-[760px] mx-auto glass-card p-8">
             <div className="flex flex-col md:flex-row md:items-center gap-6">
@@ -148,7 +148,7 @@ export default function Wallet() {
                 <h2 className="font-outfit font-bold text-[1.5rem] gradient-text">
                   {wallet ? `Connected: ${wallet.accountName}` : 'Connect with WebAuth'}
                 </h2>
-                <p className="font-inter text-sm mt-2" style={{ color: '#475569' }}>
+                <p className="font-inter text-sm mt-2" style={{ color: '#A9BCD6' }}>
                   {wallet
                     ? `Permission: ${wallet.permission}. ${user ? 'Saved to your Dashboard profile.' : 'Sign in on Dashboard to save this wallet.'}`
                     : 'Authorize through WebAuth. GCSC never stores your private keys.'}
@@ -170,7 +170,7 @@ export default function Wallet() {
       </section>
 
       {/* 4-STEP GUIDE */}
-      <section style={{ background: '#F8FAFC', padding: '80px 0' }}>
+      <section style={{ background: 'transparent', padding: '80px 0' }}>
         <div className="mx-auto max-w-container container-padding">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-12">
             <SectionLabel text="SETUP GUIDE" />
@@ -195,7 +195,7 @@ export default function Wallet() {
                     <span className="font-outfit font-bold text-sm" style={{ color: '#7B2FF7' }}>{step.num}</span>
                     <h3 className="font-outfit font-semibold text-h3 gradient-text">{step.title}</h3>
                   </div>
-                  <p className="font-inter text-body-sm" style={{ color: '#475569' }}>{step.desc}</p>
+                  <p className="font-inter text-body-sm" style={{ color: '#A9BCD6' }}>{step.desc}</p>
                   <div className="flex gap-2 mt-2">
                     {step.tags.map(tag => (
                       <span key={tag} className="px-2 py-0.5 rounded-full font-inter text-xs font-medium" style={{ background: 'rgba(123,47,247,0.08)', color: '#7B2FF7' }}>
@@ -211,12 +211,12 @@ export default function Wallet() {
       </section>
 
       {/* METAL PAY */}
-      <section style={{ background: '#FFFFFF', padding: '80px 0' }}>
+      <section style={{ background: 'transparent', padding: '80px 0' }}>
         <div className="mx-auto max-w-container container-padding">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-10">
             <SectionLabel text="FIAT ON-RAMP" />
             <h2 className="font-outfit font-bold text-h2 break-words mt-3 gradient-text">Buy GCSC with Metal Pay</h2>
-            <p className="font-inter text-body-lg mt-3 mx-auto" style={{ color: '#475569', maxWidth: '520px' }}>
+            <p className="font-inter text-body-lg mt-3 mx-auto" style={{ color: '#A9BCD6', maxWidth: '520px' }}>
               Use Metal Pay as your fiat on-ramp to purchase GCSC tokens directly with USD.
             </p>
           </motion.div>
@@ -232,7 +232,7 @@ export default function Wallet() {
                     </div>
                     <div>
                       <p className="font-inter font-medium text-sm gradient-text">{f.title}</p>
-                      <p className="font-inter text-xs" style={{ color: '#475569' }}>{f.desc}</p>
+                      <p className="font-inter text-xs" style={{ color: '#A9BCD6' }}>{f.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -244,7 +244,7 @@ export default function Wallet() {
                   <CreditCard size={32} className="text-white" />
                 </div>
                 <h3 className="font-outfit font-semibold text-h3 gradient-text">Metal Pay</h3>
-                <p className="font-inter text-body-sm mt-1" style={{ color: '#475569' }}>Fiat-to-crypto on-ramp</p>
+                <p className="font-inter text-body-sm mt-1" style={{ color: '#A9BCD6' }}>Fiat-to-crypto on-ramp</p>
                 <button
                   onClick={() => setMetalConnected(!metalConnected)}
                   className="mt-4 inline-flex items-center justify-center font-inter font-semibold text-sm px-6 py-3 rounded-full transition-all"
@@ -262,7 +262,7 @@ export default function Wallet() {
       </section>
 
       {/* XPR NETWORK DETAILS */}
-      <section style={{ background: '#F8FAFC', padding: '80px 0' }}>
+      <section style={{ background: 'transparent', padding: '80px 0' }}>
         <div className="mx-auto max-w-container container-padding">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-10">
             <SectionLabel text="NETWORK" />
@@ -287,7 +287,7 @@ export default function Wallet() {
                 ].map(item => (
                   <div key={item.label} className="flex justify-between items-center py-2 border-b" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
                     <span className="font-inter text-sm" style={{ color: '#94A3B8' }}>{item.label}</span>
-                    <span className="font-inter font-medium text-sm" style={{ color: '#0F172A' }}>{item.value}</span>
+                    <span className="font-inter font-medium text-sm" style={{ color: '#FFFFFF' }}>{item.value}</span>
                   </div>
                 ))}
               </div>
@@ -306,7 +306,7 @@ export default function Wallet() {
       </section>
 
       {/* CTA */}
-      <section style={{ background: '#FFFFFF', padding: '80px 0' }}>
+      <section style={{ background: 'transparent', padding: '80px 0' }}>
         <div className="mx-auto max-w-container container-padding text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="gradient-card p-12 rounded-[24px]">
             <h2 className="font-outfit font-bold text-h2 text-white break-words">Start Building with Blockchain</h2>

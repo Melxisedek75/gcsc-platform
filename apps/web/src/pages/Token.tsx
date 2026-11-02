@@ -20,7 +20,7 @@ export default function Token() {
   return (
     <div>
       {/* HERO */}
-      <section className="relative overflow-hidden" style={{ background: '#FFFFFF' }}>
+      <section className="relative overflow-hidden" style={{ background: 'transparent' }}>
         <div className="mx-auto max-w-container container-padding text-center" style={{ padding: '120px 0 80px' }}>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
             <motion.div variants={fadeUpChild}>
@@ -36,7 +36,7 @@ export default function Token() {
             >
               GCSC Token
             </motion.h1>
-            <motion.p variants={fadeUpChild} className="font-inter text-body-lg mt-4 mx-auto" style={{ color: '#475569', maxWidth: '560px' }}>
+            <motion.p variants={fadeUpChild} className="font-inter text-body-lg mt-4 mx-auto" style={{ color: '#A9BCD6', maxWidth: '560px' }}>
               The native utility token powering the GCSC construction escrow ecosystem on XPR Network.
             </motion.p>
           </motion.div>
@@ -70,7 +70,7 @@ export default function Token() {
       </section>
 
       {/* TOKEN UTILITY */}
-      <section style={{ background: '#F8FAFC', padding: '80px 0' }}>
+      <section style={{ background: 'transparent', padding: '80px 0' }}>
         <div className="mx-auto max-w-container container-padding">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-12">
             <img
@@ -94,7 +94,7 @@ export default function Token() {
                   <card.icon size={28} className="text-white" />
                 </div>
                 <h3 className="font-outfit font-semibold text-h3 gradient-text">{card.title}</h3>
-                <p className="font-inter text-body mt-2" style={{ color: '#475569' }}>{card.desc}</p>
+                <p className="font-inter text-body mt-2" style={{ color: '#A9BCD6' }}>{card.desc}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -102,7 +102,7 @@ export default function Token() {
       </section>
 
       {/* METAL PAY — BUY TOKENS */}
-      <section style={{ background: '#FFFFFF', padding: '80px 0' }}>
+      <section style={{ background: 'transparent', padding: '80px 0' }}>
         <div className="mx-auto max-w-container container-padding">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left: Info */}
@@ -116,7 +116,7 @@ export default function Token() {
               <h2 className="font-outfit font-bold text-h1 leading-h1 tracking-h1 mt-4 gradient-text">
                 Buy with Metal Pay
               </h2>
-              <p className="font-inter text-body-lg mt-4" style={{ color: '#475569' }}>
+              <p className="font-inter text-body-lg mt-4" style={{ color: '#A9BCD6' }}>
                 GCSC token access through Metal Pay is planned for eligible users after official
                 launch instructions are published. Availability and supported payment methods depend on Metal Pay eligibility and jurisdiction.
               </p>
@@ -140,7 +140,7 @@ export default function Token() {
                     <div className="w-5 h-5 rounded-full bg-gradient-to-r from-[#7B2FF7] to-[#3B6BF7] flex items-center justify-center flex-shrink-0">
                       <CheckCircle size={12} className="text-white" />
                     </div>
-                    <span className="font-inter text-body" style={{ color: '#475569' }}>{item}</span>
+                    <span className="font-inter text-body" style={{ color: '#A9BCD6' }}>{item}</span>
                   </motion.div>
                 ))}
               </div>
@@ -193,7 +193,7 @@ export default function Token() {
                       </div>
                       <div>
                         <h4 className="font-outfit font-semibold text-body gradient-text">{item.title}</h4>
-                        <p className="font-inter text-body-sm mt-1" style={{ color: '#475569' }}>{item.desc}</p>
+                        <p className="font-inter text-body-sm mt-1" style={{ color: '#A9BCD6' }}>{item.desc}</p>
                       </div>
                     </motion.div>
                   ))}
@@ -220,11 +220,11 @@ export default function Token() {
       </section>
 
       {/* CTA */}
-      <section style={{ background: '#F8FAFC', padding: '80px 0' }}>
+      <section style={{ background: 'transparent', padding: '80px 0' }}>
         <div className="mx-auto max-w-container container-padding text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="gradient-card p-12 rounded-[24px]">
             <h2 className="font-outfit font-bold text-h2 gradient-text break-words">Ready to Join the Ecosystem?</h2>
-            <p className="font-inter text-body-lg mt-3" style={{ color: '#475569' }}>
+            <p className="font-inter text-body-lg mt-3" style={{ color: '#A9BCD6' }}>
               Be among the first to access GCSC tokens and transform construction payments.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">

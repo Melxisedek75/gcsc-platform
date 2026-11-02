@@ -69,12 +69,12 @@ export default function ContractorProfile() {
 
   if (error || !profile) {
     return (
-      <section className="section-padding bg-white">
+      <section className="section-padding bg-transparent">
         <div className="mx-auto max-w-container container-padding text-center">
           <p className="text-xs font-semibold uppercase tracking-wider gradient-text">Public Contractor Profile</p>
           <h1 className="mt-4 font-outfit font-bold text-[2rem] gradient-text">Profile unavailable</h1>
-          <p className="mt-3 text-[#64748B]">{error || 'This contractor profile could not be found.'}</p>
-          <Link to="/dashboard" className="mt-8 inline-flex items-center gap-2 rounded-full border border-[#C4B5FD] px-5 py-3 text-sm font-semibold text-[#7B2FF7]">
+          <p className="mt-3 text-[#A9BCD6]">{error || 'This contractor profile could not be found.'}</p>
+          <Link to="/dashboard" className="mt-8 inline-flex items-center gap-2 rounded-full border border-[#7B2FF7]/40 px-5 py-3 text-sm font-semibold text-[#7B2FF7]">
             <ArrowLeft size={16} />
             Back to dashboard
           </Link>
@@ -88,7 +88,7 @@ export default function ContractorProfile() {
   const specialties = contractor.specialties || []
 
   return (
-    <section className="section-padding bg-white">
+    <section className="section-padding bg-transparent">
       <div className="mx-auto max-w-container container-padding">
         <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm font-semibold text-[#7B2FF7] hover:text-[#3B6BF7] transition-colors">
           <ArrowLeft size={16} />
@@ -113,7 +113,7 @@ export default function ContractorProfile() {
             <h1 className="mt-2 font-outfit font-bold text-[2rem] leading-tight gradient-text">
               {contractor.companyName || contractor.full_name}
             </h1>
-            <p className="mt-2 text-sm text-[#64748B]">{contractor.full_name}</p>
+            <p className="mt-2 text-sm text-[#A9BCD6]">{contractor.full_name}</p>
             <div className="mt-5">
               <VerificationPill status={verification.overall_status} />
             </div>
@@ -125,10 +125,10 @@ export default function ContractorProfile() {
               <h2 className="mt-2 font-outfit font-bold text-[1.5rem] gradient-text">Bid readiness</h2>
               <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {verification.checklist.map((item) => (
-                  <div key={item.key} className="rounded-2xl border border-[#E2E8F0] p-4 flex items-center gap-3">
+                  <div key={item.key} className="rounded-2xl border border-[#22315E] p-4 flex items-center gap-3">
                     {item.completed ? <CheckCircle2 size={18} className="text-[#10B981] shrink-0" /> : <Clock4 size={18} className="text-[#F59E0B] shrink-0" />}
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-[#0F172A] truncate">{item.label}</p>
+                      <p className="text-sm font-semibold text-white truncate">{item.label}</p>
                       <p className="text-xs text-[#94A3B8]">{item.completed ? 'Complete' : item.status || 'Needed'}</p>
                     </div>
                   </div>
@@ -176,7 +176,7 @@ export default function ContractorProfile() {
                   <ShieldCheck size={18} />
                   <span className="text-xs font-semibold uppercase tracking-wider">Profile Notes</span>
                 </div>
-                <p className="mt-4 text-sm leading-7 text-[#475569]">{contractor.bio}</p>
+                <p className="mt-4 text-sm leading-7 text-[#A9BCD6]">{contractor.bio}</p>
               </div>
             )}
           </div>
